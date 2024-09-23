@@ -8,6 +8,10 @@ setup(
         'torch',
         'lightning',
         'torch_geometric',
+        'lmdb',
+        'loguru',
+        'monty',
+        'ase'
     ],
     author='FERMat',
 )

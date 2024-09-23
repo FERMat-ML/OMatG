@@ -420,7 +420,7 @@ class Configuration:
         return config_dict
 
 
-class Dataset:
+class DataModule:
     """
     A dataset of multiple configurations (:class:`~kliff.dataset.Configuration`).
 
@@ -436,7 +436,7 @@ class Dataset:
         ):
             self._configs = list(configurations)
         else:
-            raise DatasetError(
+            raise DataModuleError(
                 "configurations must be a iterable of Configuration objects."
             )
 
@@ -451,7 +451,7 @@ class Dataset:
         colabfit_dataset: str,
         colabfit_uri: str = "mongodb://localhost:27017",
         **kwargs,
-    ) -> "Dataset":
+    ) -> "DataModule":
         """
         Read configurations from colabfit database and initialize a dataset.
 
@@ -501,7 +501,7 @@ class Dataset:
         )
         if not data_objects:
             logger.error(f"{colabfit_dataset} is either empty or does not exist")
-            raise DatasetError(f"{colabfit_dataset} is either empty or does not exist")
+            raise DataModuleError(f"{colabfit_dataset} is either empty or does not exist")
 
         configs = []
         for data_object in data_objects:
@@ -510,7 +510,7 @@ class Dataset:
             )
 
         if len(configs) <= 0:
-            raise DatasetError(f"No dataset file with in {colabfit_dataset} dataset.")
+            raise DataModuleError(f"No dataset file with in {colabfit_dataset} dataset.")
 
         logger.info(f"{len(configs)} configurations read from {colabfit_dataset}")
 
@@ -542,7 +542,7 @@ class Dataset:
         """
         # open link to the mongo
         mongo_client = MongoDatabase(colabfit_database, uri=colabfit_uri, **kwargs)
-        configs = Dataset._read_from_colabfit(mongo_client, colabfit_dataset, None)
+        configs = DataModule._read_from_colabfit(mongo_client, colabfit_dataset, None)
         self._configs.extend(configs)
 
     @classmethod
@@ -552,7 +552,7 @@ class Dataset:
         ase_atoms_list: List[ase.Atoms] = None,
         slices: Union[slice, str] = ":",
         file_format: str = "xyz",
-    ) -> "Dataset":
+    ) -> "DataModule":
         """
         Read configurations from ase.Atoms object and initialize a dataset. The expected
         inputs are either a pre-initialized list of ase.Atoms, or a path from which
@@ -564,8 +564,8 @@ class Dataset:
         Example:
             >>> from ase.build import bulk
             >>> ase_configs = [bulk("Al"), bulk("Al", cubic=True)]
-            >>> dataset_from_list = Dataset.from_ase(ase_atoms_list=ase_configs)
-            >>> dataset_from_file = Dataset.from_ase(path="configs.xyz", energy_key="Energy")
+            >>> dataset_from_list = DataModule.from_ase(ase_atoms_list=ase_configs)
+            >>> dataset_from_file = DataModule.from_ase(path="configs.xyz", energy_key="Energy")
 
         Args:
             path: Path the directory (or filename) storing the configurations.
@@ -617,7 +617,7 @@ class Dataset:
             A list of configurations.
         """
         if ase_atoms_list is None and path is None:
-            raise DatasetError(
+            raise DataModuleError(
                 "Either list of ase.Atoms objects or a path must be provided."
             )
 
@@ -632,7 +632,7 @@ class Dataset:
             try:
                 extension = SUPPORTED_FORMAT[file_format]
             except KeyError:
-                raise DatasetError(
+                raise DataModuleError(
                     f"Expect data file_format to be one of {list(SUPPORTED_FORMAT.keys())}, "
                     f"got: {file_format}."
                 )
@@ -669,7 +669,7 @@ class Dataset:
                 ]
 
         if len(configs) <= 0:
-            raise DatasetError(
+            raise DataModuleError(
                 f"No dataset file with file format `{file_format}` found at {path}."
             )
 
@@ -694,7 +694,7 @@ class Dataset:
         Example:
             >>> from ase.build import bulk
             >>> ase_configs = [bulk("Al"), bulk("Al", cubic=True)]
-            >>> dataset = Dataset()
+            >>> dataset = DataModule()
             >>> dataset.add_from_ase(ase_atoms_list=ase_configs)
             >>> dataset.add_from_ase(path="configs.xyz", energy_key="Energy")
 
@@ -719,7 +719,7 @@ class Dataset:
         configs = self._read_from_ase(
             path, ase_atoms_list,file_format
         )
-        Dataset.add_weights(configs)
+        DataModule.add_weights(configs)
         self._configs.extend(configs)
 
     @classmethod
@@ -820,8 +820,7 @@ class Dataset:
 
         for lmdb_idx, lmdb_path in enumerate(path):
             env = lmdb.open(str(lmdb_path), readonly=True, lock=False, subdir=subdir)
-            logger.warning("Weights not implemented yet")
-            configs = self._read_from_lmdb(env, None, sharded, dynamic_loading, subdir)
+            configs = self._read_from_lmdb(env, sharded, dynamic_loading, subdir)
 
             if dynamic_loading:
                 self.metadata.setdefault("lmdb_envs", []).append(env)
@@ -881,7 +880,7 @@ class Dataset:
         Return the configurations in the dataset.
         """
         if not self._configs:
-            raise DatasetError(
+            raise DataModuleError(
                 "No configurations found, maybe you are using dynamic loading?"
             )
         return self._configs
@@ -904,7 +903,7 @@ class Dataset:
 
     def __getitem__(
         self, idx: Union[int, np.ndarray, List]
-    ) -> Union[Configuration, "Dataset"]:
+    ) -> Union[Configuration, "DataModule"]:
         """
         Get the configuration at index `idx`. If the index is a list, it returns a new
         dataset with the configurations at the indices.
@@ -929,7 +928,7 @@ class Dataset:
 
             else:
                 if not self._return_config_on_getitem:
-                    ds = Dataset()
+                    ds = DataModule()
                     ds._metadata = self._metadata
                     ds._configs = idx
                     return ds
@@ -943,29 +942,12 @@ class Dataset:
                         idx = int(lmdb_idx["lmdb_env"])
                         env = self.metadata["lmdb_envs"][idx]
                         configs.append(Configuration.from_lmdb(env, key))
-                    return Dataset(configs)
+                    return DataModule(configs)
         else:
             if isinstance(idx, int):
                 return self._configs[idx]
             else:
-                return Dataset([self._configs[i] for i in idx])
-
-    def save_weights(self, path: Union[Path, str]):
-        """
-        Save the weights of the configurations to a file.
-
-        Args:
-            path: Path of the file to save the weights.
-        """
-        path = Path(path)
-        with path.open("w") as f:
-            for config in self._configs:
-                f.write(
-                    f"{config.weight.config_weight} "
-                    + f"{config.weight.energy_weight} "
-                    + f"{config.weight.forces_weight} "
-                    + f"{config.weight.stress_weight}\n"
-                )
+                return DataModule([self._configs[i] for i in idx])
 
     def add_metadata(self, metadata: dict):
         """
@@ -975,7 +957,7 @@ class Dataset:
             metadata: A dictionary containing the metadata.
         """
         if not isinstance(metadata, dict):
-            raise DatasetError("metadata must be a dictionary.")
+            raise DataModuleError("metadata must be a dictionary.")
         self._metadata |= metadata
 
     def get_metadata(self, key: str):
@@ -996,36 +978,6 @@ class Dataset:
         Return the metadata of the dataset.
         """
         return self._metadata
-
-    def check_properties_consistency(self, properties: List[str] = None):
-        """
-        Check which of the properties of the configurations are consistent. These
-        consistent properties are saved a list which can be used to get the attributes
-        from the configurations. "Consistent" in this context means that same property
-        is available for all the configurations. A property is not considered consistent
-        if it is None for any of the configurations.
-
-        Args:
-            properties: List of properties to check for consistency. If None, no
-                properties are checked. All consistent properties are saved in the
-                metadata.
-        """
-        if properties is None:
-            logger.warning("No properties provided to check for consistency.")
-            return
-
-        property_list = list(copy.deepcopy(properties))  # make it mutable, if not
-        for config in self._configs:
-            for prop in property_list:
-                try:
-                    getattr(config, prop)
-                except ConfigurationError:
-                    property_list.remove(prop)
-
-        self.add_metadata({"consistent_properties": tuple(property_list)})
-        logger.info(
-            f"Consistent properties: {property_list}, stored in metadata key: `consistent_properties`"
-        )
 
     @staticmethod
     def get_manifest_checksum(
@@ -1048,7 +1000,7 @@ class Dataset:
         return hashlib.md5(dataset_str.encode()).hexdigest()
 
     @staticmethod
-    def get_dataset_from_manifest(dataset_manifest: dict) -> "Dataset":
+    def get_dataset_from_manifest(dataset_manifest: dict) -> "DataModule":
         """
         Get a dataset from a manifest.
 
@@ -1120,10 +1072,10 @@ class Dataset:
             and dataset_type != "colabfit"
             and dataset_type != "lmdb"
         ):
-            raise DatasetError(f"Dataset type {dataset_type} not supported.")
+            raise DataModuleError(f"Dataset type {dataset_type} not supported.")
 
         if dataset_type == "ase":
-            dataset = Dataset.from_ase(
+            dataset = DataModule.from_ase(
                 path=dataset_manifest.get("path", "."),
             )
         elif dataset_type == "colabfit":
@@ -1131,27 +1083,27 @@ class Dataset:
                 colabfit_dataset = dataset_manifest.get("colabfit_dataset")
                 colabfit_database = colabfit_dataset.database_name
             except KeyError:
-                raise DatasetError("Colabfit dataset or database not provided.")
+                raise DataModuleError("Colabfit dataset or database not provided.")
             colabfit_uri = dataset_manifest.get(
                 "colabfit_uri", "mongodb://localhost:27017"
             )
 
-            dataset = Dataset.from_colabfit(
+            dataset = DataModule.from_colabfit(
                 colabfit_database=colabfit_database,
                 colabfit_dataset=colabfit_dataset,
                 colabfit_uri=colabfit_uri,
             )
         elif dataset_type == "lmdb":
-            dataset = Dataset.from_lmdb(
+            dataset = DataModule.from_lmdb(
                 path=dataset_manifest.get("lmdb_paths", []),
                 dynamic_loading=dataset_manifest.get("dynamic_loading", True),
                 save_path=Path(dataset_manifest.get("path", "./")),
                 reuse=dataset_manifest.get("save", True),
-                checksum=Dataset.get_manifest_checksum(dataset_manifest),
+                checksum=DataModule.get_manifest_checksum(dataset_manifest),
             )
         else:
             # this should not happen
-            raise DatasetError(f"Dataset type {dataset_type} not supported.")
+            raise DataModuleError(f"Dataset type {dataset_type} not supported.")
 
         return dataset
 
@@ -1200,7 +1152,7 @@ class ConfigurationError(Exception):
         self.msg = msg
 
 
-class DatasetError(Exception):
+class DataModuleError(Exception):
     def __init__(self, msg):
-        super(DatasetError, self).__init__(msg)
+        super(DataModuleError, self).__init__(msg)
         self.msg = msg
