@@ -1,113 +1,79 @@
-# Import libraries
-import abc
 import torch
+from .abstracts import LatentGamma
 
-#########
-# GAMMA #
-#########
-class Gamma(abc.ABC):
-    '''
-    Abstract class for defining an interpolant
-    '''
 
-    def __init__(self, a=None):
-        '''
-        Construct interpolant
-        '''
-        
-        # Construct
+class LatentGammaSqrt(LatentGamma):
+    def __init__(self, a: float) -> None:
+        """
+        Gamma function gamma(t) = sqrt(a * t * (1 - t)) in the latent variable gamma(t) * z of a stochastic interpolant.
+        """
         super().__init__()
-        self.a = a
+        self._a = a
 
-    @abc.abstractmethod
-    def __call__(t:torch.tensor, a=None):
-        '''
-        Function call to interpolant
-        '''
-        pass
+    def gamma(self, t: torch.tensor) -> torch.tensor:
+        """
+        Evaluate the gamma function gamma(t) in the latent variable gamma(t) * z at the times t.
 
-    @abc.abstractmethod
-    def compute_dt(t:torch.tensor, a=None):
-        '''
-        Call for time derivative of interpolant
-        '''
-        pass
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
 
-'''
-This file contains some predefined gamma functions
-for tuning the stochasticity of the stochastic interpolant.
-Other gamma functions can be defined by the user
-'''
-class GammaSqrt(Gamma):
+        :return:
+            Gamma function gamma(t).
+        :rtype: torch.tensor
+        """
+        self._check_t(t)
+        return torch.sqrt(self._a * t * (1.0 - t))
 
-    def __init__(self, a):
-        '''
-        Construct gamma that goes as sqrt(a*t*(1-t)) 
-        '''
-        super().__init__(a)
+    def gamma_derivative(self, t: torch.tensor) -> torch.tensor:
+        """
+        Compute the derivative of the gamma function gamma(t) in the latent variable gamma(t) * z with respect to time.
 
-    def __call__(self, t:torch.tensor):
-        '''
-        Gamma term
-        '''
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
 
-        # Compute gamma
-        return torch.sqrt(self.a * t * (1 - t))
+        :return:
+            Derivative of the gamma function.
+        :rtype: torch.tensor
+        """
+        self._check_t(t)
+        return self._a * (1.0 - 2.0 * t) / (2.0 * torch.sqrt(self._a * t * (1.0 - t)))
 
-    def compute_dt(self, t:torch.tensor):
-        '''
-        dGamma/dt
-        '''
 
-        # Compute dG/dt
-        return (self.a * (1 - 2 * t)) / (2 * torch.sqrt(self.a * t * (1 - t)))
+class LatentGammaEncoderDecoder(LatentGamma):
+    def __init__(self) -> None:
+        """
+        Gamma function gamma(t) = sin^2(pi * t) in the latent variable gamma(t) * z of a stochastic interpolant.
+        """
+        super().__init__()
 
-class GammaEncoderDecoder(Gamma):
+    def gamma(self, t: torch.tensor) -> torch.tensor:
+        """
+        Evaluate the gamma function gamma(t) in the latent variable gamma(t) * z at the times t.
 
-    def __init__(self):
-        '''
-        Construct gamma that goes as sin^2(pi*t) 
-        '''
-        super().__init__(None)
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
 
-    def __call__(self, t:torch.tensor):
-        '''
-        Gamma term
-        '''
-
-        # Compute gamma
+        :return:
+            Gamma function gamma(t).
+        :rtype: torch.tensor
+        """
+        self._check_t(t)
         return torch.sin(torch.pi * t) ** 2
 
-    def compute_dt(self, t:torch.tensor):
-        '''
-        dGamma/dt
-        '''
+    def gamma_derivative(self, t: torch.tensor) -> torch.tensor:
+        """
+        Compute the derivative of the gamma function gamma(t) in the latent variable gamma(t) * z with respect to time.
 
-        # Compute dG/dt
-        return 2 * torch.sin(torch.pi * t) * torch.pi * torch.cos(torch.pi * t)
- 
-class GammaNull(Gamma):
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
 
-    def __init__(self):
-        '''
-        Construct gamma that goes as sin^2(pi*t) 
-        '''
-        super().__init__(None)
-
-    def __call__(self, t:torch.tensor):
-        '''
-        Gamma term
-        '''
-
-        # Compute gamma
-        return 0
-
-    def compute_dt(self, t:torch.tensor):
-        '''
-        dGamma/dt
-        '''
-
-        # Compute dG/dt
-        return 0
- 
-     
+        :return:
+            Derivative of the gamma function.
+        :rtype: torch.tensor
+        """
+        self._check_t(t)
+        return 2.0 * torch.sin(torch.pi * t) * torch.pi * torch.cos(torch.pi * t)

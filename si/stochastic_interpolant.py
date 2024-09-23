@@ -1,50 +1,72 @@
-# Import libraries
+from typing import Optional
 import torch
+from .abstracts import Interpolant, LatentGamma, TimeChecker
 
-class StochasticInterpolant:
-    '''
-    Base class for a stochastic interpolant
-    '''
 
-    def __init__(self, interpolant, gamma, eps:float):
-        '''
-        General initialization for a stochastic interpolant
-        @param interpolant : Must be a FUNCTION. This provides flexibility in the interpolaters one can use but certain end conditions must hold
-        @param gamma : keyword for gamma 
-        @param eps : control for level of stochasticity
-        '''
+class StochasticInterpolant(TimeChecker):
+    """
+    Stochastic interpolant x_t = I(t, x_0, x_1) + gamma(t) * z between two points from two distributions p_0 and p_1 at
+    times t based on an interpolant I(t, x_0, x_1), a gamma function gamma(t), and a Gaussian random variable z.
 
-        # Initialize interpolant
-        self.I = interpolant
-        self.gamma = gamma
+    :param interpolant:
+        Interpolant I(t, x_0, x_1) between two points from two distributions p_0 and p_1 at times t.
+    :type interpolant: Interpolant
+    :param gamma:
+        Gamma function gamma(t) in the latent variable gamma(t) * z of a stochastic interpolant.
+    :type gamma: LatentGamma
+    """
 
-        # Set stochasticity
-        self.eps = eps
+    def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma]) -> None:
+        """Construct stochastic interpolant."""
+        self._interpolant = interpolant
+        self._gamma = gamma
 
-    def __call__(self, t:torch.Tensor, x_0:torch.Tensor, x_1:torch.Tensor, z:torch.Tensor):
-        '''
-        Evaluate stochastic interpolant on a trio of time and two data points
-        @param t : time
-        @param x_0 : data point from p_0
-        @param x_1 : data point from p_1
-        '''
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.tensor:
+        """
+        Stochastically interpolate between two points from two distributions p_0 and p_1 at times t.
 
-        # Assert size equality
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.tensor
+
+        :return:
+            Stochastically interpolated value.
+        :rtype: torch.tensor
+        """
         assert x_0.shape == x_1.shape
+        interpolate = self._interpolant.interpolate(t, x_0, x_1)
+        if self._gamma is not None:
+            interpolate += self._gamma.gamma(t) * torch.randn_like(t)
+        return interpolate
 
-        # Return evaluation
-        return self.I(t, x_0, x_1) + self.eps * self.gamma(t) * torch.rand_like(x_0) * z 
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.tensor:
+        """
+        Derivative with respect to time of the stochastic interpolants between two points from two distributions p_0
+        and p_1 at times t.
 
-    def compute_time_derivative(self, t:torch.Tensor, x_0:torch.Tensor, x_1:torch.Tensor, z:torch.Tensor):
-        '''
-        Evaluate stochastic interpolant on a trio of time and two data points
-        @param t : time
-        @param x_0 : data point from p_0
-        @param x_1 : data point from p_1
-        '''
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.tensor
 
-        # Assert size equality
+        :return:
+            Stochastically interpolated value.
+        :rtype: torch.tensor
+        """
         assert x_0.shape == x_1.shape
-
-        # Return evaluation
-        return self.I.compute_dt(t, x_0, x_1) + self.gamma.compute_dt(t) * z
+        self._check_t(t)
+        interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1)
+        if self._gamma is not None:
+            interpolate_derivative += self._gamma.gamma_derivative(t) * torch.randn_like(t)
+        return interpolate_derivative
