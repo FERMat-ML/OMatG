@@ -1,7 +1,12 @@
 from typing import Optional
 import torch
 from .abstracts import Interpolant, LatentGamma, TimeChecker
+from enum import Enum, auto
+import torch.nn as nn
 
+class DE(Enum):
+    ODE = auto()
+    SDE = auto()
 
 class StochasticInterpolant(TimeChecker):
     """
@@ -16,10 +21,14 @@ class StochasticInterpolant(TimeChecker):
     :type gamma: LatentGamma
     """
 
-    def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma]) -> None:
+    def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], de_type: DE) -> None:
         """Construct stochastic interpolant."""
         self._interpolant = interpolant
         self._gamma = gamma
+        if de_type == DE.ODE:
+            self.loss = self.__ode_loss
+        else:
+            self.loss = self.__sde_loss
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.tensor:
         """
@@ -70,3 +79,53 @@ class StochasticInterpolant(TimeChecker):
         if self._gamma is not None:
             interpolate_derivative += self._gamma.gamma_derivative(t) * torch.randn_like(t)
         return interpolate_derivative
+
+    def __ode_loss(self, pred: torch.Tensor, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor):
+        """
+        Compute loss function for stochastic interpolant under ODE
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.tensor
+
+        :return:
+            Loss function value.
+        :rtype: torch.tensor 
+        """
+
+        # Compute ground truth
+        gt = self.interpolate_derivative(t, x_0, x_1)
+        loss = nn.MSELoss(gt, pred[0])
+        return loss
+
+    def __sde_loss(self, pred: torch.Tensor, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor):
+        """
+        Compute loss function for stochastic interpolant under SDE
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.tensor
+
+        :return:
+            Tuple of loss function values.
+        :rtype: (torch.tensor, torch.tensor)
+        """
+
+        # Compute ground truth
+        gt_b = self.interpolate_derivative(t, x_0, x_1)
+        gt_z = torch.randn_like(t)
+        loss_b = nn.MSELoss(gt_b, pred[0])
+        loss_z = nn.MSELoss(gt_z, pred[1])
+        return loss_b + loss_z
