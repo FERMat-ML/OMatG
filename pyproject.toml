@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omfg"
+readme = "README.md"
+requires-python = ">=3.9,<=3.12"
+version = "0.0.1"
+dependencies = [
+    "torch ~= 2.4",
+    "lightning ~= 2.4",
+    "torch_geometric ~= 2.6"
+]
