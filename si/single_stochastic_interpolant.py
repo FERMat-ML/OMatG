@@ -1,8 +1,9 @@
 from typing import Optional, Callable
 import torch
-from .abstracts import Interpolant, LatentGamma, StochasticInterpolant
+from .abstracts import Interpolant, LatentGamma, StochasticInterpolant, Epsilon
 from enum import Enum, auto
 import torch.nn as nn
+import numpy as np
 
 # Integrating DE
 from scipy.integrate import solve_ivp
@@ -26,11 +27,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     :type gamma: LatentGamma
     """
 
-    def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], de_type: DE) -> None:
+    def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], eps: Epsilon, de_type: DE) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
         self._gamma = gamma
+        self._eps = eps
         self._de_type = de_type
         if self._de_type == DE.ODE:
             self.loss = self._ode_loss
@@ -172,11 +174,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         Integrate ODE
 
         :param wrapper:
-            Wrapper function for solving IVP
+            Wrapper function for getting model prediction
         :type Callable
         :param x_t:
             Old timestep x
-        :type x_t: torch.tensor
+        :type x_t: tuple
         :param tspan:
             Time span to integrate 
         :type tspan: tuple
@@ -186,6 +188,35 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.tensor
         """
 
+        # Modify wrapper to only use b(t,x)
+        ode_wrap = lambda t, x : wrapper(t, x)[0]
+
         # Integrate with scipy IVP integrator
-        x_t_new = solve_ivp(wrapper, tspan, x_t)
+        x_t_new = solve_ivp(ode_wrap, tspan, x_t)
+        return torch.Tensor(x_t_new[:,-1])
+
+    def _sde_integrate(self, wrapper: Callable[[tuple], tuple], x_t: tuple, tspan: tuple):
+        """
+        Integrate SDE
+
+        :param wrapper:
+            Wrapper function for getting model prediction
+        :type Callable
+        :param x_t
+            Old timestep x
+        :type x_t: tuple
+        """
+
+        # Modify wrapper for use in SDE integrator
+        def f(x, t): 
+            preds = wrapper(t, x)
+            out = preds[0] - (self._eps(t) / self._gamma(t)) * preds[1]
+            return out
+
+        def G(x, t):
+            out = np.sqrt(2 * self._eps(t)) * np.eye(x.shape[-1])
+            return out
+
+        # SDE Integrator
+        x_t_new = sdeint.itoEuler(f, G, x_t, tspan)
         return torch.Tensor(x_t_new[:,-1])

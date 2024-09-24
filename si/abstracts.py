@@ -123,6 +123,31 @@ class LatentGamma(ABC, TimeChecker):
         """
         raise NotImplementedError
 
+class Epsilon(ABC, TimeChecker):
+    """
+    Abstract class for defining epsilon function epsilon(t) for sampling time
+    """
+
+    def __init__(self) -> None:
+        """
+        Construct Epsilon function
+        """
+        pass
+
+    @abstractmethod
+    def epsilon(self, t: torch.tensor) -> torch.tensor:
+        """
+        Evaluate epsilon functino epsilon(t)
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
+
+        :return:
+            Epsilon function epsilon(t).
+        :rtype: torch.tensor
+        """
+        raise NotImplementedError
 
 class StochasticInterpolant(ABC, TimeChecker):
     """
