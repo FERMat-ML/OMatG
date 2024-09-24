@@ -1,0 +1,33 @@
+from .sampler import Sampler
+import numpy as np
+from ase.data import atomic_numbers
+
+
+class SampleFromDataset(Sampler):
+    """
+    This is a sampler that generates random samples from the
+    """
+    def __init__(self, dataset, fractional_coordinates=True):
+        super().__init__()
+        self.dataset = dataset
+        self._rng = np.random.default_rng()
+        self._frac = fractional_coordinates
+
+    def sample_p_0(self):
+
+        sample_idx = self._rng.integers(0, len(self.dataset))
+        sample_idx = int(sample_idx) # np.int64 to int
+
+        sample = self.dataset[sample_idx].to_dict()
+
+        species = np.array([atomic_numbers[s] for s in sample["species"]])
+        pos = sample["coords"]
+        cell = sample["cell"]
+
+        if self._frac:
+            pos = np.dot(pos, np.linalg.inv(cell))
+
+        return species, pos, cell
+
+    def set_frac_coords(self, frac: bool):
+        self._frac = frac

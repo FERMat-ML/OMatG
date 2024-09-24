@@ -388,7 +388,7 @@ class Configuration:
         Returns:
             A dictionary representation of the configuration.
         """
-        if self.coords:
+        if self.coords is not None:
             config_dict = {
                 "cell": self.cell,
                 "species": self.species,

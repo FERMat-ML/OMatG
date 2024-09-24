@@ -32,7 +32,7 @@ class OMG(pl.LightningModule):
 
     def sample(self):
         # sample number of atoms beforehand 
-        x_0 = self.sampler.sample()
+        x_0 = self.sampler.sample_p_0()
         return self.si.integrate(x_0, self.model.de_fn)
 
 
