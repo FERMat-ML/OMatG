@@ -1,25 +1,34 @@
 import torch
 from .abstracts import Epsilon
 
+
 class ConstantEpsilon(Epsilon):
+    """
+    Epsilon function epsilon(t) = c that remains constant in time.
+
+    :param c:
+        Constant value of epsilon function.
+    :type c: float
+    """
+
     def __init__(self, c: float) -> None:
         """
-        Epsilon function that remains constant in time
+        Construct constant epsilon function.
         """
         super().__init__()
         self._c = c
 
-    def epsilon(self, t: torch.tensor) -> torch.tensor:
+    def epsilon(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Evaluate epsilon function epsilon(t) at time
+        Evaluate the epsilon function at times t.
 
         :param t:
             Times in [0,1].
-        :type t: torch.tensor
+        :type t: torch.Tensor
 
-        :return: 
-            Epsilon function epsilon(t)
-        :rtype: torch.tensor
+        :return:
+            Epsilon function epsilon(t).
+        :rtype: torch.Tensor
         """
-        self.check_t(t)
-        return self._c
+        self._check_t(t)
+        return torch.full_like(t, self._c)
