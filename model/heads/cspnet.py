@@ -313,10 +313,10 @@ class CSPNet(nn.Module):
         else:
             node_features = self.node_embedding(atom_types - 1)
 
-        # remove time embedding form the encoder
-        # t_per_atom = t.repeat_interleave(num_atoms, dim=0)
-        # node_features = torch.cat([node_features, t_per_atom], dim=1)
-        # node_features = self.atom_latent_emb(node_features)
+        # embedding/injecting time in the node features
+        t_per_atom = t.repeat_interleave(num_atoms, dim=0)
+        node_features = torch.cat([node_features, t_per_atom], dim=1)
+        node_features = self.atom_latent_emb(node_features)
 
         # Getting property embedding
         property_emb = self.property_embedding(property) # property is on proper device
