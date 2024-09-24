@@ -1,9 +1,12 @@
-from typing import Optional
+from typing import Optional, Callable
 import torch
 from .abstracts import Interpolant, LatentGamma, StochasticInterpolant
 from enum import Enum, auto
 import torch.nn as nn
 
+# Integrating DE
+from scipy.integrate import solve_ivp
+import sdeint
 
 class DE(Enum):
     ODE = auto()
@@ -163,3 +166,26 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         loss_b = nn.MSELoss(gt_b, pred[0])
         loss_z = nn.MSELoss(gt_z, pred[1])
         return loss_b + loss_z
+    
+    def _ode_integrate(self, wrapper: Callable[[tuple], tuple], x_t: tuple, tspan: tuple):
+        """
+        Integrate ODE
+
+        :param wrapper:
+            Wrapper function for solving IVP
+        :type Callable
+        :param x_t:
+            Old timestep x
+        :type x_t: torch.tensor
+        :param tspan:
+            Time span to integrate 
+        :type tspan: tuple
+
+        :return:
+            new x at new t
+        :rtype: torch.tensor
+        """
+
+        # Integrate with scipy IVP integrator
+        x_t_new = solve_ivp(wrapper, tspan, x_t)
+        return torch.Tensor(x_t_new[:,-1])
