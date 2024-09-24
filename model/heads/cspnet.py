@@ -25,6 +25,8 @@ class CSPNetHead(CSPNet):
         if self.ln:
             node_features = self.final_layer_norm(node_features)
 
+        # add in property embedding
+
         coord_b = self.coord_out(node_features)
         coord_eta = self.coord_out_2(node_features)
 
@@ -42,5 +44,5 @@ class CSPNetHead(CSPNet):
             lattice_eta = torch.einsum('bij,bjk->bik', lattice_eta, lattices)
         type_b = self.type_out(node_features)
         type_eta = self.type_out_2(node_features)
-        return (lattice_b, lattice_eta), (coord_b, coord_eta), (type_b, type_eta)
+        return ((type_b, type_eta), (coord_b, coord_eta), (lattice_b, lattice_eta))
 
