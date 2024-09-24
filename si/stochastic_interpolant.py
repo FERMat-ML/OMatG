@@ -27,8 +27,10 @@ class StochasticInterpolant(TimeChecker):
         self._gamma = gamma
         if de_type == DE.ODE:
             self.loss = self.__ode_loss
+            self.integrate = self.__ode_integrate
         else:
             self.loss = self.__sde_loss
+            self.integrate = self.__sde_integrate
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.tensor:
         """
@@ -129,3 +131,5 @@ class StochasticInterpolant(TimeChecker):
         loss_b = nn.MSELoss(gt_b, pred[0])
         loss_z = nn.MSELoss(gt_z, pred[1])
         return loss_b + loss_z
+
+    
