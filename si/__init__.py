@@ -1,4 +1,4 @@
-from .abstracts import StochasticInterpolant, Interpolant, LatentGamma
+from .abstracts import Epsilon, Interpolant, LatentGamma, StochasticInterpolant
 from .gamma import LatentGammaSqrt, LatentGammaEncoderDecoder
 from .interpolants import (LinearInterpolant, TrigonometricInterpolant, EncoderDecoderInterpolant, MirrorInterpolant,
                            ScoreBasedDiffusionModelInterpolant)
