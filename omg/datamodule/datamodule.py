@@ -146,7 +146,7 @@ class Configuration:
         Args:
             atoms: ase.Atoms object.
         """
-        cell = atoms.get_cell()
+        cell = atoms.get_cell().complete()[:]
         species = atoms.get_chemical_symbols()
         coords = atoms.get_positions()
         PBC = atoms.get_pbc()
@@ -717,9 +717,8 @@ class DataModule:
             path = Path(path)
 
         configs = self._read_from_ase(
-            path, ase_atoms_list,file_format
+            path, ase_atoms_list,file_format=file_format, slices=slices
         )
-        DataModule.add_weights(configs)
         self._configs.extend(configs)
 
     @classmethod

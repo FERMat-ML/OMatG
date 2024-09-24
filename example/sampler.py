@@ -13,7 +13,7 @@ sampler = SampleFromDataset(dm)
 print("Sample 1: ", sampler.sample_p_0())
 
 # Sample from the dataset with fractional coordinates
-sampler.set_frac_coords(True)
+sampler.set_frac_coords(False)
 print("Sample 2: ", sampler.sample_p_0())
 
 # Sample from random distributions with fixed number of particles
