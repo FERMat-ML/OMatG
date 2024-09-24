@@ -40,8 +40,9 @@ class MultipleStochasticInterpolants(StochasticInterpolant):
         for t_index in range(1, len(times)):
             tspan = (times[t_index - 1], times[t_index])
             for stochastic_interpolant_index, stochastic_interpolant in enumerate(self._stochastic_interpolants):
-                model_prediction_fn = lambda t, x: model(t, tuple(x_i if i != stochastic_interpolant_index else x
-                                                                  for i, x_i in enumerate(x_0)))
+                model_prediction_fn = (lambda t, x:
+                                       model(t, tuple(x_i if i != stochastic_interpolant_index else x
+                                                      for i, x_i in enumerate(x_0)))[stochastic_interpolant_index])
                 new_xi = stochastic_interpolant.integrate(model_prediction_fn, x_t[stochastic_interpolant_index], tspan)
                 new_x_t[stochastic_interpolant_index] = new_xi
             x_t = new_x_t
