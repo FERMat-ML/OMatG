@@ -1,14 +1,16 @@
 from typing import Optional
 import torch
-from .abstracts import Interpolant, LatentGamma, TimeChecker
+from .abstracts import Interpolant, LatentGamma, StochasticInterpolant
 from enum import Enum, auto
 import torch.nn as nn
+
 
 class DE(Enum):
     ODE = auto()
     SDE = auto()
 
-class StochasticInterpolant(TimeChecker):
+
+class SingleStochasticInterpolant(StochasticInterpolant):
     """
     Stochastic interpolant x_t = I(t, x_0, x_1) + gamma(t) * z between two points from two distributions p_0 and p_1 at
     times t based on an interpolant I(t, x_0, x_1), a gamma function gamma(t), and a Gaussian random variable z.
@@ -23,14 +25,17 @@ class StochasticInterpolant(TimeChecker):
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], de_type: DE) -> None:
         """Construct stochastic interpolant."""
+        super().__init__()
         self._interpolant = interpolant
         self._gamma = gamma
-        if de_type == DE.ODE:
-            self.loss = self.__ode_loss
-            self.integrate = self.__ode_integrate
+        self._de_type = de_type
+        if self._de_type == DE.ODE:
+            self.loss = self._ode_loss
+            self.integrate = self._ode_integrate
         else:
-            self.loss = self.__sde_loss
-            self.integrate = self.__sde_integrate
+            assert self._de_type == DE.SDE
+            self.loss = self._sde_loss
+            self.integrate = self._sde_integrate
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.tensor:
         """
@@ -82,7 +87,34 @@ class StochasticInterpolant(TimeChecker):
             interpolate_derivative += self._gamma.gamma_derivative(t) * torch.randn_like(t)
         return interpolate_derivative
 
-    def __ode_loss(self, pred: torch.Tensor, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor):
+    def loss(self, model_prediction: tuple[torch.tensor, torch.tensor], t: torch.tensor, x_0: torch.tensor,
+             x_1: torch.tensor) -> torch.tensor:
+        """
+        Compute the loss for the stochastic interpolant.
+
+        This method is only defined here to define all methods of the abstract base class. The actual loss method is
+        either _ode_loss or _sde_loss, which are chosen based on the type of differential equation (self._de_type).
+
+        :param model_prediction:
+            Model prediction for the velocity field b and the denoiser eta.
+        :type model_prediction: tuple[torch.tensor, torch.tensor]
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.tensor
+
+        :return:
+            Loss.
+        :rtype: torch.tensor
+        """
+        raise NotImplementedError
+
+    def _ode_loss(self, pred: torch.Tensor, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor):
         """
         Compute loss function for stochastic interpolant under ODE
 
@@ -106,7 +138,7 @@ class StochasticInterpolant(TimeChecker):
         loss = nn.MSELoss(gt, pred[0])
         return loss
 
-    def __sde_loss(self, pred: torch.Tensor, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor):
+    def _sde_loss(self, pred: torch.Tensor, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor):
         """
         Compute loss function for stochastic interpolant under SDE
 
@@ -131,5 +163,3 @@ class StochasticInterpolant(TimeChecker):
         loss_b = nn.MSELoss(gt_b, pred[0])
         loss_z = nn.MSELoss(gt_z, pred[1])
         return loss_b + loss_z
-
-    
