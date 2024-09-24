@@ -114,6 +114,69 @@ class TrigonometricInterpolant(Interpolant):
         return (-torch.pi / 2.0 * torch.sin(torch.pi * t / 2.0) * x_0
                 + torch.pi / 2.0 * torch.cos(torch.pi * t / 2.0) * x_1)
 
+class PeriodicLinearInterpolant(Interpolant):
+    """
+    Interpolant class for use on a periodic manifold
+    I(t, x_0, x_1) = exp_m1(t*log_m1(m0))
+    """
+
+    def __init__(self) -> None:
+        """
+        Construct periodic boundary interpolant
+        """
+        super().__init__()
+
+    def interpolate(self, t: torch.tensor, x_0: torch.tensor, x_1: torch.tensor) -> torch.tensor:
+        """
+        Interpolate bewteen point x_0 and x_1 
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.tensor
+
+        :return:
+            Interpolated value.
+        :rtype: torch.tensor
+        """
+        assert self._check(t)
+        omega = 2 * torch.pi * (x_0 - x_1)
+        out = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2 * torch.pi)
+        out *= (1 - t) 
+        out = (out + x_1 - torch.floor(out + x_1))
+        return out
+
+    def interpolate_derivative(self, t: torch.tensor, x_0: torch.tensor, x_1: torch.tensor, num_atoms: torch.tensor) -> torch.tensor:
+        """
+        Interpolate bewteen point x_0 and x_1 
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.tensor
+
+        :return:
+            Interpolated value.
+        :rtype: torch.tensor
+        """
+        assert self._check(t)
+        x = self.interpolate(t, x_0, x_1)
+        omega = 2 * torch.pi * (x_1 - x)
+        out = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2 * torch.pi)
+        out -= torch.mean(torch.atan2(torch.sin(omega), torch.cos(omega)) / (2 * torch.pi))
+
+        # Return
+        return out
 
 class EncoderDecoderInterpolant(Interpolant):
     """
