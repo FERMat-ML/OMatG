@@ -210,11 +210,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         # Modify wrapper for use in SDE integrator
         def f(x, t): 
             preds = wrapper(t, x)
-            out = preds[0] - (self._eps(t) / self._gamma(t)) * preds[1]
+            out = preds[0] - (self._eps.epsilon(t) / self._gamma.gamma(t)) * preds[1]
             return out
 
         def G(x, t):
-            out = np.sqrt(2 * self._eps(t)) * np.eye(x.shape[-1])
+            out = np.sqrt(2 * self._eps.epsilon(t)) * np.eye(x.shape[-1])
             return out
 
         # SDE Integrator
