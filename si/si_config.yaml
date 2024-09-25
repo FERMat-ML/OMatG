@@ -4,7 +4,9 @@ model:
     stochastic_interpolants:
       # chemical species
       - class_path: discrete_flow.DiscreteFlowMatchingMask
-        
+        init_args:
+          n_int: 100
+          noise: 0.
       # fractional coordinates
       - class_path: single_stochastic_interpolant.SingleStochasticInterpolant
         init_args:
