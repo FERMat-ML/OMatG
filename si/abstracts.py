@@ -185,7 +185,7 @@ class StochasticInterpolant(ABC, TimeChecker):
 
     @abstractmethod
     def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor) -> torch.Tensor:
+             x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
