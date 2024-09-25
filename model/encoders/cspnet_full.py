@@ -28,14 +28,14 @@ class CSPNet_Full(CSPNet, Encoder):
         max_atoms = 100,
         act_fn = 'silu',
         dis_emb = 'sin',
-        num_freqs = 10,
+        num_freqs = 128,
         edge_style = 'fc',
-        cutoff = 6.0,
+        cutoff = 7.0,
         max_neighbors = 20,
-        ln = False,
+        ln = True,
         ip = True,
         smooth = False,
-        pred_type = False,
+        pred_type = True,
         pred_scalar = False
     ):
 
