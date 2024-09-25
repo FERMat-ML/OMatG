@@ -49,11 +49,11 @@ class OMG(L.LightningModule):
         pred = self.model(x_t, t)
         
         # record loss
-        loss = si.loss(pred, t, x_0, x_1) 
+        loss = self.si.loss(pred, t, x_0, x_1) 
        
         return loss
 
-    def validation_step(self, x_1)
+    def validation_step(self, x_1):
         """
         Performs one validation step given a batch of x_1
         """
@@ -68,7 +68,7 @@ class OMG(L.LightningModule):
         pred = self.model(x_t, t)
         
         # record loss
-        loss = si.loss(pred, t, x_0, x_1) 
+        loss = self.si.loss(pred, t, x_0, x_1) 
 
         return loss
 
