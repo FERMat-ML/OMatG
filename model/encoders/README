@@ -1,0 +1,2 @@
+Implementations of popular architectures such as nequip, m3gnet, mace, gemnet, etc.
+These will be like their original implementations but with readout layers removed.
