@@ -1,7 +1,9 @@
 from omg.si.stochastic_interpolants import StochasticInterpolants
 import lightning as L
 import torch
+import torch.nn as nn
 from typing import Sequence
+from omg.sampler.sampler import Sampler
 
 class OMG(L.LightningModule):
     """
@@ -9,7 +11,7 @@ class OMG(L.LightningModule):
     """
     
     # TODO: specify argument types
-    def __init__(self, si: StochasticInterpolants, sampler, model):
+    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module):
         self.si = si 
         self.sampler = sampler
         self.model = model
@@ -33,10 +35,14 @@ class OMG(L.LightningModule):
         x = self.model(x, t)
         return x
 
-    # TODO: specify argument types, determine what we want to return
-    def training_step(self, x_1):
+    # TODO: specify argument types
+    def training_step(self, x_1) -> torch.Tensor:
         """
         Performs one training step given a batch of x_1
+
+        :return:
+            Loss from training step
+        :rtype: torch.Tensor
         """
 
         x_0 = self.sampler.sample_p_0() # this might need x_1 as input so number of atoms are consistent 
@@ -53,7 +59,7 @@ class OMG(L.LightningModule):
        
         return loss
 
-    def validation_step(self, x_1):
+    def validation_step(self, x_1) -> torch.Tensor:
         """
         Performs one validation step given a batch of x_1
         """
@@ -72,12 +78,14 @@ class OMG(L.LightningModule):
 
         return loss
 
+    # TODO: what do we want to return
     def predict_step(self):
         """
         Performs generation
         """
         x_0 = self.sampler.sample_p_0()
         gen = self.si.integrate(x_0, self.model)
+        # probably want to turn structure back into some other object that's easier to work with
         return gen
 
 
