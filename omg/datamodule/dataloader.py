@@ -14,6 +14,15 @@ class OMGData(Data):
     A Pytorch Geometric compatible graph representation of a configuration. When loaded
     into a class:`torch_geometric.data.DataLoader` the graphs of type OMGData
     will be automatically collated and batched.
+
+    OMGData format:
+    For a batch size of batch_size, the data format is as follows:
+    - n_atoms: torch.Tensor of shape (batch_size, ) containing the number of atoms in each configuration
+    - species: torch.Tensor of shape (sum(n_atoms), ) containing the atomic numbers of the atoms in the configurations
+    - cell: torch.Tensor of shape (batch_size, 3, 3) containing the cell vectors of the configurations
+    - batch: torch.Tensor of shape (sum(n_atoms), ) containing the index of the configuration to which each atom belongs
+    - pos: torch.Tensor of shape (sum(n_atoms), 3) containing the atomic positions of the atoms in the configurations
+    - property: dict containing the properties of the configurations
     """
 
     def __init__(self):
@@ -41,7 +50,7 @@ class OMGData(Data):
             return 0
 
     @classmethod
-    def from_omg_configuration(cls, config: Configuration, convert_to_fractional=False):
+    def from_omg_configuration(cls, config: Configuration, convert_to_fractional=True):
         graph = cls()
         n_atoms = torch.tensor(len(config.species))
         graph.n_atoms = n_atoms
@@ -65,10 +74,11 @@ class OMGData(Data):
             with torch.no_grad():
                 graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell))
 
+        graph.cell = graph.cell.unsqueeze(0)
         return graph
 
     @classmethod
-    def from_data(cls, species, pos, cell, convert_to_fractional=False):
+    def from_data(cls, species, pos, cell, convert_to_fractional=True):
         graph = cls()
         n_atoms = torch.tensor(len(species))
         graph.n_atoms = n_atoms
@@ -92,6 +102,7 @@ class OMGData(Data):
             with torch.no_grad():
                 graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell))
 
+        graph.cell = graph.cell.unsqueeze(0)
         return graph
 
 
@@ -101,7 +112,7 @@ class OMGTorchDataset(Dataset):
     the use of :class:`omg.datamodule.Dataset` as a data source for the graph based models.
     """
 
-    def __init__(self, dataset: Dataset, transform=None, convert_to_fractional=False):
+    def __init__(self, dataset: Dataset, transform=None, convert_to_fractional=True):
         super().__init__("./", transform, None, None)
         self.dataset = dataset
         self.convert_to_fractional = convert_to_fractional
