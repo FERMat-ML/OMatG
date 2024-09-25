@@ -12,7 +12,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
     Currently designed for masking base distributions
     """
 
-    def __init__(self, S:int, mask:int, n_int:int) -> None:
+    def __init__(self, S:int, mask:int, n_int:int, noise:float = 0) -> None:
         """
         Construct DFM
         :param S:
@@ -24,11 +24,15 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         :param n_int:
             Number of integration timesteps
         :type n_int: int    
+        :param noise:
+            Noise to add
+        :type noise: float
         """
         super().__init__()
         self.S = MAX_ATOM_NUM
-        self.mask = -42
+        self.mask = -42     # The answer to life, the universe, and everything
         self.nsteps = n_int
+        self.noise = noise
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
@@ -86,8 +90,11 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
         """
-        Integrate the current positions x_t from time tspan[0] to tspan[1] based on the velocity fields b and the
-        denoisers eta returned by the model function.
+        Integrate the current positions x_t from time tspan[0] to tspan[1] based on the predicted x_1.
+        Implementation is based on https://arxiv.org/pdf/2402.04997. We construct rate matrix R by:
+            R(i,j|x_1) = ReLU((dp(j|x_1)/dt) - (dp(x_t|x_1)) / (S * p(x_t|x_1))
+        and add noise via "detailed balance" rate matrices R_db (see appendix):
+            R_db(i,j|x_1) = eta * delta(i,x_1) + eta * delta(j, x_1) * (St + 1 - t) / (1 - t) 
 
         :param model_function:
             Model function returning the velocity fields b and the denoisers eta given the current times t and positions
@@ -123,6 +130,13 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
             R = F.relu(dpt - dpt_xt[:, None]) / (self.S * pt_xt[:, None])
             R[(pt_xt == 0.0)[:, None].repeat(1, self.S)] = 0.0
             R[pt == 0.0] = 0.0
+
+            # Add noise if present
+            if self.noise > 0.0:
+                R_db = torch.zeros_like(R)
+                R_db[x_t == x_1] = 1
+                R_db[x_1 != x_t] = ((self.S * t) + 1 - t) / (1 - t)
+                R_db *= self.noise
 
             # Compute step probabilities and sample
             step_probs = (R * dt).clamp(max=1.0)
