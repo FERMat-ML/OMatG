@@ -14,4 +14,5 @@ dl = torch_geometric.loader.DataLoader(torch_ds, batch_size=3)
 
 batch = next(iter(dl))
 print(batch)
-print(batch.species, batch.cell, batch.pos, batch.batch)
+print(batch.cell)
+#print(batch.species, batch.cell, batch.pos, batch.batch)

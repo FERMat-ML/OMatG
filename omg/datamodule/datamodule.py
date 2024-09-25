@@ -60,6 +60,7 @@ class Configuration:
         coords: np.ndarray,
         PBC: List[bool],
         identifier: Optional[Union[str, Path]] = None,
+        property_dict: Optional[Dict] = {},
     ):
         self._cell = cell
         self._species = species
@@ -70,6 +71,7 @@ class Configuration:
         self._identifier = identifier
         self._path = None
 
+        self._property_dict = property_dict
         self._metadata: dict = {}
         # TODO: Dynamic loading from colabfit-tools dataset. Is it needed?
 
@@ -180,6 +182,7 @@ class Configuration:
         env: lmdb.Environment,
         key: str,
         dynamic: bool = False,
+        property_keys: Tuple[str] = None
     ):
         """
         Read configuration from lmdb.
@@ -201,6 +204,15 @@ class Configuration:
                 ds_idx = lmdb_config.get("ds_idx", 0)
                 identifier = key
 
+                if property_keys:
+                    property_dict = {}
+                    if isinstance(property_keys, str):
+                        property_keys = (property_keys,)
+                    for prop in property_keys:
+                        property_dict[prop] = lmdb_config.get(prop, None)
+                else:
+                    property_dict = {}
+
                 species = [chemical_symbols[int(i)] for i in species]
                 PBC = [bool(i) for i in PBC]
                 config = cls(
@@ -209,6 +221,7 @@ class Configuration:
                     coords,
                     PBC,
                     identifier=identifier,
+                    property_dict=property_dict,
                 )
                 config.metadata |= {"ds_idx": ds_idx}
             return config
@@ -296,6 +309,20 @@ class Configuration:
         Set the metadata of the configuration.
         """
         self._metadata = metadata
+
+    @property
+    def property_dict(self) -> dict:
+        """
+        Return the property dictionary of the configuration.
+        """
+        return self._property_dict
+
+    @property_dict.setter
+    def property_dict(self, property_dict: dict):
+        """
+        Set the property dictionary of the configuration.
+        """
+        self._property_dict = property_dict
 
     def get_num_atoms(self) -> int:
         """
@@ -442,6 +469,7 @@ class DataModule:
 
         self._metadata: dict = {}
         self._return_config_on_getitem = True
+        self._property_keys = None
 
     @classmethod
     @requires(MongoDatabase is not None, "colabfit-tools is not installed")
@@ -725,12 +753,12 @@ class DataModule:
     def from_lmdb(
         cls,
         path: Union[Path, str, List[Path], List[str]],
-        sharded: bool = False,
         dynamic_loading: bool = True,
         subdir: bool = False,
         save_path: Optional[Path] = None,
         reuse: bool = True,
         checksum: Optional[str] = None,
+        property_keys: Tuple[str] = None,
     ):
         """
         Read configurations from LMDB file and append to a dataset.
@@ -750,19 +778,20 @@ class DataModule:
         """
         instance = cls()
         instance.add_from_lmdb(
-            path, sharded, dynamic_loading, subdir, save_path, reuse, checksum
+            path, dynamic_loading, subdir, save_path, reuse, checksum, property_keys
         )
+        instance._property_keys = property_keys
         return instance
 
     def add_from_lmdb(
         self,
         path: Union[Path, str, List[Path], List[str]],
-        sharded: bool = False,
         dynamic_loading: bool = True,
         subdir: bool = False,
         save_path: Optional[Path] = None,
         reuse: bool = True,
         checksum: Optional[str] = None,
+        property_keys: Tuple[str] = None,
     ):
         """
         Read configurations from LMDB file and append to a dataset.
@@ -819,7 +848,7 @@ class DataModule:
 
         for lmdb_idx, lmdb_path in enumerate(path):
             env = lmdb.open(str(lmdb_path), readonly=True, lock=False, subdir=subdir)
-            configs = self._read_from_lmdb(env, sharded, dynamic_loading, subdir)
+            configs = self._read_from_lmdb(env,  dynamic_loading, subdir, property_keys)
 
             if dynamic_loading:
                 self.metadata.setdefault("lmdb_envs", []).append(env)
@@ -843,9 +872,9 @@ class DataModule:
     @staticmethod
     def _read_from_lmdb(
         env: lmdb.Environment,
-        sharded: bool,
         dynamic_loading: bool,
         subdir: bool,
+        property_keys: Tuple[str] = None,
     ) -> Union[List[Configuration], List[str]]:
         """
         Read configurations from LMDB file.
@@ -867,7 +896,7 @@ class DataModule:
 
         if not dynamic_loading:
             configs = [
-                Configuration.from_lmdb(env, key, dynamic=False) for key in keys
+                Configuration.from_lmdb(env, key, dynamic=False, property_leys=property_keys) for key in keys
             ]
         else:
             configs = keys
@@ -923,7 +952,7 @@ class DataModule:
                 key = lmdb_idx["config_key"]
                 idx = int(lmdb_idx["lmdb_env"])
                 env = self.metadata["lmdb_envs"][idx]
-                return Configuration.from_lmdb(env, key)
+                return Configuration.from_lmdb(env, key, property_keys=self._property_keys)
 
             else:
                 if not self._return_config_on_getitem:
@@ -940,7 +969,7 @@ class DataModule:
                         key = lmdb_idx["config_key"]
                         idx = int(lmdb_idx["lmdb_env"])
                         env = self.metadata["lmdb_envs"][idx]
-                        configs.append(Configuration.from_lmdb(env, key))
+                        configs.append(Configuration.from_lmdb(env, key, property_keys=self._property_keys))
                     return DataModule(configs)
         else:
             if isinstance(idx, int):
