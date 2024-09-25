@@ -72,7 +72,10 @@ class OMG(L.LightningModule):
 
         return loss
 
-    def predict(self)
+    def predict_step(self):
+        """
+        Performs generation
+        """
         x_0 = self.sampler.sample_p_0()
         gen = self.si.integrate(x_0, self.model)
         return gen
