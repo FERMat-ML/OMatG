@@ -33,5 +33,5 @@ model:
       - 0.333333333333
       - 0.333333333333
       - 0.333333333333
-    integration_time_steps: 2
+    integration_time_steps: 100
 
