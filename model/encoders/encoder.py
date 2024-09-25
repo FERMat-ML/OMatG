@@ -29,11 +29,11 @@ class Encoder(ABC, nn.Module):
         raise NotImplementedError
 
                     # TODO: what will x be here
-    def forward(self, x, **kwargs):
+    def forward(self, x, t, prop=None, **kwargs):
         """
         Strings methods together
         """
         x = self._convert_inputs(x, **kwargs)
-        x = self._forward(x, **kwargs)
+        x = self._forward(x, t, prop, **kwargs)
         x = self._convert_outputs(x, **kwargs)
         return x
