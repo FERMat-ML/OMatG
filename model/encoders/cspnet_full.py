@@ -12,8 +12,9 @@ from einops import rearrange, repeat
 from diffcsp.common.data_utils import lattice_params_to_matrix_torch, get_pbc_distances, radius_graph_pbc, frac_to_cart_coords, repeat_blocks
 
 from diffcsp.pl_modules.cspnet import CSPLayer
+from diffcsp.pl_modules.cspnet import SinusoidsEmbedding
 
-from omg.encoders.encoder import Encoder 
+from encoder import Encoder
 
 
 MAX_ATOMIC_NUM=100
@@ -39,7 +40,7 @@ class CSPNet_Full(CSPNet, Encoder):
         pred_scalar = False
     ):
 
-        super(CSPNet_SI, self).__init__()
+        super(CSPNet_Full, self).__init__()
 
         self.ip = ip
         self.smooth = smooth
