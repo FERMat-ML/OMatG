@@ -176,6 +176,7 @@ class StochasticInterpolant(ABC, TimeChecker):
         :type x_0: torch.Tensor
         :param x_1:
             Points from p_1.
+        :type x_1: torch.Tensor
 
         :return:
             Stochastically interpolated points x_t.
@@ -215,8 +216,6 @@ class StochasticInterpolant(ABC, TimeChecker):
         """
         Integrate the current positions x_t from time tspan[0] to tspan[1] based on the velocity fields b and the
         denoisers eta returned by the model function.
-
-        TODO: I somehow think that this won't work.
 
         :param model_function:
             Model function returning the velocity fields b and the denoisers eta given the current times t and positions
