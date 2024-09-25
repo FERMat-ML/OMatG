@@ -52,7 +52,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: DifferentialEquationType) -> None:
+                 differential_equation_type: DifferentialEquationType, use_pbc=True) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -70,6 +70,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             self.integrate = self._sde_integrate
             if self._epsilon is None:
                 raise ValueError("Epsilon function should be provided for SDEs.")
+
+        # PBC
+        if use_pbc:
+            self._use_pbc = True
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
@@ -258,6 +262,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
         # Integrate with scipy IVP integrator
         x_t_new = solve_ivp(ode_wrapper, tspan, x_t)
+
+        # Account for periodic boundaries
+        if self._use_pbc:
+            x_t_new %= 1.0
+
+        # Return
         return torch.tensor(x_t_new[:, -1])
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
@@ -293,4 +303,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
         # SDE Integrator
         x_t_new = sdeint.itoint(f, g, x_t, tspan)
+
+        # Account for periodic boundaries
+        if self._use_pbc:
+            x_t_new %= 1.0
+        
+        # Return
         return torch.tensor(x_t_new[:, -1])
