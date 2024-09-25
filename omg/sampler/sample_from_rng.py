@@ -2,6 +2,7 @@ from typing import List, Union, Callable
 from functools import partial
 
 from .sampler import Sampler
+from ..datamodule.dataloader import OMGData
 import numpy as np
 
 MAX_ATOMIC_NUMBER = 92
@@ -88,7 +89,7 @@ class SampleFromRNG(Sampler):
         if not self._frac:
             pos = np.dot(pos, cell)
 
-        return species, pos, cell
+        return OMGData.from_data(species, pos, cell)
 
     def add_n_particle_sampler(self, n_particle_sampler: Callable):
         self.n_particle_sampler = n_particle_sampler

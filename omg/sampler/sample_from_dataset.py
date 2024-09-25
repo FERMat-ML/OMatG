@@ -1,4 +1,5 @@
 from .sampler import Sampler
+from ..datamodule.dataloader import OMGData
 import numpy as np
 from ase.data import atomic_numbers
 
@@ -27,7 +28,7 @@ class SampleFromDataset(Sampler):
         if self._frac:
             pos = np.dot(pos, np.linalg.inv(cell))
 
-        return species, pos, cell
+        return OMGData.from_data(species, pos, cell)
 
     def set_frac_coords(self, frac: bool):
         self._frac = frac

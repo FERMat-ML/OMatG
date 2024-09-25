@@ -1,3 +1,6 @@
+from typing import Dict, Any
+from typing_extensions import Self
+
 import numpy as np
 from torch_geometric.data import Data, Dataset
 import torch
@@ -52,6 +55,29 @@ class OMGData(Data):
             graph.pos = torch.from_numpy(config.coords)
         else:
             graph.pos = config.coords
+
+        return graph
+
+    @classmethod
+    def from_data(cls, species, pos, cell):
+        graph = cls()
+        n_atoms = torch.tensor(len(species))
+        graph.n_atoms = n_atoms
+        graph.batch = torch.zeros(n_atoms, dtype=torch.int64)
+        if isinstance(species[0], str):
+            graph.species = torch.tensor([atomic_numbers[z] for z in species], dtype=torch.int64)
+        else:
+            graph.species = torch.tensor(species, dtype=torch.int64)
+
+        if isinstance(cell, np.ndarray):
+            graph.cell = torch.from_numpy(cell)
+        else:
+            graph.cell = cell
+
+        if isinstance(pos, np.ndarray):
+            graph.pos = torch.from_numpy(pos)
+        else:
+            graph.pos = pos
 
         return graph
 
