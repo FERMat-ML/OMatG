@@ -66,7 +66,7 @@ class TrigonometricInterpolant(Interpolant):
 
     def __init__(self) -> None:
         """
-        Construct trigonometric interpolant
+        Construct trigonometric interpolant.
         """
         super().__init__()
 
@@ -114,69 +114,78 @@ class TrigonometricInterpolant(Interpolant):
         return (-torch.pi / 2.0 * torch.sin(torch.pi * t / 2.0) * x_0
                 + torch.pi / 2.0 * torch.cos(torch.pi * t / 2.0) * x_1)
 
+
 class PeriodicLinearInterpolant(Interpolant):
     """
-    Interpolant class for use on a periodic manifold
-    I(t, x_0, x_1) = exp_m1(t*log_m1(m0))
+    Linear interpolant I(t, x_0, x_1) = exp_(x_0)(t * log_(x_0))(x_1)) (see Eqs (11)-(13) in
+    https://arxiv.org/pdf/2302.03660) between points x_0 and x_1 from two distributions p_0 and p_1 at times t on a
+    periodic manifold.
+
+    The exponential and logarithmic maps are given by:
+    exp_x(v) = x + v - floor(x + v)
+    log_v(x) = 1 / (2 * pi) * atan2(sin(2 * pi * (x - v)), cos(2 * pi * (x - v)))
     """
 
     def __init__(self) -> None:
         """
-        Construct periodic boundary interpolant
+        Construct PeriodicLinearInterpolant.
         """
         super().__init__()
 
-    def interpolate(self, t: torch.tensor, x_0: torch.tensor, x_1: torch.tensor) -> torch.tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
-        Interpolate bewteen point x_0 and x_1 
+        Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
         :param t:
             Times in [0,1].
-        :type t: torch.tensor
+        :type t: torch.Tensor
         :param x_0:
             Points from p_0.
-        :type x_0: torch.tensor
+        :type x_0: torch.Tensor
         :param x_1:
             Points from p_1.
-        :type x_1: torch.tensor
+        :type x_1: torch.Tensor
 
         :return:
             Interpolated value.
-        :rtype: torch.tensor
+        :rtype: torch.Tensor
         """
-        assert self._check(t)
-        omega = 2 * torch.pi * (x_0 - x_1)
-        out = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2 * torch.pi)
-        out *= (1 - t) 
-        out = (out + x_1 - torch.floor(out + x_1))
-        return out
+        assert self._check_t(t)
+        omega = 2.0 * torch.pi * (x_1 - x_0)
+        out = t * torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
+        return out + x_1 - torch.floor(out + x_1)
 
-    def interpolate_derivative(self, t: torch.tensor, x_0: torch.tensor, x_1: torch.tensor, num_atoms: torch.tensor) -> torch.tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
-        Interpolate bewteen point x_0 and x_1 
+        Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
+        t with respect to time.
+
+        This function implements -(log_(x_1)(x_0) - 1 / n sum_{i = 1}^n log_(x_1^i)(x_0^i)) where n is the number of
+        atoms. The subtraction of the mean is necessary for translational invariance (compare Eq. (15) in
+        https://arxiv.org/pdf/2302.03660, the first minus sign will be negated once the output of this function is used
+        in an mse loss).
 
         :param t:
             Times in [0,1].
-        :type t: torch.tensor
+        :type t: torch.Tensor
         :param x_0:
             Points from p_0.
-        :type x_0: torch.tensor
+        :type x_0: torch.Tensor
         :param x_1:
             Points from p_1.
-        :type x_1: torch.tensor
+        :type x_1: torch.Tensor
 
         :return:
-            Interpolated value.
-        :rtype: torch.tensor
+            Derivative of the interpolant.
+        :rtype: torch.Tensor
         """
-        assert self._check(t)
-        x = self.interpolate(t, x_0, x_1)
-        omega = 2 * torch.pi * (x_1 - x)
-        out = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2 * torch.pi)
-        out -= torch.mean(torch.atan2(torch.sin(omega), torch.cos(omega)) / (2 * torch.pi))
+        assert self._check_t(t)
+        omega = 2.0 * torch.pi * (x_0 - x_1)
+        out = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
+        # TODO: The mean should be taken over the number atoms in every element of the batch!
+        out -= torch.mean(torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi))
+        return -out
 
-        # Return
-        return out
 
 class EncoderDecoderInterpolant(Interpolant):
     """
