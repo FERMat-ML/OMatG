@@ -11,13 +11,14 @@ from einops import rearrange, repeat
 
 from diffcsp.common.data_utils import lattice_params_to_matrix_torch, get_pbc_distances, radius_graph_pbc, frac_to_cart_coords, repeat_blocks
 
+from diffcsp.pl_modules.cspnet import CSPLayer
 
 from omg.encoders.encoder import Encoder 
 
 
 MAX_ATOMIC_NUM=100
 
-class CSPNet_Full(CSPNet,Encoder):
+class CSPNet_Full(CSPNet, Encoder):
 
     def __init__(
         self,
