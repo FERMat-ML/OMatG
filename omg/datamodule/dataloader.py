@@ -100,7 +100,7 @@ class OMGData(Data):
 
         if convert_to_fractional:
             with torch.no_grad():
-                graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell))
+                graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell).to(graph.pos.dtype))
 
         graph.cell = graph.cell.unsqueeze(0)
         return graph

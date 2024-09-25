@@ -41,7 +41,7 @@ class SampleFromRNG(Sampler):
     def __init__(self, distributions: Union[
         None, np.random.Generator, List[np.random.Generator]] = None,
                  n_particle_sampler: Union[int, Callable] = 1,
-                 fractional_coordinates: bool = True):
+                 convert_to_fractional: bool = True):
 
         super().__init__()
 
@@ -72,7 +72,7 @@ class SampleFromRNG(Sampler):
         else:
             self.n_particle_sampler = n_particle_sampler
 
-        self._frac = fractional_coordinates
+        self._frac = convert_to_fractional
 
     def sample_p_0(self):
         n = self.n_particle_sampler()
@@ -86,10 +86,11 @@ class SampleFromRNG(Sampler):
         cell[np.triu_indices(3)] = lattice_
         cell = cell + cell.T # TODO: A27 equation looks redundant.
 
+        # its already [0,1) fractional coordinates so no need to convert
         if not self._frac:
             pos = np.dot(pos, cell)
 
-        return OMGData.from_data(species, pos, cell)
+        return OMGData.from_data(species, pos, cell, convert_to_fractional=False)
 
     def add_n_particle_sampler(self, n_particle_sampler: Callable):
         self.n_particle_sampler = n_particle_sampler

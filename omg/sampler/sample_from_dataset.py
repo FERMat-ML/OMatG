@@ -8,11 +8,11 @@ class SampleFromDataset(Sampler):
     """
     This is a sampler that generates random samples from the
     """
-    def __init__(self, dataset, fractional_coordinates=True):
+    def __init__(self, dataset, convert_to_fractional=True):
         super().__init__()
         self.dataset = dataset
         self._rng = np.random.default_rng()
-        self._frac = fractional_coordinates
+        self._frac = convert_to_fractional
 
     def sample_p_0(self):
 
@@ -25,10 +25,4 @@ class SampleFromDataset(Sampler):
         pos = sample["coords"]
         cell = sample["cell"]
 
-        if self._frac:
-            pos = np.dot(pos, np.linalg.inv(cell))
-
-        return OMGData.from_data(species, pos, cell)
-
-    def set_frac_coords(self, frac: bool):
-        self._frac = frac
+        return OMGData.from_data(species, pos, cell, convert_to_fractional=self._frac)
