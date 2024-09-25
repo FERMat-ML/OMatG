@@ -188,7 +188,7 @@ class PeriodicLinearInterpolant(Interpolant):
 
         # Take mean w.r.t. number of atoms in each crystal
         for ind in range(1, len(n_atoms)):
-            out[ind-1:ind] -= out[ind-1:ind].mean()
+            out[n_atoms[ind-1]:n_atoms[ind]] -= out[n_atoms[ind-1]:n_atoms[ind]].mean()
         return -out
 
 
