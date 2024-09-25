@@ -3,7 +3,7 @@ import lightning as L
 import torch
 from typing import Sequence
 
-class OMG(pl.LightningModule):
+class OMG(L.LightningModule):
     """
     Main module on which we call Trainer.fit and generate structures via generate function.
     """
