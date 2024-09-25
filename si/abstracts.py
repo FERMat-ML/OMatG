@@ -97,7 +97,7 @@ class Interpolant(ABC, TimeChecker):
         raise NotImplementedError
 
     @abstractmethod
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -111,6 +111,9 @@ class Interpolant(ABC, TimeChecker):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param n_atoms:
+            Number of atoms in crystal.
+        :type n_atoms: torch.Tensor
 
         :return:
             Derivative of the interpolant.

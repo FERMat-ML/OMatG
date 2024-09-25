@@ -35,7 +35,7 @@ class LinearInterpolant(Interpolant):
         assert self._check_t(t)
         return (1.0 - t) * x_0 + t * x_1
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -49,6 +49,9 @@ class LinearInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param n_atoms:
+            Number of atoms in crystal.
+        :type n_atoms: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -91,7 +94,7 @@ class TrigonometricInterpolant(Interpolant):
         assert self._check_t(t)
         return torch.cos(torch.pi * t / 2.0) * x_0 + torch.sin(torch.pi * t / 2.0) * x_1
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -105,6 +108,9 @@ class TrigonometricInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param n_atoms:
+            Number of atoms
+        :type n_atoms: torch.Tensor
 
         :return:
             Derivative of the interpolant.

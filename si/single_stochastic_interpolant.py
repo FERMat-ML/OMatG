@@ -116,7 +116,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             """
             return x
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> tuple(torch.Tensor, torch.Tensor):
         """
         Stochastically interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -132,15 +132,16 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
         :return:
             Stochastically interpolated points x_t.
-        :rtype: torch.Tensor
+        :rtype: tuple(torch.Tensor, torch.Tensor)
         """
         assert x_0.shape == x_1.shape
         interpolate = self._interpolant.interpolate(t, x_0, x_1)
+        z = torch.randn_like(x_0)
         if self._gamma is not None:
-            interpolate += self._gamma.gamma(t) * torch.randn_like(t)
-        return interpolate
+            interpolate += self._gamma.gamma(t) * z
+        return (interpolate, z)
 
-    def _interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def _interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor, n_atoms: torch.Tensor) -> tuple(torch.Tensor, torch.Tensor):
         """
         Derivative with respect to time of the stochastic interpolant between points x_0 and x_1 from two distributions
         p_0 and p_1 at times t.
@@ -154,20 +155,26 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param z:
+            Random variable
+        :type z: torch.Tensor
+        :param n_atoms:
+            Number of atoms in crystal from batch
+        :type n_atoms: torch.Tensor
 
         :return:
             Stochastically interpolated value.
-        :rtype: torch.Tensor
+        :rtype: tuple(torch.Tensor, torch.Tensor)
         """
         assert x_0.shape == x_1.shape
         self._check_t(t)
-        interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1)
+        interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1, n_atoms)
         if self._gamma is not None:
-            interpolate_derivative += self._gamma.gamma_derivative(t) * torch.randn_like(t)
-        return interpolate_derivative
+            interpolate_derivative += self._gamma.gamma_derivative(t) * z
+        return (interpolate_derivative, z)
 
     def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
+             x_1: torch.Tensor, n_atoms: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -190,6 +197,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param n_atoms:
             Number of atoms in each crystal from batch.
         :type n_atoms: torch.Tensor
+        :param z:
+            Random variable.
+        :type z: torch.Tensor
 
         :return:
             Loss.
@@ -198,7 +208,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         raise NotImplementedError
 
     def _ode_loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-                  x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
+                  x_1: torch.Tensor, n_atoms: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the ODE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -218,17 +228,20 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param n_atoms:
             Number of atoms in each crystal from batch.
         :type n_atoms: torch.Tensor
+        :param z:
+            Random variable.
+        :type z: torch.Tensor
 
         :return:
             Loss.
         :rtype: torch.Tensor
         """
-        expected_velocity = self._interpolate_derivative(t, x_0, x_1, n_atoms)
+        expected_velocity, _ = self._interpolate_derivative(t, x_0, x_1, n_atoms)
         loss = nn.functional.mse_loss(expected_velocity, model_prediction[0])
         return loss
 
     def _sde_loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-                  x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
+                  x_1: torch.Tensor, n_atoms: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the SDE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -248,14 +261,15 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param n_atoms:
             Number of atoms in each crystal from batch.
         :type n_atoms: torch.Tensor
+        :param z:
+            Random variable.
+        :type z: torch.Tensor
 
         :return:
             Loss.
         :rtype: torch.Tensor
         """
-        expected_velocity = self._interpolate_derivative(t, x_0, x_1, n_atoms)
-        # TODO: I think this must be the same.
-        expected_z = torch.randn_like(t)
+        expected_velocity, expected_z = self._interpolate_derivative(t, x_0, x_1, n_atoms)
         loss_b = nn.functional.mse_loss(expected_velocity, model_prediction[0])
         loss_z = nn.functional.mse_loss(expected_z, model_prediction[1])
         return loss_b + loss_z
