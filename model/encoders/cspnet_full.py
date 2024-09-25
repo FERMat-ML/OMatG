@@ -7,6 +7,7 @@ import math
 from torch_scatter import scatter
 from torch_scatter.composite import scatter_softmax
 from torch_geometric.utils import to_dense_adj, dense_to_sparse
+from torch_geometric.data import Data
 from einops import rearrange, repeat
 
 from diffcsp.common.data_utils import lattice_params_to_matrix_torch, get_pbc_distances, radius_graph_pbc, frac_to_cart_coords, repeat_blocks
@@ -123,9 +124,17 @@ class CSPNet_Full(CSPNet, Encoder):
         if self.pred_type:
             type_b = self.type_out(node_features)
             type_eta = self.type_out_2(node_features)
-            return ( (type_b, type_eta), (coord_b, coord_eta), (lattice_b, lattice_eta) )
-
-        return (  (coord_b, coord_eta), (lattice_b, lattice_eta) )
+            data = Data(
+                species_b = type_b,
+                species_eta = type_eta,
+                pos_b = coord_b,
+                pos_eta = coord_eta,
+                cell_b = lattice_b,
+                cell_eta = lattice_eta
+            )
+            return data
+        data = Data( pos_b=coord_b, pos_eta=coord_eta, cell_b=lattice_b, cell_eta=lattice_eta)
+        return data
 
     def _convert_outputs(self, x):
         return x
