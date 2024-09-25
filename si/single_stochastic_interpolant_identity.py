@@ -26,7 +26,7 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         :type x_0: torch.Tensor
         :param x_1:
             Points from p_1.
-        :type x_1: torch.Tensor, must be same as x_0
+        :type x_1: torch.Tensor, must be same as x_0.
 
         :return:
             Stochastically interpolated value.
