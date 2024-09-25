@@ -174,7 +174,7 @@ class StochasticInterpolants(object):
 
                 def model_prediction_fn(t, x):
                     x_int_dict[data_field] = x
-                    return model_function(t, x_int)[b_data_field], model_function(t, x_int)[eta_data_field]
+                    return model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
 
                 new_x_t_dict[data_field] = stochastic_interpolant.integrate(model_prediction_fn, x_t_dict[data_field],
                                                                             tspan)
