@@ -48,7 +48,6 @@ class OMG(L.LightningModule):
         x_0 = self.sampler.sample_p_0() # this might need x_1 as input so number of atoms are consistent 
         
         # sample t uniformly for each structure
-        # TODO: embed time, how should time be represented for interpolate function
         t = torch.rand(len(x_1.n_atoms))
 
         x_t = self.si.interpolate(t, x_0, x_1)
@@ -68,7 +67,7 @@ class OMG(L.LightningModule):
         
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)) 
-        
+
         x_t = self.si.interpolate(t, x_0, x_1)
         
         pred = self.model(x_t, t)
