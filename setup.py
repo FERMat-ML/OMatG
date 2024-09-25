@@ -11,7 +11,10 @@ setup(
         'lmdb',
         'loguru',
         'monty',
-        'ase'
+        'ase',
+        'lmdb',
+        'loguru',
+        'tqdm'
     ],
     author='FERMat',
 )
