@@ -12,13 +12,23 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
     Currently designed for masking base distributions
     """
 
-    def __init__(self) -> None:
+    def __init__(self, S:int, mask:int, n_int:int) -> None:
         """
         Construct DFM
+        :param S:
+            Number of classes (possible atom types)
+        :type S: int
+        :param mask:
+            Masking token
+        :type mask: int
+        :param n_int:
+            Number of integration timesteps
+        :type n_int: int    
         """
         super().__init__()
         self.S = MAX_ATOM_NUM
         self.mask = -42
+        self.nsteps = n_int
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
@@ -95,8 +105,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         # Iterate time
-        nsteps = 10
-        dt = (tspan[-1] - tspan[0]) / nsteps
+        dt = (tspan[-1] - tspan[0]) / self.nsteps
         for t in torch.arange(0, 1, dt):
 
             # Predict x1 for the flattened sequence
@@ -104,20 +113,20 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
             x_1_hot = F.one_hot(x_1, num_classes=self.S)  
             M_hot = F.one_hot(torch.tensor([self.mask]), num_classes=self.S)
             dpt = x_1_hot - M_hot 
-            dpt_xt = dpt.gather(-1, x_t[:, None]).squeeze(-1) 
+            dpt_xt = dpt.gather(-1, x_t[:, None]).squeeze(-1)
 
             # Compute pt: linear interpolation based on t
             pt = (t * x_1_hot) + (1 - t) * M_hot
             pt_xt = pt.gather(-1, x_t[:, None]).squeeze(-1)
 
             # Compute the rate R
-            R = F.relu(dpt - dpt_xt[:, None]) / (self.S * pt_xt[:, None]) 
+            R = F.relu(dpt - dpt_xt[:, None]) / (self.S * pt_xt[:, None])
             R[(pt_xt == 0.0)[:, None].repeat(1, self.S)] = 0.0
             R[pt == 0.0] = 0.0
 
             # Compute step probabilities and sample
             step_probs = (R * dt).clamp(max=1.0)
-            step_probs.scatter_(-1, x_t[:, None], 0.0) 
+            step_probs.scatter_(-1, x_t[:, None], 0.0)
             step_probs.scatter_(-1, x_t[:, None], 1.0 - step_probs.sum(dim=-1, keepdim=True)).clamp(min=0.0)
 
             # Sample the next x_t
