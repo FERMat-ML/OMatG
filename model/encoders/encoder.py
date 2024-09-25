@@ -7,7 +7,7 @@ class Encoder(ABC, nn.module):
         pass
          
     @abstractmethod           # TODO: what will x be???
-    def _convert_inputs(self, x):
+    def _convert_inputs(self, x , **kwargs):
         """
         Takes in OMG data standard and converts to whatever standard the encoder expects.
         Output should be a dict that can be passed as kwargs into _forward method
@@ -22,18 +22,18 @@ class Encoder(ABC, nn.module):
         raise NotImplementedError
 
     @abstractmethod # TODO: What will be our expected output
-    def _convert_outputs(self, x):
+    def _convert_outputs(self, x, **kwargs):
         """
         Takes output from encoder and returns expected OMG format.
         """
         raise NotImplementedError
 
                     # TODO: what will x be here
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         """
         Strings methods together
         """
-        x = self._convert_inputs(x)
-        x = self._forward(x)
-        x = self._convert_outputs(x)
+        x = self._convert_inputs(x, **kwargs)
+        x = self._forward(x, **kwargs)
+        x = self._convert_outputs(x, **kwargs)
         return x
