@@ -1,6 +1,6 @@
 import torch.nn as nn
 
-class Model(nn.module):
+class Model(nn.Module):
     def __init__(self, encoder, head):
         self.encoder = encoder
         self.head = head
