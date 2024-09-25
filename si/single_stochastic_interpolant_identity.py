@@ -62,7 +62,7 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         assert torch.equal(x_0, x_1)
-        return torch.zeros_like(x_0)
+        return torch.tensor(0.0)
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
