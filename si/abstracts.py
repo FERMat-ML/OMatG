@@ -26,16 +26,32 @@ class TimeChecker(object):
         return torch.all((0.0 <= t) & (t <= 1.0))
 
 
+class Corrector(ABC):
+    """
+    Abstract class for defining a corrector function that corrects the input x (for instance, wrapping back coordinates
+    to a specific cell in periodic boundary conditions).
+    """
+
+    @abstractmethod
+    def correct(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Correct the input x.
+
+        :param x:
+            Input to correct.
+        :type x: torch.Tensor
+
+        :return:
+            Corrected input.
+        :rtype: torch.Tensor
+        """
+        raise NotImplementedError
+
+
 class Epsilon(ABC, TimeChecker):
     """
     Abstract class for defining an epsilon function epsilon(t).
     """
-
-    def __init__(self) -> None:
-        """
-        Construct the epsilon function.
-        """
-        pass
 
     @abstractmethod
     def epsilon(self, t: torch.Tensor) -> torch.Tensor:
@@ -58,12 +74,6 @@ class Interpolant(ABC, TimeChecker):
     Abstract class for defining an interpolant I(t, x_0, x_1) in a stochastic interpolant between points x_0 and x_1
     from two distributions p_0 and p_1 at times t.
     """
-
-    def __init__(self) -> None:
-        """
-        Construct interpolant.
-        """
-        pass
 
     @abstractmethod
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
@@ -92,8 +102,6 @@ class Interpolant(ABC, TimeChecker):
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
 
-        TODO: IS THIS NECESSARY?
-
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
@@ -116,12 +124,6 @@ class LatentGamma(ABC, TimeChecker):
     Abstract class for defining the gamma function gamma(t) in a latent variable gamma(t) * z of a stochastic
     interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
     """
-
-    def __init__(self) -> None:
-        """
-        Construct the gamma function.
-        """
-        pass
 
     @abstractmethod
     def gamma(self, t: torch.Tensor) -> torch.Tensor:
@@ -159,9 +161,6 @@ class StochasticInterpolant(ABC, TimeChecker):
     Abstract class for defining a stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
     p_1 at times t.
     """
-
-    def __init__(self):
-        pass
 
     @abstractmethod
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
