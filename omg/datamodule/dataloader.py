@@ -1,4 +1,7 @@
+import os
 from typing import Dict, Any
+
+import torch_geometric.data
 from typing_extensions import Self
 
 import numpy as np
@@ -6,6 +9,7 @@ from torch_geometric.data import Data, Dataset
 import torch
 from .datamodule import Configuration
 from ase.data import atomic_numbers
+from torch_geometric.data.lightning import LightningDataset
 
 
 class OMGData(Data):
@@ -100,3 +104,22 @@ class OMGTorchDataset(Dataset):
 
     def get(self, idx):
         return OMGData.from_omg_configuration(self.dataset[idx])
+
+
+def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch_size: int):
+    """
+    Create a PyTorch Lightning datamodule from the datasets
+
+    Params:
+        train_dataset:
+        val_dataset:
+        batch_size:
+
+    Returns:
+        A PyTorch Lightning datamodule
+    """
+    num_workers = int(os.getenv("SLURM_CPUS_PER_TASK", "1"))
+    lightning_datamodule = LightningDataset(train_dataset, val_dataset,
+                                            batch_size=batch_size,
+                                            num_workers=num_workers)
+    return lightning_datamodule
