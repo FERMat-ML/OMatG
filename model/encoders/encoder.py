@@ -1,22 +1,39 @@
-# abstract encoder implementation
+from abc import ABC, abstractmethod
 import torch.nn as nn
 
-class Encoder(nn.module):
+class Encoder(ABC, nn.module):
 
-    def __init__(self):
-        # super
-
-    def convert_inputs(self,):
+    def __init__(self) -> None:
+        pass
+         
+    @abstractmethod           # TODO: what will x be???
+    def _convert_inputs(self, x):
+        """
+        Takes in OMG data standard and converts to whatever standard the encoder expects.
+        Output should be a dict that can be passed as kwargs into _forward method
+        """
         raise NotImplementedError
 
-    def _forward(self,x):      
+    @abstractmethod
+    def _forward(self, **kwargs):      
+        """
+        Forward process for encoder
+        """
         raise NotImplementedError
 
-    def convert_outputs(self,):
+    @abstractmethod # TODO: What will be our expected output
+    def _convert_outputs(self, x):
+        """
+        Takes output from encoder and returns expected OMG format.
+        """
         raise NotImplementedError
 
-    def forward(self,x):
-        x = self.convert_inputs(x)
+                    # TODO: what will x be here
+    def forward(self, x):
+        """
+        Strings methods together
+        """
+        x = self._convert_inputs(x)
         x = self._forward(x)
-        x = self.convert_outputs(x)
+        x = self._convert_outputs(x)
         return x
