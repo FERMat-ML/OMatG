@@ -13,7 +13,7 @@ from diffcsp.common.data_utils import lattice_params_to_matrix_torch, get_pbc_di
 
 from diffcsp.pl_modules.cspnet import CSPLayer
 
-from omg.encoders.encoder import Encoder 
+from encoder import Encoder 
 
 
 MAX_ATOMIC_NUM=100

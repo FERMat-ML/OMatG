@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import torch.nn as nn
 
-class Encoder(ABC, nn.module):
+class Encoder(ABC, nn.Module):
 
     def __init__(self) -> None:
         pass
