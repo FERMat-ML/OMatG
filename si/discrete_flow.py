@@ -124,6 +124,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
             dpt_xt = dpt.gather(-1, x_t[:, None]).squeeze(-1)
 
             # Compute pt: linear interpolation based on t
+            # TODO: consider adding functionality to use other types of interpolants
             pt = (t * x_1_hot) + (1 - t) * M_hot
             pt_xt = pt.gather(-1, x_t[:, None]).squeeze(-1)
 
