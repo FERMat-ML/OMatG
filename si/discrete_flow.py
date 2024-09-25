@@ -113,7 +113,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         """
         # Iterate time
         dt = (tspan[-1] - tspan[0]) / self.nsteps
-        eps = torch.finfo(torch.float64).min
+        eps = torch.finfo(torch.float64).eps
         for t in torch.arange(0, 1, dt):
 
             # Predict x1 for the flattened sequence
