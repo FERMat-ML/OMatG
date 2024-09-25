@@ -113,6 +113,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         """
         # Iterate time
         dt = (tspan[-1] - tspan[0]) / self.nsteps
+        eps = torch.finfo(torch.float64).min
         for t in torch.arange(0, 1, dt):
 
             # Predict x1 for the flattened sequence
@@ -135,10 +136,11 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
             if self.noise > 0.0:
                 R_db = torch.zeros_like(R)
                 R_db[x_t == x_1] = 1
-                R_db[x_1 != x_t] = ((self.S * t) + 1 - t) / (1 - t)
+                R_db[x_1 != x_t] = ((self.S * t) + 1 - t) / (1 - t + eps)
                 R_db *= self.noise
 
             # Compute step probabilities and sample
+            R += R_db
             step_probs = (R * dt).clamp(max=1.0)
             step_probs.scatter_(-1, x_t[:, None], 0.0)
             step_probs.scatter_(-1, x_t[:, None], 1.0 - step_probs.sum(dim=-1, keepdim=True)).clamp(min=0.0)
