@@ -41,7 +41,7 @@ class OMGData(Data):
             return 0
 
     @classmethod
-    def from_omg_configuration(cls, config: Configuration):
+    def from_omg_configuration(cls, config: Configuration, convert_to_fractional=False):
         graph = cls()
         n_atoms = torch.tensor(len(config.species))
         graph.n_atoms = n_atoms
@@ -61,10 +61,14 @@ class OMGData(Data):
         if config.property_dict is not None:
             graph.property = config.property_dict
 
+        if convert_to_fractional:
+            with torch.no_grad():
+                graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell))
+
         return graph
 
     @classmethod
-    def from_data(cls, species, pos, cell):
+    def from_data(cls, species, pos, cell, convert_to_fractional=False):
         graph = cls()
         n_atoms = torch.tensor(len(species))
         graph.n_atoms = n_atoms
@@ -84,6 +88,10 @@ class OMGData(Data):
         else:
             graph.pos = pos
 
+        if convert_to_fractional:
+            with torch.no_grad():
+                graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell))
+
         return graph
 
 
@@ -93,9 +101,10 @@ class OMGTorchDataset(Dataset):
     the use of :class:`omg.datamodule.Dataset` as a data source for the graph based models.
     """
 
-    def __init__(self, dataset: Dataset, transform=None):
+    def __init__(self, dataset: Dataset, transform=None, convert_to_fractional=False):
         super().__init__("./", transform, None, None)
         self.dataset = dataset
+        self.convert_to_fractional = convert_to_fractional
 
     def __len__(self):
         return len(self.dataset)
@@ -104,7 +113,7 @@ class OMGTorchDataset(Dataset):
         return len(self.dataset)
 
     def get(self, idx):
-        return OMGData.from_omg_configuration(self.dataset[idx])
+        return OMGData.from_omg_configuration(self.dataset[idx], convert_to_fractional=self.convert_to_fractional)
 
 
 def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch_size: int):
@@ -124,3 +133,4 @@ def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch
                                             batch_size=batch_size,
                                             num_workers=num_workers)
     return lightning_datamodule
+
