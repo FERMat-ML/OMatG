@@ -5,7 +5,7 @@ import sdeint  # TODO: Find better package.
 import torch
 import torch.nn as nn
 from typing import Optional, Callable
-from .abstracts import Epsilon, Interpolant, LatentGamma, StochasticInterpolant
+from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
 
 
 class DifferentialEquationType(Enum):
@@ -34,7 +34,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     equation during inference. If an SDE is used, one should additionally provide an epsilon function epsilon(t).
 
     :param interpolant:
-        Interpolant I(t, x_0, x_1) between two points from two distributions p_0 and p_1 at times t.
+        Interpolant I(t, x_0, x_1) between points from two distributions p_0 and p_1 at times t.
     :type interpolant: Interpolant
     :param gamma:
         Optional gamma function gamma(t) in the latent variable gamma(t) * z of a stochastic interpolant.
@@ -46,34 +46,75 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     :param differential_equation_type:
         Type of differential equation to use for inference.
     :type differential_equation_type: DifferentialEquationType
+    :param sde_number_time_steps:
+        Number of time steps for the integration of the SDE.
+        Note that the time span [0, 1] is already subdivided by the StochasticInterpolants class.
+        This number of timesteps will be used for the subintervals.
+        Should be positive and only be provided if the differential equation type is SDE.
+    :type sde_number_time_steps: Optional[int]
+    :param corrector:
+        Corrector that will be applied to the points x_t during integration (for instance, to enforce periodic boundary
+        conditions).
+        If None, no correction will be applied.
+    :type corrector: Optional[Corrector]
 
     :raises ValueError:
-        If epsilon is provided for ODEs or if epsilon is not provided for SDEs.
+        If epsilon is provided for ODEs or not provided for SDEs.
+        If sde_number_time_steps is provided for ODEs or not provided for SDEs.
+        If sde_number_time_steps is not positive.
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: DifferentialEquationType, use_pbc=True) -> None:
+                 differential_equation_type: DifferentialEquationType, sde_number_time_steps: Optional[int] = None,
+                 corrector: Optional[Corrector] = None) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
         self._gamma = gamma
         self._epsilon = epsilon
         self._differential_equation_type = differential_equation_type
+        self._sde_number_time_steps = sde_number_time_steps
+        self._corrector = corrector if corrector is not None else self.IdentityCorrector()
         if self._differential_equation_type == DifferentialEquationType.ODE:
             self.loss = self._ode_loss
             self.integrate = self._ode_integrate
             if self._epsilon is not None:
                 raise ValueError("Epsilon function should not be provided for ODEs.")
+            if self._sde_number_time_steps is not None:
+                raise ValueError("SDE number of time steps should not be provided for ODEs.")
         else:
             assert self._differential_equation_type == DifferentialEquationType.SDE
             self.loss = self._sde_loss
             self.integrate = self._sde_integrate
             if self._epsilon is None:
                 raise ValueError("Epsilon function should be provided for SDEs.")
+            if self._sde_number_time_steps is None:
+                raise ValueError("SDE number of time steps should be provided SDEs.")
+            if not self._sde_number_time_steps > 0:
+                raise ValueError("SDE number of time steps should be bigger than zero.")
 
-        # PBC
-        if use_pbc:
-            self._use_pbc = True
+    class IdentityCorrector(Corrector):
+        """
+        Corrector that does nothing.
+        """
+
+        def __init__(self):
+            """Construct identity corrector."""
+            super().__init__()
+
+        def correct(self, x: torch.Tensor) -> torch.Tensor:
+            """
+            Correct the input x.
+
+            :param x:
+                Input to correct.
+            :type x: torch.Tensor
+
+            :return:
+                Corrected input.
+            :rtype: torch.Tensor
+            """
+            return x
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
@@ -267,16 +308,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         # Modify wrapper to only use b(t,x).
-        ode_wrapper = lambda t, x: model_function(t, x)[0]
+        ode_wrapper = lambda t, x: self._corrector.correct(model_function(t, x)[0])
 
         # Integrate with scipy IVP integrator
         x_t_new = solve_ivp(ode_wrapper, tspan, x_t)
 
-        # Account for periodic boundaries
-        if self._use_pbc:
-            x_t_new %= 1.0
-
-        # Return
         return torch.tensor(x_t_new[:, -1])
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
@@ -302,20 +338,16 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         # Modify wrapper for use in SDE integrator
         def f(x, t):
-            preds = model_function(t, x)
+            preds = model_function(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
             out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
-            return out
+            return self._corrector.correct(out)
 
         def g(x, t):
             out = np.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
             return out
 
         # SDE Integrator
-        x_t_new = sdeint.itoint(f, g, x_t, tspan)
+        x_t_new = sdeint.itoint(f, g, x_t, torch.linspace(tspan[0], tspan[1], self._sde_number_time_steps))
 
-        # Account for periodic boundaries
-        if self._use_pbc:
-            x_t_new %= 1.0
-        
         # Return
         return torch.tensor(x_t_new[:, -1])
