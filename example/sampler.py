@@ -13,7 +13,7 @@ sampler = SampleFromDataset(dm)
 print("Sample 1: ", sampler.sample_p_0())
 
 # Sample from the dataset with fractional coordinates
-sampler.set_frac_coords(False)
+sampler = SampleFromDataset(dm, convert_to_fractional=True)
 print("Sample 2: ", sampler.sample_p_0())
 
 # Sample from random distributions with fixed number of particles
@@ -28,5 +28,5 @@ sampler = SampleFromRNG(n_particle_sampler=n_particle_sampler)
 print("Random Sample: ", sampler.sample_p_0())
 
 # Sample from random distributions with a random number of particles and fractional coordinates
-sampler = SampleFromRNG(n_particle_sampler=n_particle_sampler, fractional_coordinates=True)
+sampler = SampleFromRNG(n_particle_sampler=n_particle_sampler, convert_to_fractional=True)
 print("Random Sample: ", sampler.sample_p_0())
