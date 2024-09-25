@@ -1,9 +1,6 @@
 import os
 from typing import Dict, Any
 
-import torch_geometric.data
-from typing_extensions import Self
-
 import numpy as np
 from torch_geometric.data import Data, Dataset
 import torch
@@ -26,6 +23,7 @@ class OMGData(Data):
         self.cell = None
         self.batch = None
         self.pos = None
+        self.property = None
 
     def __inc__(self, key: str, value: torch.Tensor, *args, **kwargs):
         if "index" in key or "face" in key:
@@ -59,6 +57,9 @@ class OMGData(Data):
             graph.pos = torch.from_numpy(config.coords)
         else:
             graph.pos = config.coords
+
+        if config.property_dict is not None:
+            graph.property = config.property_dict
 
         return graph
 
