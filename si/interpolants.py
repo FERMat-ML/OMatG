@@ -155,7 +155,7 @@ class PeriodicLinearInterpolant(Interpolant):
         out = t * torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
         return out + x_1 - torch.floor(out + x_1)
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -174,6 +174,9 @@ class PeriodicLinearInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param n_atoms:
+            Number of atoms in crystal from batch.
+        :type n_atoms: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -182,8 +185,10 @@ class PeriodicLinearInterpolant(Interpolant):
         assert self._check_t(t)
         omega = 2.0 * torch.pi * (x_0 - x_1)
         out = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
-        # TODO: The mean should be taken over the number atoms in every element of the batch!
-        out -= torch.mean(torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi))
+
+        # Take mean w.r.t. number of atoms in each crystal
+        for ind in range(1, len(n_atoms)):
+            out[ind-1:ind] -= out[ind-1:ind].mean()
         return -out
 
 
@@ -221,7 +226,7 @@ class EncoderDecoderInterpolant(Interpolant):
         assert self._check_t(t)
         return (torch.cos(torch.pi * t) ** 2) * torch.where(t < 0.5, x_0, x_1)
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -235,6 +240,9 @@ class EncoderDecoderInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param n_atoms:
+            Number of atoms in crystal from batch.
+        :type n_atoms: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -277,7 +285,7 @@ class MirrorInterpolant(Interpolant):
         assert self._check_t(t)
         return x_1
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, n_atoms:torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -291,6 +299,9 @@ class MirrorInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param n_atoms:
+            Number of atoms in crystal from batch.
+        :type n_atoms: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -334,7 +345,7 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
         assert self._check_t(t)
         return torch.sqrt(1.0 - (t ** 2)) * x_0 + t * x_1
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -348,6 +359,9 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param n_atoms:
+            Number of atoms in crystal from batch.
+        :type n_atoms: torch.Tensor
 
         :return:
             Derivative of the interpolant.

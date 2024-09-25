@@ -36,7 +36,7 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         return x_0
 
     def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor) -> torch.Tensor:
+             x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -53,6 +53,9 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param n_atoms:
+            Number of atoms in each crystal from batch
+        :type n_atoms: torch.Tensor
 
         :return:
             Loss.
