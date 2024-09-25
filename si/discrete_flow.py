@@ -12,7 +12,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
     Currently designed for masking base distributions
     """
 
-    def __init__(self, S:int, mask:int, n_int:int, noise:float = 0) -> None:
+    def __init__(self, n_int:int, noise:float = 0) -> None:
         """
         Construct DFM
         :param S:
