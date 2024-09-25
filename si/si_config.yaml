@@ -1,0 +1,29 @@
+model:
+  class_path: stochastic_interpolants.StochasticInterpolants
+  init_args:
+    stochastic_interpolants:
+      # chemical species
+      - class_path: discrete_flow.DiscreteFlowMatchingMask
+        
+      # fractional coordinates
+      - class_path: single_stochastic_interpolant.SingleStochasticInterpolant
+        init_args:
+          interpolant: interpolants.PeriodicLinearInterpolant
+          gamma: null
+          epsilon: null
+          differential_equation_type: DifferentialEquationType.ODE
+          use_pbc: true
+      # lattice vectors
+      - class_path: single_stochastic_interpolant.SingleStochasticInterpolant
+        init_args:
+          interpolant: interpolants.LinearInterpolant
+          gamma: null
+          epsilon: null
+          differential_equation_type: DifferentialEquationType.ODE
+          use_pbc: false
+    costs:
+      - 0.333333333333
+      - 0.333333333333
+      - 0.333333333333
+    integration_time_steps: 1
+
