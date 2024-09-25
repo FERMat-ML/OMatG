@@ -78,6 +78,11 @@ class CSPNet_Full(CSPNet, Encoder):
             self.scalar_out = nn.Linear(hidden_dim, 1)
 
     def _convert_inputs(self, x):
+        atom_types = x.species
+        frac_coords = x.pos
+        lattices = x.cell
+        num_atoms = x.n_atom
+        return atom_types, frac_coords, lattices, num_atoms
 
 
     def _forward(self, t, atom_types, frac_coords, lattices, num_atoms, node2graph):
