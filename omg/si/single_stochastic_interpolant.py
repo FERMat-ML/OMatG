@@ -67,16 +67,24 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: DifferentialEquationType, sde_number_time_steps: Optional[int] = None,
+                 differential_equation_type: str, sde_number_time_steps: Optional[int] = None,
                  corrector: Optional[Corrector] = None) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
-        self._gamma = gamma
+        if gamma is not None:
+            self._gamma = gamma
+            self.antithetic = True
+        else:
+            self.antithetic = False
         self._epsilon = epsilon
         self._differential_equation_type = differential_equation_type
         self._sde_number_time_steps = sde_number_time_steps
         self._corrector = corrector if corrector is not None else self.IdentityCorrector()
+        try:
+            self._differential_equation_type = DifferentialEquationType(differential_equation_type)
+        except AttributeError:
+            raise ValueError("unknown differential equation type")
         if self._differential_equation_type == DifferentialEquationType.ODE:
             self.loss = self._ode_loss
             self.integrate = self._ode_integrate
@@ -209,7 +217,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         raise NotImplementedError
 
-    def _ode_loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
+    def _ode_loss(self, model_prediction: Callable, t: torch.Tensor, x_0: torch.Tensor,
                   x_1: torch.Tensor, n_atoms: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the ODE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
@@ -239,8 +247,18 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        expected_velocity, _ = self._interpolate_derivative(t, x_0, x_1, n_atoms)
-        loss = nn.functional.mse_loss(expected_velocity, model_prediction[0])
+        interp, z = self._interpolant.interpolate(t, x_0, x_1)
+        interp_d, _ = self._interpolant.interpolate_derivative(t, x_0, x_1) 
+        if self.antithetic:
+            x_t_p = interp + self._gamma.gamma(t) * z
+            x_t_m = interp - self._gamma.gamma(t) * z
+            expected_velocity_p = interp_d + self._gamma.gamma_derivative(t) * z
+            expected_velocity_m = interp_d - self._gamma.gamma_derivative(t) * z
+            loss = nn.functional.mse_loss(expected_velocity_p, model_prediction(x_t_p, t)[0]) + nn.functional.mse_loss(expected_velocity_m, model_prediction(x_t_m, t)[0])
+        else:
+            x_t = interp
+            expected_velocity, _ = interp_d
+            loss = nn.functional.mse_loss(expected_velocity, model_prediction(x_t, t)[0])
         return loss
 
     def _sde_loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
@@ -273,9 +291,21 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        expected_velocity, expected_z = self._interpolate_derivative(t, x_0, x_1, n_atoms)
-        loss_b = nn.functional.mse_loss(expected_velocity, model_prediction[0])
-        loss_z = nn.functional.mse_loss(expected_z, model_prediction[1])
+        interp, z = self._interpolant.interpolate(t, x_0, x_1)
+        interp_d, _ = self._interpolant.interpolate_derivative(t, x_0, x_1) 
+        if self.antithetic:
+            x_t_p = interp + self._gamma.gamma(t) * z
+            x_t_m = interp - self._gamma.gamma(t) * z
+            expected_velocity_p = interp_d + self._gamma.gamma_derivative(t) * z
+            expected_velocity_m = interp_d - self._gamma.gamma_derivative(t) * z
+            pred_b_p, pred_z = model_prediction(x_t_p, t)
+            loss_b = nn.functional.mse_loss(expected_velocity_p, pred_b_p) + nn.functional.mse_loss(expected_velocity_m, model_prediction(x_t_m, t)[0])
+        else:
+            x_t = interp
+            pred_b, pred_z = model_prediction(x_t, t)[1]
+            loss_b = nn.functional.mse_loss(interp_d, pred_b)
+
+        loss_z = nn.functional.mse_loss(z, pred_z)
         return loss_b + loss_z
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
