@@ -33,6 +33,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     The stochastic interpolant can either use an ordinary differential equation (ODE) or a stochastic differential
     equation during inference. If an SDE is used, one should additionally provide an epsilon function epsilon(t).
 
+    TODO: Think about antithetic sampling.
+
     :param interpolant:
         Interpolant I(t, x_0, x_1) between points from two distributions p_0 and p_1 at times t.
     :type interpolant: Interpolant
