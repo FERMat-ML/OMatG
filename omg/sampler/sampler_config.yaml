@@ -1,0 +1,15 @@
+model:
+  sampler:
+    class_path: omg.sampler.sample_from_rng.SampleFromRNG
+    init_args:
+      distributions: null
+      n_particle_sampler: 1
+      convert_to_fractional: true
+      batch_size: 2
+    # Code for sampling from dataset
+    # class_path: omg.sampler.SampleFromDataset
+    # init_args:
+    #   dataset:
+    #   convert_to_fractional: 
+    #   batch_size: 
+    
