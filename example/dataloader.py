@@ -1,7 +1,7 @@
 import torch_geometric.loader
 
 from omg.datamodule import DataModule
-from omg.datamodule.dataloader import OMGData, OMGTorchDataset
+from omg.datamodule import OMGData, OMGTorchDataset
 
 #ds = DataModule.from_ase("./example.xyz")
 ds = DataModule.from_lmdb(["../data/carbon_24/train.lmdb", "../data/carbon_24/val.lmdb"])
