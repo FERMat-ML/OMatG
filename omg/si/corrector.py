@@ -6,25 +6,25 @@ class PeriodicBoundaryConditionsCorrector(Corrector):
     """
     Corrector function that wraps back coordinates to the interval [min, max] with periodic boundary conditions.
 
-    :param min:
+    :param min_value:
         Minimum value of the interval.
-    :type min: float
-    :param max:
+    :type min_value: float
+    :param max_value:
         Maximum value of the interval.
-    :type max: float
+    :type max_value: float
 
     :raises ValueError:
         If the minimum value is greater than the maximum value.
     """
 
-    def __init__(self, min: float, max: float) -> None:
+    def __init__(self, min_value: float, max_value: float) -> None:
         """
         Construct corrector function.
         """
         super().__init__()
-        self._min = min
-        self._max = max
-        if self._min >= self._max:
+        self._min_value = min_value
+        self._max_value = max_value
+        if self._min_value >= self._max_value:
             raise ValueError("Minimum value must be less than maximum value.")
 
     def correct(self, x: torch.Tensor) -> torch.Tensor:
@@ -39,4 +39,4 @@ class PeriodicBoundaryConditionsCorrector(Corrector):
             Corrected input.
         :rtype: torch.Tensor
         """
-        return torch.fmod(x - self._min, self._max - self._min) + self._min
+        return torch.fmod(x - self._min_value, self._max_value - self._min_value) + self._min_value
