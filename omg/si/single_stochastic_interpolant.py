@@ -238,6 +238,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             Loss.
         :rtype: torch.Tensor
         """
+        assert x_0.shape == x_1.shape
         expected_velocity, _ = self._interpolate_derivative(t, x_0, x_1, n_atoms)
         loss = nn.functional.mse_loss(expected_velocity, model_prediction[0])
         return loss
@@ -271,6 +272,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             Loss.
         :rtype: torch.Tensor
         """
+        assert x_0.shape == x_1.shape
         expected_velocity, expected_z = self._interpolate_derivative(t, x_0, x_1, n_atoms)
         loss_b = nn.functional.mse_loss(expected_velocity, model_prediction[0])
         loss_z = nn.functional.mse_loss(expected_z, model_prediction[1])
