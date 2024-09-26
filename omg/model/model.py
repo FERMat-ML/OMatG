@@ -19,5 +19,6 @@ class Model(nn.Module):
             else:
                 prop = self.prop_embedder(prop)
         x = self.encoder(x, t, prop, **kwargs) 
+        x = self.head(x, t, prop)
         return x
 
