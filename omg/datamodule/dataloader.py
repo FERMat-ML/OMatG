@@ -52,6 +52,17 @@ class OMGData(Data):
 
     @classmethod
     def from_omg_configuration(cls, config: Configuration, convert_to_fractional=True):
+        """
+        Create a OMGData object from a :class:`omg.datamodule.Configuration` object.
+
+        :param config:  :class:`omg.datamodule.Configuration` object to convert to OMGData
+        :param convert_to_fractional: Whether to convert the atomic positions to fractional coordinates
+                                    WARNING: This will always convert the atomic positions to fractional coordinates
+                                    regardless of the current coordinate system. So, if the atomic positions are already
+                                    in fractional coordinates, you need to be careful when setting this flag to True.
+        :return:
+            OMGData object.
+        """
         graph = cls()
         n_atoms = torch.tensor(len(config.species))
         graph.n_atoms = n_atoms
@@ -80,6 +91,20 @@ class OMGData(Data):
 
     @classmethod
     def from_data(cls, species, pos, cell, convert_to_fractional=True):
+        """
+        Create a OMGData object from the atomic species, positions and cell vectors.
+
+        :param species: Integer array containing the atomic numbers of the atoms
+        :param pos: Array containing the atomic positions
+        :param cell: Array containing the cell vectors
+        :param convert_to_fractional:  Whether to convert the atomic positions to fractional coordinates
+                                    WARNING: This will always convert the atomic positions to fractional coordinates
+                                    regardless of the current coordinate system. So, if the atomic positions are already
+                                    in fractional coordinates, you need to be careful when setting this flag to True.
+
+        :return:
+            OMGData object.
+        """
         graph = cls()
         n_atoms = torch.tensor(len(species))
         graph.n_atoms = n_atoms
@@ -130,15 +155,13 @@ class OMGTorchDataset(Dataset):
 
 def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch_size: int):
     """
-    Create a PyTorch Lightning datamodule from the datasets
+    Create a PyTorch Lightning datamodule from the datasets. This is just provided for
+    ease of use, and the user can create their own datamodule if needed.
 
-    Params:
-        train_dataset:
-        val_dataset:
-        batch_size:
+    :param train_dataset: Training dataset
+    :param val_dataset: Validation dataset
+    :param batch_size: Batch size
 
-    Returns:
-        A PyTorch Lightning datamodule
     """
     num_workers = int(os.getenv("SLURM_CPUS_PER_TASK", "1"))
     lightning_datamodule = LightningDataset(train_dataset, val_dataset,
