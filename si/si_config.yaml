@@ -29,6 +29,12 @@ model:
           differential_equation_type: DifferentialEquationType.ODE
           sde_number_time_steps: null
           corrector: null
+    data_fields: 
+      # if the order of the data_fields changes,
+      # the order of the above StochasticInterpolant inputs must also change
+      - "species"
+      - "pos"
+      - "cell"
     costs:
       - 0.333333333333
       - 0.333333333333
