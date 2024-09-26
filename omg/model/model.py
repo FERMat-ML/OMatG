@@ -1,6 +1,8 @@
 import torch.nn as nn
+import lightning as L
 
-class Model(nn.Module):
+#class Model(nn.Module):
+class Model(L.LightningModule):
     def __init__(self, encoder, head, time_embedder, prop_embedder=None):
         self.encoder = encoder
         self.head = head
