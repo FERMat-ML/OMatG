@@ -1,8 +1,10 @@
 import torch.nn as nn
+<<<<<<< HEAD
 import lightning as L
 
-#class Model(nn.Module):
-class Model(L.LightningModule):
+class Model(nn.Module):
+# for testing purposes
+# class Model(L.LightningModule):
     def __init__(self, encoder, head, time_embedder, prop_embedder=None):
         self.encoder = encoder
         self.head = head
@@ -17,6 +19,5 @@ class Model(L.LightningModule):
             else:
                 prop = self.prop_embedder(prop)
         x = self.encoder(x, t, prop, **kwargs) 
-        x = self.head(x, t, prop)
         return x
 

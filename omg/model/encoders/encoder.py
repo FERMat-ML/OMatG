@@ -4,6 +4,7 @@ import torch.nn as nn
 class Encoder(ABC, nn.Module):
 
     def __init__(self) -> None:
+        super().__init__()
         pass
          
     @abstractmethod           # TODO: what will x be???

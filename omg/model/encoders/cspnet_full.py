@@ -15,7 +15,7 @@ from diffcsp.common.data_utils import lattice_params_to_matrix_torch, get_pbc_di
 from diffcsp.pl_modules.cspnet import CSPLayer
 from diffcsp.pl_modules.cspnet import SinusoidsEmbedding
 
-from encoder import Encoder
+from .encoder import Encoder
 
 
 MAX_ATOMIC_NUM=100
@@ -41,7 +41,7 @@ class CSPNetFull(CSPNet, Encoder):
         pred_scalar = False
     ):
 
-        super(CSPNet_Full, self).__init__()
+        super().__init__()
 
         self.ip = ip
         self.smooth = smooth
@@ -79,15 +79,16 @@ class CSPNetFull(CSPNet, Encoder):
         if self.pred_scalar:
             self.scalar_out = nn.Linear(hidden_dim, 1)
 
-    def _convert_inputs(self, x):
+    def _convert_inputs(self, x, **kwargs):
         atom_types = x.species
         frac_coords = x.pos
         lattices = x.cell
-        num_atoms = x.n_atom
-        return atom_types, frac_coords, lattices, num_atoms
+        num_atoms = x.n_atoms
+        node2graph = x.batch
+        return atom_types, frac_coords, lattices, num_atoms, node2graph
 
 
-    def _forward(self, t, atom_types, frac_coords, lattices, num_atoms, node2graph):
+    def _forward(self, atom_types, frac_coords, lattices, num_atoms, node2graph, t=0.0):
         # taken from DiffCSP with additional output layers included
 
         edges, frac_diff = self.gen_edges(num_atoms, frac_coords, lattices, node2graph)
@@ -117,7 +118,11 @@ class CSPNetFull(CSPNet, Encoder):
 
         lattice_b = self.lattice_out(graph_features)
         lattice_eta = self.lattice_out_2(graph_features)
-        lattice_out = lattice_out.view(-1, 3, 3)
+        lattice_b = lattice_b.view(-1, 3, 3)
+        lattice_eta = lattice_eta.view(-1, 3, 3)
+        print(lattice_b.shape)
+        print(lattice_eta.shape)
+        print(lattices.shape)
         if self.ip:
             lattice_b = torch.einsum('bij,bjk->bik', lattice_b, lattices)
             lattice_eta = torch.einsum('bij,bjk->bik', lattice_eta, lattices)
@@ -136,5 +141,6 @@ class CSPNetFull(CSPNet, Encoder):
         data = Data( pos_b=coord_b, pos_eta=coord_eta, cell_b=lattice_b, cell_eta=lattice_eta)
         return data
 
-    def _convert_outputs(self, x):
+    def _convert_outputs(self, x, **kwargs):
+        print('here')
         return x
