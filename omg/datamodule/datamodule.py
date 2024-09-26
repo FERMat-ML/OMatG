@@ -455,21 +455,25 @@ class DataModule:
         configurations: A list of :class:`~kliff.dataset.Configuration` objects.
     """
 
-    def __init__(self, configurations: Iterable = None):
-        if configurations is None:
-            self._configs = []
-        elif isinstance(configurations, Iterable) and not isinstance(
-            configurations, str
-        ):
-            self._configs = list(configurations)
-        else:
-            raise DataModuleError(
-                "configurations must be a iterable of Configuration objects."
-            )
+    def __init__(self, lmdb_paths=None):
+        # if configurations is None:
+        #     self._configs = []
+        # elif isinstance(configurations, Iterable) and not isinstance(
+        #     configurations, str
+        # ):
+        #     self._configs = list(configurations)
+        # else:
+        #     raise DataModuleError(
+        #         "configurations must be a iterable of Configuration objects."
+        #     )
 
         self._metadata: dict = {}
         self._return_config_on_getitem = True
         self._property_keys = None
+
+        if lmdb_paths is not None:
+            self.from_lmdb(lmdb_paths)
+
 
     @classmethod
     @requires(MongoDatabase is not None, "colabfit-tools is not installed")
@@ -745,9 +749,9 @@ class DataModule:
         )
         self._configs.extend(configs)
 
-    @classmethod
+    # @classmethod
     def from_lmdb(
-        cls,
+        self,
         path: Union[Path, str, List[Path], List[str]],
         dynamic_loading: bool = True,
         subdir: bool = False,
@@ -772,12 +776,12 @@ class DataModule:
             subdir: Whether the data is stored in subdirectories.
             length: Number of configurations to load.
         """
-        instance = cls()
-        instance.add_from_lmdb(
+        # instance = self()
+        self.add_from_lmdb(
             path, dynamic_loading, subdir, save_path, reuse, checksum, property_keys
         )
-        instance._property_keys = property_keys
-        return instance
+        self._property_keys = property_keys
+        return self
 
     def add_from_lmdb(
         self,
