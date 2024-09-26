@@ -3,11 +3,12 @@ from typing import Dict, Any
 
 import numpy as np
 from torch_geometric.data import Data, Dataset
+from torch_geometric.loader import DataLoader
 import torch
 from .datamodule import Configuration
 from ase.data import atomic_numbers
 from torch_geometric.data.lightning import LightningDataset
-
+import lightning as L
 
 class OMGData(Data):
     """
@@ -145,3 +146,34 @@ def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch
                                             num_workers=num_workers)
     return lightning_datamodule
 
+class OMGDataModule(L.LightningDataModule):
+    """
+    Need to do this because LightningDataset doesn't directly subclass LightningDataModule
+    """
+    def __init__(self, train_dataset, val_dataset = None, **kwargs):
+        super().__init__()
+        self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
+
+    def dataloader(self, dataset: Dataset, **kwargs: Any) -> DataLoader:
+        return DataLoader(dataset, **kwargs)
+
+    def train_dataloader(self) -> DataLoader:
+        from torch.utils.data import IterableDataset
+
+        shuffle = not isinstance(self.train_dataset, IterableDataset)
+        shuffle &= self.kwargs.get('sampler', None) is None
+        shuffle &= self.kwargs.get('batch_sampler', None) is None
+
+        return self.dataloader(
+            self.train_dataset,
+            shuffle=shuffle,
+            **self.kwargs,
+        )
+
+    def val_dataloader(self) -> DataLoader:
+        assert self.val_dataset is not None
+
+        kwargs = copy.copy(self.kwargs)
+        kwargs.pop('sampler', None)
+        kwargs.pop('batch_sampler', None)
