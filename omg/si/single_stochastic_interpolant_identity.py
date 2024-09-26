@@ -14,7 +14,8 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         """Construct stochastic interpolant."""
         super().__init__()
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                    batch_pointer: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Stochastically interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -27,16 +28,21 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor, must be same as x_0.
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
-            Stochastically interpolated value.
-        :rtype: torch.Tensor
+            Stochastically interpolated points x_t, random variables z used for interpolation.
+        :rtype: tuple[torch.Tensor, torch.Tensor]
+
         """
         assert torch.equal(x_0, x_1)
-        return x_0
+        return x_0, torch.zeros_like(x_0)
 
     def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor, n_atoms: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+             x_1: torch.Tensor, z: torch.Tensor, batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -53,12 +59,13 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param n_atoms:
-            Number of atoms in each crystal from batch
-        :type n_atoms: torch.Tensor
         :param z:
-            Random variable.
+            Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Loss.

@@ -76,7 +76,8 @@ class Interpolant(ABC, TimeChecker):
     """
 
     @abstractmethod
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                    batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -89,6 +90,10 @@ class Interpolant(ABC, TimeChecker):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -97,7 +102,8 @@ class Interpolant(ABC, TimeChecker):
         raise NotImplementedError
 
     @abstractmethod
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                               batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -111,9 +117,10 @@ class Interpolant(ABC, TimeChecker):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param n_atoms:
-            Number of atoms in crystal.
-        :type n_atoms: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -166,7 +173,8 @@ class StochasticInterpolant(ABC, TimeChecker):
     """
 
     @abstractmethod
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                    batch_pointer: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Stochastically interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -179,16 +187,20 @@ class StochasticInterpolant(ABC, TimeChecker):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
-            Stochastically interpolated points x_t.
-        :rtype: torch.Tensor
+            Stochastically interpolated points x_t, random variables z used for interpolation.
+        :rtype: tuple[torch.Tensor, torch.Tensor]
         """
         raise NotImplementedError
 
     @abstractmethod
     def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
+             x_1: torch.Tensor, z: torch.Tensor, batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -205,6 +217,13 @@ class StochasticInterpolant(ABC, TimeChecker):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param z:
+            Random variable z that was used for the stochastic interpolation to get the model prediction.
+        :type z: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Loss.

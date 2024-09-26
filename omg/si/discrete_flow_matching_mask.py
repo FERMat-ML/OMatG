@@ -36,7 +36,8 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         self._number_integration_steps = number_integration_steps
         self._noise = noise
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                    batch_pointer: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t using discrete flow
         matching.
@@ -52,10 +53,14 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
-            Interpolated points x_t.
-        :rtype: tuple(torch.Tensor, torch.Tensor)
+            Interpolated points x_t, random variables z used for interpolation.
+        :rtype: tuple[torch.Tensor, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
         assert torch.all(x_0 == self._mask_index)  # Every atom should be masked in the initial state.
@@ -64,10 +69,10 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         x_t = x_1.clone()
         mask = torch.rand_like(x_1) < t
         x_t[mask] = self._mask_index
-        return x_t
+        return x_t, torch.zeros_like(x_t)
 
     def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor, n_atoms: torch.Tensor, z: torch.tensor) -> torch.Tensor:
+             x_1: torch.Tensor, z: torch.Tensor, batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the cross-entropy loss for the discrete flow matching between points x_0 and x_1 from two distributions
         p_0 and p_1 at times t based on the model prediction for the probability distributions over the species.
@@ -92,12 +97,13 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param n_atoms:
-            Number of atoms in each crystal from batch.
-        :type n_atoms: torch.Tensor
         :param z:
-            Random variable.
+            Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Cross-entropy loss.
