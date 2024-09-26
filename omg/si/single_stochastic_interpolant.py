@@ -67,7 +67,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: DifferentialEquationType, sde_number_time_steps: Optional[int] = None,
+                 differential_equation_type: str, sde_number_time_steps: Optional[int] = None,
                  corrector: Optional[Corrector] = None) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
@@ -81,6 +81,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         self._differential_equation_type = differential_equation_type
         self._sde_number_time_steps = sde_number_time_steps
         self._corrector = corrector if corrector is not None else self.IdentityCorrector()
+        try:
+            self._differential_equation_type = DifferentialEquationType(differential_equation_type)
+        except AttributeError:
+            raise ValueError("unknown differential equation type")
         if self._differential_equation_type == DifferentialEquationType.ODE:
             self.loss = self._ode_loss
             self.integrate = self._ode_integrate
