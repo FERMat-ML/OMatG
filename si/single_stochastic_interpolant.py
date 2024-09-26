@@ -361,7 +361,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             return out
 
         # SDE Integrator
-        x_t_new = sdeint.itoint(f, g, x_t, torch.linspace(tspan[0], tspan[1], self._sde_number_time_steps))
+        x_t_new = sdeint.itoint(f, g, x_t, np.linspace(tspan[0], tspan[1], self._sde_number_time_steps))
 
         # Return
         return torch.tensor(x_t_new[:, -1])
