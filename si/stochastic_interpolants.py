@@ -32,7 +32,7 @@ class StochasticInterpolants(object):
         If the number of stochastic interpolants and costs are not equal.
         If the number of stochastic interpolants and data fields are not equal.
         If the number of integration time steps is not positive.
-    """
+    """  # noqa: E501
 
     def __init__(self, stochastic_interpolants: Sequence[StochasticInterpolant], data_fields: Sequence[str],
                  costs: Sequence[float], integration_time_steps: int) -> None:
