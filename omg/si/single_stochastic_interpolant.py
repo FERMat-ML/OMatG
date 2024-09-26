@@ -250,10 +250,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         interp, z = self._interpolant.interpolate(t, x_0, x_1)
         interp_d, _ = self._interpolant.interpolate_derivative(t, x_0, x_1) 
         if self.antithetic:
-            x_t_p = interp + self._gamma.gamma(t) * z
-            x_t_m = interp - self._gamma.gamma(t) * z
-            expected_velocity_p = interp_d + self._gamma.gamma_derivative(t) * z
-            expected_velocity_m = interp_d - self._gamma.gamma_derivative(t) * z
+            x_t_p = interp
+            x_t_m = interp - 2 * self._gamma.gamma(t) * z   # Necessary to give x_t^- = I(t,x0,x1) - \gamma(t) * z
+            expected_velocity_p = interp_d
+            expected_velocity_m = interp_d - 2 * self._gamma.gamma_derivative(t) * z 
             loss = nn.functional.mse_loss(expected_velocity_p, model_prediction(x_t_p, t)[0]) + nn.functional.mse_loss(expected_velocity_m, model_prediction(x_t_m, t)[0])
         else:
             x_t = interp
@@ -261,7 +261,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             loss = nn.functional.mse_loss(expected_velocity, model_prediction(x_t, t)[0])
         return loss
 
-    def _sde_loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
+    def _sde_loss(self, model_prediction: Callable, t: torch.Tensor, x_0: torch.Tensor,
                   x_1: torch.Tensor, n_atoms: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the SDE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
@@ -294,10 +294,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         interp, z = self._interpolant.interpolate(t, x_0, x_1)
         interp_d, _ = self._interpolant.interpolate_derivative(t, x_0, x_1) 
         if self.antithetic:
-            x_t_p = interp + self._gamma.gamma(t) * z
-            x_t_m = interp - self._gamma.gamma(t) * z
-            expected_velocity_p = interp_d + self._gamma.gamma_derivative(t) * z
-            expected_velocity_m = interp_d - self._gamma.gamma_derivative(t) * z
+            x_t_p = interp 
+            x_t_m = interp - 2 * self._gamma.gamma(t) * z
+            expected_velocity_p = interp_d 
+            expected_velocity_m = interp_d - 2 * self._gamma.gamma_derivative(t) * z
             pred_b_p, pred_z = model_prediction(x_t_p, t)
             loss_b = nn.functional.mse_loss(expected_velocity_p, pred_b_p) + nn.functional.mse_loss(expected_velocity_m, model_prediction(x_t_m, t)[0])
         else:

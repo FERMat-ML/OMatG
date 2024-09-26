@@ -4,7 +4,7 @@ model:
     init_args:
       stochastic_interpolants:
         # chemical species
-        - class_path: omg.si.discrete_flow.DiscreteFlowMatchingMask
+        - class_path: omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask
           init_args:
             number_integration_steps: 100
             noise: 0.

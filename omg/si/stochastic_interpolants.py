@@ -91,7 +91,7 @@ class StochasticInterpolants(object):
                                                                            x_1_dict[data_field.name])
         return x_t
 
-    def loss(self, model_prediction: Data, t: torch.Tensor, x_0: Data, x_1: Data) -> torch.Tensor:
+    def loss(self, model_function: Callable[[torch.Tensor, Data], Data], t: torch.Tensor, x_0: Data, x_1: Data) -> torch.Tensor:
         """
         Compute the loss for the collection of stochastic interpolants between the collection of points x_0 and x_1 from
         a collection of distributions p_0 and p_1 at times t based on the collection of model predictions for the
@@ -102,10 +102,11 @@ class StochasticInterpolants(object):
 
         The loss returned by every stochastic interpolant is scaled by the corresponding cost factor.
 
-        :param model_prediction:
-            Collection of model predictions for the velocity fields b and the denoisers eta stored in a
+        :param model_function:
+            Model function returning the collection of velocity fields b and the denoisers eta stored in a
+            torch_geometric.data.Data object given the current times t and collection of points x_t stored in a
             torch_geometric.data.Data object.
-        :type model_prediction: torch_geometric.data.Data
+        :type model_function: Callable[[torch.Tensor, torch_geometric.data.Data], torch_geometric.data.Data]
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
@@ -126,19 +127,26 @@ class StochasticInterpolants(object):
         assert torch.equal(x_0.n_atoms, x_1.n_atoms)
         n_atoms = x_0.n_atoms
         total_loss = torch.tensor(0.0)
+        x_t = self.interpolate(t, x_0, x_1)
+        x_int = x_t.clone(*[data_field.name for data_field in self._data_fields])
+        x_int_dict = x_int.to_dict()
         for cost, stochastic_interpolant, data_field in zip(self._costs, self._stochastic_interpolants,
                                                             self._data_fields):
             b_data_field = data_field.name + "_b"
             eta_data_field = data_field.name + "_eta"
             assert data_field.name in x_0_dict
             assert data_field.name in x_1_dict
-            assert b_data_field in model_prediction
-            assert eta_data_field in model_prediction
             reshaped_t = reshape_t(t, n_atoms, data_field)
             assert reshaped_t.shape == x_0_dict[data_field.name].shape
+
+            def model_prediction_fn(x, t):
+                x_int_dict[data_field.name] = x
+                return model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
+
             total_loss += cost * stochastic_interpolant.loss(
-                (model_prediction[b_data_field], model_prediction[eta_data_field]),
-                reshaped_t, x_0_dict[data_field.name], x_1_dict[data_field.name], x_0.ptr)
+                model_prediction_fn, reshaped_t,
+                x_0_dict[data_field.name], x_1_dict[data_field.name], x_0.ptr
+            )
         return total_loss
 
     def integrate(self, x_0: Data, model_function: Callable[[torch.tensor, Data], Data]) -> Data:
