@@ -7,11 +7,11 @@ from omg.sampler.sampler import Sampler
 
 class OMG(L.LightningModule):
     """
-    Main module on which we call Trainer.fit and generate structures via generate function.
+    Main module which is fit and and used to generate structures using Lightning CLI.
     """
     
     # TODO: specify argument types
-    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module):
+    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module) -> None:
         self.si = si 
         self.sampler = sampler
         self.model = model
@@ -47,14 +47,13 @@ class OMG(L.LightningModule):
 
         x_0 = self.sampler.sample_p_0() # this might need x_1 as input so number of atoms are consistent 
         
-        # sample t uniformly for each structure`
+        # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms))
 
         x_t = self.si.interpolate(t, x_0, x_1)
         
-        pred = self.model(x_t, t)
+        pred = self(x_t, t)
         
-        # record loss
         loss = self.si.loss(pred, t, x_0, x_1) 
        
         return loss
@@ -66,14 +65,13 @@ class OMG(L.LightningModule):
 
         x_0 = self.sampler.sample_p_0() # this might need x_1 as input so number of atoms are consistent 
         
-        # sample t uniformly for each structure`
+        # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)) 
-        
+
         x_t = self.si.interpolate(t, x_0, x_1)
         
         pred = self.model(x_t, t)
         
-        # record loss
         loss = self.si.loss(pred, t, x_0, x_1) 
 
         return loss
