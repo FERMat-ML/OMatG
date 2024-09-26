@@ -60,9 +60,10 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         assert x_0.shape == x_1.shape
         assert torch.all(x_0 == self._mask_index)
         # Mask atoms based on t, see Eq. (6) in https://arxiv.org/pdf/2402.04997.
+        x_t = x_1.clone()
         mask = torch.rand_like(x_1) < t
-        x_1[mask] = self._mask_index
-        return x_1
+        x_t[mask] = self._mask_index
+        return x_t
 
     def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
              x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
@@ -208,11 +209,12 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         :rtype: tuple(torch.Tensor, torch.Tensor)
         """
         assert x_0.shape == x_1.shape
-        assert torch.all(x_0 == self._mask_index)
         # Mask atoms based on t, see Eq. (6) in https://arxiv.org/pdf/2402.04997.
+        x_t = x_1.clone()
+        uniform_noise = torch.randint(0, self.S, x_0.shape[-1])
         mask = torch.rand_like(x_1) < t
-        x_1[mask] = self._mask_index
-        return x_1
+        x_t[mask] = uniform_noise[mask]
+        return x_t
 
     def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
              x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
