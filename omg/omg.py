@@ -54,7 +54,7 @@ class OMG(L.LightningModule):
         
         pred = self(x_t, t)
         
-        loss = self.si.loss(pred, t, x_0, x_1) 
+        loss = self.si.loss(self.model, pred, t, x_0, x_1) 
        
         return loss
 
