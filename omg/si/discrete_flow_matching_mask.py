@@ -58,7 +58,8 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         :rtype: tuple(torch.Tensor, torch.Tensor)
         """
         assert x_0.shape == x_1.shape
-        assert torch.all(x_0 == self._mask_index)
+        assert torch.all(x_0 == self._mask_index)  # Every atom should be masked in the initial state.
+        assert torch.all(x_1 != self._mask_index)  # No atom should be masked in the final state.
         # Mask atoms based on t, see Eq. (6) in https://arxiv.org/pdf/2402.04997.
         x_t = x_1.clone()
         mask = torch.rand_like(x_1) < t
@@ -77,7 +78,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
 
         Given that x_0 is of shape (sum(n_atoms),) containing the species of every atom in the batch, the model
         prediction returns a tensor of shape (sum(n_atoms), MAX_ATOM_NUM - 1) containing the probability distribution
-        over the species (excluding the mask) of every atom in the batch.
+        over the species (excluding the mask with token 0) of every atom in the batch.
 
         :param model_prediction:
             Model prediction for the probablity distributions over the species.
@@ -103,8 +104,12 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
+        assert torch.all(x_0 == self._mask_index)  # Every atom should be masked in the initial state.
+        assert torch.all(x_1 != self._mask_index)  # No atom should not be masked in the final state.
         assert model_prediction[0].shape == (x_0.shape[0], MAX_ATOM_NUM - 1)
-        return functional.cross_entropy(model_prediction[0], x_1)
+        # model_prediction[0][a_i, j] is the probability of atom a_i being of species j + 1.
+        # In order to compute the cross-entropy loss, we need to correct for the shift of the species in x_1.
+        return functional.cross_entropy(model_prediction[0], x_1 - 1)
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
@@ -148,15 +153,16 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
-        # Iterate time
-        t = tspan[0]
-        dt = (tspan[1] - tspan[0]) / self._number_integration_steps
+        # Iterate time.
+        t = torch.tensor(tspan[0])
+        dt = torch.tensor((tspan[1] - tspan[0]) / self._number_integration_steps)
         eps = torch.finfo(torch.float64).eps
         for _ in range(self._number_integration_steps):
             # Predict x1 for the flattened sequence
             x_1_probs = functional.softmax(model_function(t, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM - 1).
             # Sample from distribution for every of the sum(n_atoms) elements.
-            x_1 = Categorical(x_1_probs).sample()  # Shape (sum(n_atoms),)
+            # Shift the atom type by one to get the real species.
+            x_1 = Categorical(x_1_probs).sample() + 1  # Shape (sum(n_atoms),)
             assert x_1.shape == x_t.shape
             x_1_hot = functional.one_hot(x_1, num_classes=MAX_ATOM_NUM)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
             # Shape (1, MAX_ATOM_NUM).
@@ -179,12 +185,12 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
             rate[pt == 0.0] = 0.0
 
             # Add noise if present.
-            R_db = torch.zeros_like(rate)
+            rate_db = torch.zeros_like(rate)
             if self._noise > 0.0:
-                R_db[x_t == x_1] = 1.0
-                R_db[x_1 != x_t] = ((MAX_ATOM_NUM * t) + 1.0 - t) / (1.0 - t + eps)
-                R_db *= self._noise
-            rate += R_db
+                rate_db[x_t == x_1] = 1.0
+                rate_db[x_1 != x_t] = ((MAX_ATOM_NUM * t) + 1.0 - t) / (1.0 - t + eps)
+                rate_db *= self._noise
+            rate += rate_db
 
             # Don't mask on the final step.
             if abs(t + dt - 1.0) < 1e-6:
@@ -200,155 +206,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
 
             t += dt
 
-        return x_t
+            if abs(t + dt - 1.0) < 1e-6:
+                assert torch.all(x_t != self._mask_index)
 
-
-class DiscreteFlowMatchingUniform(StochasticInterpolant):
-    """
-    Class for discrete flow matching (DFM) between categorical distributions based on https://arxiv.org/pdf/2402.04997.
-
-    This class is currently designed for uniform base distributions p_0 for the points x_0.
-
-    :param number_integration_steps:
-        Number of integration steps.
-    :type number_integration_steps: int
-    :param noise:
-        Parameter scaling the noise that should be added during integration.
-    :type noise: float
-
-    :raises ValueError:
-        If the number of integration steps is less than or equal to 0 or the noise is less than 0.
-    """
-
-    def __init__(self, number_integration_steps: int, noise: float = 0.0) -> None:
-        """
-        Construct DiscreteFlowMatchingMask class.
-        """
-        super().__init__()
-        if number_integration_steps <= 0:
-            raise ValueError("Number of integration steps must be greater than 0.")
-        if noise < 0.0:
-            raise ValueError("Noise parameter must be greater than or equal to 0.")
-        self.S = MAX_ATOM_NUM - 1
-        self._number_integration_steps = number_integration_steps
-        self._noise = noise
-
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
-        """
-        Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t using discrete flow
-        matching.
-
-        The base points x_0 are expected to be entirely in the masked state.
-
-        :param t:
-            Times in [0,1].
-        :type t: torch.Tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.Tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.Tensor
-
-        :return:
-            Interpolated points x_t.
-        :rtype: tuple(torch.Tensor, torch.Tensor)
-        """
-        assert x_0.shape == x_1.shape
-        # Mask atoms based on t, see Eq. (6) in https://arxiv.org/pdf/2402.04997.
-        x_t = x_1.clone()
-        uniform_noise = torch.randint(0, self.S, x_0.shape[-1])
-        mask = torch.rand_like(x_1) < t
-        x_t[mask] = uniform_noise[mask]
-        return x_t
-
-    def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor, n_atoms: torch.Tensor) -> torch.Tensor:
-        """
-        Cross entropy loss function for discrete flow matching.
-
-        # TODO: ASK TOM WHAT THE MODEL_PREDICTION SHOULD BE?
-
-        :param model_prediction:
-            Predicted final composition.
-        :type model_prediction: tuple[torch.Tensor, torch.Tensor]
-        :param t:  
-            Times in [0,1]
-        :type t: torch.Tensor
-        :param x_0: 
-            Points from p_0.
-        :type x_0: torch.Tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.Tensor
-
-        :return:
-            Loss.
-        :rtype: torch.Tensor
-        """
-        return functional.cross_entropy(model_prediction, x_1)
-
-    def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                  x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
-        """
-        Integrate the current positions x_t from time tspan[0] to tspan[1] based on the predicted x_1.
-        Implementation is based on https://arxiv.org/pdf/2402.04997. We construct rate matrix R by:
-            R(i,j|x_1) = ReLU((dp(j|x_1)/dt) - (dp(x_t|x_1)) / (S * p(x_t|x_1))
-        and add noise via "detailed balance" rate matrices R_db (see appendix):
-            R_db(i,j|x_1) = eta * delta(i,x_1) + eta * delta(j, x_1) * (St + 1 - t) / (1 - t) 
-
-        :param model_function:
-            Model function returning the velocity fields b and the denoisers eta given the current times t and positions
-            x_t.
-        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
-        :param x_t:
-            Current positions.
-        :type x_t: torch.Tensor
-        :param tspan:
-            Time span for integration.
-        :type tspan: tuple[float, float]
-
-        :return:
-            Integrated position.
-        :rtype: torch.Tensor
-        """
-        # Iterate time
-        dt = (tspan[-1] - tspan[0]) / self._number_integration_steps
-        eps = torch.finfo(torch.float64).eps
-        for t in torch.arange(0, 1, dt):
-
-            # Predict x1 for the flattened sequence
-            x_1_probs = functional.softmax(model_function(t, x_t)[0])
-            x_1 = Categorical(x_1_probs) - 1
-            x_1_hot = functional.one_hot(x_1, num_classes=self.S)
-            dpt = x_1 - (1 / self.S)
-            dpt_xt = dpt.gather(-1, x_t[:, None]).squeeze(-1)
-
-            # Compute pt: linear interpolation based on t
-            # TODO: consider adding functionality to use other types of interpolants
-            pt = (t * x_1_hot) + (1 - t) * (1 / self.S)
-            pt_xt = pt.gather(-1, x_t[:, None]).squeeze(-1)
-
-            # Compute the rate R
-            R = functional.relu(dpt - dpt_xt[:, None]) / (self.S * pt_xt[:, None])
-            R[(pt_xt == 0.0)[:, None].repeat(1, self.S)] = 0.0
-            R[pt == 0.0] = 0.0
-
-            # Add noise if present
-            if self._noise > 0.0:
-                R_db = torch.zeros_like(R)
-                R_db[x_t == x_1] = 1
-                R_db[x_1 != x_t] = ((self.S * t) + 1 - t) / (1 - t + eps)
-                R_db *= self._noise
-
-            # Compute step probabilities and sample
-            R += R_db
-            step_probs = (R * dt).clamp(max=1.0)
-            step_probs.scatter_(-1, x_t[:, None], 0.0)
-            step_probs.scatter_(-1, x_t[:, None], 1.0 - step_probs.sum(dim=-1, keepdim=True)).clamp(min=0.0)
-
-            # Sample the next x_t
-            x_t = Categorical(step_probs).sample() + 1
-
-        # Return x_t
         return x_t
