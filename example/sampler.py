@@ -6,7 +6,7 @@ from functools import partial
 np.random.seed(0)
 
 
-dm = DataModule.from_lmdb("./example.lmdb")
+dm = DataModule(["./example.lmdb"])
 
 # Sample from the dataset
 sampler = SampleFromDataset(dm, batch_size=3)

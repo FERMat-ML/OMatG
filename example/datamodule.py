@@ -1,7 +1,7 @@
 from omg.datamodule import DataModule
 
 # 1. direct lmdb loading
-ds = DataModule.from_lmdb(["example.lmdb"], dynamic_loading=True)
+ds = DataModule(["example.lmdb"])
 print(ds[0].coords)
 
 ds.cleanup()
