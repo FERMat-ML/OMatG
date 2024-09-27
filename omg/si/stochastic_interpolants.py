@@ -41,7 +41,7 @@ class StochasticInterpolants(object):
         if not len(stochastic_interpolants) == len(data_fields):
             raise ValueError("The number of stochastic interpolants and data fields must be equal.")
         try:
-            self._data_fields = (DataField(data_field.lower()) for data_field in data_fields)
+            self._data_fields = (DataField[data_field.lower()] for data_field in data_fields)
         except AttributeError:
             raise ValueError(f"All data fields must be in {[d.name for d in DataField]}.")
         if not len(costs) == len(stochastic_interpolants):
