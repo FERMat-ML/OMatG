@@ -102,7 +102,7 @@ class OMG(L.LightningModule):
         return loss
 
     # TODO: what do we want to return
-    def predict_step(self):
+    def predict_step(self, x):
         """
         Performs generation
         """

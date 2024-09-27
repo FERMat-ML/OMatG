@@ -76,4 +76,6 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/train.lmdb"
+  predict_dataset:
+    class_path: omg.datamodule.dataloader.NullDataset
   batch_size: 2

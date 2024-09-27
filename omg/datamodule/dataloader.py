@@ -169,14 +169,26 @@ def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch
                                             num_workers=num_workers)
     return lightning_datamodule
 
+
+class NullDataset(Dataset):
+    def __init__(self,):
+        super().__init__()
+
+    def get(self, idx: int) -> int:
+        return idx
+
+    def len(self,):
+        return 1
+
 class OMGDataModule(L.LightningDataModule):
     """
     Need to do this because LightningDataset doesn't directly subclass LightningDataModule
     """
-    def __init__(self, train_dataset, val_dataset = None, **kwargs):
+    def __init__(self, train_dataset, val_dataset = None, predict_dataset = None, **kwargs):
         super().__init__()
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
+        self.predict_dataset = predict_dataset
         if self.val_dataset is None:
             self.val_dataloader = None
         self.kwargs = kwargs
@@ -202,3 +214,6 @@ class OMGDataModule(L.LightningDataModule):
         kwargs.pop('sampler', None)
         kwargs.pop('batch_sampler', None)
         return self.dataloader(self.val_dataset, shuffle=False, **kwargs)
+
+    def predict_dataloader(self) -> DataLoader:
+        return self.dataloader(self.predict_dataset)
