@@ -20,6 +20,7 @@ class OMG(L.LightningModule):
         self.sampler = sampler
         model = model.double()
         self.model = model
+        print (self.state_dict)
         if not len(relative_si_costs) == len(self.si):
             raise ValueError("The number of stochastic interpolants and costs must be equal.")
         if not all(cost >= 0.0 for cost in relative_si_costs):
@@ -28,7 +29,7 @@ class OMG(L.LightningModule):
             raise ValueError("The sum of all cost factors must be approximately equal to 1.")
         self._relative_si_costs = relative_si_costs
         if load_checkpoint:
-            checkpoint = torch.load(load_checkpoint)
+            checkpoint = torch.load(load_checkpoint, map_location=self.device)
             self.load_state_dict(checkpoint['state_dict'])
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
@@ -99,15 +100,16 @@ class OMG(L.LightningModule):
         total_loss = torch.tensor(0.0, device=self.device)
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
-            losses[loss_key] = cost * losses[loss_key]
+            losses[f"val_{loss_key}"] = cost * losses[loss_key]
             total_loss += losses[loss_key]
+            losses.pop(loss_key)
 
         assert "loss_total" not in losses
-        losses["loss_total"] = total_loss
+        losses["val_loss_total"] = total_loss
 
         self.log_dict(
             losses,
-            on_step=True,
+            on_step=False,
             on_epoch=True,
             prog_bar=True,
         )
