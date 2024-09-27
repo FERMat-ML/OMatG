@@ -59,7 +59,7 @@ class OMG(L.LightningModule):
             Loss from training step
         :rtype: torch.Tensor
         """
-        x_0 = self.sampler.sample_p_0(x_1).to(self.device) # this might need x_1 as input so number of atoms are consistent
+        x_0 = self.sampler.sample_p_0(x_1).to(self.device) 
 
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)
@@ -89,19 +89,30 @@ class OMG(L.LightningModule):
         Performs one validation step given a batch of x_1
         """
 
-        x_0 = self.sampler.sample_p_0() # this might need x_1 as input so number of atoms are consistent 
-        
+        x_0 = self.sampler.sample_p_0(x_1).to(self.device) 
+
         # sample t uniformly for each structure
-        t = torch.rand(len(x_1.n_atoms)) 
+        t = torch.rand(len(x_1.n_atoms)).to(self.device)
 
-        x_t = self.si.interpolate(t, x_0, x_1)
-        
-        pred = self.model(x_t, t)
-        
-        loss = self.si.losses(pred, t, x_0, x_1)
+        losses = self.si.losses(self.model, t, x_0, x_1)
 
-        return loss
+        total_loss = torch.tensor(0.0, device=self.device)
 
+        for cost, loss_key in zip(self._relative_si_costs, losses):
+            losses[loss_key] = cost * losses[loss_key]
+            total_loss += losses[loss_key]
+
+        assert "loss_total" not in losses
+        losses["loss_total"] = total_loss
+
+        self.log_dict(
+            losses,
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+        )
+
+        return total_loss
     # TODO: what do we want to return
     def predict_step(self, x):
         """
