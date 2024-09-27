@@ -4,7 +4,7 @@ model:
     init_args:
       stochastic_interpolants:
         # chemical species
-        - class_path: omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask
+        - class_path: omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform
           init_args:
             number_integration_steps: 100
             noise: 0.
@@ -76,3 +76,4 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/train.lmdb"
+  batch_size: 2
