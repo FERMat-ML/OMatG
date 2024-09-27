@@ -3,7 +3,7 @@ from functools import partial
 
 import torch
 
-import numpy as np
+# import numpy as np
 
 from .sampler import Sampler
 from ..datamodule.dataloader import OMGData
@@ -29,12 +29,12 @@ class SampleFromRNG(Sampler):
     functools.partial can be used to create a sampler with fixed arguments
 
     Example:
-        import numpy as np
+        import torch
 
-        rng = np.random.default_rng()
-        species_rng = partial(rng.integers, low=1, high=118)
-        pos_rng = partial(rng.uniform, low=0.0, high=1.0)
-        cell_rng = partial(rng.lognormal, loc=1.0, scale=1.0)
+        rng = torch.Generator()
+        species_rng = lambda size: torch.randint(1, 92, size=size, generator=rng)
+        pos_rng = lambda size: torch.rand(size=size, generator=rng)
+        cell_rng = lambda size: torch.randn(size=size, generator=rng)
 
         sampler = SampleFromDistributions([species_rng, pos_rng, cell_rng])
 
@@ -42,8 +42,7 @@ class SampleFromRNG(Sampler):
         RuntimeError: If the distributions > 3
     """
 
-    def __init__(self, distributions: Union[
-        None, np.random.Generator, List[np.random.Generator]] = None,
+    def __init__(self, distributions: Union[List[Callable], torch.Generator] = None,
                  n_particle_sampler: Union[int, Callable] = 1,
                  convert_to_fractional: bool = True,
                  batch_size: int = 1):
@@ -55,14 +54,14 @@ class SampleFromRNG(Sampler):
                 raise RuntimeError("Cannot sample from more than 3 distributions")
             self.distribution = distributions
 
-        elif isinstance(distributions, np.random.Generator):
+        elif isinstance(distributions, Callable):
             self.distribution = [distributions, distributions, distributions]
 
         elif distributions is None:
-            rng = np.random.default_rng()
-            _species_sampler = partial(rng.integers, low=1, high=MAX_ATOMIC_NUMBER)
-            _pos_sampler = partial(rng.uniform, low=0.0, high=1.0)
-            _cell_sampler = partial(rng.normal, loc=1.0, scale=1.0)
+            rng = torch.Generator()
+            _species_sampler = lambda size: torch.randint(1, MAX_ATOMIC_NUMBER, size=size, generator=rng)
+            _pos_sampler = lambda size: torch.rand(size=size, generator=rng)
+            _cell_sampler = lambda size: torch.randn(size=size, generator=rng)
             self.distribution = [_species_sampler, _pos_sampler, _cell_sampler]
 
         else:
@@ -91,19 +90,19 @@ class SampleFromRNG(Sampler):
 
         configs = []
         for i in range(len(n)):
-            species = self.distribution[0](size=n[i].item())
+            species = self.distribution[0](size=n[i])
 
-            pos = self.distribution[1](size=(n[i].item(), 3))
-            pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
+            pos = self.distribution[1](size=(n[i], 3))
+            # pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
 
             lattice_ = self.distribution[2](size=6)
-            cell = np.zeros((3,3))
-            cell[np.triu_indices(3)] = lattice_
+            cell = torch.zeros((3,3))
+            cell[torch.triu_indices(3)] = lattice_
             cell = cell + cell.T # TODO: A27 equation looks redundant.
 
             # its already [0,1) fractional coordinates so no need to convert
             if not self._frac:
-                pos = np.dot(pos, cell)
+                pos = torch.dot(pos, cell)
 
             configs.append(OMGData.from_data(species, pos, cell, convert_to_fractional=False))
 

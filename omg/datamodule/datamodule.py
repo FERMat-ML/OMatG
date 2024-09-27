@@ -10,7 +10,8 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import pickle as pkl
 import lmdb
-import numpy as np
+import torch
+# import numpy as np
 from loguru import logger
 from monty.dev import requires
 from tqdm import tqdm
@@ -55,9 +56,9 @@ class Configuration:
 
     def __init__(
         self,
-        cell: np.ndarray,
+        cell: torch.Tensor,
         species: List[str],
-        coords: np.ndarray,
+        coords: torch.Tensor,
         PBC: List[bool],
         identifier: Optional[Union[str, Path]] = None,
         property_dict: Optional[Dict] = {},
@@ -107,12 +108,12 @@ class Configuration:
                 "Looks like Mongo database did not return appropriate response. "
                 f"Please run db.configurations.find('_id':{data_object}) to verify response. "
             )
-        cell = np.asarray(fetched_configuration["cell"])
+        cell = torch.asarray(fetched_configuration["cell"])
         # TODO: consistent Z -> symbol mapping -> Z mapping across all kliff
         species = [
             chemical_symbols[int(i)] for i in fetched_configuration["atomic_numbers"]
         ]
-        coords = np.asarray(fetched_configuration["positions"])
+        coords = torch.asarray(fetched_configuration["positions"])
         PBC = [bool(i) for i in fetched_configuration["pbc"]]
 
         self = cls(
@@ -230,7 +231,7 @@ class Configuration:
             config.metadata = {"lmdb-env": env}
 
     @property
-    def cell(self) -> np.ndarray:
+    def cell(self) -> torch.Tensor:
         """
         3x3 matrix of the lattice vectors of the configurations.
         """
@@ -252,7 +253,7 @@ class Configuration:
         return self._species
 
     @property
-    def coords(self) -> np.ndarray:
+    def coords(self) -> torch.Tensor:
         """
         A Nx3 matrix of the Cartesian coordinates of all atoms.
         """
@@ -340,7 +341,7 @@ class Configuration:
         """
         Return volume of the configuration.
         """
-        return abs(np.dot(np.cross(self.cell[0], self.cell[1]), self.cell[2]))
+        return abs(torch.dot(torch.cross(self.cell[0], self.cell[1]), self.cell[2]))
 
     def count_atoms_by_species(
         self, symbols: Optional[List[str]] = None
@@ -357,7 +358,7 @@ class Configuration:
                 atoms with each species.
         """
 
-        unique, counts = np.unique(self.species, return_counts=True)
+        unique, counts = torch.unique(self.species, return_counts=True)
         symbols = unique if symbols is None else symbols
 
         natoms_by_species = dict()
@@ -377,8 +378,8 @@ class Configuration:
         species, coords = zip(
                 *sorted(zip(self.species, self.coords), key=lambda pair: pair[0])
         )
-        self._species = np.asarray(species)
-        self._coords = np.asarray(coords)
+        self._species = torch.asarray(species)
+        self._coords = torch.asarray(coords)
 
     @staticmethod
     def _get_colabfit_property(
@@ -807,7 +808,7 @@ class DataModule:
             checksum: Checksum for the dataset.
         """
         if dynamic_loading:
-            self._configs = np.array([], dtype=int)
+            self._configs = torch.asarray([], dtype=torch.int64)
             self.add_metadata({"dynamic": True})
 
         path = [path] if isinstance(path, (str, Path)) else path
@@ -828,7 +829,7 @@ class DataModule:
             )
             with master_lmdb_env.begin() as txn:
                 n_configs = txn.stat()["entries"]
-            self._configs = np.arange(n_configs, dtype=int)
+            self._configs = torch.arange(n_configs, dtype=torch.int64)
             logger.info(f"Reusing existing LMDB file: {master_lmdb}")
             process_configs = False
         else:
@@ -853,17 +854,18 @@ class DataModule:
             if dynamic_loading:
                 self.metadata.setdefault("lmdb_envs", []).append(env)
                 if process_configs:
-                    configs_idx = np.arange(
-                        len(self._configs), len(self._configs) + len(configs), dtype=int
+                    configs_idx = torch.arange(
+                        len(self._configs), len(self._configs) + len(configs), dtype=torch.int64
                     )
-                    self._configs = np.append(self._configs, configs_idx)
+                    self._configs = torch.cat((self._configs, configs_idx), dim=0)
                     with self.metadata["master_env"].begin(write=True) as txn:
 
                         print(f"Adding {len(configs)} configurations to LMDB from {lmdb_path}")
                         pbar = tqdm(total=len(configs))
                         for i, keys in zip(configs_idx, configs):
+                            i_ = i.item() if isinstance(i, torch.Tensor) else i
                             idx = {"lmdb_env": f"{lmdb_idx}", "config_key": f"{keys}"}
-                            txn.put(str(i).encode(), pkl.dumps(idx))
+                            txn.put(str(i_).encode(), pkl.dumps(idx))
                             pbar.update(1)
             else:
                 self._configs.extend(configs)
@@ -896,7 +898,7 @@ class DataModule:
 
         if not dynamic_loading:
             configs = [
-                Configuration.from_lmdb(env, key, dynamic=False, property_leys=property_keys) for key in keys
+                Configuration.from_lmdb(env, key, dynamic=False, property_keys=property_keys) for key in keys
             ]
         else:
             configs = keys
@@ -930,7 +932,7 @@ class DataModule:
         return len(self._configs)
 
     def __getitem__(
-        self, idx: Union[int, np.ndarray, List]
+        self, idx: Union[int, torch.Tensor, List]
     ) -> Union[Configuration, "DataModule"]:
         """
         Get the configuration at index `idx`. If the index is a list, it returns a new
@@ -1096,7 +1098,6 @@ class DataModule:
         dataset_type = dataset_manifest.get("type").lower()
         if (
             dataset_type != "ase"
-            and dataset_type != "path"
             and dataset_type != "colabfit"
             and dataset_type != "lmdb"
         ):

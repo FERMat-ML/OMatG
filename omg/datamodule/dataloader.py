@@ -1,10 +1,10 @@
 import os
 from typing import Dict, Any
 
-import numpy as np
+# import numpy as np
 from torch_geometric.data import Data, Dataset
 import torch
-from .datamodule import Configuration
+from .datamodule import Configuration, DataModule
 from ase.data import atomic_numbers
 from torch_geometric.data.lightning import LightningDataset
 
@@ -68,12 +68,12 @@ class OMGData(Data):
         graph.batch = torch.zeros(n_atoms, dtype=torch.int64)
         graph.species = torch.tensor([atomic_numbers[z] for z in config.species], dtype=torch.int64)
 
-        if isinstance(config.cell, np.ndarray):
+        if not isinstance(config.cell, torch.Tensor):
             graph.cell = torch.from_numpy(config.cell)
         else:
             graph.cell = config.cell
 
-        if isinstance(config.coords, np.ndarray):
+        if not isinstance(config.coords, torch.Tensor):
             graph.pos = torch.from_numpy(config.coords)
         else:
             graph.pos = config.coords
@@ -89,7 +89,7 @@ class OMGData(Data):
         return graph
 
     @classmethod
-    def from_data(cls, species, pos, cell, convert_to_fractional=True):
+    def from_data(cls, species, pos, cell, property_dict={}, convert_to_fractional=True):
         """
         Create a OMGData object from the atomic species, positions and cell vectors.
 
@@ -113,12 +113,12 @@ class OMGData(Data):
         else:
             graph.species = torch.tensor(species, dtype=torch.int64)
 
-        if isinstance(cell, np.ndarray):
+        if not isinstance(cell, torch.Tensor):
             graph.cell = torch.from_numpy(cell)
         else:
             graph.cell = cell
 
-        if isinstance(pos, np.ndarray):
+        if not isinstance(pos, torch.Tensor):
             graph.pos = torch.from_numpy(pos)
         else:
             graph.pos = pos
@@ -126,6 +126,8 @@ class OMGData(Data):
         if convert_to_fractional:
             with torch.no_grad():
                 graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell).to(graph.pos.dtype))
+
+        graph.property = property_dict
 
         graph.cell = graph.cell.unsqueeze(0)
         return graph
@@ -137,7 +139,7 @@ class OMGTorchDataset(Dataset):
     the use of :class:`omg.datamodule.Dataset` as a data source for the graph based models.
     """
 
-    def __init__(self, dataset: Dataset, transform=None, convert_to_fractional=True):
+    def __init__(self, dataset: DataModule, transform=None, convert_to_fractional=True):
         super().__init__("./", transform, None, None)
         self.dataset = dataset
         self.convert_to_fractional = convert_to_fractional
