@@ -455,7 +455,7 @@ class DataModule:
         configurations: A list of :class:`~kliff.dataset.Configuration` objects.
     """
 
-    def __init__(self, lmdb_paths=None):
+    def __init__(self, lmdb_paths=None, property_keys=None):
         # if configurations is None:
         #     self._configs = []
         # elif isinstance(configurations, Iterable) and not isinstance(
@@ -472,7 +472,7 @@ class DataModule:
         self._property_keys = None
 
         if lmdb_paths is not None:
-            self.from_lmdb(lmdb_paths)
+            self.from_lmdb(lmdb_paths, property_keys=property_keys)
 
 
     @classmethod
