@@ -47,11 +47,10 @@ class OMG(L.LightningModule):
             Loss from training step
         :rtype: torch.Tensor
         """
-
-        x_0 = self.sampler.sample_p_0(x_1) # this might need x_1 as input so number of atoms are consistent
+        x_0 = self.sampler.sample_p_0(x_1).to(self.device) # this might need x_1 as input so number of atoms are consistent
         
         # sample t uniformly for each structure
-        t = torch.rand(len(x_1.n_atoms))
+        t = torch.rand(len(x_1.n_atoms)).to(self.device)
 
         loss = self.si.loss_from_interpolation(self.model, t, x_0, x_1)
 

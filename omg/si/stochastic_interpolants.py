@@ -135,7 +135,7 @@ class StochasticInterpolants(object):
         assert torch.equal(x_0.ptr, x_1.ptr)
         assert torch.equal(x_0.n_atoms, x_1.n_atoms)
         n_atoms = x_0.n_atoms
-        total_loss = torch.tensor(0.0)
+        total_loss = torch.tensor(0.0,device=n_atoms.device)
         for cost, stochastic_interpolant, data_field in zip(self._costs, self._stochastic_interpolants,
                                                             self._data_fields):
             b_data_field = data_field.name + "_b"
