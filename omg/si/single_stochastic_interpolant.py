@@ -80,7 +80,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         self._sde_number_time_steps = sde_number_time_steps
         self._corrector = corrector if corrector is not None else self.IdentityCorrector()
         try:
-            self._differential_equation_type = DifferentialEquationType(differential_equation_type)
+            self._differential_equation_type = DifferentialEquationType[differential_equation_type]
         except AttributeError:
             raise ValueError(f"Unknown differential equation type f{differential_equation_type}.")
         if self._differential_equation_type == DifferentialEquationType.ODE:
