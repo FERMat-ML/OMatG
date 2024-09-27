@@ -191,7 +191,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         return interpolate_derivative
 
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-             t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
+             t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
              batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
@@ -212,6 +212,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param x_t:
+            Stochastically interpolated points x_t.
+        :type x_t: torch.Tensor
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
@@ -227,7 +230,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         raise NotImplementedError
 
     def _ode_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                  t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
+                  t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
                   batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the ODE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
@@ -245,6 +248,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param x_t:
+            Stochastically interpolated points x_t.
+        :type x_t: torch.Tensor
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
@@ -263,6 +269,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         if self._use_antithetic:
             assert self._gamma is not None
             x_t_p = x_t_without_gamma + self._gamma.gamma(t) * z
+            assert torch.equal(x_t, x_t_p)
             x_t_m = x_t_without_gamma - self._gamma.gamma(t) * z
             expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
             expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
@@ -270,11 +277,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
                     + nn.functional.mse_loss(expected_velocity_m, model_function(x_t_m)[0])) / 2.0
         else:
             assert self._gamma is None
+            assert torch.equal(x_t, x_t_without_gamma)
             loss = nn.functional.mse_loss(expected_velocity_without_gamma, model_function(x_t_without_gamma)[0])
         return loss
 
     def _sde_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                  t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
+                  t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
                   batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the SDE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
@@ -292,6 +300,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param x_t:
+            Stochastically interpolated points x_t.
+        :type x_t: torch.Tensor
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
@@ -310,6 +321,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         if self._use_antithetic:
             assert self._gamma is not None
             x_t_p = x_t_without_gamma + self._gamma.gamma(t) * z
+            assert torch.equal(x_t, x_t_p)
             x_t_m = x_t_without_gamma - self._gamma.gamma(t) * z
             expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
             expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
@@ -318,6 +330,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
                       + nn.functional.mse_loss(expected_velocity_m, model_function(x_t_m)[0])) / 2.0
         else:
             assert self._gamma is None
+            assert torch.equal(x_t, x_t_without_gamma)
             pred_b, pred_z = model_function(x_t_without_gamma)
             loss_b = nn.functional.mse_loss(expected_velocity_without_gamma, pred_b)
 
