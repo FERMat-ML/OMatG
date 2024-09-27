@@ -13,10 +13,16 @@ CSPNet):
 
 ## Training
 
-Run the following command to train:
+Run the following command to train from scratch:
 
 ```bash
 python scripts/main.py fit --config omg/conf_examples/test_config.yaml --trainer.accelerator=cpu
+```
+
+Run the following command to restart training from a checkpoint:
+
+```bash
+python scripts/main.py fit --config omg/conf_examples/test_config.yaml --trainer.accelerator=cpu --model.load_checkpoint=<checkpoint_file.ckpt> 
 ```
 
 ## TODO
