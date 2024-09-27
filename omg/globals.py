@@ -3,6 +3,8 @@ import torch
 
 # Global variables
 MAX_ATOM_NUM = 92
+SMALL_TIME = 0.001
+BIG_TIME = 1.0 - SMALL_TIME
 
 
 class DataField(Enum):

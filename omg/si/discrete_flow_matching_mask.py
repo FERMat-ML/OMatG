@@ -2,7 +2,7 @@ from typing import Callable
 import torch
 from torch.distributions import Categorical
 import torch.nn.functional as functional
-from omg.globals import MAX_ATOM_NUM
+from omg.globals import MAX_ATOM_NUM, BIG_TIME
 from .abstracts import StochasticInterpolant
 
 
@@ -204,7 +204,8 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
             rate += rate_db
 
             # Don't mask on the final step.
-            if abs(t + dt - 1.0) < 1e-6:
+            if abs(t + dt - BIG_TIME) < 1e-6:
+                assert len(rate.shape) == 2
                 rate[:, 0] = 0.0
 
             # Compute step probabilities and sample.
@@ -217,7 +218,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
 
             t += dt
 
-            if abs(t + dt - 1.0) < 1e-6:
+            if abs(t + dt - BIG_TIME) < 1e-6:
                 assert torch.all(x_t != self._mask_index)
 
         return x_t

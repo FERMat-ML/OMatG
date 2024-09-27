@@ -1,7 +1,7 @@
 import torch
 from torch_geometric.data import Data
 from typing import Callable, Sequence
-from omg.globals import reshape_t, DataField
+from omg.globals import reshape_t, DataField, SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
 
 
@@ -182,7 +182,7 @@ class StochasticInterpolants(object):
             Collection of integrated points x_1 stored in a torch_geometric.data.Data object.
         :rtype: torch_geometric.data.Data
         """
-        times = torch.linspace(0.0, 1.0, self._integration_time_steps)
+        times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps)
         x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
         new_x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
         x_t_dict = x_t.to_dict()
