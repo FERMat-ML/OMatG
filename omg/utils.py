@@ -1,4 +1,5 @@
 import torch
+from enum import Enum, auto
 
 class DataField(Enum):
     pos = auto()
