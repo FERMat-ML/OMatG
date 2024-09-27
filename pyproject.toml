@@ -8,7 +8,7 @@ readme = "README.md"
 requires-python = ">=3.9,<3.13"
 version = "0.0.1"
 dependencies = [
-    "torch ~= 2.4",
+    "torch == 2.4.0",
     "lightning ~= 2.4",
     "torch_geometric ~= 2.6",
     "numpy ~= 1.26",
@@ -18,6 +18,7 @@ dependencies = [
     "loguru ~= 0.7",
     "monty ~= 2024.7",
     "ase ~= 3.23",
+    "jsonargparse ~= 4.33",
     "jsonargparse[signatures] ~= 4.27",
     "lightning[pytorch-extra]"
 ]
