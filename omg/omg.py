@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch import optim
 from typing import Optional, Sequence
 from omg.sampler.sampler import Sampler
-from omg.model.model_utils import xyz_saver 
+from omg.utils import xyz_saver 
 
 class OMG(L.LightningModule):
     """
