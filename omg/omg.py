@@ -2,6 +2,7 @@ from omg.si.stochastic_interpolants import StochasticInterpolants
 import lightning as L
 import torch
 import torch.nn as nn
+from torch import optim
 from typing import Sequence
 from omg.sampler.sampler import Sampler
 
@@ -86,6 +87,11 @@ class OMG(L.LightningModule):
         gen = self.si.integrate(x_0, self.model)
         # probably want to turn structure back into some other object that's easier to work with
         return gen
+
+    #TODO allow for YAML config
+    def configure_optimizers(self):
+        optimizer = optim.Adam(self.parameters(), lr=1e-3)
+        return optimizer
 
 
 
