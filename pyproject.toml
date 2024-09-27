@@ -18,5 +18,6 @@ dependencies = [
     "loguru ~= 0.7",
     "monty ~= 2024.7",
     "ase ~= 3.23",
-    "jsonargparse ~= 4.33"
+    "jsonargparse[signatures] ~= 4.27",
+    "lightning[pytorch-extra]"
 ]
