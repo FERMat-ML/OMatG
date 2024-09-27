@@ -75,4 +75,4 @@ data:
         class_path: omg.datamodule.datamodule.DataModule
         init_args:
           lmdb_paths:
-           - "/Users/efuemmel/projects/omg/data/mp_20/train.lmdb"
+           - "data/mp_20/train.lmdb"
