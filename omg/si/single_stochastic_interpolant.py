@@ -33,8 +33,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     The stochastic interpolant can either use an ordinary differential equation (ODE) or a stochastic differential
     equation during inference. If an SDE is used, one should additionally provide an epsilon function epsilon(t).
 
-    TODO: Think about antithetic sampling.
-
     :param interpolant:
         Interpolant I(t, x_0, x_1) between points from two distributions p_0 and p_1 at times t.
     :type interpolant: Interpolant
@@ -72,11 +70,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
-        if gamma is not None:
-            self._gamma = gamma
-            self.antithetic = True
+        self._gamma = gamma
+        if self._gamma is not None:
+            self._use_antithetic = True
         else:
-            self.antithetic = False
+            self._use_antithetic = False
         self._epsilon = epsilon
         self._differential_equation_type = differential_equation_type
         self._sde_number_time_steps = sde_number_time_steps
@@ -84,7 +82,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         try:
             self._differential_equation_type = DifferentialEquationType(differential_equation_type)
         except AttributeError:
-            raise ValueError("unknown differential equation type")
+            raise ValueError(f"Unknown differential equation type f{differential_equation_type}.")
         if self._differential_equation_type == DifferentialEquationType.ODE:
             self.loss = self._ode_loss
             self.integrate = self._ode_integrate
@@ -126,7 +124,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             """
             return x
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> tuple(torch.Tensor, torch.Tensor):
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                    batch_pointer: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Stochastically interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -139,19 +138,26 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
-            Stochastically interpolated points x_t.
-        :rtype: tuple(torch.Tensor, torch.Tensor)
+            Stochastically interpolated points x_t, random variables z used for interpolation.
+        :rtype: tuple[torch.Tensor, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
-        interpolate = self._interpolant.interpolate(t, x_0, x_1)
-        z = torch.randn_like(x_0)
+        interpolate = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
+            z = torch.randn_like(x_0)
             interpolate += self._gamma.gamma(t) * z
-        return (interpolate, z)
+        else:
+            z = torch.zeros_like(x_0)
+        return interpolate, z
 
-    def _interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor, n_atoms: torch.Tensor) -> tuple(torch.Tensor, torch.Tensor):
+    def _interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
+                                batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Derivative with respect to time of the stochastic interpolant between points x_0 and x_1 from two distributions
         p_0 and p_1 at times t.
@@ -166,25 +172,27 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             Points from p_1.
         :type x_1: torch.Tensor
         :param z:
-            Random variable
+            Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
-        :param n_atoms:
-            Number of atoms in crystal from batch
-        :type n_atoms: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Stochastically interpolated value.
-        :rtype: tuple(torch.Tensor, torch.Tensor)
+        :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
         self._check_t(t)
-        interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1, n_atoms)
+        interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
             interpolate_derivative += self._gamma.gamma_derivative(t) * z
-        return (interpolate_derivative, z)
+        return interpolate_derivative
 
-    def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor, n_atoms: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+    def loss(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
+             t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
+             batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -192,9 +200,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         This method is only defined here to define all methods of the abstract base class. The actual loss method is
         either _ode_loss or _sde_loss, which are chosen based on the type of differential equation (self._de_type).
 
-        :param model_prediction:
-            Model prediction for the velocity field b and the denoiser eta.
-        :type model_prediction: tuple[torch.Tensor, torch.Tensor]
+        :param model_function:
+            Model function returning the velocity fields b and the denoisers eta given the current times t and positions
+            x_t.
+        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
@@ -204,12 +213,13 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param n_atoms:
-            Number of atoms in each crystal from batch.
-        :type n_atoms: torch.Tensor
         :param z:
-            Random variable.
+            Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Loss.
@@ -217,15 +227,17 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         raise NotImplementedError
 
-    def _ode_loss(self, model_prediction: Callable, t: torch.Tensor, x_0: torch.Tensor,
-                  x_1: torch.Tensor, n_atoms: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+    def _ode_loss(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
+                  t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
+                  batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the ODE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
 
-        :param model_prediction:
-            Model prediction for the velocity field b and the denoiser eta.
-        :type model_prediction: tuple[torch.Tensor, torch.Tensor]
+        :param model_function:
+            Model function returning the velocity fields b and the denoisers eta given the current times t and positions
+            x_t.
+        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
@@ -235,41 +247,45 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param n_atoms:
-            Number of atoms in each crystal from batch.
-        :type n_atoms: torch.Tensor
         :param z:
-            Random variable.
+            Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Loss.
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        interp, z = self._interpolant.interpolate(t, x_0, x_1)
-        interp_d, _ = self._interpolant.interpolate_derivative(t, x_0, x_1) 
-        if self.antithetic:
-            x_t_p = interp
-            x_t_m = interp - 2 * self._gamma.gamma(t) * z   # Necessary to give x_t^- = I(t,x0,x1) - \gamma(t) * z
-            expected_velocity_p = interp_d
-            expected_velocity_m = interp_d - 2 * self._gamma.gamma_derivative(t) * z 
-            loss = nn.functional.mse_loss(expected_velocity_p, model_prediction(x_t_p, t)[0]) + nn.functional.mse_loss(expected_velocity_m, model_prediction(x_t_m, t)[0])
+        x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
+        expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
+        if self._use_antithetic:
+            assert self._gamma is not None
+            x_t_p = x_t_without_gamma + self._gamma.gamma(t) * z
+            x_t_m = x_t_without_gamma - self._gamma.gamma(t) * z
+            expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
+            expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
+            loss = (nn.functional.mse_loss(expected_velocity_p, model_function(x_t_p, t)[0])
+                    + nn.functional.mse_loss(expected_velocity_m, model_function(x_t_m, t)[0])) / 2.0
         else:
-            x_t = interp
-            expected_velocity, _ = interp_d
-            loss = nn.functional.mse_loss(expected_velocity, model_prediction(x_t, t)[0])
+            assert self._gamma is None
+            loss = nn.functional.mse_loss(expected_velocity_without_gamma, model_function(x_t_without_gamma, t)[0])
         return loss
 
-    def _sde_loss(self, model_prediction: Callable, t: torch.Tensor, x_0: torch.Tensor,
-                  x_1: torch.Tensor, n_atoms: torch.Tensor, z: torch.Tensor) -> torch.Tensor:
+    def _sde_loss(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
+                  t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
+                  batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the SDE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
 
-        :param model_prediction:
-            Model prediction for the velocity field b and the denoiser eta.
-        :type model_prediction: tuple[torch.Tensor, torch.Tensor]
+        :param model_function:
+            Model function returning the velocity fields b and the denoisers eta given the current times t and positions
+            x_t.
+        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
@@ -279,31 +295,34 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param n_atoms:
-            Number of atoms in each crystal from batch.
-        :type n_atoms: torch.Tensor
         :param z:
-            Random variable.
+            Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Loss.
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        interp, z = self._interpolant.interpolate(t, x_0, x_1)
-        interp_d, _ = self._interpolant.interpolate_derivative(t, x_0, x_1) 
-        if self.antithetic:
-            x_t_p = interp 
-            x_t_m = interp - 2 * self._gamma.gamma(t) * z
-            expected_velocity_p = interp_d 
-            expected_velocity_m = interp_d - 2 * self._gamma.gamma_derivative(t) * z
-            pred_b_p, pred_z = model_prediction(x_t_p, t)
-            loss_b = nn.functional.mse_loss(expected_velocity_p, pred_b_p) + nn.functional.mse_loss(expected_velocity_m, model_prediction(x_t_m, t)[0])
+        x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
+        expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
+        if self._use_antithetic:
+            assert self._gamma is not None
+            x_t_p = x_t_without_gamma + self._gamma.gamma(t) * z
+            x_t_m = x_t_without_gamma - self._gamma.gamma(t) * z
+            expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
+            expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
+            pred_b_p, pred_z = model_function(x_t_p, t)
+            loss_b = (nn.functional.mse_loss(expected_velocity_p, pred_b_p)
+                      + nn.functional.mse_loss(expected_velocity_m, model_function(x_t_m, t)[0])) / 2.0
         else:
-            x_t = interp
-            pred_b, pred_z = model_prediction(x_t, t)[1]
-            loss_b = nn.functional.mse_loss(interp_d, pred_b)
+            assert self._gamma is None
+            pred_b, pred_z = model_function(x_t_without_gamma, t)
+            loss_b = nn.functional.mse_loss(expected_velocity_without_gamma, pred_b)
 
         loss_z = nn.functional.mse_loss(z, pred_z)
         return loss_b + loss_z
