@@ -42,7 +42,7 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         return x_0, torch.zeros_like(x_0)
 
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-             t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
+             t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
              batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
@@ -60,6 +60,9 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param x_t:
+            Stochastically interpolated points x_t.
+        :type x_t: torch.Tensor
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
