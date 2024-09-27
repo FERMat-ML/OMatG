@@ -120,9 +120,6 @@ class CSPNetFull(Encoder, CSPNet):
         lattice_eta = self.lattice_out_2(graph_features)
         lattice_b = lattice_b.view(-1, 3, 3)
         lattice_eta = lattice_eta.view(-1, 3, 3)
-        print(lattice_b.shape)
-        print(lattice_eta.shape)
-        print(lattices.shape)
         if self.ip:
             lattice_b = torch.einsum('bij,bjk->bik', lattice_b, lattices)
             lattice_eta = torch.einsum('bij,bjk->bik', lattice_eta, lattices)
@@ -142,5 +139,4 @@ class CSPNetFull(Encoder, CSPNet):
         return data
 
     def _convert_outputs(self, x, **kwargs):
-        print('here')
         return x
