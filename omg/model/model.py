@@ -1,5 +1,4 @@
 import torch.nn as nn
-<<<<<<< HEAD
 import lightning as L
 
 class Model(nn.Module):

@@ -11,5 +11,9 @@ model:
             class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
             init_args:
                 dim: 256
+        prop_embedder:
+            class_path: pmg.model.model_utils.SinusoidalTimeEmbeddings
+            init_args:
+                dim: 64
 
                     
