@@ -156,7 +156,7 @@ class StochasticInterpolants(object):
             assert data_field.name + "_z" in x_t_dict["property"]
             total_loss += cost * stochastic_interpolant.loss(
                 model_prediction_fn, reshaped_t, x_0_dict[data_field.name], x_1_dict[data_field.name],
-                x_t_dict["property"][data_field.name + "_z"], x_0.ptr)
+                x_t_dict[data_field.name], x_t_dict["property"][data_field.name + "_z"], x_0.ptr)
         return total_loss
 
     def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data]) -> Data:
