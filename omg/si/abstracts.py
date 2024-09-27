@@ -1,8 +1,5 @@
 from abc import ABC, abstractmethod
-<<<<<<< HEAD
-=======
 from typing import Callable
->>>>>>> origin/si-dev
 import torch
 
 
@@ -12,11 +9,7 @@ class TimeChecker(object):
     """
 
     @staticmethod
-<<<<<<< HEAD
-    def _check_t(t: torch.tensor) -> torch.tensor:
-=======
     def _check_t(t: torch.Tensor) -> torch.Tensor:
->>>>>>> origin/si-dev
         """
         Check that all times are in [0,1].
 
@@ -24,55 +17,15 @@ class TimeChecker(object):
 
         :param t:
             Times to check.
-<<<<<<< HEAD
         :type t: torch.tensor
 
         :return:
             Whether all times are in [0,1].
         :rtype: torch.tensor
-=======
-        :type t: torch.Tensor
-
-        :return:
-            Whether all times are in [0,1].
-        :rtype: torch.Tensor
->>>>>>> origin/si-dev
         """
         return torch.all((0.0 <= t) & (t <= 1.0))
 
 
-<<<<<<< HEAD
-class Interpolant(ABC, TimeChecker):
-    """
-    Abstract class for defining an interpolant I(t, x_0, x_1) in a stochastic interpolant between two points from two
-    distributions p_0 and p_1 at times t.
-    """
-
-    def __init__(self) -> None:
-        """
-        Construct interpolant.
-        """
-        pass
-
-    @abstractmethod
-    def interpolate(self, t: torch.tensor, x_0: torch.tensor, x_1: torch.tensor) -> torch.tensor:
-        """
-        Interpolate between two points from two distributions p_0 and p_1 at times t.
-
-        :param t:
-            Times in [0,1].
-        :type t: torch.tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.tensor
-
-        :return:
-            Interpolated value.
-        :rtype: torch.tensor
-=======
 class Corrector(ABC):
     """
     Abstract class for defining a corrector function that corrects the input x (for instance, wrapping back coordinates
@@ -145,31 +98,10 @@ class Interpolant(ABC, TimeChecker):
         :return:
             Interpolated value.
         :rtype: torch.Tensor
->>>>>>> origin/si-dev
         """
         raise NotImplementedError
 
     @abstractmethod
-<<<<<<< HEAD
-    def interpolate_derivative(self, t: torch.tensor, x_0: torch.tensor, x_1: torch.tensor) -> torch.tensor:
-        """
-        Compute the derivative of the interpolant between two points from two distributions p_0 and p_1 at times t with
-        respect to time.
-
-        :param t:
-            Times in [0,1].
-        :type t: torch.tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.tensor
-
-        :return:
-            Derivative of the interpolant.
-        :rtype: torch.tensor
-=======
     def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                                batch_pointer: torch.Tensor) -> torch.Tensor:
         """
@@ -193,7 +125,6 @@ class Interpolant(ABC, TimeChecker):
         :return:
             Derivative of the interpolant.
         :rtype: torch.Tensor
->>>>>>> origin/si-dev
         """
         raise NotImplementedError
 
@@ -201,129 +132,42 @@ class Interpolant(ABC, TimeChecker):
 class LatentGamma(ABC, TimeChecker):
     """
     Abstract class for defining the gamma function gamma(t) in a latent variable gamma(t) * z of a stochastic
-<<<<<<< HEAD
-    interpolant between two points from two distributions p_0 and p_1 at times t.
-    """
-
-    def __init__(self) -> None:
-        """
-        Construct the gamma function.
-        """
-        pass
-
-    @abstractmethod
-    def gamma(self, t: torch.tensor) -> torch.tensor:
-=======
     interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
     """
 
     @abstractmethod
     def gamma(self, t: torch.Tensor) -> torch.Tensor:
->>>>>>> origin/si-dev
         """
         Evaluate the gamma function gamma(t) in the latent variable gamma(t) * z at the times t.
 
         :param t:
             Times in [0,1].
-<<<<<<< HEAD
-        :type t: torch.tensor
-
-        :return:
-            Gamma function gamma(t).
-        :rtype: torch.tensor
-=======
         :type t: torch.Tensor
 
         :return:
             Gamma function gamma(t).
         :rtype: torch.Tensor
->>>>>>> origin/si-dev
         """
         raise NotImplementedError
 
     @abstractmethod
-<<<<<<< HEAD
-    def gamma_derivative(self, t: torch.tensor) -> torch.tensor:
-=======
     def gamma_derivative(self, t: torch.Tensor) -> torch.Tensor:
->>>>>>> origin/si-dev
         """
         Compute the derivative of the gamma function gamma(t) in the latent variable gamma(t) * z with respect to time.
 
         :param t:
             Times in [0,1].
-<<<<<<< HEAD
-        :type t: torch.tensor
-
-        :return:
-            Derivative of the gamma function.
-        :rtype: torch.tensor
-=======
         :type t: torch.Tensor
 
         :return:
             Derivative of the gamma function.
         :rtype: torch.Tensor
->>>>>>> origin/si-dev
         """
         raise NotImplementedError
 
 
 class StochasticInterpolant(ABC, TimeChecker):
     """
-<<<<<<< HEAD
-    Abstract class for defining a stochastic interpolant between two points from two distributions p_0 and p_1.
-    """
-
-    def __init__(self) -> None:
-        pass
-
-    @abstractmethod
-    def interpolate(self, t: torch.Tensor, x_0: tuple[torch.Tensor, ...],
-                    x_1: tuple[torch.Tensor, ...]) -> tuple[torch.tensor, ...]:
-        """
-        Stochastically interpolate between two points from two distributions p_0 and p_1 at times t.
-
-        TODO: Update documentation.
-
-        :param t:
-            Times in [0,1].
-        :type t: torch.tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.tensor
-
-        :return:
-            Stochastically interpolated value.
-        :rtype: torch.tensor
-        """
-        raise NotImplementedError
-
-    def loss(self, model_prediction: tuple[tuple[torch.tensor, torch.tensor], ...], t: torch.tensor,
-             x_0: tuple[torch.tensor, ...], x_1: [torch.tensor, ...]) -> tuple[torch.tensor, ...]:
-        """
-        Compute the loss for the stochastic interpolant.
-
-        :param model_prediction:
-            Model prediction for the velocity field b and the denoiser eta.
-        :type model_prediction: tuple[torch.tensor, torch.tensor]
-        :param t:
-            Times in [0,1].
-        :type t: torch.tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.tensor
-
-        :return:
-            Loss.
-        :rtype: torch.tensor
-=======
     Abstract class for defining a stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
     p_1 at times t.
     """
@@ -409,6 +253,5 @@ class StochasticInterpolant(ABC, TimeChecker):
         :return:
             Integrated position.
         :rtype: torch.Tensor
->>>>>>> origin/si-dev
         """
         raise NotImplementedError
