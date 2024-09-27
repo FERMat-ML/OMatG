@@ -123,7 +123,7 @@ class OMGData(Data):
             graph.pos = torch.from_numpy(pos)
         else:
             graph.pos = pos
-
+        graph.property = {}
         if convert_to_fractional:
             with torch.no_grad():
                 graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell).to(graph.pos.dtype))
