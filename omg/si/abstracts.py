@@ -1,4 +1,8 @@
 from abc import ABC, abstractmethod
+<<<<<<< HEAD
+=======
+from typing import Callable
+>>>>>>> origin/si-dev
 import torch
 
 
@@ -8,7 +12,11 @@ class TimeChecker(object):
     """
 
     @staticmethod
+<<<<<<< HEAD
     def _check_t(t: torch.tensor) -> torch.tensor:
+=======
+    def _check_t(t: torch.Tensor) -> torch.Tensor:
+>>>>>>> origin/si-dev
         """
         Check that all times are in [0,1].
 
@@ -16,15 +24,24 @@ class TimeChecker(object):
 
         :param t:
             Times to check.
+<<<<<<< HEAD
         :type t: torch.tensor
 
         :return:
             Whether all times are in [0,1].
         :rtype: torch.tensor
+=======
+        :type t: torch.Tensor
+
+        :return:
+            Whether all times are in [0,1].
+        :rtype: torch.Tensor
+>>>>>>> origin/si-dev
         """
         return torch.all((0.0 <= t) & (t <= 1.0))
 
 
+<<<<<<< HEAD
 class Interpolant(ABC, TimeChecker):
     """
     Abstract class for defining an interpolant I(t, x_0, x_1) in a stochastic interpolant between two points from two
@@ -55,10 +72,85 @@ class Interpolant(ABC, TimeChecker):
         :return:
             Interpolated value.
         :rtype: torch.tensor
+=======
+class Corrector(ABC):
+    """
+    Abstract class for defining a corrector function that corrects the input x (for instance, wrapping back coordinates
+    to a specific cell in periodic boundary conditions).
+    """
+
+    @abstractmethod
+    def correct(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Correct the input x.
+
+        :param x:
+            Input to correct.
+        :type x: torch.Tensor
+
+        :return:
+            Corrected input.
+        :rtype: torch.Tensor
+        """
+        raise NotImplementedError
+
+
+class Epsilon(ABC, TimeChecker):
+    """
+    Abstract class for defining an epsilon function epsilon(t).
+    """
+
+    @abstractmethod
+    def epsilon(self, t: torch.Tensor) -> torch.Tensor:
+        """
+        Evaluate the epsilon function at times t.
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+
+        :return:
+            Epsilon function epsilon(t).
+        :rtype: torch.Tensor
+        """
+        raise NotImplementedError
+
+
+class Interpolant(ABC, TimeChecker):
+    """
+    Abstract class for defining an interpolant I(t, x_0, x_1) in a stochastic interpolant between points x_0 and x_1
+    from two distributions p_0 and p_1 at times t.
+    """
+
+    @abstractmethod
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                    batch_pointer: torch.Tensor) -> torch.Tensor:
+        """
+        Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.Tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
+
+        :return:
+            Interpolated value.
+        :rtype: torch.Tensor
+>>>>>>> origin/si-dev
         """
         raise NotImplementedError
 
     @abstractmethod
+<<<<<<< HEAD
     def interpolate_derivative(self, t: torch.tensor, x_0: torch.tensor, x_1: torch.tensor) -> torch.tensor:
         """
         Compute the derivative of the interpolant between two points from two distributions p_0 and p_1 at times t with
@@ -77,6 +169,31 @@ class Interpolant(ABC, TimeChecker):
         :return:
             Derivative of the interpolant.
         :rtype: torch.tensor
+=======
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                               batch_pointer: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
+        t with respect to time.
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.Tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
+
+        :return:
+            Derivative of the interpolant.
+        :rtype: torch.Tensor
+>>>>>>> origin/si-dev
         """
         raise NotImplementedError
 
@@ -84,6 +201,7 @@ class Interpolant(ABC, TimeChecker):
 class LatentGamma(ABC, TimeChecker):
     """
     Abstract class for defining the gamma function gamma(t) in a latent variable gamma(t) * z of a stochastic
+<<<<<<< HEAD
     interpolant between two points from two distributions p_0 and p_1 at times t.
     """
 
@@ -95,37 +213,65 @@ class LatentGamma(ABC, TimeChecker):
 
     @abstractmethod
     def gamma(self, t: torch.tensor) -> torch.tensor:
+=======
+    interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
+    """
+
+    @abstractmethod
+    def gamma(self, t: torch.Tensor) -> torch.Tensor:
+>>>>>>> origin/si-dev
         """
         Evaluate the gamma function gamma(t) in the latent variable gamma(t) * z at the times t.
 
         :param t:
             Times in [0,1].
+<<<<<<< HEAD
         :type t: torch.tensor
 
         :return:
             Gamma function gamma(t).
         :rtype: torch.tensor
+=======
+        :type t: torch.Tensor
+
+        :return:
+            Gamma function gamma(t).
+        :rtype: torch.Tensor
+>>>>>>> origin/si-dev
         """
         raise NotImplementedError
 
     @abstractmethod
+<<<<<<< HEAD
     def gamma_derivative(self, t: torch.tensor) -> torch.tensor:
+=======
+    def gamma_derivative(self, t: torch.Tensor) -> torch.Tensor:
+>>>>>>> origin/si-dev
         """
         Compute the derivative of the gamma function gamma(t) in the latent variable gamma(t) * z with respect to time.
 
         :param t:
             Times in [0,1].
+<<<<<<< HEAD
         :type t: torch.tensor
 
         :return:
             Derivative of the gamma function.
         :rtype: torch.tensor
+=======
+        :type t: torch.Tensor
+
+        :return:
+            Derivative of the gamma function.
+        :rtype: torch.Tensor
+>>>>>>> origin/si-dev
         """
         raise NotImplementedError
 
 
 class StochasticInterpolant(ABC, TimeChecker):
     """
+<<<<<<< HEAD
     Abstract class for defining a stochastic interpolant between two points from two distributions p_0 and p_1.
     """
 
@@ -177,5 +323,92 @@ class StochasticInterpolant(ABC, TimeChecker):
         :return:
             Loss.
         :rtype: torch.tensor
+=======
+    Abstract class for defining a stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
+    p_1 at times t.
+    """
+
+    @abstractmethod
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                    batch_pointer: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Stochastically interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.Tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
+
+        :return:
+            Stochastically interpolated points x_t, random variables z used for interpolation.
+        :rtype: tuple[torch.Tensor, torch.Tensor]
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def loss(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]], t: torch.Tensor, x_0: torch.Tensor,
+             x_1: torch.Tensor, z: torch.Tensor, batch_pointer: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
+        p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
+
+        :param model_function:
+            Model function returning the velocity fields b and the denoisers eta given the current times t and positions
+            x_t.
+        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.Tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.Tensor
+        :param z:
+            Random variable z that was used for the stochastic interpolation to get the model prediction.
+        :type z: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
+
+        :return:
+            Loss.
+        :rtype: torch.Tensor
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
+                  x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
+        """
+        Integrate the current positions x_t from time tspan[0] to tspan[1] based on the velocity fields b and the
+        denoisers eta returned by the model function.
+
+        :param model_function:
+            Model function returning the velocity fields b and the denoisers eta given the current times t and positions
+            x_t.
+        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
+        :param x_t:
+            Current positions.
+        :type x_t: torch.Tensor
+        :param tspan:
+            Time span for integration.
+        :type tspan: tuple[float, float]
+
+        :return:
+            Integrated position.
+        :rtype: torch.Tensor
+>>>>>>> origin/si-dev
         """
         raise NotImplementedError
