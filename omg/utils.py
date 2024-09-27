@@ -1,5 +1,6 @@
 import torch
 from enum import Enum, auto
+from torch_geometric.data import Data
 
 class DataField(Enum):
     pos = auto()
