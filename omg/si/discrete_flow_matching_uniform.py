@@ -67,7 +67,7 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         assert torch.all(x_1 != self._mask_index)  # No atom should be masked in the final state.
         # Mask atoms based on t, see Eq. (6) in https://arxiv.org/pdf/2402.04997.
         x_t = x_1.clone()
-        mask = torch.rand_like(x_1) < t
+        mask = torch.rand_like(x_1, dtype=t.dtype) < t
         x_t[mask] = x_0[mask]
         return x_t, torch.zeros_like(x_t)
 
