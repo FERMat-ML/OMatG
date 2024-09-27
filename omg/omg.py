@@ -47,7 +47,9 @@ class OMG(L.LightningModule):
         :rtype: torch.Tensor
         """
 
-        x_0 = self.sampler.sample_p_0() # this might need x_1 as input so number of atoms are consistent 
+        print (x_1.n_atoms)
+        x_0 = self.sampler.sample_p_0(x_1) # this might need x_1 as input so number of atoms are consistent 
+        print (x_0.n_atoms)
         
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms))
