@@ -54,7 +54,12 @@ class OMG(L.LightningModule):
 
         loss = self.si.loss_from_interpolation(self.model, t, x_0, x_1)
 
-        self.log_dict({"loss": loss})
+        self.log_dict(
+            {"loss": loss},
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
+        )
 
         return loss
 
