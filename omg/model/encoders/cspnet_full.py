@@ -19,9 +19,8 @@ from omg.model.model_utils import AdapterModule
 from omg.model.model_utils import PropIndicator
 
 from .encoder import Encoder
+from omg.globals import MAX_ATOM_NUM 
 
-
-MAX_ATOMIC_NUM=100
 
 class CSPNetFull(Encoder, CSPNet):
 
@@ -30,7 +29,7 @@ class CSPNetFull(Encoder, CSPNet):
         hidden_dim = 128,
         latent_dim = 256,
         num_layers = 4,
-        max_atoms = 100,
+        max_atoms = MAX_ATOM_NUM,
         act_fn = 'silu',
         dis_emb = 'sin',
         num_freqs = 128,
@@ -73,13 +72,14 @@ class CSPNetFull(Encoder, CSPNet):
         self.cutoff = cutoff
         self.max_neighbors = max_neighbors
         self.pred_type = pred_type
+        self.max_atoms = max_atoms
         self.ln = ln
         self.edge_style = edge_style
         if self.ln:
             self.final_layer_norm = nn.LayerNorm(hidden_dim)
         if self.pred_type:
-            self.type_out = nn.Linear(hidden_dim, MAX_ATOMIC_NUM)
-            self.type_out_2 = nn.Linear(hidden_dim, MAX_ATOMIC_NUM)
+            self.type_out = nn.Linear(hidden_dim, self.max_atoms)
+            self.type_out_2 = nn.Linear(hidden_dim, self.max_atoms)
         self.pred_scalar = pred_scalar
         if self.pred_scalar:
             self.scalar_out = nn.Linear(hidden_dim, 1)
@@ -138,9 +138,6 @@ class CSPNetFull(Encoder, CSPNet):
         lattice_eta = self.lattice_out_2(graph_features)
         lattice_b = lattice_b.view(-1, 3, 3)
         lattice_eta = lattice_eta.view(-1, 3, 3)
-        print(lattice_b.shape)
-        print(lattice_eta.shape)
-        print(lattices.shape)
         if self.ip:
             lattice_b = torch.einsum('bij,bjk->bik', lattice_b, lattices)
             lattice_eta = torch.einsum('bij,bjk->bik', lattice_eta, lattices)
@@ -160,5 +157,4 @@ class CSPNetFull(Encoder, CSPNet):
         return data
 
     def _convert_outputs(self, x, **kwargs):
-        print('here')
         return x

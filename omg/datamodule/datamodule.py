@@ -455,21 +455,25 @@ class DataModule:
         configurations: A list of :class:`~kliff.dataset.Configuration` objects.
     """
 
-    def __init__(self, configurations: Iterable = None):
-        if configurations is None:
-            self._configs = []
-        elif isinstance(configurations, Iterable) and not isinstance(
-            configurations, str
-        ):
-            self._configs = list(configurations)
-        else:
-            raise DataModuleError(
-                "configurations must be a iterable of Configuration objects."
-            )
+    def __init__(self, lmdb_paths=None):
+        # if configurations is None:
+        #     self._configs = []
+        # elif isinstance(configurations, Iterable) and not isinstance(
+        #     configurations, str
+        # ):
+        #     self._configs = list(configurations)
+        # else:
+        #     raise DataModuleError(
+        #         "configurations must be a iterable of Configuration objects."
+        #     )
 
         self._metadata: dict = {}
         self._return_config_on_getitem = True
         self._property_keys = None
+
+        if lmdb_paths is not None:
+            self.from_lmdb(lmdb_paths)
+
 
     @classmethod
     @requires(MongoDatabase is not None, "colabfit-tools is not installed")
@@ -633,10 +637,6 @@ class DataModule:
         Args:
             path: Path the directory (or filename) storing the configurations.
             ase_atoms_list: A list of ase.Atoms objects.
-            weight: an instance that computes the weight of the configuration in the loss
-                function.
-            energy_key: Name of the field in extxyz/ase.Atoms that stores the energy.
-            forces_key: Name of the field in extxyz/ase.Atoms that stores the forces.
             slices: Slice of the configurations to read. It is used only when `path` is
                 a file.
             file_format: Format of the file that stores the configuration, e.g. `xyz`.
@@ -749,9 +749,9 @@ class DataModule:
         )
         self._configs.extend(configs)
 
-    @classmethod
+    # @classmethod
     def from_lmdb(
-        cls,
+        self,
         path: Union[Path, str, List[Path], List[str]],
         dynamic_loading: bool = True,
         subdir: bool = False,
@@ -776,12 +776,12 @@ class DataModule:
             subdir: Whether the data is stored in subdirectories.
             length: Number of configurations to load.
         """
-        instance = cls()
-        instance.add_from_lmdb(
+        # instance = self()
+        self.add_from_lmdb(
             path, dynamic_loading, subdir, save_path, reuse, checksum, property_keys
         )
-        instance._property_keys = property_keys
-        return instance
+        self._property_keys = property_keys
+        return self
 
     def add_from_lmdb(
         self,
@@ -1140,7 +1140,7 @@ class DataModule:
     # def __del__(self):
     #     self.cleanup(save=False)
 
-    def cleanup(self, save: bool = True):
+    def cleanup(self, save: bool = False):
         if self.metadata.get("lmdb_envs"):
             for env in self.metadata["lmdb_envs"]:
                 env.close()
@@ -1148,9 +1148,15 @@ class DataModule:
         if self.metadata.get("master_env"):
             self.metadata["master_env"].close()
 
-        if save:
+        if not save:
             if self.metadata.get("master_lmdb"):
+                logger.info(f"Removing master LMDB file: {self.metadata['master_lmdb']}")
                 shutil.rmtree(self.metadata["master_lmdb"], ignore_errors=True)
+                # if lmdb file is a file, not directory, remove the file
+                if self.metadata["master_lmdb"].is_file():
+                    self.metadata["master_lmdb"].unlink()
+
+
 
     def toggle_lazy_config_fetch(self):
         """
@@ -1172,6 +1178,7 @@ class DataModule:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._return_config_on_getitem = True
         logger.warning(f"Lazy config fetch for seq: Disabled")
+
 
 
 class ConfigurationError(Exception):

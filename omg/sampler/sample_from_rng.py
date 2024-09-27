@@ -1,11 +1,14 @@
 from typing import List, Union, Callable
 from functools import partial
 
-from .sampler import Sampler
-from ..datamodule.dataloader import OMGData
+import torch
+
 import numpy as np
 
-MAX_ATOMIC_NUMBER = 92
+from omg.globals import MAX_ATOM_NUM
+from .sampler import Sampler
+from ..datamodule.dataloader import OMGData
+from torch_geometric.data import Batch
 
 
 class SampleFromRNG(Sampler):
@@ -41,7 +44,8 @@ class SampleFromRNG(Sampler):
     def __init__(self, distributions: Union[
         None, np.random.Generator, List[np.random.Generator]] = None,
                  n_particle_sampler: Union[int, Callable] = 1,
-                 convert_to_fractional: bool = True):
+                 convert_to_fractional: bool = True,
+                 batch_size: int = 1):
 
         super().__init__()
 
@@ -55,7 +59,7 @@ class SampleFromRNG(Sampler):
 
         elif distributions is None:
             rng = np.random.default_rng()
-            _species_sampler = partial(rng.integers, low=1, high=MAX_ATOMIC_NUMBER)
+            _species_sampler = partial(rng.integers, low=1, high=MAX_ATOM_NUM)
             _pos_sampler = partial(rng.uniform, low=0.0, high=1.0)
             _cell_sampler = partial(rng.normal, loc=1.0, scale=1.0)
             self.distribution = [_species_sampler, _pos_sampler, _cell_sampler]
@@ -73,24 +77,36 @@ class SampleFromRNG(Sampler):
             self.n_particle_sampler = n_particle_sampler
 
         self._frac = convert_to_fractional
+        self.batch_size = batch_size
 
-    def sample_p_0(self):
-        n = self.n_particle_sampler()
-        species = self.distribution[0](size=n)
+    def sample_p_0(self, x1: "OMGDataBatch" = None):
+        if x1 is not None:
+            n = x1.n_atoms
+            n = n.to(torch.int64)
+        else:
+            n = torch.zeros(self.batch_size, dtype=torch.int64)
+            for i in range(self.batch_size):
+                n[i] = torch.tensor(self.n_particle_sampler()).to(torch.int64)
 
-        pos = self.distribution[1](size=(n, 3))
-        pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
+        configs = []
+        for i in range(len(n)):
+            species = self.distribution[0](size=n[i].item())
 
-        lattice_ = self.distribution[2](size=6)
-        cell = np.zeros((3,3))
-        cell[np.triu_indices(3)] = lattice_
-        cell = cell + cell.T # TODO: A27 equation looks redundant.
+            pos = self.distribution[1](size=(n[i].item(), 3))
+            pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
 
-        # its already [0,1) fractional coordinates so no need to convert
-        if not self._frac:
-            pos = np.dot(pos, cell)
+            lattice_ = self.distribution[2](size=6)
+            cell = np.zeros((3,3))
+            cell[np.triu_indices(3)] = lattice_
+            cell = cell + cell.T # TODO: A27 equation looks redundant.
 
-        return OMGData.from_data(species, pos, cell, convert_to_fractional=False)
+            # its already [0,1) fractional coordinates so no need to convert
+            if not self._frac:
+                pos = np.dot(pos, cell)
+
+            configs.append(OMGData.from_data(species, pos, cell, convert_to_fractional=False))
+
+        return Batch.from_data_list(configs)
 
     def add_n_particle_sampler(self, n_particle_sampler: Callable):
         self.n_particle_sampler = n_particle_sampler

@@ -1,11 +1,9 @@
 from lightning.pytorch.cli import LightningCLI
-#from omg.omg import OMG
-#from ?data stuff here?
-from omg.model.model import Model 
+from omg.omg import OMG
+from omg.datamodule.dataloader import OMGDataModule
 
 def main():
-    #cli = LightningCLI(OMG, ?Data?)
-    cli = LightningCLI(Model, run=False)
+    cli = LightningCLI(OMG,OMGDataModule)
 
 if __name__ == "__main__":
     main()
