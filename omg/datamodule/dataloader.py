@@ -10,6 +10,8 @@ from ase.data import atomic_numbers
 from torch_geometric.data.lightning import LightningDataset
 import lightning as L
 
+import copy
+
 class OMGData(Data):
     """
     A Pytorch Geometric compatible graph representation of a configuration. When loaded
