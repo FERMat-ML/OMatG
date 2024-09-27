@@ -35,6 +35,6 @@ class Encoder(ABC, nn.Module):
         Strings methods together
         """
         x = self._convert_inputs(x, **kwargs)
-        x = self._forward(x, t, prop, **kwargs)
+        x = self._forward(*x, t, prop, **kwargs)
         x = self._convert_outputs(x, **kwargs)
         return x

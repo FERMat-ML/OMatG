@@ -5,7 +5,7 @@ model:
         encoder:
             class_path: omg.model.encoders.cspnet_full.CSPNetFull
             # assume all defaults are good
-        decoder:
+        head:
             class_path: omg.model.heads.pass_through.PassThrough
         time_embedder:
             class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
