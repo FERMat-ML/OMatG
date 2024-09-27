@@ -1,12 +1,15 @@
+import copy
 import os
 from typing import Dict, Any
 
 # import numpy as np
 from torch_geometric.data import Data, Dataset
+from torch_geometric.loader import DataLoader
 import torch
 from .datamodule import Configuration, DataModule
 from ase.data import atomic_numbers
 from torch_geometric.data.lightning import LightningDataset
+import lightning as L
 
 
 class OMGData(Data):
@@ -122,7 +125,7 @@ class OMGData(Data):
             graph.pos = torch.from_numpy(pos)
         else:
             graph.pos = pos
-
+        graph.property = {}
         if convert_to_fractional:
             with torch.no_grad():
                 graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell).to(graph.pos.dtype))
@@ -170,3 +173,36 @@ def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch
                                             num_workers=num_workers)
     return lightning_datamodule
 
+class OMGDataModule(L.LightningDataModule):
+    """
+    Need to do this because LightningDataset doesn't directly subclass LightningDataModule
+    """
+    def __init__(self, train_dataset, val_dataset = None, **kwargs):
+        super().__init__()
+        self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
+        if self.val_dataset is None:
+            self.val_dataloader = None
+        self.kwargs = kwargs
+
+    def dataloader(self, dataset: Dataset, **kwargs: Any) -> DataLoader:
+        return DataLoader(dataset, **kwargs)
+
+    def train_dataloader(self) -> DataLoader:
+        from torch.utils.data import IterableDataset
+
+        shuffle = not isinstance(self.train_dataset, IterableDataset)
+        shuffle &= self.kwargs.get('sampler', None) is None
+        shuffle &= self.kwargs.get('batch_sampler', None) is None
+
+        return self.dataloader(
+            self.train_dataset,
+            shuffle=shuffle,
+            **self.kwargs,
+        )
+
+    def val_dataloader(self) -> DataLoader:
+        kwargs = copy.copy(self.kwargs)
+        kwargs.pop('sampler', None)
+        kwargs.pop('batch_sampler', None)
+        return self.dataloader(self.val_dataset, shuffle=False, **kwargs)

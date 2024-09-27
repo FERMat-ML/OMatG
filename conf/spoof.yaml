@@ -1,0 +1,15 @@
+# TODO: fix paths once they are decided
+model:
+    class_path: omg.model.model.Model
+    init_args:
+        encoder:
+            class_path: omg.model.encoders.cspnet_full.CSPNetFull
+            # assume all defaults are good
+        decoder:
+            class_path: omg.model.heads.pass_through.PassThrough
+        time_embedder:
+            class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+            init_args:
+                dim: 256
+
+                    
