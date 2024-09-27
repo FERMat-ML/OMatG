@@ -12,6 +12,7 @@ class OMG(L.LightningModule):
     
     # TODO: specify argument types
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module) -> None:
+        super().__init__()
         self.si = si 
         self.sampler = sampler
         self.model = model
