@@ -3,7 +3,7 @@ import lightning as L
 import torch
 import torch.nn as nn
 from torch import optim
-from typing import Sequence
+from typing import Optional, Sequence
 from omg.sampler.sampler import Sampler
 from typing import Optional
 
@@ -13,7 +13,7 @@ class OMG(L.LightningModule):
     """
     
     # TODO: specify argument types
-    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module, 
+    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module,
                  load_checkpoint: Optional[str] = None) -> None:
         super().__init__()
         self.si = si 
