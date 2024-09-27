@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "omg"
 readme = "README.md"
-requires-python = ">=3.9,<=3.12.2"
+requires-python = ">=3.9,<3.13"
 version = "0.0.1"
 dependencies = [
     "torch ~= 2.4",
@@ -14,4 +14,9 @@ dependencies = [
     "numpy ~= 1.26",
     "scipy ~= 1.14",
     "sdeint ~= 0.3",
+    "lmdb ~= 1.5",
+    "loguru ~= 0.7",
+    "monty ~= 2024.7",
+    "ase ~= 3.23",
+    "jsonargparse ~= 4.33"
 ]
