@@ -19,11 +19,10 @@ Run the following command to train from scratch:
 python scripts/main.py fit --config omg/conf_examples/test_config.yaml --trainer.accelerator=cpu
 ```
 
-Run the following command to restart training from a checkpoint:
+If you want to include a Wandb logger, add the `--trainer.logger=WandbLogger` argument. Other loggers can be found
+[here](https://lightning.ai/docs/pytorch/stable/extensions/logging.html).
 
-```bash
-python scripts/main.py fit --config omg/conf_examples/test_config.yaml --trainer.accelerator=cpu --model.load_checkpoint=<checkpoint_file.ckpt> 
-```
+In order to restart training from a checkpoint, add the `--model.load_checkpoint=<checkpoint_file.ckpt>` argument. 
 
 ## TODO
 
