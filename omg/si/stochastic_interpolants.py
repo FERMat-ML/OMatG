@@ -1,7 +1,7 @@
 from typing import Callable, Sequence
 import torch
 from torch_geometric.data import Data
-from omg.globals import reshape_t, DataField, SMALL_TIME, BIG_TIME
+from omg.utils import reshape_t, DataField, SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
 
 
