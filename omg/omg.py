@@ -16,6 +16,7 @@ class OMG(L.LightningModule):
         super().__init__()
         self.si = si 
         self.sampler = sampler
+        model = model.double()
         self.model = model
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:

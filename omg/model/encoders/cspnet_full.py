@@ -88,7 +88,7 @@ class CSPNetFull(Encoder, CSPNet):
         return atom_types, frac_coords, lattices, num_atoms, node2graph
 
 
-    def _forward(self, atom_types, frac_coords, lattices, num_atoms, node2graph, t=0.0):
+    def _forward(self, atom_types, frac_coords, lattices, num_atoms, node2graph, t=0.0, prop=None):
         # taken from DiffCSP with additional output layers included
 
         edges, frac_diff = self.gen_edges(num_atoms, frac_coords, lattices, node2graph)
