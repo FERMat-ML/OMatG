@@ -94,4 +94,10 @@ data:
            - "data/mp_20/val.lmdb"
   predict_dataset:
     class_path: omg.datamodule.dataloader.NullDataset
-  batch_size: 2
+  batch_size: 256
+trainer:
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        save_top_k: 1
+        monitor: "val_loss_total"
