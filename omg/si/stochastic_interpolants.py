@@ -204,8 +204,14 @@ class StochasticInterpolants(object):
                 x_int_dict = x_int.to_dict()
 
                 def model_prediction_fn(t, x):
+                    t = torch.tensor(t)
+                    t = torch.unsqueeze(t, 0) # adding "batch" dimension
+                    x = torch.tensor(x)
+                    x = x.reshape(x_int_dict[data_field.name].shape)
                     x_int_dict[data_field.name].copy_(x)
-                    return model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
+                    b, eta = model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
+                    b, eta = b.reshape((-1,)), eta.reshape((-1,))
+                    return b, eta
 
                 new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
                                                     x_t_dict[data_field.name], tspan))

@@ -175,6 +175,7 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
             # Do not shift the atom type by one to get the real species. Instead shift x_t down.
             shifted_x_1 = Categorical(x_1_probs).sample()  # Shape (sum(n_atoms),)
             shifted_x_t = x_t - 1
+            shifted_x_1 = torch.unsqueeze(shifted_x_1,0)
             assert shifted_x_1.shape == x_t.shape == shifted_x_t.shape
             # Shape (sum(n_atoms), MAX_ATOM_NUM).
             shifted_x_1_hot = functional.one_hot(shifted_x_1, num_classes=MAX_ATOM_NUM)
