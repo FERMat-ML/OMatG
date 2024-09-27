@@ -173,9 +173,9 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
             x_1_probs = functional.softmax(model_function(t, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
             # Sample from distribution for every of the sum(n_atoms) elements.
             # Do not shift the atom type by one to get the real species. Instead shift x_t down.
+            x_1_probs = x_1_probs.reshape((-1, MAX_ATOM_NUM))
             shifted_x_1 = Categorical(x_1_probs).sample()  # Shape (sum(n_atoms),)
             shifted_x_t = x_t - 1
-            shifted_x_1 = torch.unsqueeze(shifted_x_1,0)
             assert shifted_x_1.shape == x_t.shape == shifted_x_t.shape
             # Shape (sum(n_atoms), MAX_ATOM_NUM).
             shifted_x_1_hot = functional.one_hot(shifted_x_1, num_classes=MAX_ATOM_NUM)
