@@ -5,7 +5,7 @@ import numpy as np
 from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
 import torch
-from .datamodule import Configuration
+from .datamodule import Configuration, DataModule
 from ase.data import atomic_numbers
 from torch_geometric.data.lightning import LightningDataset
 import lightning as L
@@ -138,7 +138,7 @@ class OMGTorchDataset(Dataset):
     the use of :class:`omg.datamodule.Dataset` as a data source for the graph based models.
     """
 
-    def __init__(self, dataset: Dataset, transform=None, convert_to_fractional=True):
+    def __init__(self, dataset: DataModule, transform=None, convert_to_fractional=True):
         super().__init__("./", transform, None, None)
         self.dataset = dataset
         self.convert_to_fractional = convert_to_fractional
