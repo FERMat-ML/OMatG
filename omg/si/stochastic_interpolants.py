@@ -90,8 +90,10 @@ class StochasticInterpolants(object):
             assert reshaped_t.shape == x_0_dict[data_field.name].shape
             interpolated_x_t, z = stochastic_interpolant.interpolate(reshaped_t, x_0_dict[data_field.name],
                                                                      x_1_dict[data_field.name], x_0.ptr)
-            x_t_dict[data_field.name] = interpolated_x_t
+            # Assignment does not update x_t.
+            x_t_dict[data_field.name].copy_(interpolated_x_t)
             assert data_field.name + "_z" not in x_t_dict["property"]
+            # This appears to be fine though.
             x_t_dict["property"][data_field.name + "_z"] = z
         return x_t
 
@@ -150,7 +152,7 @@ class StochasticInterpolants(object):
             x_t_clone_dict = x_t_clone.to_dict()
 
             def model_prediction_fn(x):
-                x_t_clone_dict[data_field.name] = x
+                x_t_clone_dict[data_field.name].copy_(x)
                 return model_function(x_t_clone, t)[b_data_field], model_function(x_t_clone, t)[eta_data_field]
 
             assert data_field.name + "_z" in x_t_dict["property"]
@@ -199,11 +201,10 @@ class StochasticInterpolants(object):
                 x_int_dict = x_int.to_dict()
 
                 def model_prediction_fn(t, x):
-                    x_int_dict[data_field.name] = x
+                    x_int_dict[data_field.name].copy_(x)
                     return model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
 
-                new_x_t_dict[data_field.name] = stochastic_interpolant.integrate(model_prediction_fn,
-                                                                                 x_t_dict[data_field.name],
-                                                                                 tspan)
+                new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
+                                                    x_t_dict[data_field.name], tspan))
             x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
         return x_t
