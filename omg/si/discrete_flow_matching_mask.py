@@ -97,7 +97,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         :type x_0: torch.Tensor
         :param x_1:
             Points from p_1.
-        :type x_1: torch.Tensor,
+        :type x_1: torch.Tensor:
         :param x_t:
             Stochastically interpolated points x_t:
         :type t: torch.Tensor
