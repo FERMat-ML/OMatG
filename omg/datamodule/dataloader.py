@@ -169,7 +169,7 @@ def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch
                                             num_workers=num_workers)
     return lightning_datamodule
 
-
+# TODO: Make len be the number of times we run through the generation pipeline
 class NullDataset(Dataset):
     def __init__(self,):
         super().__init__()

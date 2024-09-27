@@ -97,7 +97,6 @@ class CSPNetFull(Encoder, CSPNet):
             node_features = self.node_embedding(atom_types)
         else:
             node_features = self.node_embedding(atom_types - 1)
-
         t_per_atom = t.repeat_interleave(num_atoms, dim=0)
         node_features = torch.cat([node_features, t_per_atom], dim=1)
         node_features = self.atom_latent_emb(node_features)
