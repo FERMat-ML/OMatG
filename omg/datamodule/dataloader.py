@@ -112,9 +112,9 @@ class OMGData(Data):
         graph.n_atoms = n_atoms
         graph.batch = torch.zeros(n_atoms, dtype=torch.int64)
         if isinstance(species[0], str):
-            graph.species = torch.tensor([atomic_numbers[z] for z in species], dtype=torch.int64)
+            graph.species = torch.asarray([atomic_numbers[z] for z in species], dtype=torch.int64)
         else:
-            graph.species = torch.tensor(species, dtype=torch.int64)
+            graph.species = torch.asarray(species, dtype=torch.int64)
 
         if not isinstance(cell, torch.Tensor):
             graph.cell = torch.from_numpy(cell)

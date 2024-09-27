@@ -58,9 +58,9 @@ class SampleFromRNG(Sampler):
 
         elif distributions is None:
             rng = torch.Generator()
-            _species_sampler = lambda size: torch.randint(1, MAX_ATOM_NUM, size=size, generator=rng)
+            _species_sampler = lambda size: torch.randint(1, MAX_ATOM_NUM, size=(size,), generator=rng)
             _pos_sampler = lambda size: torch.rand(size=size, generator=rng)
-            _cell_sampler = lambda size: torch.randn(size=size, generator=rng)
+            _cell_sampler = lambda size: torch.randn(size=(size,), generator=rng)
             self.distribution = [_species_sampler, _pos_sampler, _cell_sampler]
 
         else:
@@ -85,9 +85,11 @@ class SampleFromRNG(Sampler):
         else:
             n = torch.zeros(self.batch_size, dtype=torch.int64)
             for i in range(self.batch_size):
-                n[i] = torch.tensor(self.n_particle_sampler()).to(torch.int64)
+                n[i] = self.n_particle_sampler()
+
 
         configs = []
+        ut_indices = torch.triu_indices(3,3)
         for i in range(len(n)):
             species = self.distribution[0](size=n[i])
 
@@ -96,7 +98,7 @@ class SampleFromRNG(Sampler):
 
             lattice_ = self.distribution[2](size=6)
             cell = torch.zeros((3,3))
-            cell[torch.triu_indices(3)] = lattice_
+            cell[ut_indices[0], ut_indices[1]] = lattice_
             cell = cell + cell.T # TODO: A27 equation looks redundant.
 
             # its already [0,1) fractional coordinates so no need to convert

@@ -25,7 +25,7 @@ class SampleFromDataset(Sampler):
 
             sample = self.dataset[sample_idx].to_dict()
 
-            species = torch.array([atomic_numbers[s] for s in sample["species"]])
+            species = torch.asarray([atomic_numbers[s] for s in sample["species"]])
             pos = sample["coords"]
             cell = sample["cell"]
 
