@@ -42,7 +42,8 @@ class CSPNetFull(Encoder, CSPNet):
         pred_type = True,
         pred_scalar = False,
         am_hidden_dim = 128, # added to acomodate adapter module
-        prop_embed_dim = 32  # needs to match the property embedding dimension of yaml file for time
+        prop_embed_dim = 32,  # needs to match the property embedding dimension of yaml file for time
+        prop = False
     ):
 
         super().__init__()
@@ -83,12 +84,12 @@ class CSPNetFull(Encoder, CSPNet):
         self.pred_scalar = pred_scalar
         if self.pred_scalar:
             self.scalar_out = nn.Linear(hidden_dim, 1)
-
-        # Initialize AdapterModule->Need to intialize num_layers adapters each with their own weights
-        self.adapters = torch.nn.ModuleList()
-        for i in range (self.num_layers):
-            adapter = AdapterModule(input_dim=hidden_dim, am_hidden_dim=am_hidden_dim, property_dim=prop_embed_dim)
-            self.adapters.append(adapter) # already on CUDA
+        if prop:
+            # Initialize AdapterModule->Need to intialize num_layers adapters each with their own weights
+            self.adapters = torch.nn.ModuleList()
+            for i in range (self.num_layers):
+                adapter = AdapterModule(input_dim=hidden_dim, am_hidden_dim=am_hidden_dim, property_dim=prop_embed_dim)
+                self.adapters.append(adapter) # already on CUDA
 
     def _convert_inputs(self, x, **kwargs):
         atom_types = x.species

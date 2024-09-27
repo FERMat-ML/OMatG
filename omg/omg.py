@@ -20,6 +20,7 @@ class OMG(L.LightningModule):
         self.sampler = sampler
         model = model.double()
         self.model = model
+        print (self.state_dict)
         if not len(relative_si_costs) == len(self.si):
             raise ValueError("The number of stochastic interpolants and costs must be equal.")
         if not all(cost >= 0.0 for cost in relative_si_costs):
@@ -28,7 +29,7 @@ class OMG(L.LightningModule):
             raise ValueError("The sum of all cost factors must be approximately equal to 1.")
         self._relative_si_costs = relative_si_costs
         if load_checkpoint:
-            checkpoint = torch.load(load_checkpoint)
+            checkpoint = torch.load(load_checkpoint, map_location=self.device)
             self.load_state_dict(checkpoint['state_dict'])
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
