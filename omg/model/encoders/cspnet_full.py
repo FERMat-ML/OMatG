@@ -114,13 +114,11 @@ class CSPNetFull(Encoder, CSPNet):
         node_features = self.atom_latent_emb(node_features)
 
         prop_indicator = PropIndicator(batch_size=len(num_atoms), p_uncond=0.2) #p_uncond should be in yaml
-        #prop_indicator = prop_indicator.to(node_features.device)
-        # make sure prop and time both don't induce an empty one dimension in the tensor
+        prop_indicator = prop_indicator.to(node_features.device)
 
         for i in range(0, self.num_layers):
             if prop is not None:
                 node_features = self.adapters[i](node_features, prop, prop_indicator, num_atoms)
-                print("property is here")
             node_features = self._modules["csp_layer_%d" % i](node_features, frac_coords, lattices, edges, edge2graph, frac_diff = frac_diff)
 
         if self.ln:

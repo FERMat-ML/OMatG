@@ -65,7 +65,12 @@ model:
       time_embedder:
         class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
         init_args:
-          dim: 256
+          dim: 256 # has to be same as latent_dim in cspnet
+      prop_embedder:
+            class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+            init_args:
+                dim: 32 # has to be sam eas prop_emb_dim of adapter module
+      property_keys: "band_gap"
 
 data:
   train_dataset:
@@ -76,4 +81,6 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/train.lmdb"
+          property_keys: # specify only when you wanna do guided training
+           - "band_gap"
   batch_size: 2
