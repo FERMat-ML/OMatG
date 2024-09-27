@@ -5,11 +5,10 @@ import torch
 
 import numpy as np
 
+from omg.globals import MAX_ATOM_NUM
 from .sampler import Sampler
 from ..datamodule.dataloader import OMGData
 from torch_geometric.data import Batch
-
-MAX_ATOMIC_NUMBER = 92
 
 
 class SampleFromRNG(Sampler):
@@ -60,7 +59,7 @@ class SampleFromRNG(Sampler):
 
         elif distributions is None:
             rng = np.random.default_rng()
-            _species_sampler = partial(rng.integers, low=1, high=MAX_ATOMIC_NUMBER)
+            _species_sampler = partial(rng.integers, low=1, high=MAX_ATOM_NUM)
             _pos_sampler = partial(rng.uniform, low=0.0, high=1.0)
             _cell_sampler = partial(rng.normal, loc=1.0, scale=1.0)
             self.distribution = [_species_sampler, _pos_sampler, _cell_sampler]
