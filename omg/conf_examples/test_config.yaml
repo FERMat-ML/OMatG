@@ -41,4 +41,36 @@ model:
         - 0.333333333333
         - 0.333333333333
       integration_time_steps: 100
+  sampler:
+    class_path: omg.sampler.sample_from_rng.SampleFromRNG
+    init_args:
+      distributions: null
+      n_particle_sampler: 1
+      convert_to_fractional: true
+      batch_size: 2
+    # Code for sampling from dataset
+    # class_path: omg.sampler.sample_from_dataset.SampleFromDataset
+    # init_args:
+    #   dataset:
+    #   convert_to_fractional: 
+    #   batch_size: 
+  model:
+    encoder:
+      class_path: omg.model.encoders.cspnet_full.CSPNetFull
+        # assume all defaults are good
+    head:
+      class_path: omg.model.heads.pass_through.PassThrough
+    time_embedder:
+      class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+      init_args:
+        dim: 256
 
+data:
+  train_dataset:
+    class_path: omg.datamodule.dataloader.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+           - "/Users/efuemmel/projects/omg/data/mp_20/train.lmdb"
