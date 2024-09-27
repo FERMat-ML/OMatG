@@ -1,6 +1,6 @@
+from typing import Callable, Sequence
 import torch
 from torch_geometric.data import Data
-from typing import Callable, Sequence
 from omg.globals import reshape_t, DataField, SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
 
@@ -22,9 +22,6 @@ class StochasticInterpolants(object):
     :param data_fields:
         Sequence of data fields for the different stochastic interpolants.
     :type data_fields: Sequence[str]
-    :param costs:
-        Cost factors for the different coordinate types that are used to scale their respective losses.
-    :type costs: Sequence[float]
     :param integration_time_steps:
         Number of integration time steps for the integration of the collection of stochastic interpolants.
 
@@ -35,7 +32,7 @@ class StochasticInterpolants(object):
     """  # noqa: E501
 
     def __init__(self, stochastic_interpolants: Sequence[StochasticInterpolant], data_fields: Sequence[str],
-                 costs: Sequence[float], integration_time_steps: int) -> None:
+                 integration_time_steps: int) -> None:
         """Constructor of the StochasticInterpolants class."""
         super().__init__()
         if not len(stochastic_interpolants) == len(data_fields):
@@ -44,17 +41,21 @@ class StochasticInterpolants(object):
             self._data_fields = [DataField[data_field.lower()] for data_field in data_fields]
         except AttributeError:
             raise ValueError(f"All data fields must be in {[d.name for d in DataField]}.")
-        if not len(costs) == len(stochastic_interpolants):
-            raise ValueError("The number of stochastic interpolants and costs must be equal.")
-        if not all(cost >= 0.0 for cost in costs):
-            raise ValueError("All cost factors must be non-negative.")
-        if not abs(sum(costs) - 1.0) < 1e-10:
-            raise ValueError("The sum of all cost factors must be approximately equal to 1.")
+
         if not integration_time_steps > 0:
             raise ValueError("The number of integration time steps must be positive.")
         self._stochastic_interpolants = stochastic_interpolants
-        self._costs = costs
         self._integration_time_steps = integration_time_steps
+
+    def __len__(self) -> int:
+        """
+        Return the number of stochastic interpolants handled by this class.
+
+        :return:
+            Number of stochastic interpolants.
+        :rtype: int
+        """
+        return len(self._stochastic_interpolants)
 
     def _interpolate(self, t: torch.Tensor, x_0: Data, x_1: Data) -> Data:
         """
@@ -97,17 +98,18 @@ class StochasticInterpolants(object):
             x_t_dict["property"][data_field.name + "_z"] = z
         return x_t
 
-    def loss_from_interpolation(self, model_function: Callable[[Data, torch.tensor], Data], t: torch.Tensor, x_0: Data,
-                                x_1: Data) -> torch.Tensor:
+    def losses(self, model_function: Callable[[Data, torch.tensor], Data], t: torch.Tensor, x_0: Data,
+               x_1: Data) -> dict[str, torch.Tensor]:
         """
-        Compute the loss for the collection of stochastic interpolants between the collection of points x_0 and x_1 from
-        a collection of distributions p_0 and p_1 at times t based on the collection of model predictions for the
+        Compute the losses for the collection of stochastic interpolants between the collection of points x_0 and x_1
+        from a collection of distributions p_0 and p_1 at times t based on the collection of model predictions for the
         velocity fields b and the denoisers eta.
 
         This function expects that the velocity b and denoiser eta corresponding to the data field data_field are stored
         with the keys data_field_b and data_field_eta in the model prediction.
 
-        The loss returned by every stochastic interpolant is scaled by the corresponding cost factor.
+        The losses are returned as a dictionary with the data field names as keys and the corresponding losses as
+        values.
 
         :param model_function:
             Model function returning the collection of velocity fields b and the denoisers eta stored in a
@@ -125,9 +127,10 @@ class StochasticInterpolants(object):
         :type x_1: torch_geometric.data.Data
 
         :return:
-            Loss.
-        :rtype: torch.Tensor
+            The losses for the collection of stochastic interpolants.
+        :rtype: dict[str, torch.Tensor]
         """
+        # We have to interpolate everything first so that we can pass all interpolated to the model function.
         x_t = self._interpolate(t, x_0, x_1)
         x_0_dict = x_0.to_dict()
         x_1_dict = x_1.to_dict()
@@ -135,9 +138,8 @@ class StochasticInterpolants(object):
         assert torch.equal(x_0.ptr, x_1.ptr)
         assert torch.equal(x_0.n_atoms, x_1.n_atoms)
         n_atoms = x_0.n_atoms
-        total_loss = torch.tensor(0.0,device=n_atoms.device)
-        for cost, stochastic_interpolant, data_field in zip(self._costs, self._stochastic_interpolants,
-                                                            self._data_fields):
+        losses = {}
+        for stochastic_interpolant, data_field in zip(self._stochastic_interpolants, self._data_fields):
             b_data_field = data_field.name + "_b"
             eta_data_field = data_field.name + "_eta"
             assert data_field.name in x_0_dict
@@ -156,10 +158,11 @@ class StochasticInterpolants(object):
                 return model_function(x_t_clone, t)[b_data_field], model_function(x_t_clone, t)[eta_data_field]
 
             assert data_field.name + "_z" in x_t_dict["property"]
-            total_loss += cost * stochastic_interpolant.loss(
+            assert "loss_" + data_field.name not in losses
+            losses["loss_" + data_field.name] = stochastic_interpolant.loss(
                 model_prediction_fn, reshaped_t, x_0_dict[data_field.name], x_1_dict[data_field.name],
                 x_t_dict[data_field.name], x_t_dict["property"][data_field.name + "_z"], x_0.ptr)
-        return total_loss
+        return losses
 
     def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data]) -> Data:
         """

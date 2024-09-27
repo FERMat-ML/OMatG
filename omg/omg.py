@@ -12,12 +12,20 @@ class OMG(L.LightningModule):
     """
     
     # TODO: specify argument types
-    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module) -> None:
+    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module,
+                 relative_si_costs: Sequence[float]) -> None:
         super().__init__()
         self.si = si 
         self.sampler = sampler
         model = model.double()
         self.model = model
+        if not len(relative_si_costs) == len(self.si):
+            raise ValueError("The number of stochastic interpolants and costs must be equal.")
+        if not all(cost >= 0.0 for cost in relative_si_costs):
+            raise ValueError("All cost factors must be non-negative.")
+        if not abs(sum(relative_si_costs) - 1.0) < 1e-10:
+            raise ValueError("The sum of all cost factors must be approximately equal to 1.")
+        self._relative_si_costs = relative_si_costs
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
@@ -48,20 +56,29 @@ class OMG(L.LightningModule):
         :rtype: torch.Tensor
         """
         x_0 = self.sampler.sample_p_0(x_1).to(self.device) # this might need x_1 as input so number of atoms are consistent
-        
+
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)
 
-        loss = self.si.loss_from_interpolation(self.model, t, x_0, x_1)
+        losses = self.si.losses(self.model, t, x_0, x_1)
+
+        total_loss = torch.tensor(0.0, device=self.device)
+
+        for cost, loss_key in zip(self._relative_si_costs, losses):
+            losses[loss_key] = cost * losses[loss_key]
+            total_loss += losses[loss_key]
+
+        assert "loss_total" not in losses
+        losses["loss_total"] = total_loss
 
         self.log_dict(
-            {"loss": loss},
+            losses,
             on_step=True,
             on_epoch=True,
             prog_bar=True,
         )
 
-        return loss
+        return total_loss
 
     def validation_step(self, x_1) -> torch.Tensor:
         """
@@ -77,7 +94,7 @@ class OMG(L.LightningModule):
         
         pred = self.model(x_t, t)
         
-        loss = self.si.loss(pred, t, x_0, x_1) 
+        loss = self.si.losses(pred, t, x_0, x_1)
 
         return loss
 
