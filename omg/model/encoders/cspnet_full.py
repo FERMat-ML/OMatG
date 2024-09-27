@@ -16,9 +16,8 @@ from diffcsp.pl_modules.cspnet import CSPLayer
 from diffcsp.pl_modules.cspnet import SinusoidsEmbedding
 
 from .encoder import Encoder
+from omg.globals import MAX_ATOM_NUM 
 
-
-MAX_ATOMIC_NUM=100
 
 class CSPNetFull(Encoder, CSPNet):
 
@@ -27,7 +26,7 @@ class CSPNetFull(Encoder, CSPNet):
         hidden_dim = 128,
         latent_dim = 256,
         num_layers = 4,
-        max_atoms = 100,
+        max_atoms = MAX_ATOM_NUM,
         act_fn = 'silu',
         dis_emb = 'sin',
         num_freqs = 128,
