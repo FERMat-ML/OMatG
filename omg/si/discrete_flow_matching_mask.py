@@ -83,7 +83,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         in this class.
 
         Given that x_0 is of shape (sum(n_atoms),) containing the species of every atom in the batch, the model
-        prediction returns a tensor of shape (sum(n_atoms), MAX_ATOM_NUM - 1) containing the probability distribution
+        prediction returns a tensor of shape (sum(n_atoms), MAX_ATOM_NUM) containing the probability distribution
         over the species (excluding the mask with token 0) of every atom in the batch.
 
         :param model_function:
@@ -119,7 +119,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         # model_prediction[0][a_i, j] is the probability of atom a_i being of species j + 1.
         # In order to compute the cross-entropy loss, we need to correct for the shift of the species in x_1.
         pred = model_function(x_t)[0] 
-        assert pred.shape == (x_0.shape[0], MAX_ATOM_NUM - 1)
+        assert pred.shape == (x_0.shape[0], MAX_ATOM_NUM)
         return functional.cross_entropy(pred, x_1 - 1)
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
@@ -133,7 +133,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         in this class.
 
         Given that x_0 is of shape (sum(n_atoms),) containing the species of every atom in the batch, the model
-        prediction returns a tensor of shape (sum(n_atoms), MAX_ATOM_NUM - 1) containing the probability distribution
+        prediction returns a tensor of shape (sum(n_atoms), MAX_ATOM_NUM) containing the probability distribution
         over the species (excluding the mask with token 0) of every atom in the batch.
 
         Following https://arxiv.org/pdf/2402.04997, we construct a rate matrix R by
@@ -170,36 +170,36 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         eps = torch.finfo(torch.float64).eps
         for _ in range(self._number_integration_steps):
             # Predict x1 for the flattened sequence
-            x_1_probs = functional.softmax(model_function(t, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM - 1).
+            x_1_probs = functional.softmax(model_function(t, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
             # Sample from distribution for every of the sum(n_atoms) elements.
             # Shift the atom type by one to get the real species.
             x_1 = Categorical(x_1_probs).sample() + 1  # Shape (sum(n_atoms),)
             assert x_1.shape == x_t.shape
-            x_1_hot = functional.one_hot(x_1, num_classes=MAX_ATOM_NUM)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
-            # Shape (1, MAX_ATOM_NUM).
-            mask_hot = functional.one_hot(torch.tensor([self._mask_index]), num_classes=MAX_ATOM_NUM)
+            x_1_hot = functional.one_hot(x_1, num_classes=MAX_ATOM_NUM + 1)  # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
+            # Shape (1, MAX_ATOM_NUM + 1).
+            mask_hot = functional.one_hot(torch.tensor([self._mask_index]), num_classes=MAX_ATOM_NUM + 1)
             # Subtract the mask_hot vector from every x_1_hot[i, :].
-            dpt = x_1_hot - mask_hot  # Shape (sum(n_atoms), MAX_ATOM_NUM).
+            dpt = x_1_hot - mask_hot  # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
             # Gather values from dpt based on x_t.
             dpt_xt = dpt.gather(-1, x_t[:, None]).squeeze(-1)  # Shape (sum(n_atoms),).
 
             # Compute pt: linear interpolation based on t.
             # TODO: consider adding functionality to use other types of interpolants
-            pt = (t * x_1_hot) + (1.0 - t) * mask_hot  # Shape (sum(n_atoms), MAX_ATOM_NUM).
+            pt = (t * x_1_hot) + (1.0 - t) * mask_hot  # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
             pt_xt = pt.gather(-1, x_t[:, None]).squeeze(-1)  # Shape (sum(n_atoms),).
 
             # Compute the rate R.
-            # Shape (sum(n_atoms), MAX_ATOM_NUM).
-            rate = functional.relu(dpt - dpt_xt[:, None]) / (MAX_ATOM_NUM * pt_xt[:, None])
+            # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
+            rate = functional.relu(dpt - dpt_xt[:, None]) / ((MAX_ATOM_NUM + 1) * pt_xt[:, None])
             # Set p(x_t | x_1) = 0 or p(j | x_1) = 0 cases to zero.
-            rate[(pt_xt == 0.0)[:, None].repeat(1, MAX_ATOM_NUM)] = 0.0
+            rate[(pt_xt == 0.0)[:, None].repeat(1, MAX_ATOM_NUM + 1)] = 0.0
             rate[pt == 0.0] = 0.0
 
             # Add noise if present.
             rate_db = torch.zeros_like(rate)
             if self._noise > 0.0:
                 rate_db[x_t == x_1] = 1.0
-                rate_db[x_1 != x_t] = ((MAX_ATOM_NUM * t) + 1.0 - t) / (1.0 - t + eps)
+                rate_db[x_1 != x_t] = (((MAX_ATOM_NUM + 1) * t) + 1.0 - t) / (1.0 - t + eps)
                 rate_db *= self._noise
             rate += rate_db
 
@@ -209,7 +209,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
                 rate[:, 0] = 0.0
 
             # Compute step probabilities and sample.
-            step_probs = (rate * dt).clamp(max=1.0)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
+            step_probs = (rate * dt).clamp(max=1.0)  # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
             step_probs.scatter_(-1, x_t[:, None], 0.0)
             step_probs.scatter_(-1, x_t[:, None], 1.0 - step_probs.sum(dim=-1, keepdim=True)).clamp(min=0.0)
 
