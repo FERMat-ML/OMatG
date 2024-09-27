@@ -20,7 +20,7 @@ from .encoder import Encoder
 
 MAX_ATOMIC_NUM=100
 
-class CSPNetFull(CSPNet, Encoder):
+class CSPNetFull(Encoder, CSPNet):
 
     def __init__(
         self,
