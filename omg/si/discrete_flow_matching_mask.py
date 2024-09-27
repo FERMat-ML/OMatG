@@ -2,7 +2,7 @@ from typing import Callable
 import torch
 from torch.distributions import Categorical
 import torch.nn.functional as functional
-from omg.globals import MAX_ATOM_NUM
+from omg.globals import MAX_ATOM_NUM, BIG_TIME
 from .abstracts import StochasticInterpolant
 
 
@@ -71,8 +71,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         x_t[mask] = self._mask_index
         return x_t, torch.zeros_like(x_t)
 
-    def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor, z: torch.Tensor, batch_pointer: torch.Tensor) -> torch.Tensor:
+    def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
+             t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
+             batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the cross-entropy loss for the discrete flow matching between points x_0 and x_1 from two distributions
         p_0 and p_1 at times t based on the model prediction for the probability distributions over the species.
@@ -85,9 +86,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         prediction returns a tensor of shape (sum(n_atoms), MAX_ATOM_NUM - 1) containing the probability distribution
         over the species (excluding the mask with token 0) of every atom in the batch.
 
-        :param model_prediction:
-            Model prediction for the probablity distributions over the species.
-        :type model_prediction: tuple[torch.Tensor, torch.Tensor]
+        :param model_function:
+            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.
+        :type model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
@@ -96,7 +97,10 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         :type x_0: torch.Tensor
         :param x_1:
             Points from p_1.
-        :type x_1: torch.Tensor
+        :type x_1: torch.Tensor:
+        :param x_t:
+            Stochastically interpolated points x_t:
+        :type t: torch.Tensor
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
@@ -112,10 +116,11 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         assert x_0.shape == x_1.shape
         assert torch.all(x_0 == self._mask_index)  # Every atom should be masked in the initial state.
         assert torch.all(x_1 != self._mask_index)  # No atom should not be masked in the final state.
-        assert model_prediction[0].shape == (x_0.shape[0], MAX_ATOM_NUM - 1)
         # model_prediction[0][a_i, j] is the probability of atom a_i being of species j + 1.
         # In order to compute the cross-entropy loss, we need to correct for the shift of the species in x_1.
-        return functional.cross_entropy(model_prediction[0], x_1 - 1)
+        pred = model_function(x_t)[0] 
+        assert pred.shape == (x_0.shape[0], MAX_ATOM_NUM - 1)
+        return functional.cross_entropy(pred, x_1 - 1)
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
@@ -199,7 +204,8 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
             rate += rate_db
 
             # Don't mask on the final step.
-            if abs(t + dt - 1.0) < 1e-6:
+            if abs(t + dt - BIG_TIME) < 1e-6:
+                assert len(rate.shape) == 2
                 rate[:, 0] = 0.0
 
             # Compute step probabilities and sample.
@@ -212,7 +218,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
 
             t += dt
 
-            if abs(t + dt - 1.0) < 1e-6:
+            if abs(t + dt - BIG_TIME) < 1e-6:
                 assert torch.all(x_t != self._mask_index)
 
         return x_t

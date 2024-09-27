@@ -33,9 +33,10 @@ class ConstantEpsilon(Epsilon):
         self._check_t(t)
         return torch.full_like(t, self._c)
 
+
 class VanishingEpsilon(Epsilon):
     """
-    Epsilon function epsilon(t) = c * sqrt(1 - t)
+    Epsilon function epsilon(t) = c * sqrt(1 - t).
 
     :params c:
         Constant in front of square root
@@ -62,5 +63,4 @@ class VanishingEpsilon(Epsilon):
         :rtype: torch.Tensor
         """
         self._check_t(t)
-        ans = self._c * torch.sqrt(1 - t)
-        return torch.full_like(t, ans)
+        return self._c * torch.sqrt(1 - t)
