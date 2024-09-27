@@ -52,12 +52,8 @@ class OMG(L.LightningModule):
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms))
 
-        x_t = self.si.interpolate(t, x_0, x_1)
-        
-        pred = self(x_t, t)
-        
-        loss = self.si.loss(self.model, pred, t, x_0, x_1) 
-       
+        loss = self.si.loss_from_interpolation(self.model, t, x_0, x_1)
+
         return loss
 
     def validation_step(self, x_1) -> torch.Tensor:
