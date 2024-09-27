@@ -177,6 +177,8 @@ class OMGDataModule(L.LightningDataModule):
         super().__init__()
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
+        if self.val_dataset is None:
+            self.val_dataloader = None
 
     def dataloader(self, dataset: Dataset, **kwargs: Any) -> DataLoader:
         return DataLoader(dataset, **kwargs)
@@ -195,8 +197,7 @@ class OMGDataModule(L.LightningDataModule):
         )
 
     def val_dataloader(self) -> DataLoader:
-        assert self.val_dataset is not None
-
         kwargs = copy.copy(self.kwargs)
         kwargs.pop('sampler', None)
         kwargs.pop('batch_sampler', None)
+        return self.dataloader(self.val_dataset, shuffle=False, **kwargs)
