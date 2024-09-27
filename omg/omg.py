@@ -5,7 +5,7 @@ import torch.nn as nn
 from torch import optim
 from typing import Optional, Sequence
 from omg.sampler.sampler import Sampler
-from typing import Optional
+from omg.utils import xyz_saver 
 
 class OMG(L.LightningModule):
     """
@@ -103,13 +103,14 @@ class OMG(L.LightningModule):
         return loss
 
     # TODO: what do we want to return
-    def predict_step(self):
+    def predict_step(self, x):
         """
         Performs generation
         """
         x_0 = self.sampler.sample_p_0()
         gen = self.si.integrate(x_0, self.model)
         # probably want to turn structure back into some other object that's easier to work with
+        xyz_saver(gen)
         return gen
 
     #TODO allow for YAML config

@@ -388,9 +388,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         ode_wrapper = lambda t, x: self._corrector.correct(model_function(t, x)[0])
 
         # Integrate with scipy IVP integrator
+        original_shape = x_t.shape
+        x_t = torch.reshape(x_t, (-1,))
         x_t_new = solve_ivp(ode_wrapper, tspan, x_t)
 
-        return torch.tensor(x_t_new[:, -1])
+        return torch.tensor(x_t_new.y[:, -1].reshape(original_shape))
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                        x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:

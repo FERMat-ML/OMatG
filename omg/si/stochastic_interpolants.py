@@ -1,7 +1,8 @@
 from typing import Callable, Sequence
 import torch
 from torch_geometric.data import Data
-from omg.globals import reshape_t, DataField, SMALL_TIME, BIG_TIME
+from omg.utils import reshape_t, DataField
+from omg.globals import SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
 
 
@@ -11,7 +12,7 @@ class StochasticInterpolants(object):
     p_1 at times t for different coordinate types x (like atom species, fractional coordinates, and lattice vectors).
 
     Every stochastic interpolant is associated with a data field and a cost factor. The possible data fields are defined
-    in the omg.globals.DataField enumeration. Data is transmitted using the torch_geometric.data.Data class which allows
+    in the omg.utils.DataField enumeration. Data is transmitted using the torch_geometric.data.Data class which allows
     for accessing the data with a dictionary-like interface.
 
     The loss returned by every stochastic interpolant is scaled by the corresponding cost factor.
@@ -204,8 +205,14 @@ class StochasticInterpolants(object):
                 x_int_dict = x_int.to_dict()
 
                 def model_prediction_fn(t, x):
+                    t = torch.tensor(t)
+                    x = torch.tensor(x)
+                    x = x.reshape(x_int_dict[data_field.name].shape)
+                    t = t.repeat(len(x_int_dict['n_atoms']),)
                     x_int_dict[data_field.name].copy_(x)
-                    return model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
+                    b, eta = model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
+                    b, eta = b.reshape((-1,)), eta.reshape((-1,))
+                    return b, eta
 
                 new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
                                                     x_t_dict[data_field.name], tspan))

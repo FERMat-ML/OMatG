@@ -45,7 +45,7 @@ model:
     class_path: omg.sampler.sample_from_rng.SampleFromRNG
     init_args:
       distributions: null
-      n_particle_sampler: 1
+      n_particle_sampler: 4
       convert_to_fractional: true
       batch_size: 2
     # Code for sampling from dataset
@@ -83,4 +83,6 @@ data:
            - "data/mp_20/train.lmdb"
           # property_keys: # specify only when you wanna do guided training
           #  - "band_gap"
+  predict_dataset:
+    class_path: omg.datamodule.dataloader.NullDataset
   batch_size: 2

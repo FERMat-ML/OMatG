@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 import math
+from torch_geometric.data import Data
 
 class SinusoidalTimeEmbeddings(nn.Module):
     """ Attention is all you need. """
