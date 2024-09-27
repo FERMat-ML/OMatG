@@ -1,7 +1,8 @@
 from typing import Callable, Sequence
 import torch
 from torch_geometric.data import Data
-from omg.utils import reshape_t, DataField, SMALL_TIME, BIG_TIME
+from omg.utils import reshape_t, DataField
+from omg.globals import SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
 
 
@@ -11,7 +12,7 @@ class StochasticInterpolants(object):
     p_1 at times t for different coordinate types x (like atom species, fractional coordinates, and lattice vectors).
 
     Every stochastic interpolant is associated with a data field and a cost factor. The possible data fields are defined
-    in the omg.globals.DataField enumeration. Data is transmitted using the torch_geometric.data.Data class which allows
+    in the omg.utils.DataField enumeration. Data is transmitted using the torch_geometric.data.Data class which allows
     for accessing the data with a dictionary-like interface.
 
     The loss returned by every stochastic interpolant is scaled by the corresponding cost factor.

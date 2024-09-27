@@ -1,3 +1,10 @@
+import torch
+
+class DataField(Enum):
+    pos = auto()
+    cell = auto()
+    species = auto()
+
 def reshape_t(t: torch.Tensor, n_atoms: torch.Tensor, data_field: DataField) -> torch.Tensor:
     """
     Reshape the given tensor of times for every configuration of the batch so that it can be used for the given data field.  
