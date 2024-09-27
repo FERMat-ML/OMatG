@@ -1,0 +1,86 @@
+model:
+  si:
+    class_path: omg.si.stochastic_interpolants.StochasticInterpolants
+    init_args:
+      stochastic_interpolants:
+        # chemical species
+        - class_path: omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform
+          init_args:
+            number_integration_steps: 100
+            noise: 0.
+        # fractional coordinates
+        - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
+          init_args:
+            interpolant: omg.si.interpolants.PeriodicLinearInterpolant
+            gamma: null
+            epsilon: null
+            differential_equation_type: "ODE"
+            sde_number_time_steps: null
+            corrector: 
+              class_path: omg.si.corrector.PeriodicBoundaryConditionsCorrector
+              init_args:
+                min_value: 0
+                max_value: 1
+        # lattice vectors
+        - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
+          init_args:
+            interpolant: omg.si.interpolants.LinearInterpolant
+            gamma: null
+            epsilon: null
+            differential_equation_type: "ODE"
+            sde_number_time_steps: null
+            corrector: null
+      data_fields: 
+        # if the order of the data_fields changes,
+        # the order of the above StochasticInterpolant inputs must also change
+        - "species"
+        - "pos"
+        - "cell"
+      integration_time_steps: 100
+  relative_si_costs:
+    - 0.333333333333
+    - 0.333333333333
+    - 0.333333333333
+  sampler:
+    class_path: omg.sampler.sample_from_rng.SampleFromRNG
+    init_args:
+      distributions: null
+      n_particle_sampler: 1
+      convert_to_fractional: true
+      batch_size: 2
+    # Code for sampling from dataset
+    # class_path: omg.sampler.sample_from_dataset.SampleFromDataset
+    # init_args:
+    #   dataset:
+    #   convert_to_fractional: 
+    #   batch_size: 
+  model:
+    class_path: omg.model.model.Model
+    init_args:
+      encoder:
+        class_path: omg.model.encoders.cspnet_full.CSPNetFull
+        # assume all defaults are good
+      head:
+        class_path: omg.model.heads.pass_through.PassThrough
+      time_embedder:
+        class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+        init_args:
+          dim: 256 # has to be same as latent_dim in cspnet
+      prop_embedder:
+            class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+            init_args:
+                dim: 32 # has to be sam eas prop_emb_dim of adapter module
+      property_keys: "band_gap"
+
+data:
+  train_dataset:
+    class_path: omg.datamodule.dataloader.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+           - "data/mp_20/train.lmdb"
+          property_keys: # specify only when you wanna do guided training
+           - "band_gap"
+  batch_size: 2

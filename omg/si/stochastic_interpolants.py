@@ -157,7 +157,7 @@ class StochasticInterpolants(object):
             def model_prediction_fn(x):
                 x_t_clone_dict[data_field.name].copy_(x)
                 return model_function(x_t_clone, t)[b_data_field], model_function(x_t_clone, t)[eta_data_field]
-
+            x_t_dict["property"]|= x_1_dict["property"] # to copy actual property values from x_1 to x_t
             assert data_field.name + "_z" in x_t_dict["property"]
             assert "loss_" + data_field.name not in losses
             losses["loss_" + data_field.name] = stochastic_interpolant.loss(

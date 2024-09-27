@@ -15,6 +15,9 @@ from diffcsp.common.data_utils import lattice_params_to_matrix_torch, get_pbc_di
 from diffcsp.pl_modules.cspnet import CSPLayer
 from diffcsp.pl_modules.cspnet import SinusoidsEmbedding
 
+from omg.model.model_utils import AdapterModule
+from omg.model.model_utils import prop_indicator
+
 from .encoder import Encoder
 from omg.globals import MAX_ATOM_NUM 
 
@@ -37,7 +40,9 @@ class CSPNetFull(Encoder, CSPNet):
         ip = True,
         smooth = False,
         pred_type = True,
-        pred_scalar = False
+        pred_scalar = False,
+        am_hidden_dim = 128, # added to acomodate adapter module
+        prop_embed_dim = 32  # needs to match the property embedding dimension of yaml file for time
     ):
 
         super().__init__()
@@ -79,6 +84,12 @@ class CSPNetFull(Encoder, CSPNet):
         if self.pred_scalar:
             self.scalar_out = nn.Linear(hidden_dim, 1)
 
+        # Initialize AdapterModule->Need to intialize num_layers adapters each with their own weights
+        self.adapters = torch.nn.ModuleList()
+        for i in range (self.num_layers):
+            adapter = AdapterModule(input_dim=hidden_dim, am_hidden_dim=am_hidden_dim, property_dim=prop_embed_dim)
+            self.adapters.append(adapter) # already on CUDA
+
     def _convert_inputs(self, x, **kwargs):
         atom_types = x.species
         frac_coords = x.pos
@@ -88,7 +99,7 @@ class CSPNetFull(Encoder, CSPNet):
         return atom_types, frac_coords, lattices, num_atoms, node2graph
 
 
-    def _forward(self, atom_types, frac_coords, lattices, num_atoms, node2graph, t=0.0, prop=None):
+    def _forward(self, atom_types, frac_coords, lattices, num_atoms, node2graph, t, prop=None):
         # taken from DiffCSP with additional output layers included
 
         edges, frac_diff = self.gen_edges(num_atoms, frac_coords, lattices, node2graph)
@@ -101,7 +112,12 @@ class CSPNetFull(Encoder, CSPNet):
         node_features = torch.cat([node_features, t_per_atom], dim=1)
         node_features = self.atom_latent_emb(node_features)
 
+        if prop is not None:
+            prop_indicator = prop_indicator(batch_size=len(num_atoms), p_uncond=0.2) #p_uncond should be in yaml
+
         for i in range(0, self.num_layers):
+            if prop is not None:
+                node_features = self.adapters[i](node_features, prop, prop_indicator, num_atoms)
             node_features = self._modules["csp_layer_%d" % i](node_features, frac_coords, lattices, edges, edge2graph, frac_diff = frac_diff)
 
         if self.ln:
