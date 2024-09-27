@@ -67,13 +67,14 @@ class CSPNetFull(Encoder, CSPNet):
         self.cutoff = cutoff
         self.max_neighbors = max_neighbors
         self.pred_type = pred_type
+        self.max_atoms = max_atoms
         self.ln = ln
         self.edge_style = edge_style
         if self.ln:
             self.final_layer_norm = nn.LayerNorm(hidden_dim)
         if self.pred_type:
-            self.type_out = nn.Linear(hidden_dim, MAX_ATOMIC_NUM)
-            self.type_out_2 = nn.Linear(hidden_dim, MAX_ATOMIC_NUM)
+            self.type_out = nn.Linear(hidden_dim, self.max_atoms)
+            self.type_out_2 = nn.Linear(hidden_dim, self.max_atoms)
         self.pred_scalar = pred_scalar
         if self.pred_scalar:
             self.scalar_out = nn.Linear(hidden_dim, 1)
