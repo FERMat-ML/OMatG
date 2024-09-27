@@ -208,7 +208,6 @@ class StochasticInterpolants(object):
                     x = torch.tensor(x)
                     x = x.reshape(x_int_dict[data_field.name].shape)
                     t = t.repeat(len(x_int_dict['n_atoms']),)
-                    print (x.shape,t.shape)
                     x_int_dict[data_field.name].copy_(x)
                     b, eta = model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
                     b, eta = b.reshape((-1,)), eta.reshape((-1,))
