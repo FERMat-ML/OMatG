@@ -179,6 +179,7 @@ class OMGDataModule(L.LightningDataModule):
         self.val_dataset = val_dataset
         if self.val_dataset is None:
             self.val_dataloader = None
+        self.kwargs = kwargs
 
     def dataloader(self, dataset: Dataset, **kwargs: Any) -> DataLoader:
         return DataLoader(dataset, **kwargs)
