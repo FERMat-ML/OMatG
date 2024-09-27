@@ -19,8 +19,8 @@ model:
             corrector: 
               class_path: omg.si.corrector.PeriodicBoundaryConditionsCorrector
               init_args:
-                min: 0
-                max: 1
+                min_value: 0
+                max_value: 1
         # lattice vectors
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
           init_args:
@@ -55,15 +55,17 @@ model:
     #   convert_to_fractional: 
     #   batch_size: 
   model:
-    encoder:
-      class_path: omg.model.encoders.cspnet_full.CSPNetFull
+    class_path: omg.model.model.Model
+    init_args:
+      encoder:
+        class_path: omg.model.encoders.cspnet_full.CSPNetFull
         # assume all defaults are good
-    head:
-      class_path: omg.model.heads.pass_through.PassThrough
-    time_embedder:
-      class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
-      init_args:
-        dim: 256
+      head:
+        class_path: omg.model.heads.pass_through.PassThrough
+      time_embedder:
+        class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+        init_args:
+          dim: 256
 
 data:
   train_dataset:
