@@ -26,7 +26,7 @@ class CSPNetFull(Encoder, CSPNet):
         hidden_dim = 128,
         latent_dim = 256,
         num_layers = 4,
-        max_atoms = MAX_ATOM_NUM - 1,
+        max_atoms = MAX_ATOM_NUM,
         act_fn = 'silu',
         dis_emb = 'sin',
         num_freqs = 128,
