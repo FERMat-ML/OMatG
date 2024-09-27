@@ -48,7 +48,7 @@ class AdapterModule(nn.Module):
 
         return H_prime_L
 
-def PropIndicator(batch_size, p_uncond):
+def prop_indicator(batch_size, p_uncond):
     property_indicator = torch.bernoulli(torch.ones(batch_size)*(1.-p_uncond))
     return property_indicator
 

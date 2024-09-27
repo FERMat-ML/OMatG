@@ -16,7 +16,7 @@ from diffcsp.pl_modules.cspnet import CSPLayer
 from diffcsp.pl_modules.cspnet import SinusoidsEmbedding
 
 from omg.model.model_utils import AdapterModule
-from omg.model.model_utils import PropIndicator
+from omg.model.model_utils import prop_indicator
 
 from .encoder import Encoder
 from omg.globals import MAX_ATOM_NUM 
@@ -112,8 +112,7 @@ class CSPNetFull(Encoder, CSPNet):
         node_features = torch.cat([node_features, t_per_atom], dim=1)
         node_features = self.atom_latent_emb(node_features)
 
-        prop_indicator = PropIndicator(batch_size=len(num_atoms), p_uncond=0.2) #p_uncond should be in yaml
-        prop_indicator = prop_indicator.to(node_features.device)
+        prop_indicator = prop_indicator(batch_size=len(num_atoms), p_uncond=0.2) #p_uncond should be in yaml
 
         for i in range(0, self.num_layers):
             if prop is not None:
