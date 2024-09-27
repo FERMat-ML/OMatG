@@ -71,8 +71,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         x_t[mask] = self._mask_index
         return x_t, torch.zeros_like(x_t)
 
-    def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor, z: torch.Tensor, batch_pointer: torch.Tensor) -> torch.Tensor:
+    def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
+             t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
+             batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the cross-entropy loss for the discrete flow matching between points x_0 and x_1 from two distributions
         p_0 and p_1 at times t based on the model prediction for the probability distributions over the species.
@@ -85,9 +86,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         prediction returns a tensor of shape (sum(n_atoms), MAX_ATOM_NUM - 1) containing the probability distribution
         over the species (excluding the mask with token 0) of every atom in the batch.
 
-        :param model_prediction:
-            Model prediction for the probablity distributions over the species.
-        :type model_prediction: tuple[torch.Tensor, torch.Tensor]
+        :param model_function:
+            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.
+        :type model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
         :param t:
             Times in [0,1].
         :type t: torch.Tensor

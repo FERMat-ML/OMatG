@@ -41,15 +41,16 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         assert torch.equal(x_0, x_1)
         return x_0, torch.zeros_like(x_0)
 
-    def loss(self, model_prediction: tuple[torch.Tensor, torch.Tensor], t: torch.Tensor, x_0: torch.Tensor,
-             x_1: torch.Tensor, z: torch.Tensor, batch_pointer: torch.Tensor) -> torch.Tensor:
+    def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
+             t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
+             batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
 
-        :param model_prediction:
-            Model prediction for the velocity fields b and the denoisers eta.
-        :type model_prediction: tuple[torch.Tensor, torch.Tensor]
+        :param model_function:
+            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.
+        :type model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
         :param t:
             Times in [0,1].
         :type t: torch.Tensor

@@ -190,7 +190,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             interpolate_derivative += self._gamma.gamma_derivative(t) * z
         return interpolate_derivative
 
-    def loss(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
+    def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
              batch_pointer: torch.Tensor) -> torch.Tensor:
         """
@@ -201,9 +201,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         either _ode_loss or _sde_loss, which are chosen based on the type of differential equation (self._de_type).
 
         :param model_function:
-            Model function returning the velocity fields b and the denoisers eta given the current times t and positions
-            x_t.
-        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
+            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.
+        :type model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
@@ -227,7 +226,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         raise NotImplementedError
 
-    def _ode_loss(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
+    def _ode_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
                   batch_pointer: torch.Tensor) -> torch.Tensor:
         """
@@ -235,8 +234,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
 
         :param model_function:
-            Model function returning the velocity fields b and the denoisers eta given the current times t and positions
-            x_t.
+            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.
         :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
         :param t:
             Times in [0,1].
@@ -268,14 +266,14 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             x_t_m = x_t_without_gamma - self._gamma.gamma(t) * z
             expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
             expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
-            loss = (nn.functional.mse_loss(expected_velocity_p, model_function(x_t_p, t)[0])
-                    + nn.functional.mse_loss(expected_velocity_m, model_function(x_t_m, t)[0])) / 2.0
+            loss = (nn.functional.mse_loss(expected_velocity_p, model_function(x_t_p)[0])
+                    + nn.functional.mse_loss(expected_velocity_m, model_function(x_t_m)[0])) / 2.0
         else:
             assert self._gamma is None
-            loss = nn.functional.mse_loss(expected_velocity_without_gamma, model_function(x_t_without_gamma, t)[0])
+            loss = nn.functional.mse_loss(expected_velocity_without_gamma, model_function(x_t_without_gamma)[0])
         return loss
 
-    def _sde_loss(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
+    def _sde_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
                   batch_pointer: torch.Tensor) -> torch.Tensor:
         """
@@ -283,9 +281,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
 
         :param model_function:
-            Model function returning the velocity fields b and the denoisers eta given the current times t and positions
-            x_t.
-        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
+            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.
+        :type model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
@@ -316,12 +313,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             x_t_m = x_t_without_gamma - self._gamma.gamma(t) * z
             expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
             expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
-            pred_b_p, pred_z = model_function(x_t_p, t)
+            pred_b_p, pred_z = model_function(x_t_p)
             loss_b = (nn.functional.mse_loss(expected_velocity_p, pred_b_p)
-                      + nn.functional.mse_loss(expected_velocity_m, model_function(x_t_m, t)[0])) / 2.0
+                      + nn.functional.mse_loss(expected_velocity_m, model_function(x_t_m)[0])) / 2.0
         else:
             assert self._gamma is None
-            pred_b, pred_z = model_function(x_t_without_gamma, t)
+            pred_b, pred_z = model_function(x_t_without_gamma)
             loss_b = nn.functional.mse_loss(expected_velocity_without_gamma, pred_b)
 
         loss_z = nn.functional.mse_loss(z, pred_z)
