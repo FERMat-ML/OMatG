@@ -58,7 +58,7 @@ class StochasticInterpolants(object):
         """
         return len(self._stochastic_interpolants)
 
-    def _interpolate(self, t: torch.Tensor, x_0: Data, x_1: Data) -> Data:
+    def _interpolate(self, t: torch.Tensor, x_0: Data, x_1: Data) -> tuple[Data, Data]:
         """
         Stochastically interpolate between the collection of points x_0 and x_1 from the collection of two distributions
         p_0 and p_1 at times t.
@@ -74,16 +74,18 @@ class StochasticInterpolants(object):
         :type x_1: torch_geometric.data.Data
 
         :return:
-            Collection of stochastically interpolated points x_t stored in a torch_geometric.data.Data object.
-        :rtype: torch_geometric.data.Data
+            Collection of stochastically interpolated points x_t stored in a torch_geometric.data.Data object,
+            and the collection of z values stored in a torch_geometric.data.Data object.
+        :rtype: tuple[torch_geometric.data.Data, torch_geometric.data.Data]
         """
         x_0_dict = x_0.to_dict()
         x_1_dict = x_1.to_dict()
         assert torch.equal(x_0.ptr, x_1.ptr)
         assert torch.equal(x_0.n_atoms, x_1.n_atoms)
         n_atoms = x_0.n_atoms
-        x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
+        x_t = x_0.clone()
         x_t_dict = x_t.to_dict()
+        z_data = {}
         for stochastic_interpolant, data_field in zip(self._stochastic_interpolants, self._data_fields):
             assert data_field.name in x_0_dict
             assert data_field.name in x_1_dict
@@ -94,10 +96,9 @@ class StochasticInterpolants(object):
                                                                      x_1_dict[data_field.name], x_0.ptr)
             # Assignment does not update x_t.
             x_t_dict[data_field.name].copy_(interpolated_x_t)
-            assert data_field.name + "_z" not in x_t_dict["property"]
-            # This appears to be fine though.
-            x_t_dict["property"][data_field.name + "_z"] = z
-        return x_t
+            assert data_field.name not in z_data
+            z_data[data_field.name] = z
+        return x_t, Data.from_dict(z_data)
 
     def losses(self, model_function: Callable[[Data, torch.tensor], Data], t: torch.Tensor, x_0: Data,
                x_1: Data) -> dict[str, torch.Tensor]:
@@ -131,11 +132,13 @@ class StochasticInterpolants(object):
             The losses for the collection of stochastic interpolants.
         :rtype: dict[str, torch.Tensor]
         """
-        # We have to interpolate everything first so that we can pass all interpolated to the model function.
-        x_t = self._interpolate(t, x_0, x_1)
+        # Interpolate everything first so that we can pass all interpolated to the model function.
+        x_t, z = self._interpolate(t, x_0, x_1)
+
         x_0_dict = x_0.to_dict()
         x_1_dict = x_1.to_dict()
         x_t_dict = x_t.to_dict()
+        z_dict = z.to_dict()
         assert torch.equal(x_0.ptr, x_1.ptr)
         assert torch.equal(x_0.n_atoms, x_1.n_atoms)
         n_atoms = x_0.n_atoms
@@ -151,18 +154,20 @@ class StochasticInterpolants(object):
             assert reshaped_t.shape == x_1_dict[data_field.name].shape
             assert reshaped_t.shape == x_t_dict[data_field.name].shape
 
-            x_t_clone = x_t.clone(*[data_field.name for data_field in self._data_fields])
-            x_t_clone_dict = x_t_clone.to_dict()
-
             def model_prediction_fn(x):
+                # Clone x_t inside the function so that this function can be called several time.
+                # If cloned outside, torch will complain that one of the variables needed for gradient computation has
+                # been modified by an inplace operation.
+                x_t_clone = x_t.clone()
+                x_t_clone_dict = x_t_clone.to_dict()
                 x_t_clone_dict[data_field.name].copy_(x)
                 return model_function(x_t_clone, t)[b_data_field], model_function(x_t_clone, t)[eta_data_field]
-            x_t_dict["property"] = x_1_dict["property"] # to copy actual property values from x_1 to x_t
-            assert data_field.name + "_z" in x_t_dict["property"]
+
+            assert data_field.name in z_dict
             assert "loss_" + data_field.name not in losses
             losses["loss_" + data_field.name] = stochastic_interpolant.loss(
                 model_prediction_fn, reshaped_t, x_0_dict[data_field.name], x_1_dict[data_field.name],
-                x_t_dict[data_field.name], x_t_dict["property"][data_field.name + "_z"], x_0.ptr)
+                x_t_dict[data_field.name], z[data_field.name], x_0.ptr)
         return losses
 
     def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data]) -> Data:
