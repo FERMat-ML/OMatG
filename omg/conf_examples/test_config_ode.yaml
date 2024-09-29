@@ -44,7 +44,10 @@ model:
   sampler:
     class_path: omg.sampler.sample_from_rng.SampleFromRNG
     init_args:
-      distributions: null
+      cell_distribution:
+        class_path: omg.sampler.distribution.NDependentScaledNormal
+        init_args:
+         c: 17.32666337598216 
       n_particle_sampler: 4
       convert_to_fractional: true
       batch_size: 2
