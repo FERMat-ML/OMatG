@@ -4,6 +4,7 @@ from torch_geometric.data import Data
 from omg.utils import reshape_t, DataField
 from omg.globals import SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
+from tqdm import trange
 
 
 class StochasticInterpolants(object):
@@ -170,7 +171,7 @@ class StochasticInterpolants(object):
                 x_t_dict[data_field.name], z[data_field.name], x_0.ptr)
         return losses
 
-    def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data]) -> Data:
+    def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data], save_intermediate: bool = False) -> Data:
         """
         Integrate the collection of points x_0 from the collection of distributions p_0 from time 0 to 1 based on the
         model that provides the collection of velocity fields b and denoisers eta.
@@ -201,7 +202,9 @@ class StochasticInterpolants(object):
         assert all(data_field.name in x_t_dict for data_field in self._data_fields)
         assert all(data_field.name in new_x_t_dict for data_field in self._data_fields)
 
-        for t_index in range(1, len(times)):
+        if save_intermediate:
+            inter_list = [x_t]
+        for t_index in trange(1, len(times), desc='Integrating'):
             tspan = (float(times[t_index - 1]), float(times[t_index]))
             for stochastic_interpolant, data_field in zip(self._stochastic_interpolants, self._data_fields):
                 b_data_field = data_field.name + "_b"
@@ -222,4 +225,9 @@ class StochasticInterpolants(object):
                 new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
                                                     x_t_dict[data_field.name], tspan))
             x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
-        return x_t
+            if save_intermediate:
+                inter_list.append(x_t)
+        if save_intermediate:
+            return x_t, inter_list
+        else:
+            return x_t

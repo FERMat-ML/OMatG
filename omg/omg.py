@@ -20,7 +20,6 @@ class OMG(L.LightningModule):
         self.sampler = sampler
         model = model.double()
         self.model = model
-        print (self.state_dict)
         if not len(relative_si_costs) == len(self.si):
             raise ValueError("The number of stochastic interpolants and costs must be equal.")
         if not all(cost >= 0.0 for cost in relative_si_costs):
@@ -121,9 +120,9 @@ class OMG(L.LightningModule):
         Performs generation
         """
         x_0 = self.sampler.sample_p_0()
-        gen = self.si.integrate(x_0, self.model)
+        gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
-        xyz_saver(gen)
+        xyz_saver(inter)
         return gen
 
     #TODO allow for YAML config
