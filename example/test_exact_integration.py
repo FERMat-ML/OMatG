@@ -34,12 +34,14 @@ pos_si = SingleStochasticInterpolant(interpolant=PeriodicLinearInterpolant(),gam
 
 cell_si = SingleStochasticInterpolant(interpolant=LinearInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE")
 
+species_si = DiscreteFlowMatchingUniform(number_integration_steps=STEPS, noise=0)
+
 # Sample p_1 and p_0
 x_1 = next(iter(dl.train_dataloader()))
 x_0 = sampler.sample_p_0(x_1)
 
 # Set up some "model" functions which just return the exact b field
-# These models need take x_t and t as arguments. But ground truth b field calculation is independent of both in these cases.
+# These models need take x_t and t as arguments. But for pos and cell ground truth b field calculation is independent of both
 def pos_model(x_t, t):
     gt_b = pos_si._interpolant.interpolate_derivative(torch.tensor([times[0]]), x_0.pos, x_1.pos, x_0.ptr)
     return gt_b
@@ -47,6 +49,11 @@ def pos_model(x_t, t):
 def cell_model(x_t, t):
     gt_b = cell_si._interpolant.interpolate_derivative(torch.tensor([times[0]]), x_0.cell, x_1.cell, x_0.ptr)
     return gt_b
+
+def species_model(x_t, t):
+    gt = functional.one_hot(x_t - 1, MAX_ATOM_NUM).double()
+    gt[gt == 0.] = -float("INF")
+    return gt # softmax of this is equivalent to one hot from above
 
 def pos_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic_interpolants 
     t = torch.tensor(t)
@@ -64,6 +71,12 @@ def cell_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochasti
     b = b.reshape((-1,))
     return b
 
+def species_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic_interpolants 
+    t = t.repeat(1,)
+    b = species_model(x, t)
+    b = b.reshape((-1,))
+    return b, None
+
 # Define times
 STEPS=10
 times = torch.linspace(SMALL_TIME, BIG_TIME, STEPS)
@@ -74,7 +87,7 @@ pos = x_0.pos
 print ('=========Positions=========')
 for i in range(1,len(times)):
     print (f'========={times[i]}=========')
-    x_t_true, _ = pos_si.interpolate(torch.tensor(times[i]), x_0.pos, x_1.pos, x_0.ptr)
+    x_t_true, _ = pos_si.interpolate(times[i], x_0.pos, x_1.pos, x_0.ptr)
     print ('---------Interpolated Value---------')
     print (x_t_true)
     pos = pos_si._ode_integrate(pos_model_wrapper, pos, (float(times[i - 1]), float(times[i])))
@@ -89,7 +102,7 @@ cell = x_0.cell
 print ('=========Cell=========')
 for i in range(1,len(times)):
     print (f'========={times[i]}=========')
-    x_t_true, _ = cell_si.interpolate(torch.tensor(times[i]), x_0.cell, x_1.cell, x_0.ptr)
+    x_t_true, _ = cell_si.interpolate(times[i], x_0.cell, x_1.cell, x_0.ptr)
     print ('---------Interpolated Value---------')
     print (x_t_true)
     cell = cell_si._ode_integrate(cell_model_wrapper, cell, (float(times[i - 1]), float(times[i])))
@@ -97,5 +110,21 @@ for i in range(1,len(times)):
     print (cell)
     print ('---------Difference---------')
     print (x_t_true - cell)
+    print ()
+    print ()
+
+# Check integration of species
+print ('=========Species=========')
+for i in range(1,len(times)):
+    print (f'========={times[i]}=========')
+    x_t_true, _ = species_si.interpolate(times[i], x_0.species, x_1.species, x_0.ptr)
+    print ('---------Interpolated Value---------')
+    print (x_t_true)
+    species = x_t_true.clone()
+    species = species_si.integrate(species_model_wrapper, species, (float(times[i - 1]), float(times[i])))
+    print ('---------Integrated Value---------')
+    print (species)
+    print ('---------Difference---------')
+    print (x_t_true - species)
     print ()
     print ()
