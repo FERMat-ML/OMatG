@@ -41,32 +41,25 @@ class SampleFromRNG(Sampler):
         RuntimeError: If the distributions > 3
     """
 
-    def __init__(self, distributions: Union[
-        None, np.random.Generator, List[np.random.Generator]] = None,
-                 n_particle_sampler: Union[int, Callable] = 1,
-                 convert_to_fractional: bool = True,
-                 batch_size: int = 1):
+    def __init__(self, species_distribution = None,
+                pos_distribution = None,
+                cell_distribution = None,
+                n_particle_sampler: Union[int, Callable] = 1,
+                convert_to_fractional: bool = True,
+                batch_size: int = 1):
 
         super().__init__()
 
-        if isinstance(distributions, list):
-            if len(distributions) > 3:
-                raise RuntimeError("Cannot sample from more than 3 distributions")
-            self.distribution = distributions
 
-        elif isinstance(distributions, np.random.Generator):
-            self.distribution = [distributions, distributions, distributions]
+        rng = np.random.default_rng()
+        if species_distribution is None:
+            species_distribution = partial(rng.integers, low=1, high=MAX_ATOM_NUM)
+        if pos_distribution is None:    
+            pos_distribution = partial(rng.uniform, low=0.0, high=1.0)
+        if cell_distribution is None:
+            cell_distribution = partial(rng.normal, loc=1.0, scale=1.0)
+        self.distribution = [species_distribution, pos_distribution, cell_distribution]
 
-        elif distributions is None:
-            rng = np.random.default_rng()
-            _species_sampler = partial(rng.integers, low=1, high=MAX_ATOM_NUM)
-            _pos_sampler = partial(rng.uniform, low=0.0, high=1.0)
-            _cell_sampler = partial(rng.normal, loc=1.0, scale=1.0)
-            self.distribution = [_species_sampler, _pos_sampler, _cell_sampler]
-
-        else:
-            raise RuntimeError(
-                "Distributions must be a numpy random generator or a list of numpy random generators or None")
 
         if isinstance(n_particle_sampler, int):
             def _constant_sampler():
@@ -94,11 +87,13 @@ class SampleFromRNG(Sampler):
 
             pos = self.distribution[1](size=(n[i].item(), 3))
             pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
-
-            lattice_ = self.distribution[2](size=6)
-            cell = np.zeros((3,3))
-            cell[np.triu_indices(3)] = lattice_
-            cell = cell + cell.T # TODO: A27 equation looks redundant.
+            
+            # TODO: maybe we don't need to restrict to symmetric->At least we aren't doing so for p1
+            lattice_ = self.distribution[2](n[i].item())
+            cell = lattice_ 
+            #cell = np.zeros((3,3))
+            #cell[np.triu_indices(3)] = lattice_
+            #cell = cell + cell.T # TODO: A27 equation looks redundant.
 
             # its already [0,1) fractional coordinates so no need to convert
             if not self._frac:
