@@ -178,7 +178,7 @@ class PeriodicLinearInterpolant(Interpolant):
         assert self._check_t(t)
         omega = 2.0 * torch.pi * (x_1 - x_0)
         out = t * torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
-        return out + x_1 - torch.floor(out + x_1)
+        return out + x_0 - torch.floor(out + x_0)
 
     def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                                batch_pointer: torch.Tensor) -> torch.Tensor:
@@ -210,14 +210,16 @@ class PeriodicLinearInterpolant(Interpolant):
         :rtype: torch.Tensor
         """
         assert self._check_t(t)
-        omega = 2.0 * torch.pi * (x_0 - x_1)
+        omega = 2.0 * torch.pi * (x_1 - x_0)
         out = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
-
+        # TODO: Discuss
+        '''
         # Subtract mean w.r.t. number of atoms in each batch.
         for index in range(1, len(batch_pointer)):
             out[batch_pointer[index - 1]:batch_pointer[index]] -= (
                 out[batch_pointer[index - 1]:batch_pointer[index]].mean(dim=0))
-        return -out
+        '''
+        return out
 
 
 class EncoderDecoderInterpolant(Interpolant):
