@@ -211,7 +211,6 @@ class StochasticInterpolants(object):
                 eta_data_field = data_field.name + "_eta"
                 x_int = x_t.clone(*[data_field.name for data_field in self._data_fields])
                 x_int_dict = x_int.to_dict()
-
                 def model_prediction_fn(t, x):
                     t = torch.tensor(t)
                     x = torch.tensor(x)
@@ -224,7 +223,9 @@ class StochasticInterpolants(object):
 
                 x_int_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
                                                     x_t_dict[data_field.name], tspan))
-            x_t = x_int_dict.clone(*[data_field.name for data_field in self._data_fields])
+                x_t[data_field.name] = x_int_dict[data_field.name]
+            x_t_dict = x_t.to_dict()
+            print(x_t['cell'])
             if save_intermediate:
                 inter_list.append(x_t)
         if save_intermediate:
