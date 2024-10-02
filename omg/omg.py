@@ -6,7 +6,7 @@ from torch import optim
 from typing import Optional, Sequence
 from omg.sampler.sampler import Sampler
 from omg.utils import xyz_saver 
-
+from omg.si.utils import integrate, rk
 class OMG(L.LightningModule):
     """
     Main module which is fit and and used to generate structures using Lightning CLI.
@@ -120,9 +120,9 @@ class OMG(L.LightningModule):
         Performs generation
         """
         x_0 = self.sampler.sample_p_0()
-        gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
+        gen = integrate(rk, self.model, x_0)
         # probably want to turn structure back into some other object that's easier to work with
-        xyz_saver(inter)
+        xyz_saver(gen)
         return gen
 
     #TODO allow for YAML config
