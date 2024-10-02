@@ -384,15 +384,16 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
-        # Modify wrapper to only use b(t,x).
-        ode_wrapper = lambda t, x: self._corrector.correct(model_function(t, x)[0])
 
         # Integrate with scipy IVP integrator
         original_shape = x_t.shape
         x_t = torch.reshape(x_t, (-1,))
-        x_t_new = solve_ivp(ode_wrapper, tspan, x_t)
-
-        return torch.tensor(x_t_new.y[:, -1].reshape(original_shape))
+        x_t_new = solve_ivp(model_function, tspan, x_t)
+        x_t_new = torch.tensor(x_t_new.y[:, -1].reshape(original_shape))
+        
+        # Applies corrector to output of integration not the b field itself
+        # Can consider only applying corrector after final integration step but useful here for debugging/testing purposes
+        return self._corrector.correct(x_t_new)
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                        x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
