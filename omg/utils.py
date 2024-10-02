@@ -1,6 +1,7 @@
 import torch
 from enum import Enum, auto
 from torch_geometric.data import Data
+from typing import List, Union
 
 class DataField(Enum):
     pos = auto()
@@ -45,16 +46,19 @@ def reshape_t(t: torch.Tensor, n_atoms: torch.Tensor, data_field: DataField) -> 
         return t_per_atom                                                        
 
 # TODO: make options accesible to OMG via CLI
-def xyz_saver(data: Data):
+def xyz_saver(data: Union [Data, List[Data]]):
     """
     Takes data that has been generated and saves it as xyz file
     """
     from ase import Atoms
     from ase.io import write
     import time
-    batch_size = len(data.n_atoms)
+    if not isinstance(data, list):
+        data = [data]
     atoms = []
-    for i in range(batch_size):
-        lower, upper = data.ptr[i*1], data.ptr[(i*1)+1]
-        atoms.append(Atoms(numbers=data.species[lower:upper], scaled_positions =data.pos[lower:upper, :], cell=data.cell[i, :, :]))
+    for d in data:
+        batch_size = len(d.n_atoms)
+        for i in range(batch_size):
+            lower, upper = d.ptr[i*1], d.ptr[(i*1)+1]
+            atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :], cell=d.cell[i, :, :]))
     write(f'{time.strftime("%Y%m%d-%H%M%S")}.xyz', atoms)
