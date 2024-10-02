@@ -221,10 +221,12 @@ class StochasticInterpolants(object):
                     b, eta = model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
                     b, eta = b.reshape((-1,)), eta.reshape((-1,))
                     return b, eta
-
-                x_int_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
+                    
+                new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
                                                     x_t_dict[data_field.name], tspan))
-            x_t = x_int_dict.clone(*[data_field.name for data_field in self._data_fields])
+            x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
+            x_t_dict = x_t.to_dict()
+            
             if save_intermediate:
                 inter_list.append(x_t)
         if save_intermediate:
