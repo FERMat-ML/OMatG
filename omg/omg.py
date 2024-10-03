@@ -119,10 +119,11 @@ class OMG(L.LightningModule):
         """
         Performs generation
         """
-        x_0 = self.sampler.sample_p_0()
-        gen = integrate(rk, self.model, x_0)
+        x_0 = self.sampler.sample_p_0(x)
+        x_0.to(self.device)
+        gen = integrate(rk, self.model, x_0, device=self.device)
         # probably want to turn structure back into some other object that's easier to work with
-        xyz_saver(gen)
+        xyz_saver(gen.to('cpu'))
         return gen
 
     #TODO allow for YAML config

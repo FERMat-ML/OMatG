@@ -73,11 +73,11 @@ def rk(model, t, x, dt):
 
     return x
 
-def integrate(method, model, x, steps = 100, min_t=0., max_t=1.):
+def integrate(method, model, x, steps = 100, min_t=0., max_t=1., device='cpu'):
     times = torch.linspace(min_t, max_t, steps)
     dt = times[1] - times[0]
     for time in tqdm(times[:-1]):
-        time = time.repeat(len(x.n_atoms),)
+        time = time.repeat(len(x.n_atoms),).to(device)
         x = method(model, time, x, dt)
     return x
 
