@@ -6,7 +6,7 @@ import os
 import shutil
 from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, Callable
 
 import pickle as pkl
 import lmdb
@@ -760,6 +760,7 @@ class DataModule:
         reuse: bool = True,
         checksum: Optional[str] = None,
         property_keys: Tuple[str] = None,
+        use_transformed_if_available: bool = True
     ):
         """
         Read configurations from LMDB file and append to a dataset.
@@ -779,7 +780,7 @@ class DataModule:
         """
         # instance = self()
         self.add_from_lmdb(
-            path, dynamic_loading, subdir, save_path, reuse, checksum, property_keys
+            path, dynamic_loading, subdir, save_path, reuse, checksum, property_keys, use_transformed_if_available
         )
         self._property_keys = property_keys
         return self
@@ -793,6 +794,7 @@ class DataModule:
         reuse: bool = True,
         checksum: Optional[str] = None,
         property_keys: Tuple[str] = None,
+        use_transformed_if_available: bool = True
     ):
         """
         Read configurations from LMDB file and append to a dataset.
@@ -1179,6 +1181,17 @@ class DataModule:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._return_config_on_getitem = True
         logger.warning(f"Lazy config fetch for seq: Disabled")
+
+    def transform_and_save(self, transform: Union[List[Callable], Callable], attributes: List, save_path: Path):
+        """
+        Apply a transformation to the dataset and save the transformed dataset.
+
+        Args:
+            transform: Transformation to apply to the dataset.
+            save_path: Path to save the transformed dataset.
+        """
+
+    pass
 
 
 
