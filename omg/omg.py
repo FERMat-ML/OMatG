@@ -99,8 +99,9 @@ class OMG(L.LightningModule):
         total_loss = torch.tensor(0.0, device=self.device)
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
+            print (loss_key)
             losses[f"val_{loss_key}"] = cost * losses[loss_key]
-            total_loss += losses[loss_key]
+            total_loss += losses[f"val_{loss_key}"]
             losses.pop(loss_key)
 
         assert "loss_total" not in losses
