@@ -73,6 +73,31 @@ def rk(model, t, x, dt):
 
     return x
 
+def heun_second_order(model, eps, s, t, x, dt):
+    '''
+    Heun integrator
+
+    @param model : model function
+    @param eps : model epsilon
+    @param s : scaling
+    @param t : time
+    @param x : current x
+    @param dt : timestep
+    '''
+    # Integrate
+    x_hat = x + torch.sqrt(2 * eps) * torch.sqrt(dt) * torch.randn(x.shape)
+    t_up = t + dt
+    d = x_hat - model(x_hat, t_up)
+    x_up = x_hat + dt * d
+
+    # Apply second order correction
+    d_prime = x_up - model(x_up, t_up)
+    x_up = x + dt * 0.5 * (d + d_prime)
+
+    # Return
+    return x_up
+
+
 def integrate(method, model, x, steps = 100, min_t=0., max_t=1., device='cpu'):
     times = torch.linspace(min_t, max_t, steps)
     dt = times[1] - times[0]
