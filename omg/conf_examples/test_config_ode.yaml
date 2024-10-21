@@ -112,3 +112,4 @@ trainer:
       init_args:
         save_top_k: 1
         monitor: "val_loss_total"
+    - class_path: lightning.pytorch.callbacks.LearningRateFinder

@@ -6,7 +6,7 @@ from torch import optim
 from typing import Optional, Sequence
 from omg.sampler.sampler import Sampler
 from omg.utils import xyz_saver 
-from omg.si.utils import integrate, rk
+
 class OMG(L.LightningModule):
     """
     Main module which is fit and and used to generate structures using Lightning CLI.
@@ -14,11 +14,13 @@ class OMG(L.LightningModule):
     
     # TODO: specify argument types
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module,
-                 relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None) -> None:
+                 relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
+                 learning_rate: Optional[float] = 1.e-3) -> None:
         super().__init__()
         self.si = si 
         self.sampler = sampler
         model = model.double()
+        self.learning_rate = learning_rate
         self.model = model
         if not len(relative_si_costs) == len(self.si):
             raise ValueError("The number of stochastic interpolants and costs must be equal.")
@@ -49,6 +51,13 @@ class OMG(L.LightningModule):
         """
         x = self.model(x, t)
         return x
+
+    def on_fit_start(self):
+        if self.learning_rate:
+            # Overwrite learning rate after running LearningRateFinder
+            for optimizer in self.trainer.optimizers:
+                for param_group in optimizer.param_groups:
+                    param_group["learning_rate"] = self.learning_rate
 
     # TODO: specify argument types
     def training_step(self, x_1) -> torch.Tensor:
@@ -100,7 +109,7 @@ class OMG(L.LightningModule):
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
             losses[f"val_{loss_key}"] = cost * losses[loss_key]
-            total_loss += losses[loss_key]
+            total_loss += losses[f"val_{loss_key}"]
             losses.pop(loss_key)
 
         assert "loss_total" not in losses
@@ -119,11 +128,10 @@ class OMG(L.LightningModule):
         """
         Performs generation
         """
-        x_0 = self.sampler.sample_p_0(x)
-        x_0.to(self.device)
-        gen = integrate(rk, self.model, x_0, device=self.device)
+        x_0 = self.sampler.sample_p_0()
+        gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
-        xyz_saver(gen.to('cpu'))
+        xyz_saver(gen)
         return gen
 
     #TODO allow for YAML config

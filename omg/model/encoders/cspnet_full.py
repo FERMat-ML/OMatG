@@ -26,9 +26,9 @@ class CSPNetFull(Encoder, CSPNet):
 
     def __init__(
         self,
-        hidden_dim = 128,
+        hidden_dim = 512,
         latent_dim = 256,
-        num_layers = 4,
+        num_layers = 6,
         max_atoms = MAX_ATOM_NUM,
         act_fn = 'silu',
         dis_emb = 'sin',
