@@ -8,22 +8,6 @@ from typing import Any, Optional, Callable
 from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
 
 
-# Modify wrapper for use in SDE integrator
-class SDE(torch.nn.Module):
-    def __init__(self, model_func):
-        super().__init__()
-        self.model_func = model_func
-
-    def f(self, t, x):
-        preds = self.model_func(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
-        out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
-        return self._corrector.correct(out)
-
-    def g(self, t, x):
-        out = torch.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
-        return out
-
-
 class DifferentialEquationType(Enum):
     """
     Enum for the possible types of differential equation that should be used by the stochastic interpolants.
@@ -429,6 +413,27 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         # Can consider only applying corrector after final integration step but useful here for debugging/testing purposes
         return self._corrector.correct(x_t_new)
 
+    # Modify wrapper for use in SDE integrator
+    class SDE(torch.nn.Module):
+        def __init__(self, model_func, corrector, gamma, epsilon):
+            super().__init__()
+            self._model_func = model_func
+            self._corrector = corrector
+            self._gamma = gamma
+            self._epsilon = epsilon
+            # Required for torchsde.
+            self.sde_type = "ito"
+            self.noise_type = "diagonal"
+
+        def f(self, t, x):
+            preds = self._model_func(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
+            out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
+            return self._corrector.correct(out)
+
+        def g(self, t, x):
+            out = torch.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
+            return out
+
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                        x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
         """
@@ -455,9 +460,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
 
         # SDE Integrator
-        sde = SDE(model_func=model_function)
+        sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon)
         t_span = torch.tensor([time, time + time_step])
-        x_t_new = torchsde.sdeint(sde, x_t, t_span, **self._integrator_kwargs)
+        with torch.no_grad():
+            x_t_new = torchsde.sdeint(sde, x_t, t_span, **self._integrator_kwargs)
 
         # Return
         return torch.tensor(x_t_new[:, -1])
