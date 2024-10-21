@@ -1,12 +1,12 @@
 from enum import Enum, auto
 import numpy as np
-from scipy.integrate import solve_ivp
-import torchsde
-from torchdiffeq import odeint
 import torch
 import torch.nn as nn
+from torchdiffeq import odeint
+import torchsde
 from typing import Optional, Callable
 from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
+
 
 # Modify wrapper for use in SDE integrator
 class SDE(torch.nn.Module):
@@ -22,6 +22,7 @@ class SDE(torch.nn.Module):
     def g(self, t, x):
         out = torch.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
         return out
+
 
 class DifferentialEquationType(Enum):
     """
@@ -353,10 +354,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         return loss_b + loss_z
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                  x_t: torch.Tensor, t:float, t_step:float) -> torch.Tensor:
+                  x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
         """
-        Integrate the current positions x_t from time tspan[0] to tspan[1] based on the velocity fields b and the
-        denoisers eta returned by the model function.
+        Integrate the current positions x_t at the given time for the given time step based on the velocity fields b and
+        the denoisers eta returned by the model function.
 
         This method is only defined here to define all methods of the abstract base class. The actual loss method is
         either _ode_integrate or _sde_integrate, which are chosen based on the type of differential equation (self._de_type).
@@ -368,12 +369,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_t:
             Current positions.
         :type x_t: torch.Tensor
-        :param t:
-            initial time.
-        :type t: float
-        :param t_step:
-            time step
-        :type t_step: float
+        :param time:
+            Initial time (0-dimensional torch tensor).
+        :type time: torch.Tensor
+        :param time_step:
+            Time step (0-dimensional torch tensor).
+        :type time_step: torch.Tensor
 
         :return:
             Integrated position.
@@ -382,10 +383,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         raise NotImplementedError
 
     def _ode_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                       x_t: torch.Tensor, t:float, t_step:float) -> torch.Tensor:
+                       x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
         """
-        Integrate the ODE for the current positions x_t from time tspan[0] to tspan[1] based on the velocity fields b
-        and the denoisers eta returned by the model function.
+        Integrate the ODE for the current positions x_t at the given time for the given time step based on the velocity
+        fields b and the denoisers eta returned by the model function.
 
         :param model_function:
             Model function returning the velocity fields b and the denoisers eta given the current times t and positions
@@ -394,12 +395,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_t:
             Current positions.
         :type x_t: torch.Tensor
-        :param t:
-            initial time.
-        :type t: float
-        :param t_step:
-            time step
-        :type t_step: float
+        :param time:
+            Initial time (0-dimensional torch tensor).
+        :type time: torch.Tensor
+        :param time_step:
+            Time step (0-dimensional torch tensor).
+        :type time_step: torch.Tensor
 
         :return:
             Integrated position.
@@ -407,11 +408,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
 
         # Set up ODE function
-        odefunc = lambda time, x : model_function(time, x)[0]
+        odefunc = lambda t, x: model_function(t, self._corrector.correct(x))[0]
 
         # Integrate with scipy IVP integrator
         original_shape = x_t.shape
-        t_span = torch.tensor([t, t + t_step])
+        t_span = torch.tensor([time, time + time_step])
         x_t = torch.reshape(x_t, (-1,))
         x_t_new = odeint(odefunc, x_t, t_span)
         x_t_new = torch.tensor(x_t_new.y[:, -1].reshape(original_shape))
@@ -421,10 +422,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         return self._corrector.correct(x_t_new)
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                       x_t: torch.Tensor, t:float, t_step:float) -> torch.Tensor:
+                       x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
         """
-        Integrate the SDE for the current positions x_t from time tspan[0] to tspan[1] based on the velocity fields b
-        and the denoisers eta returned by the model function.
+        Integrate the SDE for the current positions x_t at the given time for the given time step based on the velocity
+        fields b and the denoisers eta returned by the model function.
 
         :param model_function:
             Model function returning the velocity fields b and the denoisers eta given the current times t and positions
@@ -433,13 +434,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_t:
             Current positions.
         :type x_t: torch.Tensor
-        :param t:
-            initial time.
-        :type t: float
-        :param t_step:
-            time step
-        :type t_step: float
-
+        :param time:
+            Initial time (0-dimensional torch tensor).
+        :type time: torch.Tensor
+        :param time_step:
+            Time step (0-dimensional torch tensor).
+        :type time_step: torch.Tensor
 
         :return:
             Integrated position.
@@ -448,7 +448,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
         # SDE Integrator
         sde = SDE(model_func=model_function)
-        t_span = torch.tensor([t, t + t_step])
+        t_span = torch.tensor([time, time + time_step])
         x_t_new = torchsde.sdeint(sde, x_t, t_span)
 
         # Return
