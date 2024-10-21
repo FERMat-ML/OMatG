@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from torchdiffeq import odeint
 import torchsde
-from typing import Optional, Callable
+from typing import Any, Optional, Callable
 from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
 
 
@@ -49,6 +49,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     The stochastic interpolant can either use an ordinary differential equation (ODE) or a stochastic differential
     equation during inference. If an SDE is used, one should additionally provide an epsilon function epsilon(t).
 
+    The ODE is integrated using the torchdiffeq library and the SDE is integrated using the torchsde library.
+
     :param interpolant:
         Interpolant I(t, x_0, x_1) between points from two distributions p_0 and p_1 at times t.
     :type interpolant: Interpolant
@@ -73,6 +75,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         conditions).
         If None, no correction will be applied.
     :type corrector: Optional[Corrector]
+    :param integrator_kwargs: Optional keyword arguments for the odeint function of torchdiffeq (see
+        https://github.com/rtqichen/torchdiffeq/blob/master/README.md) or the sdeint function of torchsde (see
+        https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md#keyword-arguments-of-sdeint).
+    :type integrator_kwargs: Optional[dict]
 
     :raises ValueError:
         If epsilon is provided for ODEs or not provided for SDEs.
@@ -82,7 +88,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
                  differential_equation_type: str, sde_number_time_steps: Optional[int] = None,
-                 corrector: Optional[Corrector] = None) -> None:
+                 corrector: Optional[Corrector] = None, integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -116,6 +122,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
                 raise ValueError("SDE number of time steps should be provided SDEs.")
             if not self._sde_number_time_steps > 0:
                 raise ValueError("SDE number of time steps should be bigger than zero.")
+        self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
 
     class IdentityCorrector(Corrector):
         """
@@ -414,7 +421,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         original_shape = x_t.shape
         t_span = torch.tensor([time, time + time_step])
         x_t = torch.reshape(x_t, (-1,))
-        x_t_new = odeint(odefunc, x_t, t_span)
+        x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)
         x_t_new = torch.tensor(x_t_new.y[:, -1].reshape(original_shape))
 
         # Applies corrector to output of integration not the b field itself
@@ -449,7 +456,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         # SDE Integrator
         sde = SDE(model_func=model_function)
         t_span = torch.tensor([time, time + time_step])
-        x_t_new = torchsde.sdeint(sde, x_t, t_span)
+        x_t_new = torchsde.sdeint(sde, x_t, t_span, **self._integrator_kwargs)
 
         # Return
         return torch.tensor(x_t_new[:, -1])
