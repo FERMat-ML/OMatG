@@ -79,10 +79,10 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         return torch.tensor(0.0)
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                  x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
+                  x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
         """
-        Integrate the current positions x_t from time tspan[0] to tspan[1] based on the velocity fields b and the
-        denoisers eta returned by the model function.
+        Integrate the current positions x_t at the given time for the given time step based on the velocity fields b and
+        the denoisers eta returned by the model function.
 
         :param model_function:
             Model function returning the velocity fields b and the denoisers eta given the current times t and positions
@@ -91,9 +91,12 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         :param x_t:
             Current positions.
         :type x_t: torch.Tensor
-        :param tspan:
-            Time span for integration.
-        :type tspan: tuple[float, float]
+        :param time:
+            Initial time (0-dimensional torch tensor).
+        :type time: torch.Tensor
+        :param time_step:
+            Time step (0-dimensional torch tensor).
+        :type time_step: torch.Tensor
 
         :return:
             Integrated position.

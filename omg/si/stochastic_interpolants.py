@@ -5,7 +5,6 @@ from omg.utils import reshape_t, DataField
 from omg.globals import SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
 from tqdm import trange
-import time
 
 
 class StochasticInterpolants(object):
