@@ -8,6 +8,20 @@ import torch.nn as nn
 from typing import Optional, Callable
 from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
 
+# Modify wrapper for use in SDE integrator
+class SDE(torch.nn.Module):
+    def __init__(self, model_func):
+        super().__init__()
+        self.model_func = model_func
+
+    def f(self, t, x):
+        preds = self.model_func(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
+        out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
+        return self._corrector.correct(out)
+
+    def g(self, t, x):
+        out = torch.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
+        return out
 
 class DifferentialEquationType(Enum):
     """
@@ -354,9 +368,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_t:
             Current positions.
         :type x_t: torch.Tensor
-        :param tspan:
-            Time span for integration.
-        :type tspan: tuple[float, float]
+        :param t:
+            initial time.
+        :type t: float
+        :param t_step:
+            time step
+        :type t_step: float
 
         :return:
             Integrated position.
@@ -377,9 +394,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_t:
             Current positions.
         :type x_t: torch.Tensor
-        :param tspan:
-            Time span for integration.
-        :type tspan: tuple[float, float]
+        :param t:
+            initial time.
+        :type t: float
+        :param t_step:
+            time step
+        :type t_step: float
 
         :return:
             Integrated position.
@@ -413,30 +433,21 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_t:
             Current positions.
         :type x_t: torch.Tensor
-        :param tspan:
-            Time span for integration.
-        :type tspan: tuple[float, float]
+        :param t:
+            initial time.
+        :type t: float
+        :param t_step:
+            time step
+        :type t_step: float
+
 
         :return:
             Integrated position.
         :rtype: torch.Tensor
         """
-        # Modify wrapper for use in SDE integrator
-        class SDE(torch.nn.Module):
-            def __init__(self):
-                super().__init__()
-
-            def f(self, t, x):
-                preds = model_function(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
-                out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
-                return self._corrector.correct(out)
-
-            def g(self, t, x):
-                out = torch.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
-                return out
 
         # SDE Integrator
-        sde = SDE()
+        sde = SDE(model_func=model_function)
         t_span = torch.tensor([t, t + t_step])
         x_t_new = torchsde.sdeint(sde, x_t, t_span)
 

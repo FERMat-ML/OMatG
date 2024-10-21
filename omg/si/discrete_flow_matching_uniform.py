@@ -156,9 +156,12 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         :param x_t:
             Current positions.
         :type x_t: torch.Tensor
-        :param tspan:
-            Time span for integration.
-        :type tspan: tuple[float, float]
+        :param t:
+            initial time.
+        :type t: float
+        :param t_step:
+            time step
+        :type t_step: float
 
         :return:
             Integrated position.
