@@ -205,25 +205,26 @@ class StochasticInterpolants(object):
         if save_intermediate:
             inter_list = [x_t]
         for t_index in trange(1, len(times), desc='Integrating'):
-            tspan = (float(times[t_index - 1]), float(times[t_index]))
+            t = times[t_index - 1]
+            dt = times[t_index] - times[t_index - 1]
             for stochastic_interpolant, data_field in zip(self._stochastic_interpolants, self._data_fields):
                 b_data_field = data_field.name + "_b"
                 eta_data_field = data_field.name + "_eta"
                 x_int = x_t.clone(*[data_field.name for data_field in self._data_fields])
                 x_int_dict = x_int.to_dict()
 
-                def model_prediction_fn(t, x):
-                    t = torch.tensor(t)
+                def model_prediction_fn(time, x):
+                    time = torch.tensor(time)
                     x = torch.tensor(x)
                     x = x.reshape(x_int_dict[data_field.name].shape)
-                    t = t.repeat(len(x_int_dict['n_atoms']),)
+                    time = time.repeat(len(x_int_dict['n_atoms']),)
                     x_int_dict[data_field.name].copy_(x)
-                    b, eta = model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
+                    b, eta = model_function(x_int, time)[b_data_field], model_function(x_int, time)[eta_data_field]
                     b, eta = b.reshape((-1,)), eta.reshape((-1,))
                     return b, eta
                     
                 new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
-                                                    x_t_dict[data_field.name], tspan))
+                                                    x_t_dict[data_field.name], t, dt))
             x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
             x_t_dict = x_t.to_dict()
             
