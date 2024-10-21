@@ -61,7 +61,7 @@ def pos_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic
     t = t.repeat(1,)
     b = pos_model(x, t)
     b = b.reshape((-1,))
-    return b
+    return b, None
 
 def cell_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic_interpolants 
     t = torch.tensor(t)
@@ -69,7 +69,7 @@ def cell_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochasti
     t = t.repeat(1,)
     b = cell_model(x, t)
     b = b.reshape((-1,))
-    return b
+    return b, None
 
 def species_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic_interpolants 
     t = t.repeat(1,)
