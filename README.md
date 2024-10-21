@@ -24,6 +24,14 @@ If you want to include a Wandb logger, add the `--trainer.logger=WandbLogger` ar
 
 In order to restart training from a checkpoint, add the `--model.load_checkpoint=<checkpoint_file.ckpt>` argument. 
 
+## Sampling
+
+For generating new structures run the following command:
+
+```bash
+python scripts/main.py predict --config
+```
+
 ## TODO
 
 - Add diffcsp as a git submodule and update the dependencies.
