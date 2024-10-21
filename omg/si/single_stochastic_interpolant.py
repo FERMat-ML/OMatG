@@ -424,13 +424,13 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             def __init__(self):
                 super().__init__()
 
-            def f(x, t):
+            def f(self, t, x):
                 preds = model_function(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
                 out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
                 return self._corrector.correct(out)
 
-            def g(x, t):
-                out = np.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
+            def g(self, t, x):
+                out = torch.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
                 return out
 
         # SDE Integrator
