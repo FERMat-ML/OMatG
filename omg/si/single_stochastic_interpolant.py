@@ -413,7 +413,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         original_shape = x_t.shape
         t_span = torch.tensor([t, t + t_step])
         x_t = torch.reshape(x_t, (-1,))
-        x_t_new = odeint(odefunc, t_span, x_t)
+        x_t_new = odeint(odefunc, x_t, t_span)
         x_t_new = torch.tensor(x_t_new.y[:, -1].reshape(original_shape))
 
         # Applies corrector to output of integration not the b field itself
