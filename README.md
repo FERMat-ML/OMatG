@@ -29,7 +29,7 @@ In order to restart training from a checkpoint, add the `--model.load_checkpoint
 For generating new structures run the following command:
 
 ```bash
-python scripts/main.py predict --config
+python scripts/main.py predict --config {config_file}
 ```
 
 ## TODO
