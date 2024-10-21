@@ -1,7 +1,7 @@
 from enum import Enum, auto
 import numpy as np
 from scipy.integrate import solve_ivp
-import sdeint  # TODO: Find better package.
+import torchsde
 import torch
 import torch.nn as nn
 from typing import Optional, Callable
@@ -399,7 +399,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         return self._corrector.correct(x_t_new)
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                       x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
+                       x_t: torch.Tensor, t:float, t_step:float) -> torch.Tensor:
         """
         Integrate the SDE for the current positions x_t from time tspan[0] to tspan[1] based on the velocity fields b
         and the denoisers eta returned by the model function.
@@ -420,17 +420,23 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         # Modify wrapper for use in SDE integrator
-        def f(x, t):
-            preds = model_function(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
-            out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
-            return self._corrector.correct(out)
+        class SDE(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
 
-        def g(x, t):
-            out = np.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
-            return out
+            def f(x, t):
+                preds = model_function(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
+                out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
+                return self._corrector.correct(out)
+
+            def g(x, t):
+                out = np.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
+                return out
 
         # SDE Integrator
-        x_t_new = sdeint.itoint(f, g, x_t, np.linspace(tspan[0], tspan[1], self._sde_number_time_steps))
+        sde = SDE()
+        t_span = torch.tensor([t, t + t_step])
+        x_t_new = torchsde.sdeint(sde, x_t, t_span, dt_min=t_step)
 
         # Return
         return torch.tensor(x_t_new[:, -1])
