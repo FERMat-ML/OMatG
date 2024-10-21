@@ -2,6 +2,7 @@ from enum import Enum, auto
 import numpy as np
 from scipy.integrate import solve_ivp
 import torchsde
+from torchdiffeq import odeint
 import torch
 import torch.nn as nn
 from typing import Optional, Callable
@@ -338,7 +339,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         return loss_b + loss_z
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                  x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
+                  x_t: torch.Tensor, t:float, t_step:float) -> torch.Tensor:
         """
         Integrate the current positions x_t from time tspan[0] to tspan[1] based on the velocity fields b and the
         denoisers eta returned by the model function.
@@ -364,7 +365,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         raise NotImplementedError
 
     def _ode_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                       x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
+                       x_t: torch.Tensor, t:float, t_step:float) -> torch.Tensor:
         """
         Integrate the ODE for the current positions x_t from time tspan[0] to tspan[1] based on the velocity fields b
         and the denoisers eta returned by the model function.
@@ -386,12 +387,13 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
 
         # Set up ODE function
-        odefunc = lambda t, x : model_function(t, x)[0]
+        odefunc = lambda time, x : model_function(time, x)[0]
 
         # Integrate with scipy IVP integrator
         original_shape = x_t.shape
+        t_span = torch.tensor([t, t + t_step])
         x_t = torch.reshape(x_t, (-1,))
-        x_t_new = solve_ivp(odefunc, tspan, x_t)
+        x_t_new = odeint(odefunc, t_span, x_t)
         x_t_new = torch.tensor(x_t_new.y[:, -1].reshape(original_shape))
 
         # Applies corrector to output of integration not the b field itself
@@ -436,7 +438,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         # SDE Integrator
         sde = SDE()
         t_span = torch.tensor([t, t + t_step])
-        x_t_new = torchsde.sdeint(sde, x_t, t_span, dt_min=t_step)
+        x_t_new = torchsde.sdeint(sde, x_t, t_span)
 
         # Return
         return torch.tensor(x_t_new[:, -1])
