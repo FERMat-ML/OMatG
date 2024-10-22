@@ -397,17 +397,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
-
         # Set up ODE function
         odefunc = lambda t, x: model_function(t, self._corrector.correct(x))[0]
 
-        # Integrate with scipy IVP integrator
-        original_shape = x_t.shape
         t_span = torch.tensor([time, time + time_step])
-        x_t = torch.reshape(x_t, (-1,))
         with torch.no_grad():
-            x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)
-        x_t_new = torch.tensor(x_t_new[-1].reshape(original_shape))
+            x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)[-1]
 
         # Applies corrector to output of integration not the b field itself
         # Can consider only applying corrector after final integration step but useful here for debugging/testing purposes
