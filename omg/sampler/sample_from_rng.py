@@ -9,7 +9,7 @@ from omg.globals import MAX_ATOM_NUM
 from .sampler import Sampler
 from ..datamodule.dataloader import OMGData
 from torch_geometric.data import Batch
-
+from .distributions import NDependentGamma 
 
 class SampleFromRNG(Sampler):
     """
@@ -90,7 +90,12 @@ class SampleFromRNG(Sampler):
             pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
 
             # TODO: maybe we don't need to restrict to symmetric->At least we aren't doing so for p1
-            lattice_ = self.distribution[2](size=(3,3))
+            # TODO: make more generic in the future
+            if isinstance(self.distribution[2],NDependentGamma):
+                lattice_ = self.distribution[2](n[i].item())
+            else:
+                lattice_ = self.distribution[2](size=(3,3))
+            #lattice_ = self.distribution[2](size=(3,3))
             cell = lattice_
             #cell = np.zeros((3,3))
             #cell[np.triu_indices(3)] = lattice_
