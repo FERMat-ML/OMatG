@@ -128,7 +128,7 @@ class OMG(L.LightningModule):
         """
         Performs generation
         """
-        x_0 = self.sampler.sample_p_0()
+        x_0 = self.sampler.sample_p_0().to(self.device)
         gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
         xyz_saver(gen)
