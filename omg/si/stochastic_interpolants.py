@@ -216,9 +216,8 @@ class StochasticInterpolants(object):
                 def model_prediction_fn(time, x):
                     time = time.repeat(len(x_int_dict['n_atoms']),)
                     x_int_dict[data_field.name].copy_(x)
-                    # TODO: Do we need to call model twice
-                    b, eta = model_function(x_int, time)[b_data_field], model_function(x_int, time)[eta_data_field]
-                    return b, eta
+                    model_result = model_function(x_int, time)
+                    return model_result[b_data_field], model_result[eta_data_field]
 
                 # Do not use x_int_dict[data_field.name] here because it will be implicitly updated in the
                 # model_prediction_fn, which leads to unpredictable bugs.
