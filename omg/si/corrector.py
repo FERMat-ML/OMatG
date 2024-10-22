@@ -39,4 +39,5 @@ class PeriodicBoundaryConditionsCorrector(Corrector):
             Corrected input.
         :rtype: torch.Tensor
         """
-        return torch.fmod(x - self._min_value, self._max_value - self._min_value) + self._min_value
+        x = torch.tensor(x)
+        return torch.remainder(x - self._min_value, self._max_value - self._min_value) + self._min_value

@@ -3,7 +3,7 @@ from functools import partial
 
 import torch
 
-# import numpy as np
+import numpy as np
 
 from omg.globals import MAX_ATOM_NUM
 from .sampler import Sampler
@@ -28,12 +28,12 @@ class SampleFromRNG(Sampler):
     functools.partial can be used to create a sampler with fixed arguments
 
     Example:
-        import torch
+        import numpy as np
 
-        rng = torch.Generator()
-        species_rng = lambda size: torch.randint(1, 92, size=size, generator=rng)
-        pos_rng = lambda size: torch.rand(size=size, generator=rng)
-        cell_rng = lambda size: torch.randn(size=size, generator=rng)
+        rng = np.random.default_rng()
+        species_rng = partial(rng.integers, low=1, high=118)
+        pos_rng = partial(rng.uniform, low=0.0, high=1.0)
+        cell_rng = partial(rng.lognormal, loc=1.0, scale=1.0)
 
         sampler = SampleFromDistributions([species_rng, pos_rng, cell_rng])
 
@@ -41,31 +41,25 @@ class SampleFromRNG(Sampler):
         RuntimeError: If the distributions > 3
     """
 
-    def __init__(self, distributions: Union[List[Callable], torch.Generator] = None,
-                 n_particle_sampler: Union[int, Callable] = 1,
-                 convert_to_fractional: bool = True,
-                 batch_size: int = 1):
+    def __init__(self, species_distribution = None,
+                pos_distribution = None,
+                cell_distribution = None,
+                n_particle_sampler: Union[int, Callable] = 1,
+                convert_to_fractional: bool = True,
+                batch_size: int = 1):
 
         super().__init__()
 
-        if isinstance(distributions, list):
-            if len(distributions) > 3:
-                raise RuntimeError("Cannot sample from more than 3 distributions")
-            self.distribution = distributions
 
-        elif isinstance(distributions, Callable):
-            self.distribution = [distributions, distributions, distributions]
+        rng = np.random.default_rng()
+        if species_distribution is None:
+            species_distribution = partial(rng.integers, low=1, high=MAX_ATOM_NUM)
+        if pos_distribution is None:
+            pos_distribution = partial(rng.uniform, low=0.0, high=1.0)
+        if cell_distribution is None:
+            cell_distribution = partial(rng.normal, loc=1.0, scale=1.0)
+        self.distribution = [species_distribution, pos_distribution, cell_distribution]
 
-        elif distributions is None:
-            rng = torch.Generator()
-            _species_sampler = lambda size: torch.randint(1, MAX_ATOM_NUM, size=(size,), generator=rng)
-            _pos_sampler = lambda size: torch.rand(size=size, generator=rng)
-            _cell_sampler = lambda size: torch.randn(size=(size,), generator=rng)
-            self.distribution = [_species_sampler, _pos_sampler, _cell_sampler]
-
-        else:
-            raise RuntimeError(
-                "Distributions must be a numpy random generator or a list of numpy random generators or None")
 
         if isinstance(n_particle_sampler, int):
             def _constant_sampler():
@@ -85,25 +79,25 @@ class SampleFromRNG(Sampler):
         else:
             n = torch.zeros(self.batch_size, dtype=torch.int64)
             for i in range(self.batch_size):
-                n[i] = self.n_particle_sampler()
-
+                n[i] = torch.tensor(self.n_particle_sampler()).to(torch.int64)
 
         configs = []
-        ut_indices = torch.triu_indices(3,3)
         for i in range(len(n)):
-            species = self.distribution[0](size=n[i])
+            species = self.distribution[0](size=n[i].item())
 
-            pos = self.distribution[1](size=(n[i], 3))
-            # pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
+            pos = self.distribution[1](size=(n[i].item(), 3))
+            pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
 
-            lattice_ = self.distribution[2](size=6)
-            cell = torch.zeros((3,3))
-            cell[ut_indices[0], ut_indices[1]] = lattice_
-            cell = cell + cell.T # TODO: A27 equation looks redundant.
+            # TODO: maybe we don't need to restrict to symmetric->At least we aren't doing so for p1
+            lattice_ = self.distribution[2](n[i].item())
+            cell = lattice_
+            #cell = np.zeros((3,3))
+            #cell[np.triu_indices(3)] = lattice_
+            #cell = cell + cell.T # TODO: A27 equation looks redundant.
 
             # its already [0,1) fractional coordinates so no need to convert
             if not self._frac:
-                pos = torch.dot(pos, cell)
+                pos = np.dot(pos, cell)
 
             configs.append(OMGData.from_data(species, pos, cell, convert_to_fractional=False))
 

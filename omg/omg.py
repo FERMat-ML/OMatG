@@ -5,6 +5,7 @@ import torch.nn as nn
 from torch import optim
 from typing import Optional, Sequence
 from omg.sampler.sampler import Sampler
+from omg.utils import xyz_saver 
 
 class OMG(L.LightningModule):
     """
@@ -13,11 +14,13 @@ class OMG(L.LightningModule):
     
     # TODO: specify argument types
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module,
-                 relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None) -> None:
+                 relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
+                 learning_rate: Optional[float] = 1.e-3) -> None:
         super().__init__()
         self.si = si 
         self.sampler = sampler
         model = model.double()
+        self.learning_rate = learning_rate
         self.model = model
         if not len(relative_si_costs) == len(self.si):
             raise ValueError("The number of stochastic interpolants and costs must be equal.")
@@ -27,7 +30,7 @@ class OMG(L.LightningModule):
             raise ValueError("The sum of all cost factors must be approximately equal to 1.")
         self._relative_si_costs = relative_si_costs
         if load_checkpoint:
-            checkpoint = torch.load(load_checkpoint)
+            checkpoint = torch.load(load_checkpoint, map_location=self.device)
             self.load_state_dict(checkpoint['state_dict'])
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
@@ -49,6 +52,13 @@ class OMG(L.LightningModule):
         x = self.model(x, t)
         return x
 
+    def on_fit_start(self):
+        if self.learning_rate:
+            # Overwrite learning rate after running LearningRateFinder
+            for optimizer in self.trainer.optimizers:
+                for param_group in optimizer.param_groups:
+                    param_group["learning_rate"] = self.learning_rate
+
     # TODO: specify argument types
     def training_step(self, x_1) -> torch.Tensor:
         """
@@ -58,7 +68,7 @@ class OMG(L.LightningModule):
             Loss from training step
         :rtype: torch.Tensor
         """
-        x_0 = self.sampler.sample_p_0(x_1).to(self.device) # this might need x_1 as input so number of atoms are consistent
+        x_0 = self.sampler.sample_p_0(x_1).to(self.device) 
 
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)
@@ -88,27 +98,40 @@ class OMG(L.LightningModule):
         Performs one validation step given a batch of x_1
         """
 
-        x_0 = self.sampler.sample_p_0() # this might need x_1 as input so number of atoms are consistent 
-        
+        x_0 = self.sampler.sample_p_0(x_1).to(self.device) 
+
         # sample t uniformly for each structure
-        t = torch.rand(len(x_1.n_atoms)) 
+        t = torch.rand(len(x_1.n_atoms)).to(self.device)
 
-        x_t = self.si.interpolate(t, x_0, x_1)
-        
-        pred = self.model(x_t, t)
-        
-        loss = self.si.losses(pred, t, x_0, x_1)
+        losses = self.si.losses(self.model, t, x_0, x_1)
 
-        return loss
+        total_loss = torch.tensor(0.0, device=self.device)
 
+        for cost, loss_key in zip(self._relative_si_costs, losses):
+            losses[f"val_{loss_key}"] = cost * losses[loss_key]
+            total_loss += losses[f"val_{loss_key}"]
+            losses.pop(loss_key)
+
+        assert "loss_total" not in losses
+        losses["val_loss_total"] = total_loss
+
+        self.log_dict(
+            losses,
+            on_step=False,
+            on_epoch=True,
+            prog_bar=True,
+        )
+
+        return total_loss
     # TODO: what do we want to return
-    def predict_step(self):
+    def predict_step(self, x):
         """
         Performs generation
         """
         x_0 = self.sampler.sample_p_0()
-        gen = self.si.integrate(x_0, self.model)
+        gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
+        xyz_saver(gen)
         return gen
 
     #TODO allow for YAML config

@@ -384,13 +384,19 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
-        # Modify wrapper to only use b(t,x).
-        ode_wrapper = lambda t, x: self._corrector.correct(model_function(t, x)[0])
+
+        # Set up ODE function
+        odefunc = lambda t, x : model_function(t, self._corrector.correct(x))[0]
 
         # Integrate with scipy IVP integrator
-        x_t_new = solve_ivp(ode_wrapper, tspan, x_t)
+        original_shape = x_t.shape
+        x_t = torch.reshape(x_t, (-1,))
+        x_t_new = solve_ivp(odefunc, tspan, x_t)
+        x_t_new = torch.tensor(x_t_new.y[:, -1].reshape(original_shape))
 
-        return torch.tensor(x_t_new[:, -1])
+        # Applies corrector to output of integration not the b field itself
+        # Can consider only applying corrector after final integration step but useful here for debugging/testing purposes
+        return self._corrector.correct(x_t_new)
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                        x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
@@ -413,18 +419,25 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
+        original_shape = x_t.shape
+        x_t = x_t.reshape((-1,))
+        
         # Modify wrapper for use in SDE integrator
         def f(x, t):
+            t = torch.tensor(t)
             preds = model_function(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
             out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
-            return self._corrector.correct(out)
-
-        def g(x, t):
-            out = np.sqrt(2 * self._epsilon.epsilon(t)) * np.eye(x.shape[-1])
+            out = self._corrector.correct(out).numpy()
             return out
 
+        def G(x, t):
+            t = torch.tensor(t)
+            out = torch.eye(x.shape[0]) * torch.sqrt(2 * self._epsilon.epsilon(t))
+            return out.numpy()
+
         # SDE Integrator
-        x_t_new = sdeint.itoint(f, g, x_t, np.linspace(tspan[0], tspan[1], self._sde_number_time_steps))
+        x_t_new = sdeint.itoint(f, G, x_t.numpy(), np.linspace(tspan[0], tspan[1], self._sde_number_time_steps))
 
         # Return
-        return torch.tensor(x_t_new[:, -1])
+        print(x_t_new[-1])
+        return torch.tensor(x_t_new[-1].reshape(original_shape))
