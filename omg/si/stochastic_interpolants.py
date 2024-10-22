@@ -1,4 +1,4 @@
-from typing import Callable, Sequence
+from typing import Callable, List, Tuple, Union, Sequence
 from tqdm import trange
 import torch
 from torch_geometric.data import Data
@@ -171,7 +171,8 @@ class StochasticInterpolants(object):
                 x_t_dict[data_field.name], z[data_field.name], x_0.ptr)
         return losses
 
-    def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data], save_intermediate: bool = False) -> Data:
+    def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data],
+                  save_intermediate: bool = False) -> Union[Data, Tuple[Data, List[Data]]]:
         """
         Integrate the collection of points x_0 from the collection of distributions p_0 from time 0 to 1 based on the
         model that provides the collection of velocity fields b and denoisers eta.
@@ -189,9 +190,13 @@ class StochasticInterpolants(object):
             torch_geometric.data.Data object given the current collection of points x_t stored in a
             torch_geometric.data.Data object and times t.
         :type model_function: Callable[[torch_geometric.data.Data, torch.Tensor], torch_geometric.data.Data]
+        :save_intermediate:
+            If True, the intermediate points of the integration are saved and returned.
+        :type save_intermediate: bool
 
         :return:
             Collection of integrated points x_1 stored in a torch_geometric.data.Data object.
+            If save_intermediate is True, furthermore a list of the intermediate points in Data objects is returned.
         :rtype: torch_geometric.data.Data
         """
         times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps)
@@ -204,6 +209,8 @@ class StochasticInterpolants(object):
 
         if save_intermediate:
             inter_list = [x_t]
+        else:
+            inter_list = None
         for t_index in trange(1, len(times), desc='Integrating'):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
