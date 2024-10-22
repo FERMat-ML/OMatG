@@ -426,10 +426,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             self.noise_type = "diagonal"
 
         def f(self, t, x):
-            original_shape = x.shape
             preds = self._model_func(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
             out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
-            return self._corrector.correct(out).reshape((original_shape[0], -1))
+            return self._corrector.correct(out).reshape((x.shape[0], -1))
 
         def g(self, t, x):
             out = (torch.sqrt(2 * self._epsilon.epsilon(t)) * torch.ones(x.shape[-1])).to(x.device)
@@ -461,7 +460,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
 
         # SDE Integrator
-        sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon)
+        sde = self.self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon)
         t_span = torch.tensor([time, time + time_step])
         original_shape = x_t.shape
         x_t = x_t.reshape((original_shape[0], -1))
