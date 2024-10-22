@@ -386,7 +386,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
 
         # Set up ODE function
-        odefunc = lambda t, x : model_function(t, x)[0]
+        odefunc = lambda t, x : model_function(t, self._corrector.correct(x))[0]
 
         # Integrate with scipy IVP integrator
         original_shape = x_t.shape
