@@ -6,10 +6,13 @@ from typing import Dict, Any
 from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
 import torch
-from .datamodule import Configuration, DataModule
 from ase.data import atomic_numbers
 from torch_geometric.data.lightning import LightningDataset
 import lightning as L
+
+from .datamodule import Configuration, DataModule
+from .utils import niggli_reduce_configuration, niggli_reduce_data
+
 
 class OMGData(Data):
     """
@@ -52,7 +55,7 @@ class OMGData(Data):
             return 0
 
     @classmethod
-    def from_omg_configuration(cls, config: Configuration, convert_to_fractional=True):
+    def from_omg_configuration(cls, config: Configuration, convert_to_fractional=True, niggli=True):
         """
         Create a OMGData object from a :class:`omg.datamodule.Configuration` object.
 
@@ -65,6 +68,9 @@ class OMGData(Data):
             OMGData object.
         """
         graph = cls()
+        if niggli:
+            niggli_reduce_configuration(config)
+
         n_atoms = torch.tensor(len(config.species))
         graph.n_atoms = n_atoms
         graph.batch = torch.zeros(n_atoms, dtype=torch.int64)
@@ -91,7 +97,7 @@ class OMGData(Data):
         return graph
 
     @classmethod
-    def from_data(cls, species, pos, cell, property_dict={}, convert_to_fractional=True):
+    def from_data(cls, species, pos, cell, property_dict={}, convert_to_fractional=True, niggli=True):
         """
         Create a OMGData object from the atomic species, positions and cell vectors.
 
@@ -106,6 +112,9 @@ class OMGData(Data):
         :return:
             OMGData object.
         """
+        if niggli:
+            pos, cell = niggli_reduce_data(species, pos, cell)
+
         graph = cls()
         n_atoms = torch.tensor(len(species))
         graph.n_atoms = n_atoms
@@ -141,10 +150,11 @@ class OMGTorchDataset(Dataset):
     the use of :class:`omg.datamodule.Dataset` as a data source for the graph based models.
     """
 
-    def __init__(self, dataset: DataModule, transform=None, convert_to_fractional=True):
+    def __init__(self, dataset: DataModule, transform=None, convert_to_fractional=True, niggli=True):
         super().__init__("./", transform, None, None)
         self.dataset = dataset
         self.convert_to_fractional = convert_to_fractional
+        self.niggli = niggli
 
     def __len__(self):
         return len(self.dataset)
@@ -153,7 +163,7 @@ class OMGTorchDataset(Dataset):
         return len(self.dataset)
 
     def get(self, idx):
-        return OMGData.from_omg_configuration(self.dataset[idx], convert_to_fractional=self.convert_to_fractional)
+        return OMGData.from_omg_configuration(self.dataset[idx], convert_to_fractional=self.convert_to_fractional, niggli=self.niggli)
 
 
 def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch_size: int):

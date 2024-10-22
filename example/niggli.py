@@ -1,4 +1,4 @@
-from omg.datamodule.utils import niggli
+from omg.datamodule.utils import niggli_reduce_configuration, niggli_reduce_data
 from omg.datamodule.datamodule import DataModule
 import torch
 
@@ -13,8 +13,10 @@ config = ds[0]
 # print(torch.mm(ds[0].cell, transform_matrix))
 
 print(config.cell)
-niggli(config)
+niggli_reduce_configuration(config)
 print(config.cell)
-niggli(config)
-print(config.cell)
+config = ds[1]
+print(config.cell, config.coords)
+cell,pos = niggli_reduce_data(config.species, config.coords, config.cell)
+print(cell, pos)
 

@@ -1,9 +1,10 @@
 import ase
 import torch
 from ase.build.niggli import niggli_reduce_cell
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Union, Tuple
 import numpy as np
 from ase.build.tools import update_cell_and_positions
+from ase.data import atomic_numbers
 from pathlib import Path
 import lmdb
 import tqdm
@@ -13,7 +14,7 @@ if TYPE_CHECKING:
     from .datamodule import Configuration
 
 
-def niggli(configuration: "Configuration") -> None:
+def niggli_reduce_configuration(configuration: "Configuration") -> None:
     """
     Modified version of  :class:`ase.build.tools.niggli_reduce` that works with torch tensors.
 
@@ -75,6 +76,68 @@ def niggli(configuration: "Configuration") -> None:
     # TODO: Remove accessing private attributes
     configuration._cell = torch.from_numpy(atoms.cell[:]).to(configuration.cell.dtype)
     configuration._coords = torch.from_numpy(atoms.positions).to(configuration.coords.dtype)
+
+
+def niggli_reduce_data(species, coordinates, cell) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    Modified version of  :class:`ase.build.tools.niggli_reduce` that works with torch tensors.
+    Same as niggli_reduce_configuration but takes species, coordinates and cell as input.
+
+    TODO: Merge the two methods, they are almost identical.
+
+    :param species: Atomic numbers of the atoms
+    :param coordinates: Coordinates of the atoms
+    :param cell: Cell vectors of the system
+    :return: Reduced cell and coordinates
+    """
+    from ase.geometry.geometry import permute_axes
+
+    if isinstance(species, list):
+        species_np = np.array([atomic_numbers[s] for s in species]) if isinstance(species[0], str) else np.array(species)
+    elif isinstance(species, torch.Tensor):
+        species_np = species.numpy()
+    coordinates_np = coordinates if isinstance(coordinates, np.ndarray) else coordinates.numpy()
+    cell_np = cell if isinstance(cell, np.ndarray) else cell.numpy()
+
+    # everything we have is periodic
+    atoms = ase.Atoms(
+        numbers=species_np,
+        positions=coordinates_np,
+        cell=cell_np,
+        pbc=[True, True, True],
+    )
+
+    # Make sure non-periodic cell vectors are orthogonal
+    non_periodic_cv = atoms.cell[~atoms.pbc]
+    periodic_cv = atoms.cell[atoms.pbc]
+    if not np.isclose(np.dot(non_periodic_cv, periodic_cv.T), 0).all():
+        raise ValueError('Non-orthogonal cell along non-periodic dimensions')
+
+    input_atoms = atoms
+
+    # Permute axes, such that the non-periodic are along the last dimensions,
+    # since niggli_reduce_cell will change the order of axes.
+
+    permutation = np.argsort(~atoms.pbc)
+    ipermutation = np.empty_like(permutation)
+    ipermutation[permutation] = np.arange(len(permutation))
+    atoms = permute_axes(atoms, permutation)
+
+    # Perform the Niggli reduction on the cell
+    nonpbc = ~atoms.pbc
+    uncompleted_cell = atoms.cell.uncomplete(atoms.pbc)
+    new_cell, op = niggli_reduce_cell(uncompleted_cell)
+    new_cell[nonpbc] = atoms.cell[nonpbc]
+    update_cell_and_positions(atoms, new_cell, op)
+
+    # Undo the prior permutation.
+    atoms = permute_axes(atoms, ipermutation)
+    input_atoms.cell[:] = atoms.cell
+    input_atoms.positions[:] = atoms.positions
+
+    # TODO: Remove accessing private attributes
+    return (torch.from_numpy(atoms.cell[:]).to(cell.dtype),
+            torch.from_numpy(atoms.positions).to(coordinates.dtype))
 
 
 def diffscp_to_lmdb(diffcsp_ds_file: Union[str, Path], lmdb_file: Union[str, Path], properties: list = None):
