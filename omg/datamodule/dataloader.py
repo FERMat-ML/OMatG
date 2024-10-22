@@ -1,16 +1,18 @@
+import copy
 import os
 from typing import Dict, Any
 
-import numpy as np
+# import numpy as np
 from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
 import torch
-from .datamodule import Configuration, DataModule
 from ase.data import atomic_numbers
 from torch_geometric.data.lightning import LightningDataset
 import lightning as L
 
-import copy
+from .datamodule import Configuration, DataModule
+from .utils import niggli_reduce_configuration, niggli_reduce_data
+
 
 class OMGData(Data):
     """
@@ -53,7 +55,7 @@ class OMGData(Data):
             return 0
 
     @classmethod
-    def from_omg_configuration(cls, config: Configuration, convert_to_fractional=True):
+    def from_omg_configuration(cls, config: Configuration, convert_to_fractional=True, niggli=True):
         """
         Create a OMGData object from a :class:`omg.datamodule.Configuration` object.
 
@@ -66,17 +68,20 @@ class OMGData(Data):
             OMGData object.
         """
         graph = cls()
+        if niggli:
+            niggli_reduce_configuration(config)
+
         n_atoms = torch.tensor(len(config.species))
         graph.n_atoms = n_atoms
         graph.batch = torch.zeros(n_atoms, dtype=torch.int64)
         graph.species = torch.tensor([atomic_numbers[z] for z in config.species], dtype=torch.int64)
 
-        if isinstance(config.cell, np.ndarray):
+        if not isinstance(config.cell, torch.Tensor):
             graph.cell = torch.from_numpy(config.cell)
         else:
             graph.cell = config.cell
 
-        if isinstance(config.coords, np.ndarray):
+        if not isinstance(config.coords, torch.Tensor):
             graph.pos = torch.from_numpy(config.coords)
         else:
             graph.pos = config.coords
@@ -92,7 +97,7 @@ class OMGData(Data):
         return graph
 
     @classmethod
-    def from_data(cls, species, pos, cell, convert_to_fractional=True):
+    def from_data(cls, species, pos, cell, property_dict={}, convert_to_fractional=True, niggli=True):
         """
         Create a OMGData object from the atomic species, positions and cell vectors.
 
@@ -107,21 +112,24 @@ class OMGData(Data):
         :return:
             OMGData object.
         """
+        if niggli:
+            pos, cell = niggli_reduce_data(species, pos, cell)
+
         graph = cls()
         n_atoms = torch.tensor(len(species))
         graph.n_atoms = n_atoms
         graph.batch = torch.zeros(n_atoms, dtype=torch.int64)
         if isinstance(species[0], str):
-            graph.species = torch.tensor([atomic_numbers[z] for z in species], dtype=torch.int64)
+            graph.species = torch.asarray([atomic_numbers[z] for z in species], dtype=torch.int64)
         else:
-            graph.species = torch.tensor(species, dtype=torch.int64)
+            graph.species = torch.asarray(species, dtype=torch.int64)
 
-        if isinstance(cell, np.ndarray):
+        if not isinstance(cell, torch.Tensor):
             graph.cell = torch.from_numpy(cell)
         else:
             graph.cell = cell
 
-        if isinstance(pos, np.ndarray):
+        if not isinstance(pos, torch.Tensor):
             graph.pos = torch.from_numpy(pos)
         else:
             graph.pos = pos
@@ -129,6 +137,8 @@ class OMGData(Data):
         if convert_to_fractional:
             with torch.no_grad():
                 graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell).to(graph.pos.dtype))
+
+        graph.property = property_dict
 
         graph.cell = graph.cell.unsqueeze(0)
         return graph
@@ -140,10 +150,11 @@ class OMGTorchDataset(Dataset):
     the use of :class:`omg.datamodule.Dataset` as a data source for the graph based models.
     """
 
-    def __init__(self, dataset: DataModule, transform=None, convert_to_fractional=True):
+    def __init__(self, dataset: DataModule, transform=None, convert_to_fractional=True, niggli=True):
         super().__init__("./", transform, None, None)
         self.dataset = dataset
         self.convert_to_fractional = convert_to_fractional
+        self.niggli = niggli
 
     def __len__(self):
         return len(self.dataset)
@@ -152,7 +163,7 @@ class OMGTorchDataset(Dataset):
         return len(self.dataset)
 
     def get(self, idx):
-        return OMGData.from_omg_configuration(self.dataset[idx], convert_to_fractional=self.convert_to_fractional)
+        return OMGData.from_omg_configuration(self.dataset[idx], convert_to_fractional=self.convert_to_fractional, niggli=self.niggli)
 
 
 def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch_size: int):

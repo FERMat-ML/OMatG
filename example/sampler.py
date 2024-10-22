@@ -1,10 +1,11 @@
+import torch
+
 from omg.sampler import SampleFromRNG, SampleFromDataset
 from omg.datamodule import DataModule
-import numpy as np
+#import numpy as np
 from functools import partial
 
-np.random.seed(0)
-
+torch.manual_seed(0)
 
 dm = DataModule(["./example.lmdb"])
 
@@ -21,8 +22,10 @@ sampler = SampleFromRNG(n_particle_sampler=4)
 print("Random Sample: ", sampler.sample_p_0())
 
 # Sample from random distributions with a random number of particles
-rng = np.random.default_rng()
-n_particle_sampler = partial(rng.integers, low=10, high=15)
+# rng = np.random.default_rng()
+
+def n_particle_sampler():
+    return torch.randint(10,15, size=(1,))
 
 sampler = SampleFromRNG(n_particle_sampler=n_particle_sampler, batch_size=3)
 print("Random Sample: ", sampler.sample_p_0())

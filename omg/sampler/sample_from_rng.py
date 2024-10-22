@@ -54,7 +54,7 @@ class SampleFromRNG(Sampler):
         rng = np.random.default_rng()
         if species_distribution is None:
             species_distribution = partial(rng.integers, low=1, high=MAX_ATOM_NUM)
-        if pos_distribution is None:    
+        if pos_distribution is None:
             pos_distribution = partial(rng.uniform, low=0.0, high=1.0)
         if cell_distribution is None:
             cell_distribution = partial(rng.normal, loc=1.0, scale=1.0)
@@ -87,10 +87,10 @@ class SampleFromRNG(Sampler):
 
             pos = self.distribution[1](size=(n[i].item(), 3))
             pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
-            
+
             # TODO: maybe we don't need to restrict to symmetric->At least we aren't doing so for p1
             lattice_ = self.distribution[2](n[i].item())
-            cell = lattice_ 
+            cell = lattice_
             #cell = np.zeros((3,3))
             #cell[np.triu_indices(3)] = lattice_
             #cell = cell + cell.T # TODO: A27 equation looks redundant.

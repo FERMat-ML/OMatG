@@ -1,6 +1,6 @@
 from .sampler import Sampler
 from ..datamodule.dataloader import OMGData
-import numpy as np
+# import numpy as np
 from ase.data import atomic_numbers
 
 import torch
@@ -14,7 +14,6 @@ class SampleFromDataset(Sampler):
     def __init__(self, dataset, convert_to_fractional=True, batch_size=1):
         super().__init__()
         self.dataset = dataset
-        self._rng = np.random.default_rng()
         self._frac = convert_to_fractional
         self.batch_size = batch_size
 
@@ -22,12 +21,11 @@ class SampleFromDataset(Sampler):
 
         config = []
         for i in range(self.batch_size):
-            sample_idx = self._rng.integers(0, len(self.dataset))
-            sample_idx = int(sample_idx) # np.int64 to int
+            sample_idx = torch.randint(0, len(self.dataset), (1,)).item()
 
             sample = self.dataset[sample_idx].to_dict()
 
-            species = np.array([atomic_numbers[s] for s in sample["species"]])
+            species = torch.asarray([atomic_numbers[s] for s in sample["species"]])
             pos = sample["coords"]
             cell = sample["cell"]
 
