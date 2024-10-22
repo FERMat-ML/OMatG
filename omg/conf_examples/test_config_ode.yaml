@@ -16,6 +16,8 @@ model:
             epsilon: null
             differential_equation_type: "ODE"
             sde_number_time_steps: null
+            integrator_kwargs:
+              method: euler
             corrector: 
               class_path: omg.si.corrector.PeriodicBoundaryConditionsCorrector
               init_args:
@@ -30,6 +32,8 @@ model:
             differential_equation_type: "ODE"
             sde_number_time_steps: null
             corrector: null
+            integrator_kwargs:
+              method: euler
       data_fields: 
         # if the order of the data_fields changes,
         # the order of the above StochasticInterpolant inputs must also change
@@ -105,7 +109,7 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/train.lmdb"
-  batch_size: 1024
+  batch_size: 256
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint

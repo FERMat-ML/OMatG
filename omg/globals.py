@@ -1,4 +1,4 @@
 # Global variables
 MAX_ATOM_NUM = 100
-SMALL_TIME = 0.001
+SMALL_TIME = 0.0
 BIG_TIME = 1.0 - SMALL_TIME
