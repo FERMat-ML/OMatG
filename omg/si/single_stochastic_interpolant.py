@@ -1,5 +1,4 @@
 from enum import Enum, auto
-import numpy as np
 import torch
 import torch.nn as nn
 from torchdiffeq import odeint
@@ -345,7 +344,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         return loss_b + loss_z
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                  x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
+                  x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
+                  batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Integrate the current positions x_t at the given time for the given time step based on the velocity fields b and
         the denoisers eta returned by the model function.
@@ -366,6 +366,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Integrated position.
@@ -374,7 +378,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         raise NotImplementedError
 
     def _ode_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                       x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
+                       x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
+                       batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Integrate the ODE for the current positions x_t at the given time for the given time step based on the velocity
         fields b and the denoisers eta returned by the model function.
@@ -392,6 +397,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Integrated position.
@@ -430,7 +439,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             return out.repeat(x.shape[0]).reshape((x.shape[0], -1))
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                       x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
+                       x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
+                       batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Integrate the SDE for the current positions x_t at the given time for the given time step based on the velocity
         fields b and the denoisers eta returned by the model function.
@@ -448,12 +458,16 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Integrated position.
         :rtype: torch.Tensor
         """
-
+        # TODO: Fix this.
         # SDE Integrator
         sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon)
         t_span = torch.tensor([time, time + time_step])
