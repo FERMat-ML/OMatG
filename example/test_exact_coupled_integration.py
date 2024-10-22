@@ -27,18 +27,19 @@ dl = OMGDataModule(train_dataset=ds, batch_size=1)
 # Set up sampler. This will use the new gamma distribution for lattice and defaults for the others
 sampler = SampleFromRNG(cell_distribution=NDependentGamma(a=6.950090673417738,loc=0.0011311460889336065,scale=0.008141385751601667))
 
-STEPS = 10
-# Set up SI classes. Will test each integration separately. 
-# TODO: Need to look at how to do this with discrete species without too much of a hack
+STEPS=200
 pos_si = SingleStochasticInterpolant(interpolant=PeriodicLinearInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE",corrector=PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)) 
 
 cell_si = SingleStochasticInterpolant(interpolant=LinearInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE")
 
 species_si = DiscreteFlowMatchingUniform(number_integration_steps=STEPS, noise=0)
 
+coupled_si = StochasticInterpolants([species_si,pos_si, cell_si], data_fields=['species','pos','cell'],integration_time_steps=STEPS)  
+
 # Sample p_1 and p_0
 x_1 = next(iter(dl.train_dataloader()))
 x_0 = sampler.sample_p_0(x_1)
+print (x_0.species)
 
 # Set up some "model" functions which just return the exact b field
 # These models need take x_t and t as arguments. But for pos and cell ground truth b field calculation is independent of both
@@ -55,32 +56,31 @@ def species_model(x_t, t):
     gt[gt == 0.] = -float("INF")
     return gt # softmax of this is equivalent to one hot from above
 
-def pos_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic_interpolants 
-    t = torch.tensor(t)
-    x = torch.tensor(x)
-    t = t.repeat(1,)
+def pos_model_wrapper(t, x):  
     b = pos_model(x, t)
-    b = b.reshape((-1,))
     return b, None
 
-def cell_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic_interpolants 
-    t = torch.tensor(t)
-    x = torch.tensor(x)
-    t = t.repeat(1,)
+def cell_model_wrapper(t, x): 
     b = cell_model(x, t)
-    b = b.reshape((-1,))
     return b, None
 
-def species_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic_interpolants 
-    t = t.repeat(1,)
+def species_model_wrapper(t, x): 
     b = species_model(x, t)
-    b = b.reshape((-1,))
     return b, None
+
+def coupled_model_wrapper(x, t):
+    species_b, _ = species_model_wrapper(t, x.species)
+    pos_b, pos_eta = pos_model_wrapper(t, x.pos)
+    cell_b, cell_eta = cell_model_wrapper(t, x.cell)
+    # just passing in b instead of eta since wqe arent using them
+    return Data(species_b = species_b, species_eta = species_b, pos_b=pos_b, pos_eta=pos_b, cell_b=cell_b, cell_eta=cell_b)
 
 # Define times
-STEPS=10
 times = torch.linspace(SMALL_TIME, BIG_TIME, STEPS)
 
+gen, inter = coupled_si.integrate(x_0,coupled_model_wrapper,save_intermediate=True)
+
+xyz_saver(inter)
 
 # Check integration of pos
 pos = x_0.pos
@@ -88,8 +88,8 @@ print ('=========Positions=========')
 for i in range(1,len(times)):
     print (f'========={times[i]}=========')
     x_t_true, _ = pos_si.interpolate(times[i], x_0.pos, x_1.pos, x_0.ptr)
-    print ('---------Interpolated Value---------')
-    print (x_t_true)
+    print (x_t_true-inter[i].pos)
+    '''
     pos = pos_si._ode_integrate(pos_model_wrapper, pos, (float(times[i - 1]), float(times[i])))
     print ('---------Integrated Value---------')
     print (pos)
@@ -97,14 +97,16 @@ for i in range(1,len(times)):
     print (x_t_true - pos)
     print ()
     print ()
+    '''
 # Check integration of cell
 cell = x_0.cell
 print ('=========Cell=========')
 for i in range(1,len(times)):
     print (f'========={times[i]}=========')
     x_t_true, _ = cell_si.interpolate(times[i], x_0.cell, x_1.cell, x_0.ptr)
-    print ('---------Interpolated Value---------')
-    print (x_t_true)
+    #print ('---------Interpolated Value---------')
+    print (x_t_true-inter[i].cell)
+    '''
     cell = cell_si._ode_integrate(cell_model_wrapper, cell, (float(times[i - 1]), float(times[i])))
     print ('---------Integrated Value---------')
     print (cell)
@@ -112,14 +114,14 @@ for i in range(1,len(times)):
     print (x_t_true - cell)
     print ()
     print ()
-
+    '''
 # Check integration of species
 print ('=========Species=========')
 for i in range(1,len(times)):
     print (f'========={times[i]}=========')
     x_t_true, _ = species_si.interpolate(times[i], x_0.species, x_1.species, x_0.ptr)
-    print ('---------Interpolated Value---------')
-    print (x_t_true)
+    print (x_t_true-inter[i].species)
+    '''
     species = x_t_true.clone()
     species = species_si.integrate(species_model_wrapper, species, (float(times[i - 1]), float(times[i])))
     print ('---------Integrated Value---------')
@@ -128,3 +130,4 @@ for i in range(1,len(times)):
     print (x_t_true - species)
     print ()
     print ()
+    '''

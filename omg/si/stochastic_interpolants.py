@@ -222,6 +222,7 @@ class StochasticInterpolants(object):
                     x = x.reshape(x_int_dict[data_field.name].shape)
                     time = time.repeat(len(x_int_dict['n_atoms']),)
                     x_int_dict[data_field.name].copy_(x)
+                    # TODO: Do we need to call model twice
                     b, eta = model_function(x_int, time)[b_data_field], model_function(x_int, time)[eta_data_field]
                     b, eta = b.reshape((-1,)), eta.reshape((-1,))
                     return b, eta
