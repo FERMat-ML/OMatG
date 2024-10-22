@@ -205,7 +205,6 @@ class StochasticInterpolants(object):
         if save_intermediate:
             inter_list = [x_t]
         for t_index in trange(1, len(times), desc='Integrating'):
-            print (x_t.species, x_t.pos, x_t.cell)
             tspan = (float(times[t_index - 1]), float(times[t_index]))
             for stochastic_interpolant, data_field in zip(self._stochastic_interpolants, self._data_fields):
                 b_data_field = data_field.name + "_b"
