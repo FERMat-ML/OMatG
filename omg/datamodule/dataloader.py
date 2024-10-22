@@ -55,7 +55,7 @@ class OMGData(Data):
             return 0
 
     @classmethod
-    def from_omg_configuration(cls, config: Configuration, convert_to_fractional=True, niggli=True):
+    def from_omg_configuration(cls, config: Configuration, convert_to_fractional=True, niggli=False):
         """
         Create a OMGData object from a :class:`omg.datamodule.Configuration` object.
 
@@ -97,7 +97,7 @@ class OMGData(Data):
         return graph
 
     @classmethod
-    def from_data(cls, species, pos, cell, property_dict={}, convert_to_fractional=True, niggli=True):
+    def from_data(cls, species, pos, cell, property_dict={}, convert_to_fractional=True, niggli=False):
         """
         Create a OMGData object from the atomic species, positions and cell vectors.
 
@@ -113,7 +113,7 @@ class OMGData(Data):
             OMGData object.
         """
         if niggli:
-            pos, cell = niggli_reduce_data(species, pos, cell)
+            cell, pos = niggli_reduce_data(species, pos, cell)
 
         graph = cls()
         n_atoms = torch.tensor(len(species))
@@ -150,7 +150,7 @@ class OMGTorchDataset(Dataset):
     the use of :class:`omg.datamodule.Dataset` as a data source for the graph based models.
     """
 
-    def __init__(self, dataset: DataModule, transform=None, convert_to_fractional=True, niggli=True):
+    def __init__(self, dataset: DataModule, transform=None, convert_to_fractional=True, niggli=False):
         super().__init__("./", transform, None, None)
         self.dataset = dataset
         self.convert_to_fractional = convert_to_fractional

@@ -96,6 +96,9 @@ def niggli_reduce_data(species, coordinates, cell) -> Tuple[torch.Tensor, torch.
         species_np = np.array([atomic_numbers[s] for s in species]) if isinstance(species[0], str) else np.array(species)
     elif isinstance(species, torch.Tensor):
         species_np = species.numpy()
+    else:
+        species_np = species
+
     coordinates_np = coordinates if isinstance(coordinates, np.ndarray) else coordinates.numpy()
     cell_np = cell if isinstance(cell, np.ndarray) else cell.numpy()
 
@@ -132,10 +135,8 @@ def niggli_reduce_data(species, coordinates, cell) -> Tuple[torch.Tensor, torch.
 
     # Undo the prior permutation.
     atoms = permute_axes(atoms, ipermutation)
-    input_atoms.cell[:] = atoms.cell
-    input_atoms.positions[:] = atoms.positions
-
     # TODO: Remove accessing private attributes
+
     return (torch.from_numpy(atoms.cell[:]).to(cell.dtype),
             torch.from_numpy(atoms.positions).to(coordinates.dtype))
 

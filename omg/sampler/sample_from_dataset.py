@@ -11,10 +11,11 @@ class SampleFromDataset(Sampler):
     """
     This is a sampler that generates random samples from the
     """
-    def __init__(self, dataset, convert_to_fractional=True, batch_size=1):
+    def __init__(self, dataset, convert_to_fractional=True, niggli=True, batch_size=1):
         super().__init__()
         self.dataset = dataset
         self._frac = convert_to_fractional
+        self.niggli = niggli
         self.batch_size = batch_size
 
     def sample_p_0(self):
@@ -29,6 +30,6 @@ class SampleFromDataset(Sampler):
             pos = sample["coords"]
             cell = sample["cell"]
 
-            config.append(OMGData.from_data(species, pos, cell, convert_to_fractional=self._frac))
+            config.append(OMGData.from_data(species, pos, cell, convert_to_fractional=self._frac, niggli=self.niggli))
 
         return Batch.from_data_list(config)
