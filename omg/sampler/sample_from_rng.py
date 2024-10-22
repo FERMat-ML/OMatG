@@ -80,6 +80,7 @@ class SampleFromRNG(Sampler):
             n = torch.zeros(self.batch_size, dtype=torch.int64)
             for i in range(self.batch_size):
                 n[i] = torch.tensor(self.n_particle_sampler()).to(torch.int64)
+            print(n, self.batch_size)
 
         configs = []
         for i in range(len(n)):
@@ -89,7 +90,7 @@ class SampleFromRNG(Sampler):
             pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
 
             # TODO: maybe we don't need to restrict to symmetric->At least we aren't doing so for p1
-            lattice_ = self.distribution[2](n[i].item())
+            lattice_ = self.distribution[2](size=(3,3))
             cell = lattice_
             #cell = np.zeros((3,3))
             #cell[np.triu_indices(3)] = lattice_
@@ -100,7 +101,6 @@ class SampleFromRNG(Sampler):
                 pos = np.dot(pos, cell)
 
             configs.append(OMGData.from_data(species, pos, cell, convert_to_fractional=False))
-
         return Batch.from_data_list(configs)
 
     def add_n_particle_sampler(self, n_particle_sampler: Callable):
