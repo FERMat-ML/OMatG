@@ -1,10 +1,10 @@
 from typing import Callable, Sequence
+from tqdm import trange
 import torch
 from torch_geometric.data import Data
 from omg.utils import reshape_t, DataField
 from omg.globals import SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
-from tqdm import trange
 
 
 class StochasticInterpolants(object):
@@ -205,9 +205,6 @@ class StochasticInterpolants(object):
         if save_intermediate:
             inter_list = [x_t]
         for t_index in trange(1, len(times), desc='Integrating'):
-            # Profile code with time
-            loop_start = time.time()
-
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             for stochastic_interpolant, data_field in zip(self._stochastic_interpolants, self._data_fields):
@@ -226,19 +223,12 @@ class StochasticInterpolants(object):
                     b, eta = model_function(x_int, time)[b_data_field], model_function(x_int, time)[eta_data_field]
                     b, eta = b.reshape((-1,)), eta.reshape((-1,))
                     return b, eta
-                    
-                # Time for each integration step
-                integrate_start = time.time()
+
                 new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
                                                     x_t_dict[data_field.name], t, dt))
-                integrate_end = time.time()
-                print(f'{data_field} TIME : {integrate_end - integrate_start}')
+
             x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
             x_t_dict = x_t.to_dict()
-            loop_end = time.time()
-            print(f'LOOP TIME : {loop_end - loop_start}', flush=True)
-            exit()
-
             if save_intermediate:
                 inter_list.append(x_t)
         if save_intermediate:
