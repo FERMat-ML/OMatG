@@ -460,7 +460,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
 
         # SDE Integrator
-        sde = self.self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon)
+        sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon)
         t_span = torch.tensor([time, time + time_step])
         original_shape = x_t.shape
         x_t = x_t.reshape((original_shape[0], -1))
