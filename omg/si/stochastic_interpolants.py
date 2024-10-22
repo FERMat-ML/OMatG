@@ -5,6 +5,7 @@ from omg.utils import reshape_t, DataField
 from omg.globals import SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
 from tqdm import trange
+import time
 
 
 class StochasticInterpolants(object):
@@ -194,6 +195,7 @@ class StochasticInterpolants(object):
             Collection of integrated points x_1 stored in a torch_geometric.data.Data object.
         :rtype: torch_geometric.data.Data
         """
+        dev = x_0.ptr.device
         times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps)
         x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
         new_x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
@@ -217,7 +219,7 @@ class StochasticInterpolants(object):
                 x_int_dict = x_int.to_dict()
 
                 def model_prediction_fn(time, x):
-                    time = torch.tensor(time)
+                    time = torch.tensor(time).to(dev)
                     x = torch.tensor(x)
                     x = x.reshape(x_int_dict[data_field.name].shape)
                     time = time.repeat(len(x_int_dict['n_atoms']),)
@@ -229,7 +231,7 @@ class StochasticInterpolants(object):
                 # Time for each integration step
                 integrate_start = time.time()
                 new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
-                                                    x_t_dict[data_field.name], t, dt))
+                                                    x_t_dict[data_field.name], t, dt, x_t_dict[data_field.name].ptr))
                 integrate_end = time.time()
                 print(f'{data_field} TIME : {integrate_end - integrate_start}')
             x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
