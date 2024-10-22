@@ -2,7 +2,7 @@ from enum import Enum, auto
 import torch
 import torch.nn as nn
 from torchdiffeq import odeint
-import torchsde
+from torchsde import sdeint
 from typing import Any, Optional, Callable
 from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
 
@@ -419,24 +419,26 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     # Modify wrapper for use in SDE integrator
     class SDE(torch.nn.Module):
-        def __init__(self, model_func, corrector, gamma, epsilon):
+        def __init__(self, model_func, corrector, gamma, epsilon, original_x_shape):
             super().__init__()
             self._model_func = model_func
             self._corrector = corrector
             self._gamma = gamma
             self._epsilon = epsilon
+            self._original_x_shape = original_x_shape
             # Required for torchsde.
             self.sde_type = "ito"
             self.noise_type = "diagonal"
 
         def f(self, t, x):
-            preds = self._model_func(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
+            # Because of the noise, the x should be corrected.
+            new_x_shape = x.shape
+            preds = self._model_func(t, self._corrector.correct(x.reshape(self._original_x_shape)))
             out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
-            return self._corrector.correct(out).reshape((x.shape[0], -1))
+            return self._corrector.correct(out).reshape(new_x_shape)
 
         def g(self, t, x):
-            out = (torch.sqrt(2 * self._epsilon.epsilon(t)) * torch.ones(x.shape[-1])).to(x.device)
-            return out.repeat(x.shape[0]).reshape((x.shape[0], -1))
+            return torch.sqrt(2.0 * self._epsilon.epsilon(t)) * torch.ones_like(x)
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                        x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
@@ -467,15 +469,15 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
-        # TODO: Fix this.
         # SDE Integrator
-        sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon)
-        t_span = torch.tensor([time, time + time_step])
         original_shape = x_t.shape
-        x_t = x_t.reshape((original_shape[0], -1))
-        with torch.no_grad():
-            x_t_new = torchsde.sdeint(sde, x_t, t_span, **self._integrator_kwargs)
+        sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon,
+                       original_x_shape=original_shape)
+        t_span = torch.tensor([time, time + time_step])
 
-        # Return
-        print(x_t.shape)
-        return torch.tensor(x_t_new[-1].view(original_shape))
+        with torch.no_grad():
+            # Diagonal noise in torchsde expects a tensor of shape (batch_size, state_size).
+            # See https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md.
+            x_t_new = sdeint(sde, x_t.reshape((len(batch_pointer) - 1, -1)), t_span, **self._integrator_kwargs)
+
+        return torch.tensor(x_t_new[-1].reshape(original_shape))
