@@ -399,7 +399,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         # Set up ODE function
         odefunc = lambda t, x: model_function(t, self._corrector.correct(x))[0]
-
         t_span = torch.tensor([time, time + time_step])
         with torch.no_grad():
             x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)[-1]

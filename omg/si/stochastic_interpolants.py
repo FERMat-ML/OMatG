@@ -5,6 +5,7 @@ from torch_geometric.data import Data
 from omg.utils import reshape_t, DataField
 from omg.globals import SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
+import time
 
 
 class StochasticInterpolants(object):
@@ -205,8 +206,10 @@ class StochasticInterpolants(object):
         if save_intermediate:
             inter_list = [x_t]
         for t_index in trange(1, len(times), desc='Integrating'):
+            print('\n')
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
+            start = time.time()
             for stochastic_interpolant, data_field in zip(self._stochastic_interpolants, self._data_fields):
                 b_data_field = data_field.name + "_b"
                 eta_data_field = data_field.name + "_eta"
@@ -222,13 +225,23 @@ class StochasticInterpolants(object):
 
                 # Do not use x_int_dict[data_field.name] here because it will be implicitly updated in the
                 # model_prediction_fn, which leads to unpredictable bugs.
-                new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
-                                                    x_t_dict[data_field.name], t, dt, x_t_dict[data_field.name].ptr))
-
+                int_beg = time.time()
+                try:
+                    new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
+                                                        x_t_dict[data_field.name], t, dt, torch.tensor([0])))
+                except TypeError:
+                    new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
+                                                                                         x_t_dict[data_field.name], t,
+                                                                                         dt))
+                int_end = time.time()
+                print(f'INT {data_field.name} : {int_end - int_beg}')
             x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
             x_t_dict = x_t.to_dict()
+            end = time.time()
+            print(f'LOOP : {end - start}')
             if save_intermediate:
                 inter_list.append(x_t)
+            
         if save_intermediate:
             return x_t, inter_list
         else:
