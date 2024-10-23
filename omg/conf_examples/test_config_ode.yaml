@@ -107,3 +107,8 @@ trainer:
         save_top_k: 1
         monitor: "val_loss_total"
     - class_path: lightning.pytorch.callbacks.LearningRateFinder
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        patience: 20
+        monitor: "val_loss_total"
+  gradient_clip_val: 0.5
