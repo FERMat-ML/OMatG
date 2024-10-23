@@ -226,7 +226,7 @@ class OMGDataModule(L.LightningDataModule):
         kwargs = copy.copy(self.kwargs)
         kwargs.pop('sampler', None)
         kwargs.pop('batch_sampler', None)
-        return self.dataloader(self.val_dataset, shuffle=False, **kwargs)
+        return self.dataloader(self.val_dataset, shuffle=False, **self.kwargs)
 
     def predict_dataloader(self) -> DataLoader:
-        return self.dataloader(self.predict_dataset)
+        return self.dataloader(self.predict_dataset, shuffle=False, **self.kwargs)

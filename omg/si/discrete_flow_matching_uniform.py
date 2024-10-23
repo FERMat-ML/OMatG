@@ -123,10 +123,11 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         return functional.cross_entropy(pred, x_1 - 1)
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                  x_t: torch.Tensor, tspan: tuple[float, float]) -> torch.Tensor:
+                  x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
+                  batch_pointer: torch.Tensor) -> torch.Tensor:
         """
-        Integrate the current positions x_t from time tspan[0] to tspan[1] based on the probability distributions over
-        the species.
+        Integrate the current positions x_t at the given time for the given time step based on the probability
+        distributions over the species.
 
         In contrast to the other stochastic interpolants in this module, the model prediction is not the velocity fields
         b and denoisers eta. Instead, only one model prediction is required. The second model prediction is ignored
@@ -156,62 +157,64 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         :param x_t:
             Current positions.
         :type x_t: torch.Tensor
-        :param tspan:
-            Time span for integration.
-        :type tspan: tuple[float, float]
+        :param time:
+            Initial time (0-dimensional torch tensor).
+        :type time: torch.Tensor
+        :param time_step:
+            Time step (0-dimensional torch tensor).
+        :type time_step: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Integrated position.
         :rtype: torch.Tensor
         """
         # Iterate time.
-        t = torch.tensor(tspan[0])
-        dt = torch.tensor((tspan[1] - tspan[0]) / self._number_integration_steps)
         eps = torch.finfo(torch.float64).eps
-        for _ in range(self._number_integration_steps):
-            # Predict x1 for the flattened sequence
-            x_1_probs = functional.softmax(model_function(t, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
-            # Sample from distribution for every of the sum(n_atoms) elements.
-            # Do not shift the atom type by one to get the real species. Instead shift x_t down.
-            x_1_probs = x_1_probs.reshape((-1, MAX_ATOM_NUM))
-            shifted_x_1 = Categorical(x_1_probs).sample()  # Shape (sum(n_atoms),)
-            shifted_x_t = x_t - 1
-            assert shifted_x_1.shape == x_t.shape == shifted_x_t.shape
-            # Shape (sum(n_atoms), MAX_ATOM_NUM).
-            shifted_x_1_hot = functional.one_hot(shifted_x_1, num_classes=MAX_ATOM_NUM)
-            dpt = shifted_x_1_hot - (1.0 / MAX_ATOM_NUM)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
-            # Gather values from dpt based on shifted_x_t.
-            dpt_xt = dpt.gather(-1, shifted_x_t[:, None]).squeeze(-1)  # Shape (sum(n_atoms),).
+        # Predict x1 for the flattened sequence
+        x_1_probs = functional.softmax(model_function(time, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
+        # Sample from distribution for every of the sum(n_atoms) elements.
+        # Do not shift the atom type by one to get the real species. Instead shift x_t down.
+        x_1_probs = x_1_probs.reshape((-1, MAX_ATOM_NUM))
+        shifted_x_1 = Categorical(x_1_probs).sample()  # Shape (sum(n_atoms),)
+        shifted_x_t = x_t - 1
+        assert shifted_x_1.shape == x_t.shape == shifted_x_t.shape
+        # Shape (sum(n_atoms), MAX_ATOM_NUM).
+        shifted_x_1_hot = functional.one_hot(shifted_x_1, num_classes=MAX_ATOM_NUM)
+        dpt = shifted_x_1_hot - (1.0 / MAX_ATOM_NUM)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
+        # Gather values from dpt based on shifted_x_t.
+        dpt_xt = dpt.gather(-1, shifted_x_t[:, None]).squeeze(-1)  # Shape (sum(n_atoms),).
 
-            # Compute pt: linear interpolation based on t.
-            # TODO: consider adding functionality to use other types of interpolants
-            # Shape (sum(n_atoms), MAX_ATOM_NUM).
-            pt = (t * shifted_x_1_hot) + (1.0 - t) * (1.0 / MAX_ATOM_NUM)
-            pt_xt = pt.gather(-1, shifted_x_t[:, None]).squeeze(-1)  # Shape (sum(n_atoms),).
+        # Compute pt: linear interpolation based on t.
+        # TODO: consider adding functionality to use other types of interpolants
+        # Shape (sum(n_atoms), MAX_ATOM_NUM).
+        pt = (time * shifted_x_1_hot) + (1.0 - time) * (1.0 / MAX_ATOM_NUM)
+        pt_xt = pt.gather(-1, shifted_x_t[:, None]).squeeze(-1)  # Shape (sum(n_atoms),).
 
-            # Compute the rate R.
-            # Shape (sum(n_atoms), MAX_ATOM_NUM).
-            rate = functional.relu(dpt - dpt_xt[:, None]) / (MAX_ATOM_NUM * pt_xt[:, None])
-            # Set p(x_t | x_1) = 0 or p(j | x_1) = 0 cases to zero.
-            rate[(pt_xt == 0.0)[:, None].repeat(1, MAX_ATOM_NUM)] = 0.0
-            rate[pt == 0.0] = 0.0
+        # Compute the rate R.
+        # Shape (sum(n_atoms), MAX_ATOM_NUM).
+        rate = functional.relu(dpt - dpt_xt[:, None]) / (MAX_ATOM_NUM * pt_xt[:, None])
+        # Set p(x_t | x_1) = 0 or p(j | x_1) = 0 cases to zero.
+        rate[(pt_xt == 0.0)[:, None].repeat(1, MAX_ATOM_NUM)] = 0.0
+        rate[pt == 0.0] = 0.0
 
-            # Add noise if present.
-            rate_db = torch.zeros_like(rate)
-            if self._noise > 0.0:
-                rate_db[shifted_x_t == shifted_x_1] = 1.0
-                rate_db[shifted_x_1 != shifted_x_t] = ((MAX_ATOM_NUM * t) + 1.0 - t) / (1.0 - t + eps)
-                rate_db *= self._noise
-            rate += rate_db
+        # Add noise if present.
+        rate_db = torch.zeros_like(rate)
+        if self._noise > 0.0:
+            rate_db[shifted_x_t == shifted_x_1] = 1.0
+            rate_db[shifted_x_1 != shifted_x_t] = ((MAX_ATOM_NUM * time) + 1.0 - time) / (1.0 - time + eps)
+            rate_db *= self._noise
+        rate += rate_db
 
-            # Compute step probabilities and sample
-            step_probs = (rate * dt).clamp(max=1.0)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
-            step_probs.scatter_(-1, shifted_x_t[:, None], 0.0)
-            step_probs.scatter_(-1, shifted_x_t[:, None], 1.0 - step_probs.sum(dim=-1, keepdim=True)).clamp(min=0.0)
+        # Compute step probabilities and sample
+        step_probs = (rate * time_step).clamp(max=1.0)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
+        step_probs.scatter_(-1, shifted_x_t[:, None], 0.0)
+        step_probs.scatter_(-1, shifted_x_t[:, None], 1.0 - step_probs.sum(dim=-1, keepdim=True)).clamp(min=0.0)
 
-            # Sample the next x_t
-            x_t = Categorical(step_probs).sample() + 1
-
-            t += dt
+        # Sample the next x_t
+        x_t = Categorical(step_probs).sample() + 1
 
         return x_t

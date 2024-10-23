@@ -1,10 +1,10 @@
-from typing import Callable, Sequence
+from typing import Callable, List, Tuple, Union, Sequence
+from tqdm import trange
 import torch
 from torch_geometric.data import Data
 from omg.utils import reshape_t, DataField
 from omg.globals import SMALL_TIME, BIG_TIME
 from .abstracts import StochasticInterpolant
-from tqdm import trange
 
 
 class StochasticInterpolants(object):
@@ -171,7 +171,8 @@ class StochasticInterpolants(object):
                 x_t_dict[data_field.name], z[data_field.name], x_0.ptr)
         return losses
 
-    def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data], save_intermediate: bool = False) -> Data:
+    def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data],
+                  save_intermediate: bool = False) -> Union[Data, Tuple[Data, List[Data]]]:
         """
         Integrate the collection of points x_0 from the collection of distributions p_0 from time 0 to 1 based on the
         model that provides the collection of velocity fields b and denoisers eta.
@@ -189,12 +190,16 @@ class StochasticInterpolants(object):
             torch_geometric.data.Data object given the current collection of points x_t stored in a
             torch_geometric.data.Data object and times t.
         :type model_function: Callable[[torch_geometric.data.Data, torch.Tensor], torch_geometric.data.Data]
+        :save_intermediate:
+            If True, the intermediate points of the integration are saved and returned.
+        :type save_intermediate: bool
 
         :return:
             Collection of integrated points x_1 stored in a torch_geometric.data.Data object.
+            If save_intermediate is True, furthermore a list of the intermediate points in Data objects is returned.
         :rtype: torch_geometric.data.Data
         """
-        times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps)
+        times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps, device=x_0.pos.device)
         x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
         new_x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
         x_t_dict = x_t.to_dict()
@@ -204,26 +209,29 @@ class StochasticInterpolants(object):
 
         if save_intermediate:
             inter_list = [x_t]
+        else:
+            inter_list = None
         for t_index in trange(1, len(times), desc='Integrating'):
-            tspan = (float(times[t_index - 1]), float(times[t_index]))
+            t = times[t_index - 1]
+            dt = times[t_index] - times[t_index - 1]
             for stochastic_interpolant, data_field in zip(self._stochastic_interpolants, self._data_fields):
                 b_data_field = data_field.name + "_b"
                 eta_data_field = data_field.name + "_eta"
                 x_int = x_t.clone(*[data_field.name for data_field in self._data_fields])
                 x_int_dict = x_int.to_dict()
-                def model_prediction_fn(t, x):
-                    t = torch.tensor(t)
-                    x = torch.tensor(x)
-                    x = x.reshape(x_int_dict[data_field.name].shape)
-                    t = t.repeat(len(x_int_dict['n_atoms']),)
+
+                def model_prediction_fn(time, x):
+                    time = time.to(x.device)
+                    time = time.repeat(len(x_int_dict['n_atoms']),)
                     x_int_dict[data_field.name].copy_(x)
-                    # TODO: Do we need to call model twice
-                    b, eta = model_function(x_int, t)[b_data_field], model_function(x_int, t)[eta_data_field]
-                    b, eta = b.reshape((-1,)), eta.reshape((-1,))
-                    return b, eta
-                    
+                    model_result = model_function(x_int, time)
+                    return model_result[b_data_field], model_result[eta_data_field]
+
+                # Do not use x_int_dict[data_field.name] here because it will be implicitly updated in the
+                # model_prediction_fn, which leads to unpredictable bugs.
                 new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
-                                                    x_t_dict[data_field.name], tspan))
+                                                    x_t_dict[data_field.name], t, dt, x_0.ptr))
+
 
             x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
             x_t_dict = x_t.to_dict()

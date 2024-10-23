@@ -16,6 +16,8 @@ model:
             epsilon: null
             differential_equation_type: "ODE"
             sde_number_time_steps: null
+            integrator_kwargs:
+              method: euler
             corrector: 
               class_path: omg.si.corrector.PeriodicBoundaryConditionsCorrector
               init_args:
@@ -30,6 +32,8 @@ model:
             differential_equation_type: "ODE"
             sde_number_time_steps: null
             corrector: null
+            integrator_kwargs:
+              method: euler
       data_fields: 
         # if the order of the data_fields changes,
         # the order of the above StochasticInterpolant inputs must also change
@@ -50,9 +54,9 @@ model:
           a: 6.950090673417738 
           loc: 0.0011311460889336065
           scale: 0.008141385751601667
-      n_particle_sampler: 4
+      n_particle_sampler: 6
       convert_to_fractional: true
-      batch_size: 2
+      batch_size: 2000
     # Code for sampling from dataset
     # class_path: omg.sampler.sample_from_dataset.SampleFromDataset
     # init_args:
@@ -98,7 +102,13 @@ data:
           lmdb_paths:
            - "data/mp_20/val.lmdb"
   predict_dataset:
-    class_path: omg.datamodule.dataloader.NullDataset
+    class_path: omg.datamodule.dataloader.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+           - "data/mp_20/train.lmdb"
   batch_size: 256
 trainer:
   callbacks:
