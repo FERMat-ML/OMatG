@@ -136,9 +136,8 @@ def niggli_reduce_data(species, coordinates, cell) -> Tuple[torch.Tensor, torch.
     # Undo the prior permutation.
     atoms = permute_axes(atoms, ipermutation)
     # TODO: Remove accessing private attributes
-
-    return (torch.from_numpy(atoms.cell[:]).to(cell.dtype),
-            torch.from_numpy(atoms.positions).to(coordinates.dtype))
+    return (torch.from_numpy(atoms.cell[:].astype(cell.dtype)),
+            torch.from_numpy(atoms.positions.astype(coordinates.dtype)))
 
 
 def diffscp_to_lmdb(diffcsp_ds_file: Union[str, Path], lmdb_file: Union[str, Path], properties: list = None):
