@@ -78,8 +78,9 @@ class OMG(L.LightningModule):
         total_loss = torch.tensor(0.0, device=self.device)
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
-            losses[loss_key] = cost * losses[loss_key]
-            total_loss += losses[loss_key]
+            current_loss = losses[loss_key].detach()
+            losses[loss_key] = cost * losses[loss_key] # Don't normalize here so we can inspect the losses
+            total_loss += losses[loss_key] / current_loss # normalize weights TODO: Look at how SDE losses are combined
 
         assert "loss_total" not in losses
         losses["loss_total"] = total_loss
@@ -89,6 +90,7 @@ class OMG(L.LightningModule):
             on_step=True,
             on_epoch=True,
             prog_bar=True,
+            sync_dist=True,
         )
 
         return total_loss
@@ -109,7 +111,7 @@ class OMG(L.LightningModule):
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
             losses[f"val_{loss_key}"] = cost * losses[loss_key]
-            total_loss += losses[f"val_{loss_key}"]
+            total_loss += losses[f"val_{loss_key}"] / losses[loss_key].detach()
             losses.pop(loss_key)
 
         assert "loss_total" not in losses
@@ -120,6 +122,7 @@ class OMG(L.LightningModule):
             on_step=False,
             on_epoch=True,
             prog_bar=True,
+            sync_dist=True,
         )
 
         return total_loss
@@ -136,7 +139,7 @@ class OMG(L.LightningModule):
 
     #TODO allow for YAML config
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
 
