@@ -232,6 +232,7 @@ class StochasticInterpolants(object):
                 new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
                                                     x_t_dict[data_field.name], t, dt, x_0.ptr))
 
+
             x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
             x_t_dict = x_t.to_dict()
             if save_intermediate:
