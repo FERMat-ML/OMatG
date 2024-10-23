@@ -199,7 +199,7 @@ class StochasticInterpolants(object):
             If save_intermediate is True, furthermore a list of the intermediate points in Data objects is returned.
         :rtype: torch_geometric.data.Data
         """
-        times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps)
+        times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps, device=x_0.pos.device)
         x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
         new_x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
         x_t_dict = x_t.to_dict()
@@ -221,6 +221,7 @@ class StochasticInterpolants(object):
                 x_int_dict = x_int.to_dict()
 
                 def model_prediction_fn(time, x):
+                    time = time.to(x.device)
                     time = time.repeat(len(x_int_dict['n_atoms']),)
                     x_int_dict[data_field.name].copy_(x)
                     model_result = model_function(x_int, time)

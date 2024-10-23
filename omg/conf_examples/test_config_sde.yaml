@@ -34,8 +34,8 @@ model:
             sde_number_time_steps: 50
             corrector: null
             # Some SDE kwargs
-            method: "euler"
-            adaptive: "False"
+            #method: "euler"
+            #adaptive: "False"
       data_fields: 
         # if the order of the data_fields changes,
         # the order of the above StochasticInterpolant inputs must also change
