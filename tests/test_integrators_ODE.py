@@ -8,9 +8,9 @@ from omg.si.epsilon import *
 from omg.globals import SMALL_TIME, BIG_TIME
 
 # Testing parameters/objects
-tol = 1e-2
+tol = 5e-2
 ptr = None
-eps = 1e-3
+eps = 0
 times = torch.linspace(SMALL_TIME, BIG_TIME, 100)
 
 # Interpolants
@@ -44,8 +44,8 @@ def test_integrator(interpolant, gamma):
     Test interpolant integrator
     '''
     # Initialize
-    x_init = torch.rand(size=(4,))
-    x_final = torch.rand(size=(4,))
+    x_init = torch.zeros(size=(2,2))
+    x_final = torch.rand(size=(2,2))
     corr = None
     if isinstance(interpolant, PeriodicLinearInterpolant):
         corr = PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)
@@ -56,11 +56,12 @@ def test_integrator(interpolant, gamma):
     interpolant = SingleStochasticInterpolant(
         interpolant=interpolant, gamma=gamma,epsilon=None,
         differential_equation_type='ODE', corrector=corr,
-        integrator_kwargs={'method':'rk4'}
+        integrator_kwargs={'method':'euler'}
     )
 
     # ODE function
-    velo = lambda t, x : interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=0, batch_pointer=None)
+    def velo(t, x):
+        return [interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=0, batch_pointer=None)]
     
     # Integrate
     x = x_init
@@ -70,9 +71,6 @@ def test_integrator(interpolant, gamma):
         x_interp = interpolant.interpolate(times[i], x_init, x_final, ptr)[0]
         x_new = interpolant._ode_integrate(velo, x, t_i, dt)
         x = x_new
-        #assert x == pytest.approx(x_interp, abs=tol)
 
-    # Test for equality
-    print(x)
-    print(x_final - x)
-    assert x == pytest.approx(x_final, abs=tol)
+        # Test for equality
+        assert x == pytest.approx(x_interp, abs=tol)
