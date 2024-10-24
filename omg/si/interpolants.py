@@ -484,6 +484,12 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
 
 
 class PeriodicScoreBasedDifussionModelInterpolant(Interpolant):
+    """
+    Interpolant mimicking score based diffusion model 
+    I(t, x_0, x_1) = I(t, x_0, x_1) = sqrt(1 - t^2) * x_0 + t * x_1 on a torus.
+    between points x_0 and x_1 from two distributions p_0 (assumed to be Gaussian here) 
+    and p_1 at times t that can be used to reproduce score-based diffusion models.
+    """
 
     def __init__(self) -> None:
         """
@@ -516,7 +522,10 @@ class PeriodicScoreBasedDifussionModelInterpolant(Interpolant):
             Interpolated value.
         :rtype: torch.Tensor
         """
-        assert self._check_t(t) # TODO: Explain.
+        assert self._check_t(t)
+
+        # Correct for periodic boundaries by using the geodesic to move x_1 to x_1prime
+        # Then wrap the interpolated value back onto the torus
         diff = torch.abs(x_0 - x_1)
         x_1prime = torch.where(diff >= self._mid_point, x_1 + torch.sign(x_0 - self._mid_point), x_1)
         x_t = torch.sqrt(1.0 - (t ** 2)) * x_0 + t * x_1prime
@@ -547,10 +556,12 @@ class PeriodicScoreBasedDifussionModelInterpolant(Interpolant):
         :rtype: torch.Tensor
         """
         assert self._check_t(t)
+
+        # Correct for periodic boundaries by using the geodesic to move x_1 to x_1prime
+        # Unlike the interpolation, the derivative does not need to be corrected
         diff = torch.abs(x_0 - x_1)
         x_1prime = torch.where(diff >= self._mid_point, x_1 + torch.sign(x_0 - self._mid_point), x_1)
-        der = -t / torch.sqrt(1.0 - (t ** 2)) * x_0 + x_1prime
-        return der
+        return -t / torch.sqrt(1.0 - (t ** 2)) * x_0 + x_1prime
 
     def get_corrector(self) -> Corrector:
         """
