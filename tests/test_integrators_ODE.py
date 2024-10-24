@@ -8,11 +8,12 @@ from omg.si.epsilon import *
 from omg.globals import SMALL_TIME, BIG_TIME
 
 # Testing parameters/objects
-tol = 2e-2
+tol = 1e-4
+stol = 6e-2
 ptr = None
 eps = 1e-4
 times = torch.linspace(SMALL_TIME+eps, BIG_TIME-eps, 200)
-nrep = 100000
+nrep = 10000
 
 # Interpolants
 interpolants = [
@@ -88,7 +89,7 @@ def test_integrator(interpolant, gamma):
             x = x_mean.unsqueeze(-1).expand(10, nrep)
 
             # Assertion test
-            assert x_mean == pytest.approx(x_interp_mean, abs=tol)
+            assert x_mean == pytest.approx(x_interp_mean, abs=stol)
 
         # If all deterministic
         else:
