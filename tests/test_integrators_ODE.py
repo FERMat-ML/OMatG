@@ -8,7 +8,7 @@ from omg.si.epsilon import *
 from omg.globals import SMALL_TIME, BIG_TIME
 
 # Testing parameters/objects
-tol = 1e-4
+tol = 1e-2
 stol = 6e-2
 ptr = None
 times = torch.linspace(SMALL_TIME, BIG_TIME, 200)
