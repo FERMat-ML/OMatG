@@ -25,5 +25,5 @@ dependencies = [
     "jsonargparse ~= 4.33",
     "jsonargparse[signatures] ~= 4.27",
     "lightning[pytorch-extra]",
-    "pytest" ~= 8.3
+    "pytest ~= 8.3"
 ]
