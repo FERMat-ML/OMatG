@@ -18,11 +18,6 @@ model:
             sde_number_time_steps: null
             integrator_kwargs:
               method: euler
-            corrector: 
-              class_path: omg.si.corrector.PeriodicBoundaryConditionsCorrector
-              init_args:
-                min_value: 0
-                max_value: 1
         # lattice vectors
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
           init_args:

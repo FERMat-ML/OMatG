@@ -4,7 +4,7 @@ import torch.nn as nn
 from torchdiffeq import odeint
 from torchsde import sdeint
 from typing import Any, Optional, Callable
-from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
+from .abstracts import Epsilon, Interpolant, LatentGamma, StochasticInterpolant
 
 
 class DifferentialEquationType(Enum):
@@ -53,11 +53,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         This number of timesteps will be used for the subintervals.
         Should be positive and only be provided if the differential equation type is SDE.
     :type sde_number_time_steps: Optional[int]
-    :param corrector:
-        Corrector that will be applied to the points x_t during integration (for instance, to enforce periodic boundary
-        conditions).
-        If None, no correction will be applied.
-    :type corrector: Optional[Corrector]
     :param integrator_kwargs: Optional keyword arguments for the odeint function of torchdiffeq (see
         https://github.com/rtqichen/torchdiffeq/blob/master/README.md) or the sdeint function of torchsde (see
         https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md#keyword-arguments-of-sdeint).
@@ -71,7 +66,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
                  differential_equation_type: str, sde_number_time_steps: Optional[int] = None,
-                 corrector: Optional[Corrector] = None, integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
+                 integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -83,7 +78,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         self._epsilon = epsilon
         self._differential_equation_type = differential_equation_type
         self._sde_number_time_steps = sde_number_time_steps
-        self._corrector = corrector if corrector is not None else self.IdentityCorrector()
+        # Corrector that needs to be applied to the points x_t during integration.
+        self._corrector = self._interpolant.get_corrector()
         try:
             self._differential_equation_type = DifferentialEquationType[differential_equation_type]
         except AttributeError:
@@ -106,29 +102,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             if not self._sde_number_time_steps > 0:
                 raise ValueError("SDE number of time steps should be bigger than zero.")
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
-
-    class IdentityCorrector(Corrector):
-        """
-        Corrector that does nothing.
-        """
-
-        def __init__(self):
-            """Construct identity corrector."""
-            super().__init__()
-
-        def correct(self, x: torch.Tensor) -> torch.Tensor:
-            """
-            Correct the input x.
-
-            :param x:
-                Input to correct.
-            :type x: torch.Tensor
-
-            :return:
-                Corrected input.
-            :rtype: torch.Tensor
-            """
-            return x
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_pointer: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:

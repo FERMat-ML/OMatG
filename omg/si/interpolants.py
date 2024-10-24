@@ -1,5 +1,6 @@
 import torch
 from .abstracts import Interpolant
+from .corrector import Corrector, IdentityCorrector, PeriodicBoundaryConditionsCorrector
 
 
 class LinearInterpolant(Interpolant):
@@ -66,6 +67,16 @@ class LinearInterpolant(Interpolant):
         """
         self._check_t(t)
         return x_1 - x_0
+
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the interpolant.
+
+        :return:
+            Identity corrector that does nothing.
+        :rtype: Corrector
+        """
+        return IdentityCorrector()
 
 
 class TrigonometricInterpolant(Interpolant):
@@ -134,12 +145,22 @@ class TrigonometricInterpolant(Interpolant):
         return (-torch.pi / 2.0 * torch.sin(torch.pi * t / 2.0) * x_0
                 + torch.pi / 2.0 * torch.cos(torch.pi * t / 2.0) * x_1)
 
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the interpolant.
+
+        :return:
+            Identity corrector that does nothing.
+        :rtype: Corrector
+        """
+        return IdentityCorrector()
+
 
 class PeriodicLinearInterpolant(Interpolant):
     """
     Linear interpolant I(t, x_0, x_1) = exp_(x_0)(t * log_(x_0))(x_1)) (see Eqs (11)-(13) in
     https://arxiv.org/pdf/2406.04713) between points x_0 and x_1 from two distributions p_0 and p_1 at times t on a
-    periodic manifold.
+    periodic manifold. The coordinates are assumed to be in [0,1].
 
     The exponential and logarithmic maps are given by:
     exp_x(v) = x + v - floor(x + v)
@@ -221,6 +242,16 @@ class PeriodicLinearInterpolant(Interpolant):
         '''
         return out
 
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the interpolant.
+
+        :return:
+            Corrector that corrects for periodic boundary conditions.
+        :rtype: Corrector
+        """
+        return PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
+
 
 class EncoderDecoderInterpolant(Interpolant):
     """
@@ -289,6 +320,16 @@ class EncoderDecoderInterpolant(Interpolant):
         return (-2.0 * torch.cos(torch.pi * t) * torch.pi * torch.sin(torch.pi * t)
                 * torch.where(t < 0.5, x_0, x_1))
 
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the interpolant.
+
+        :return:
+            Identity corrector that does nothing.
+        :rtype: Corrector
+        """
+        return IdentityCorrector()
+
 
 class MirrorInterpolant(Interpolant):
     """
@@ -353,6 +394,16 @@ class MirrorInterpolant(Interpolant):
         """
         assert self._check_t(t)
         return torch.zeros_like(x_1)
+
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the interpolant.
+
+        :return:
+            Identity corrector that does nothing.
+        :rtype: Corrector
+        """
+        return IdentityCorrector()
 
 
 class ScoreBasedDiffusionModelInterpolant(Interpolant):
@@ -419,10 +470,21 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
         :rtype: torch.Tensor
         """
         assert self._check_t(t)
-        return -t / torch.sqrt(1.0 - (t ** 2)) * x_0 + x_1 # TODO: is this right?
+        return -t / torch.sqrt(1.0 - (t ** 2)) * x_0 + x_1
+
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the interpolant.
+
+        :return:
+            Identity corrector that does nothing.
+        :rtype: Corrector
+        """
+        return IdentityCorrector()
+
 
 class PeriodicScoreBasedDifussionModelInterpolant(Interpolant):
-    
+
     def __init__(self) -> None:
         """
         Construct VP interpolant
@@ -461,7 +523,7 @@ class PeriodicScoreBasedDifussionModelInterpolant(Interpolant):
         x_mid = (x_max - x_min)/2
         diff = torch.abs(x_0-x_1)
         x_1prime = torch.where(diff >= x_mid, x_1 + torch.sign(x_0-x_mid), x_1)
-        path = torch.sqrt(1.0 - (t ** 2))*x_0.reshape(1, -1) + t * x_1prime.reshape(1, -1) # TODO: check reshape 
+        path = torch.sqrt(1.0 - (t ** 2))*x_0.reshape(1, -1) + t * x_1prime.reshape(1, -1) # TODO: check reshape
 
         return path%(x_max-x_min)
 
