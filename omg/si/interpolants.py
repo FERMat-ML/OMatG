@@ -490,6 +490,8 @@ class PeriodicScoreBasedDifussionModelInterpolant(Interpolant):
         Construct VP interpolant
         """
         super().__init__()
+        self._corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
+        self._mid_point = 0.5  # Mid point of the periodic boundary conditions.
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_pointer: torch.Tensor) -> torch.Tensor:
@@ -514,18 +516,11 @@ class PeriodicScoreBasedDifussionModelInterpolant(Interpolant):
             Interpolated value.
         :rtype: torch.Tensor
         """
-        assert self._check_t(t)
-        # omega = 2.0 * torch.pi * (x_1 - x_0)
-        # out = t * torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
-        # return out + x_0 - torch.floor(out + x_0)
-        x_min = 0. # TODO: input?
-        x_max = 1. # TODO: input?
-        x_mid = (x_max - x_min)/2
-        diff = torch.abs(x_0-x_1)
-        x_1prime = torch.where(diff >= x_mid, x_1 + torch.sign(x_0-x_mid), x_1)
-        path = torch.sqrt(1.0 - (t ** 2))*x_0.reshape(1, -1) + t * x_1prime.reshape(1, -1) # TODO: check reshape
-
-        return path%(x_max-x_min)
+        assert self._check_t(t) # TODO: Explain.
+        diff = torch.abs(x_0 - x_1)
+        x_1prime = torch.where(diff >= self._mid_point, x_1 + torch.sign(x_0 - self._mid_point), x_1)
+        x_t = torch.sqrt(1.0 - (t ** 2)) * x_0 + t * x_1prime
+        return self._corrector.correct(x_t)
 
     def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                                batch_pointer: torch.Tensor) -> torch.Tensor:
@@ -552,11 +547,17 @@ class PeriodicScoreBasedDifussionModelInterpolant(Interpolant):
         :rtype: torch.Tensor
         """
         assert self._check_t(t)
-        x_min = 0. # TODO: input?
-        x_max = 1. # TODO: input?
-        x_mid = (x_max - x_min)/2
-        diff = torch.abs(x_0-x_1)
-        x_1prime = torch.where(diff >= x_mid, x_1 + torch.sign(x_0-x_mid), x_1)
-        der = -t / torch.sqrt(1.0 - (t ** 2))*x_0.reshape(1, -1) + x_1prime.reshape(1, -1) # TODO: check reshape
-
+        diff = torch.abs(x_0 - x_1)
+        x_1prime = torch.where(diff >= self._mid_point, x_1 + torch.sign(x_0 - self._mid_point), x_1)
+        der = -t / torch.sqrt(1.0 - (t ** 2)) * x_0 + x_1prime
         return der
+
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the interpolant.
+
+        :return:
+            Corrector that corrects for periodic boundary conditions.
+        :rtype: Corrector
+        """
+        return self._corrector
