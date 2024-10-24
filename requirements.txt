@@ -6,3 +6,4 @@ lmdb~=1.5
 loguru~=0.7
 monty~=2024.7.30
 ase~=3.23
+pytest~=8.3
