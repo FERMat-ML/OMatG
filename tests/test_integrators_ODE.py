@@ -8,17 +8,17 @@ from omg.si.epsilon import *
 from omg.globals import SMALL_TIME, BIG_TIME
 
 # Testing parameters/objects
-tol = 5e-2
+tol = 2e-2
 ptr = None
-eps = 1e-3
-times = torch.linspace(SMALL_TIME+eps, BIG_TIME-eps, 100)
-nrep = 5000
+eps = 1e-4
+times = torch.linspace(SMALL_TIME+eps, BIG_TIME-eps, 200)
+nrep = 100000
 
 # Interpolants
 interpolants = [
     LinearInterpolant(),
     TrigonometricInterpolant(),
-    #PeriodicLinearInterpolant(),
+    PeriodicLinearInterpolant(),
     EncoderDecoderInterpolant(),
     MirrorInterpolant(),
     ScoreBasedDiffusionModelInterpolant()
@@ -48,8 +48,8 @@ def test_integrator(interpolant, gamma):
     '''
     # Initialize
     corr = None
-    x_init = torch.zeros(size=(2, 2))
-    x_final = torch.rand(size=(2, 2))
+    x_init = torch.ones(size=(10,)) * 0.5
+    x_final = torch.rand(size=(10,))
     if isinstance(interpolant, PeriodicLinearInterpolant):
         corr = PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)
     if isinstance(interpolant, MirrorInterpolant):
@@ -57,8 +57,8 @@ def test_integrator(interpolant, gamma):
 
     if isinstance(gamma, LatentGammaSqrt) or isinstance(gamma, LatentGammaEncoderDecoder):
         lat_flag = True
-        x_init = x_init.unsqueeze(2).expand(2, 2, nrep)
-        x_final = x_final.unsqueeze(2).expand(2, 2, nrep)
+        x_init = x_init.unsqueeze(-1).expand(10, nrep)
+        x_final = x_final.unsqueeze(-1).expand(10, nrep)
     else:
         lat_flag=False
 
@@ -66,7 +66,7 @@ def test_integrator(interpolant, gamma):
     interpolant = SingleStochasticInterpolant(
         interpolant=interpolant, gamma=gamma,epsilon=None,
         differential_equation_type='ODE', corrector=corr,
-        integrator_kwargs={'method':'euler'}
+        integrator_kwargs={'method':'rk4'}
     )
 
     # ODE function
@@ -85,7 +85,7 @@ def test_integrator(interpolant, gamma):
         if lat_flag:
             x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, ptr)[0].mean(dim=-1)
             x_mean = interpolant._ode_integrate(velo, x, t_i, dt).mean(dim=-1)
-            x = x_mean.unsqueeze(2).expand(2, 2, nrep)
+            x = x_mean.unsqueeze(-1).expand(10, nrep)
 
             # Assertion test
             assert x_mean == pytest.approx(x_interp_mean, abs=tol)
