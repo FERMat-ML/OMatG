@@ -9,19 +9,19 @@ from omg.globals import SMALL_TIME, BIG_TIME
 
 # Testing parameters/objects
 stol = 6e-2
-ptr = None
 eps = 1e-3
 times = torch.linspace(SMALL_TIME+eps, BIG_TIME-eps, 100)
 nrep = 10000
+ptr = torch.arange(nrep) * 10
 
 # Interpolants
 interpolants = [
     LinearInterpolant(),
     TrigonometricInterpolant(),
     #PeriodicLinearInterpolant(),
-    #EncoderDecoderInterpolant(),
-    #MirrorInterpolant(),
-    #ScoreBasedDiffusionModelInterpolant()
+    EncoderDecoderInterpolant(),
+    MirrorInterpolant(),
+    ScoreBasedDiffusionModelInterpolant()
 ]
 
 # Interpolant arguments
@@ -53,8 +53,8 @@ def test_sde_integrator(interpolant, gamma, epsilon):
     '''
     # Initialize
     corr = None
-    x_init = torch.ones(size=(10, nrep)) * 0.5
-    x_final = torch.rand(size=(10,)).unsqueeze(-1).expand(10, nrep)
+    x_init = torch.ones(size=(10, nrep)) * 0.40
+    x_final = (torch.ones(size=(10,)) * 0.55).unsqueeze(-1).expand(10, nrep)
     if isinstance(interpolant, PeriodicLinearInterpolant):
         corr = PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)
     if isinstance(interpolant, MirrorInterpolant):
@@ -70,7 +70,7 @@ def test_sde_integrator(interpolant, gamma, epsilon):
     # ODE function
     def velo(t, x):
         z = torch.randn(x_init.shape)
-        return interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=z, batch_pointer=None), z
+        return interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=z, batch_pointer=ptr), z
     
     # Integrate
     x = x_init
@@ -84,4 +84,5 @@ def test_sde_integrator(interpolant, gamma, epsilon):
         x = x_mean.unsqueeze(-1).expand(10, nrep)
 
         # Assertion test
+        print(i)
         assert x_mean == pytest.approx(x_interp_mean, abs=stol)
