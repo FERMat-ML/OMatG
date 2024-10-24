@@ -26,7 +26,6 @@ model:
             epsilon: null
             differential_equation_type: "ODE"
             sde_number_time_steps: null
-            corrector: null
             integrator_kwargs:
               method: euler
       data_fields: 

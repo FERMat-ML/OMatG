@@ -24,7 +24,6 @@ model:
             epsilon: null
             differential_equation_type: "ODE"
             sde_number_time_steps: null
-            corrector: null
       data_fields: 
         # if the order of the data_fields changes,
         # the order of the above StochasticInterpolant inputs must also change

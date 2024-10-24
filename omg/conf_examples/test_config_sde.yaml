@@ -27,7 +27,6 @@ model:
                 c: 0.1
             differential_equation_type: "SDE"
             sde_number_time_steps: 50
-            corrector: null
             # Some SDE kwargs
             #method: "euler"
             #adaptive: "False"
