@@ -71,8 +71,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: str, sde_number_time_steps: Optional[int] = None,
-                 corrector: Optional[Corrector] = None, integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
+                 differential_equation_type: str, corrector: Optional[Corrector] = None,
+                integrator_kwargs: Optional[dict[str, Any]] = None
+            ) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -83,7 +84,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             self._use_antithetic = False
         self._epsilon = epsilon
         self._differential_equation_type = differential_equation_type
-        self._sde_number_time_steps = sde_number_time_steps
         self._corrector = corrector if corrector is not None else self.IdentityCorrector()
         try:
             self._differential_equation_type = DifferentialEquationType[differential_equation_type]
@@ -94,18 +94,13 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             self.integrate = self._ode_integrate
             if self._epsilon is not None:
                 raise ValueError("Epsilon function should not be provided for ODEs.")
-            if self._sde_number_time_steps is not None:
-                raise ValueError("SDE number of time steps should not be provided for ODEs.")
+
         else:
             assert self._differential_equation_type == DifferentialEquationType.SDE
             self.loss = self._sde_loss
             self.integrate = self._sde_integrate
             if self._epsilon is None:
                 raise ValueError("Epsilon function should be provided for SDEs.")
-            if self._sde_number_time_steps is None:
-                raise ValueError("SDE number of time steps should be provided SDEs.")
-            if not self._sde_number_time_steps > 0:
-                raise ValueError("SDE number of time steps should be bigger than zero.")
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
 
     class IdentityCorrector(Corrector):
@@ -423,7 +418,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         def f(self, t, x):
             preds = self._model_func(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
             out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
-            return self._corrector.correct(out).reshape((x.shape[0], -1))
+            out = self._corrector.correct(out).reshape((x.shape[0], -1))
+            return out
 
         def g(self, t, x):
             out = (torch.sqrt(2 * self._epsilon.epsilon(t)) * torch.ones(x.shape[-1])).to(x.device)
@@ -458,10 +454,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon)
         t_span = torch.tensor([time, time + time_step])
         original_shape = x_t.shape
-        x_t = x_t.reshape((original_shape[0], -1))
+        x_t = x_t.reshape((original_shape[0], -1)) 
         with torch.no_grad():
             x_t_new = torchsde.sdeint(sde, x_t, t_span, **self._integrator_kwargs)
 
         # Return
-        print(x_t.shape)
         return torch.tensor(x_t_new[-1].view(original_shape))
