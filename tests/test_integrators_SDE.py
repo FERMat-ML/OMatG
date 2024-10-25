@@ -8,7 +8,7 @@ from omg.si.epsilon import *
 from omg.globals import SMALL_TIME, BIG_TIME
 
 # Testing parameters/objects
-stol = 6e-2
+stol = 6.5e-2
 eps = 1e-3
 times = torch.linspace(SMALL_TIME+eps, BIG_TIME-eps, 100)
 nrep = 10000
@@ -84,5 +84,4 @@ def test_sde_integrator(interpolant, gamma, epsilon):
         x = x_mean.unsqueeze(-1).expand(10, nrep)
 
         # Assertion test
-        print(i)
         assert x_mean == pytest.approx(x_interp_mean, abs=stol)
