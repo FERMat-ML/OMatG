@@ -41,7 +41,7 @@ def get_name(obj):
         for gamma in gammas for interpolant in interpolants
     ]
 )
-def test_sde_integrator(interpolant, gamma):
+def test_ode_integrator(interpolant, gamma):
     '''
     Test interpolant integrator
     '''
