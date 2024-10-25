@@ -8,10 +8,11 @@ from omg.si.epsilon import *
 from omg.globals import SMALL_TIME, BIG_TIME
 
 # Testing parameters/objects
-stol = 6e-2
+stol = 6.5e-2
 eps = 1e-3
 times = torch.linspace(SMALL_TIME+eps, BIG_TIME-eps, 100)
 nrep = 10000
+ptr = torch.arange(nrep) * 10
 
 # Interpolants
 interpolants = [

@@ -12,9 +12,6 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
 
     This class is currently designed for uniform base distributions p_0 for the points x_0.
 
-    :param number_integration_steps:
-        Number of integration steps.
-    :type number_integration_steps: int
     :param noise:
         Parameter scaling the noise that should be added during integration.
     :type noise: float
@@ -23,17 +20,14 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         If the number of integration steps is less than or equal to 0 or the noise is less than 0.
     """
 
-    def __init__(self, number_integration_steps: int, noise: float = 0.0) -> None:
+    def __init__(self, noise: float = 0.0) -> None:
         """
         Construct DiscreteFlowMatchingMask class.
         """
         super().__init__()
-        if number_integration_steps <= 0:
-            raise ValueError("Number of integration steps must be greater than 0.")
         if noise < 0.0:
             raise ValueError("Noise parameter must be greater than or equal to 0.")
         self._mask_index = 0  # Real atoms start at index 1.
-        self._number_integration_steps = number_integration_steps
         self._noise = noise
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
@@ -179,7 +173,7 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         # Sample from distribution for every of the sum(n_atoms) elements.
         # Do not shift the atom type by one to get the real species. Instead shift x_t down.
         x_1_probs = x_1_probs.reshape((-1, MAX_ATOM_NUM))
-        shifted_x_1 = Categorical(x_1_probs).sample()  # Shape (sum(n_atoms),)
+        shifted_x_1 = Categorical(x_1_probs).sample() - 1 # Shape (sum(n_atoms),)
         shifted_x_t = x_t - 1
         assert shifted_x_1.shape == x_t.shape == shifted_x_t.shape
         # Shape (sum(n_atoms), MAX_ATOM_NUM).

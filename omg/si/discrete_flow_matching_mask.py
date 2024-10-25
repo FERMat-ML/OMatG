@@ -23,17 +23,14 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         If the number of integration steps is less than or equal to 0 or the noise is less than 0.
     """
 
-    def __init__(self, number_integration_steps: int, noise: float = 0.0) -> None:
+    def __init__(self, noise: float = 0.0) -> None:
         """
         Construct DiscreteFlowMatchingMask class.
         """
         super().__init__()
-        if number_integration_steps <= 0:
-            raise ValueError("Number of integration steps must be greater than 0.")
         if noise < 0.0:
             raise ValueError("Noise parameter must be greater than or equal to 0.")
         self._mask_index = 0  # Real atoms start at index 1.
-        self._number_integration_steps = number_integration_steps
         self._noise = noise
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
@@ -173,12 +170,12 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         # Iterate time.
-        eps = torch.finfo(torch.float64).eps 
+        eps = torch.finfo(torch.float64).eps
         # Predict x1 for the flattened sequence
         x_1_probs = functional.softmax(model_function(time, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
         # Sample from distribution for every of the sum(n_atoms) elements.
         # Shift the atom type by one to get the real species.
-        x_1 = Categorical(x_1_probs).sample() + 1  # Shape (sum(n_atoms),)
+        x_1 = Categorical(x_1_probs).sample()  # Shape (sum(n_atoms),)
         assert x_1.shape == x_t.shape
         x_1_hot = functional.one_hot(x_1, num_classes=MAX_ATOM_NUM + 1)  # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
         # Shape (1, MAX_ATOM_NUM + 1).
@@ -186,16 +183,17 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         # Subtract the mask_hot vector from every x_1_hot[i, :].
         dpt = x_1_hot - mask_hot  # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
         # Gather values from dpt based on x_t.
+        print(dpt.shape)
         dpt_xt = dpt.gather(-1, x_t[:, None]).squeeze(-1)  # Shape (sum(n_atoms),).
 
         # Compute pt: linear interpolation based on t.
         # TODO: consider adding functionality to use other types of interpolants
         pt = (time * x_1_hot) + (1.0 - time) * mask_hot  # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
         pt_xt = pt.gather(-1, x_t[:, None]).squeeze(-1)  # Shape (sum(n_atoms),).
-
         # Compute the rate R.
         # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
-        rate = functional.relu(dpt - dpt_xt[:, None]) / ((MAX_ATOM_NUM + 1) * pt_xt[:, None])
+        S = torch.count_nonzero(pt, dim=-1)
+        rate = functional.relu(dpt - dpt_xt[:, None]) / (S * pt_xt)[:, None]
         # Set p(x_t | x_1) = 0 or p(j | x_1) = 0 cases to zero.
         rate[(pt_xt == 0.0)[:, None].repeat(1, MAX_ATOM_NUM + 1)] = 0.0
         rate[pt == 0.0] = 0.0
@@ -220,8 +218,6 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
 
         # Sample the next x_t
         x_t = Categorical(step_probs).sample()
-
         if abs(time + time_step - BIG_TIME) < 1e-6:
             assert torch.all(x_t != self._mask_index)
-
         return x_t
