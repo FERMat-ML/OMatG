@@ -183,7 +183,6 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         # Subtract the mask_hot vector from every x_1_hot[i, :].
         dpt = x_1_hot - mask_hot  # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
         # Gather values from dpt based on x_t.
-        print(dpt.shape)
         dpt_xt = dpt.gather(-1, x_t[:, None]).squeeze(-1)  # Shape (sum(n_atoms),).
 
         # Compute pt: linear interpolation based on t.
