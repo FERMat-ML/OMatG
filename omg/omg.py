@@ -32,6 +32,10 @@ class OMG(L.LightningModule):
         if load_checkpoint:
             checkpoint = torch.load(load_checkpoint, map_location=self.device)
             self.load_state_dict(checkpoint['state_dict'])
+        self.loss_norm = {}
+        self.loss_norm['loss_species'] = 0.43 
+        self.loss_norm['loss_pos'] = 0.020
+        self.loss_norm['loss_cell'] = 0.022
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
@@ -78,8 +82,8 @@ class OMG(L.LightningModule):
         total_loss = torch.tensor(0.0, device=self.device)
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
-            losses[loss_key] = cost * losses[loss_key]
-            total_loss += losses[loss_key]
+            losses[loss_key] = cost * losses[loss_key] # Don't normalize here so we can inspect the losses
+            total_loss += losses[loss_key] / self.loss_norm[loss_key] # normalize weights TODO: Look at how SDE losses are combined
 
         assert "loss_total" not in losses
         losses["loss_total"] = total_loss
@@ -89,6 +93,7 @@ class OMG(L.LightningModule):
             on_step=True,
             on_epoch=True,
             prog_bar=True,
+            sync_dist=True,
         )
 
         return total_loss
@@ -109,7 +114,7 @@ class OMG(L.LightningModule):
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
             losses[f"val_{loss_key}"] = cost * losses[loss_key]
-            total_loss += losses[f"val_{loss_key}"]
+            total_loss += losses[f"val_{loss_key}"] / self.loss_norm[loss_key]
             losses.pop(loss_key)
 
         assert "loss_total" not in losses
@@ -120,6 +125,7 @@ class OMG(L.LightningModule):
             on_step=False,
             on_epoch=True,
             prog_bar=True,
+            sync_dist=True,
         )
 
         return total_loss
@@ -131,12 +137,12 @@ class OMG(L.LightningModule):
         x_0 = self.sampler.sample_p_0().to(self.device)
         gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
-        xyz_saver(gen)
+        xyz_saver(gen.to('cpu'))
         return gen
 
     #TODO allow for YAML config
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
 

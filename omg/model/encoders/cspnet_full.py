@@ -1,25 +1,14 @@
-from diffcsp.pl_modules.cspnet import CSPNet
+from .diffcsp_copies import SinusoidsEmbedding, CSPLayer, CSPNet
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
-import math
 from torch_scatter import scatter
-from torch_scatter.composite import scatter_softmax
-from torch_geometric.utils import to_dense_adj, dense_to_sparse
 from torch_geometric.data import Data
-from einops import rearrange, repeat
-
-from diffcsp.common.data_utils import lattice_params_to_matrix_torch, get_pbc_distances, radius_graph_pbc, frac_to_cart_coords, repeat_blocks
-
-from diffcsp.pl_modules.cspnet import CSPLayer
-from diffcsp.pl_modules.cspnet import SinusoidsEmbedding
 
 from omg.model.model_utils import AdapterModule
 from omg.model.model_utils import prop_indicator
 
 from .encoder import Encoder
-from omg.globals import MAX_ATOM_NUM 
+from omg.globals import MAX_ATOM_NUM
 
 
 class CSPNetFull(Encoder, CSPNet):
@@ -102,7 +91,7 @@ class CSPNetFull(Encoder, CSPNet):
 
     def _forward(self, atom_types, frac_coords, lattices, num_atoms, node2graph, t, prop=None):
         # taken from DiffCSP with additional output layers included
-        t = t.to(atom_types.device)
+
         edges, frac_diff = self.gen_edges(num_atoms, frac_coords, lattices, node2graph)
         edge2graph = node2graph[edges[0]]
         if self.smooth:
