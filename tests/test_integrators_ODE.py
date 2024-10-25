@@ -10,7 +10,6 @@ from omg.globals import SMALL_TIME, BIG_TIME
 # Testing parameters/objects
 tol = 1e-2
 stol = 6e-2
-ptr = None
 times = torch.linspace(SMALL_TIME, BIG_TIME, 200)
 nrep = 10000
 
@@ -18,7 +17,7 @@ nrep = 10000
 interpolants = [
     LinearInterpolant(),
     TrigonometricInterpolant(),
-    #PeriodicLinearInterpolant(),
+    PeriodicLinearInterpolant(),
     EncoderDecoderInterpolant(),
     MirrorInterpolant(),
     ScoreBasedDiffusionModelInterpolant()
@@ -48,7 +47,8 @@ def test_sde_integrator(interpolant, gamma):
     '''
     # Initialize
     corr = None
-    x_init = torch.ones(size=(10,)) * 0.5
+    x_init = torch.ones(size=(10,)) * 0.1
+    batch_pointer = torch.tensor([0, 4, 7, 10])
     x_final = torch.rand(size=(10,))
     if isinstance(interpolant, PeriodicLinearInterpolant):
         corr = PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)
@@ -71,7 +71,8 @@ def test_sde_integrator(interpolant, gamma):
 
     # ODE function
     def velo(t, x):
-        return [interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=torch.randn(x_init.shape), batch_pointer=None)]
+        return (interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=torch.randn(x_init.shape),
+                                                    batch_pointer=batch_pointer), torch.tensor(torch.nan))
     
     # Integrate
     x = x_init
@@ -83,8 +84,8 @@ def test_sde_integrator(interpolant, gamma):
 
         # If stochastic element
         if lat_flag:
-            x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, ptr)[0].mean(dim=-1)
-            x_mean = interpolant._ode_integrate(velo, x, t_i, dt).mean(dim=-1)
+            x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)[0].mean(dim=-1)
+            x_mean = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer).mean(dim=-1)
             x = x_mean.unsqueeze(-1).expand(10, nrep)
 
             # Assertion test
@@ -94,8 +95,8 @@ def test_sde_integrator(interpolant, gamma):
         else:
        
             # Interpolate
-            x_interp, z = interpolant.interpolate(times[i], x_init, x_final, ptr)
-            x_new = interpolant._ode_integrate(velo, x, t_i, dt)
+            x_interp, z = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)
+            x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
             x = x_new
 
             # Test for equality
