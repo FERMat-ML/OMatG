@@ -15,7 +15,6 @@ model:
             gamma: null
             epsilon: null
             differential_equation_type: "ODE"
-            sde_number_time_steps: null
             integrator_kwargs:
               method: euler
             corrector: 
@@ -30,7 +29,6 @@ model:
             gamma: null
             epsilon: null
             differential_equation_type: "ODE"
-            sde_number_time_steps: null
             corrector: null
             integrator_kwargs:
               method: euler
