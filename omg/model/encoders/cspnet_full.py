@@ -91,7 +91,7 @@ class CSPNetFull(Encoder, CSPNet):
 
     def _forward(self, atom_types, frac_coords, lattices, num_atoms, node2graph, t, prop=None):
         # taken from DiffCSP with additional output layers included
-        t = t.to(atom_types.device)
+
         edges, frac_diff = self.gen_edges(num_atoms, frac_coords, lattices, node2graph)
         edge2graph = node2graph[edges[0]]
         if self.smooth:
