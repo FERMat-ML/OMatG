@@ -2,6 +2,8 @@ import torch
 from enum import Enum, auto
 from torch_geometric.data import Data
 from typing import List, Union
+from lightning.pytorch.callbacks import LearningRateFinder
+import matplotlib.pyplot as plt 
 
 class DataField(Enum):
     pos = auto()
@@ -62,3 +64,13 @@ def xyz_saver(data: Union [Data, List[Data]]):
             lower, upper = d.ptr[i*1], d.ptr[(i*1)+1]
             atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :], cell=d.cell[i, :, :], pbc=(1,1,1)))
     write(f'{time.strftime("%Y%m%d-%H%M%S")}.xyz', atoms)
+
+class OMGLearningRateFinder(LearningRateFinder):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def on_fit_start(self, trainer, pl_module):
+        self.lr_find(trainer, pl_module)
+        fig = self.optimal_lr.plot(suggest=True)
+        plt.savefig('lr-finder.png')
+

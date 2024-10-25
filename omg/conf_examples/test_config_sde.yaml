@@ -105,10 +105,21 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/train.lmdb"
-  batch_size: 256
+  batch_size: 128
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
         save_top_k: 1
         monitor: "val_loss_total"
+      #- class_path: omg.utils.OMGLearningRateFinder
+      #init_args:
+        #min_lr: 0.00001
+        #num_training_steps: 200
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        patience: 20
+        monitor: "val_loss_total"
+  gradient_clip_val: 0.5
+  num_sanity_val_steps: 0
+  strategy: "ddp_find_unused_parameters_true"
