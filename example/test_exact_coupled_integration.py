@@ -27,7 +27,7 @@ dl = OMGDataModule(train_dataset=ds, batch_size=1)
 # Set up sampler. This will use the new gamma distribution for lattice and defaults for the others
 sampler = SampleFromRNG(cell_distribution=NDependentGamma(a=6.950090673417738,loc=0.0011311460889336065,scale=0.008141385751601667))
 
-STEPS=200
+STEPS=20
 pos_si = SingleStochasticInterpolant(interpolant=PeriodicLinearInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE",corrector=PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)) 
 
 cell_si = SingleStochasticInterpolant(interpolant=LinearInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE")
@@ -80,7 +80,7 @@ times = torch.linspace(SMALL_TIME, BIG_TIME, STEPS)
 
 gen, inter = coupled_si.integrate(x_0,coupled_model_wrapper,save_intermediate=True)
 
-xyz_saver(inter)
+#xyz_saver(inter)
 
 # Check integration of pos
 pos = x_0.pos
@@ -115,12 +115,13 @@ for i in range(1,len(times)):
     print ()
     print ()
     '''
+# NOTE: Exact integration of species is not possible without knowledge of x_t.species so don't test for now
 # Check integration of species
-print ('=========Species=========')
-for i in range(1,len(times)):
-    print (f'========={times[i]}=========')
-    x_t_true, _ = species_si.interpolate(times[i], x_0.species, x_1.species, x_0.ptr)
-    print (x_t_true-inter[i].species)
+#print ('=========Species=========')
+#for i in range(1,len(times)):
+#    print (f'========={times[i]}=========')
+#    x_t_true, _ = species_si.interpolate(times[i], x_0.species, x_1.species, x_0.ptr)
+#    print (x_t_true-inter[i].species)
     '''
     species = x_t_true.clone()
     species = species_si.integrate(species_model_wrapper, species, (float(times[i - 1]), float(times[i])))

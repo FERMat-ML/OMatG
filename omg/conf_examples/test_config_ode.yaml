@@ -116,4 +116,14 @@ trainer:
       init_args:
         save_top_k: 1
         monitor: "val_loss_total"
-    - class_path: lightning.pytorch.callbacks.LearningRateFinder
+    #- class_path: omg.utils.OMGLearningRateFinder
+      #init_args:
+        #min_lr: 0.00001
+        #num_training_steps: 200
+    - class_path: lightning.pytorch.callbacks.EarlyStopping
+      init_args:
+        patience: 20
+        monitor: "val_loss_total"
+  gradient_clip_val: 0.5
+  num_sanity_val_steps: 0
+  strategy: "ddp_find_unused_parameters_true"

@@ -6,7 +6,7 @@ from omg.datamodule import OMGData, OMGTorchDataset
 #ds = DataModule.from_ase("./example.xyz")
 ds = DataModule(["../data/mp_20/train.lmdb"], property_keys=("band_gap",))
 
-torch_ds = OMGTorchDataset(ds)
+torch_ds = OMGTorchDataset(ds, convert_to_fractional=True, niggli=True)
 
 print(torch_ds[0])
 

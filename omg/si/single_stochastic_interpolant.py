@@ -1,9 +1,8 @@
 from enum import Enum, auto
-import numpy as np
 import torch
 import torch.nn as nn
 from torchdiffeq import odeint
-import torchsde
+from torchsde import sdeint
 from typing import Any, Optional, Callable
 from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
 
@@ -48,12 +47,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     :param differential_equation_type:
         Type of differential equation to use for inference.
     :type differential_equation_type: DifferentialEquationType
-    :param sde_number_time_steps:
-        Number of time steps for the integration of the SDE.
-        Note that the time span [0, 1] is already subdivided by the StochasticInterpolants class.
-        This number of timesteps will be used for the subintervals.
-        Should be positive and only be provided if the differential equation type is SDE.
-    :type sde_number_time_steps: Optional[int]
     :param corrector:
         Corrector that will be applied to the points x_t during integration (for instance, to enforce periodic boundary
         conditions).
@@ -72,8 +65,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
                  differential_equation_type: str, corrector: Optional[Corrector] = None,
-                integrator_kwargs: Optional[dict[str, Any]] = None
-            ) -> None:
+                 integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -153,7 +145,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         interpolate = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
             z = torch.randn_like(x_0)
-            interpolate = interpolate.clone()   #TODO: Why do I need this?
+            interpolate = interpolate.clone()   # TODO: Why do I need this?
             interpolate += self._gamma.gamma(t) * z
         else:
             z = torch.zeros_like(x_0)
@@ -341,7 +333,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         return loss_b + loss_z
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                  x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
+                  x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
+                  batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Integrate the current positions x_t at the given time for the given time step based on the velocity fields b and
         the denoisers eta returned by the model function.
@@ -362,6 +355,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Integrated position.
@@ -370,7 +367,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         raise NotImplementedError
 
     def _ode_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                       x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
+                       x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
+                       batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Integrate the ODE for the current positions x_t at the given time for the given time step based on the velocity
         fields b and the denoisers eta returned by the model function.
@@ -388,6 +386,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Integrated position.
@@ -405,28 +407,30 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     # Modify wrapper for use in SDE integrator
     class SDE(torch.nn.Module):
-        def __init__(self, model_func, corrector, gamma, epsilon):
+        def __init__(self, model_func, corrector, gamma, epsilon, original_x_shape):
             super().__init__()
             self._model_func = model_func
             self._corrector = corrector
             self._gamma = gamma
             self._epsilon = epsilon
+            self._original_x_shape = original_x_shape
             # Required for torchsde.
             self.sde_type = "ito"
             self.noise_type = "diagonal"
 
         def f(self, t, x):
-            preds = self._model_func(t, self._corrector.correct(x))  # Because of the noise, the x should be corrected.
+            # Because of the noise, the x should be corrected.
+            new_x_shape = x.shape
+            preds = self._model_func(t, self._corrector.correct(x.reshape(self._original_x_shape)))
             out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
-            out = self._corrector.correct(out).reshape((x.shape[0], -1))
-            return out
+            return self._corrector.correct(out).reshape(new_x_shape)
 
         def g(self, t, x):
-            out = (torch.sqrt(2 * self._epsilon.epsilon(t)) * torch.ones(x.shape[-1])).to(x.device)
-            return out.repeat(x.shape[0]).reshape((x.shape[0], -1))
+            return torch.sqrt(2.0 * self._epsilon.epsilon(t)) * torch.ones_like(x)
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
-                       x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor) -> torch.Tensor:
+                       x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
+                       batch_pointer: torch.Tensor) -> torch.Tensor:
         """
         Integrate the SDE for the current positions x_t at the given time for the given time step based on the velocity
         fields b and the denoisers eta returned by the model function.
@@ -444,19 +448,24 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
+        :param batch_pointer:
+            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
+            number of atoms in the batch.
+        :type batch_pointer: torch.Tensor
 
         :return:
             Integrated position.
         :rtype: torch.Tensor
         """
-
         # SDE Integrator
-        sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon)
-        t_span = torch.tensor([time, time + time_step])
         original_shape = x_t.shape
-        x_t = x_t.reshape((original_shape[0], -1)) 
-        with torch.no_grad():
-            x_t_new = torchsde.sdeint(sde, x_t, t_span, **self._integrator_kwargs)
+        sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon,
+                       original_x_shape=original_shape)
+        t_span = torch.tensor([time, time + time_step])
 
-        # Return
-        return torch.tensor(x_t_new[-1].view(original_shape))
+        with torch.no_grad():
+            # Diagonal noise in torchsde expects a tensor of shape (batch_size, state_size).
+            # See https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md.
+            x_t_new = sdeint(sde, x_t.reshape((len(batch_pointer) - 1, -1)), t_span, **self._integrator_kwargs)
+
+        return torch.tensor(x_t_new[-1].reshape(original_shape))
