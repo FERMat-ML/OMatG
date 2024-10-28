@@ -12,9 +12,6 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
 
     This class is currently designed for masking base distributions p_0 for the points x_0.
 
-    :param number_integration_steps:
-        Number of integration steps.
-    :type number_integration_steps: int
     :param noise:
         Parameter scaling the noise that should be added during integration.
     :type noise: float
@@ -63,9 +60,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         assert torch.all(x_0 == self._mask_index)  # Every atom should be masked in the initial state.
         assert torch.all(x_1 != self._mask_index)  # No atom should be masked in the final state.
         # Mask atoms based on t, see Eq. (6) in https://arxiv.org/pdf/2402.04997.
-        x_t = x_1.clone()
-        mask = torch.rand_like(x_1, dtype=t.dtype) < t
-        x_t[mask] = self._mask_index
+        x_t = x_0.clone()
+        mask = torch.rand_like(x_0, dtype=t.dtype) < t
+        x_t[mask] = x_1[mask]
         return x_t, torch.zeros_like(x_t)
 
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
@@ -175,7 +172,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         x_1_probs = functional.softmax(model_function(time, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
         # Sample from distribution for every of the sum(n_atoms) elements.
         # Shift the atom type by one to get the real species.
-        x_1 = Categorical(x_1_probs).sample() # Shape (sum(n_atoms),)
+        x_1 = Categorical(x_1_probs).sample() + 1  # Shape (sum(n_atoms),)
         assert x_1.shape == x_t.shape
         x_1_hot = functional.one_hot(x_1, num_classes=MAX_ATOM_NUM + 1)  # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
         # Shape (1, MAX_ATOM_NUM + 1).
