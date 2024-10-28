@@ -107,4 +107,5 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
-        return x_t
+        # Always return new object.
+        return x_t.clone()
