@@ -437,4 +437,4 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             # See https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md.
             x_t_new = sdeint(sde, x_t.reshape((len(batch_pointer) - 1, -1)), t_span, **self._integrator_kwargs)
 
-        return torch.tensor(x_t_new[-1].reshape(original_shape))
+        return self._corrector.correct(torch.tensor(x_t_new[-1].reshape(original_shape)))
