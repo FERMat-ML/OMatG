@@ -7,6 +7,7 @@ from omg.si.interpolants import *
 from omg.si.gamma import *
 from omg.si.epsilon import *
 from omg.si.discrete_flow_matching_mask import DiscreteFlowMatchingMask
+from omg.utils import reshape_t, DataField
 from torch_geometric.data import Data
 import torch.nn.functional as functional
 from omg.globals import SMALL_TIME, BIG_TIME, MAX_ATOM_NUM
