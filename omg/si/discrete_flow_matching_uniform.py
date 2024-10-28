@@ -173,7 +173,7 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         # Sample from distribution for every of the sum(n_atoms) elements.
         # Do not shift the atom type by one to get the real species. Instead shift x_t down.
         x_1_probs = x_1_probs.reshape((-1, MAX_ATOM_NUM))
-        shifted_x_1 = Categorical(x_1_probs).sample() - 1 # Shape (sum(n_atoms),)
+        shifted_x_1 = Categorical(x_1_probs).sample()  # Shape (sum(n_atoms),)
         shifted_x_t = x_t - 1
         assert shifted_x_1.shape == x_t.shape == shifted_x_t.shape
         # Shape (sum(n_atoms), MAX_ATOM_NUM).
@@ -190,7 +190,8 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
 
         # Compute the rate R.
         # Shape (sum(n_atoms), MAX_ATOM_NUM).
-        rate = functional.relu(dpt - dpt_xt[:, None]) / (MAX_ATOM_NUM * pt_xt[:, None])
+        S = torch.count_nonzero(pt, dim=-1)
+        rate = functional.relu(dpt - dpt_xt[:, None]) / (S * pt_xt)[:, None]
         # Set p(x_t | x_1) = 0 or p(j | x_1) = 0 cases to zero.
         rate[(pt_xt == 0.0)[:, None].repeat(1, MAX_ATOM_NUM)] = 0.0
         rate[pt == 0.0] = 0.0
