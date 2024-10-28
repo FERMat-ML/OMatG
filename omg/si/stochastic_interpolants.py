@@ -221,7 +221,6 @@ class StochasticInterpolants(object):
                 x_int_dict = x_int.to_dict()
 
                 def model_prediction_fn(time, x):
-                    time = time.to(x.device)
                     time = time.repeat(len(x_int_dict['n_atoms']),)
                     x_int_dict[data_field.name].copy_(x)
                     model_result = model_function(x_int, time)

@@ -15,7 +15,6 @@ model:
             gamma: null
             epsilon: null
             differential_equation_type: "ODE"
-            sde_number_time_steps: null
             integrator_kwargs:
               method: euler
         # lattice vectors
@@ -25,7 +24,6 @@ model:
             gamma: null
             epsilon: null
             differential_equation_type: "ODE"
-            sde_number_time_steps: null
             integrator_kwargs:
               method: euler
       data_fields: 

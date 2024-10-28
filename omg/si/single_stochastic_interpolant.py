@@ -47,12 +47,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     :param differential_equation_type:
         Type of differential equation to use for inference.
     :type differential_equation_type: DifferentialEquationType
-    :param sde_number_time_steps:
-        Number of time steps for the integration of the SDE.
-        Note that the time span [0, 1] is already subdivided by the StochasticInterpolants class.
-        This number of timesteps will be used for the subintervals.
-        Should be positive and only be provided if the differential equation type is SDE.
-    :type sde_number_time_steps: Optional[int]
     :param integrator_kwargs: Optional keyword arguments for the odeint function of torchdiffeq (see
         https://github.com/rtqichen/torchdiffeq/blob/master/README.md) or the sdeint function of torchsde (see
         https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md#keyword-arguments-of-sdeint).
@@ -60,12 +54,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     :raises ValueError:
         If epsilon is provided for ODEs or not provided for SDEs.
-        If sde_number_time_steps is provided for ODEs or not provided for SDEs.
-        If sde_number_time_steps is not positive.
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: str, sde_number_time_steps: Optional[int] = None,
+                 differential_equation_type: str,
                  integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
@@ -77,7 +69,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             self._use_antithetic = False
         self._epsilon = epsilon
         self._differential_equation_type = differential_equation_type
-        self._sde_number_time_steps = sde_number_time_steps
         # Corrector that needs to be applied to the points x_t during integration.
         self._corrector = self._interpolant.get_corrector()
         try:
@@ -89,18 +80,13 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             self.integrate = self._ode_integrate
             if self._epsilon is not None:
                 raise ValueError("Epsilon function should not be provided for ODEs.")
-            if self._sde_number_time_steps is not None:
-                raise ValueError("SDE number of time steps should not be provided for ODEs.")
+
         else:
             assert self._differential_equation_type == DifferentialEquationType.SDE
             self.loss = self._sde_loss
             self.integrate = self._sde_integrate
             if self._epsilon is None:
                 raise ValueError("Epsilon function should be provided for SDEs.")
-            if self._sde_number_time_steps is None:
-                raise ValueError("SDE number of time steps should be provided SDEs.")
-            if not self._sde_number_time_steps > 0:
-                raise ValueError("SDE number of time steps should be bigger than zero.")
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
@@ -130,6 +116,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         interpolate = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
             z = torch.randn_like(x_0)
+            interpolate = interpolate.clone()   # TODO: Why do I need this?
             interpolate += self._gamma.gamma(t) * z
         else:
             z = torch.zeros_like(x_0)
@@ -381,7 +368,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         # Set up ODE function
         odefunc = lambda t, x: model_function(t, self._corrector.correct(x))[0]
-
         t_span = torch.tensor([time, time + time_step])
         with torch.no_grad():
             x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)[-1]

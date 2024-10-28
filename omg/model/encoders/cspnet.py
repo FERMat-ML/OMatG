@@ -1,4 +1,4 @@
-from diffcsp.pl_modules.cspnet import CSPNet
+from .diffcsp_copies import CSPNet
 from encoder import Encoder
 
 class CSPNetEncoder(Encoder):

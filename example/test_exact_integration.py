@@ -40,7 +40,7 @@ cell_si = SingleStochasticInterpolant(interpolant=LinearInterpolant(),gamma=None
 
 # cell_si = SingleStochasticInterpolant(interpolant=ScoreBasedDiffusionModelInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE", integrator_kwargs={'method':'euler'})
 
-species_si = DiscreteFlowMatchingUniform(number_integration_steps=STEPS, noise=0)
+species_si = DiscreteFlowMatchingUniform(noise=0)
 
 # Sample p_1 and p_0
 x_1 = next(iter(dl.train_dataloader()))
