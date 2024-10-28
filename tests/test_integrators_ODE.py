@@ -50,7 +50,7 @@ def test_ode_integrator(interpolant, gamma):
     batch_pointer = torch.tensor([0, 10])
     x_final = torch.rand(size=(10,))
     if isinstance(interpolant, MirrorInterpolant):
-        x_init = x_final
+        x_init = x_final.clone()
 
     if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant)):
         pbc_flag = True

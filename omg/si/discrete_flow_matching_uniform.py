@@ -210,6 +210,6 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         step_probs.scatter_(-1, shifted_x_t[:, None], 1.0 - step_probs.sum(dim=-1, keepdim=True)).clamp(min=0.0)
 
         # Sample the next x_t
-        x_t = Categorical(step_probs).sample() + 1
+        x_t = Categorical(step_probs).sample()
 
         return x_t

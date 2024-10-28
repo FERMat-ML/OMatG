@@ -116,7 +116,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         interpolate = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
             z = torch.randn_like(x_0)
-            interpolate = interpolate.clone()   # TODO: Why do I need this?
             interpolate += self._gamma.gamma(t) * z
         else:
             z = torch.zeros_like(x_0)

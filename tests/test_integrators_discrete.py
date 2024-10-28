@@ -40,14 +40,13 @@ def test_discrete_mask_integrator():
 def test_discrete_uniform_integrator():
 
     # Initialize
-    x_final = torch.randint(size=(10,), low=1, high=MAX_ATOM_NUM + 1).long()
-    x_init = torch.randint(size=(10,), low=1, high=MAX_ATOM_NUM + 1).long()
+    x_final = torch.randint(size=(10,), low=1, high=MAX_ATOM_NUM+1).long()
+    x_init = torch.randint(size=(10,), low=1, high=MAX_ATOM_NUM+1).long()
     interp = DiscreteFlowMatchingUniform(noise=0.0)
 
     # ODE function
     def velo(t, x):
-        x1 = functional.one_hot(x_final - 1, num_classes=MAX_ATOM_NUM).float()
-        # One-hot encoding will be passed through softmax. Ensure that wrong types are getting zero.
+        x1 = functional.one_hot(x_final, num_classes=MAX_ATOM_NUM+1).float()
         x1[x1 == 0] = -float("INF")
         return x1, None
     
