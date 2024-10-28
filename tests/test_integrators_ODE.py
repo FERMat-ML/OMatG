@@ -104,7 +104,6 @@ def test_ode_integrator(interpolant, gamma):
 
         # If all deterministic
         else:
-
             # Interpolate
             x_interp = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)[0]
             x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
@@ -113,8 +112,8 @@ def test_ode_integrator(interpolant, gamma):
             # Test for equality
             if pbc_flag:
                 # assume pbc is from 0 - 1
-                diff = torch.abs(x_interp - x)
-                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x - 0.5), x_interp)
-                assert x == pytest.approx(x_interp_prime, abs=tol)
+                diff = torch.abs(x_interp - x_new)
+                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new - 0.5), x_interp)
+                assert x_new == pytest.approx(x_interp_prime, abs=tol)
             else:
-                assert x == pytest.approx(x_interp, abs=tol)
+                assert x_new == pytest.approx(x_interp, abs=tol)
