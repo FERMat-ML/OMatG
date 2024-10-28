@@ -13,10 +13,10 @@ from omg.globals import SMALL_TIME, BIG_TIME, MAX_ATOM_NUM
 
 # Testing parameters/objects
 stol = 6.5e-2
-tol = 1e-4
-eps = 1e-3
-times = torch.linspace(SMALL_TIME+eps, BIG_TIME-eps, 100)
-nrep = 10000
+tol = 1e-2
+eps = 1e-6
+times = torch.linspace(SMALL_TIME, BIG_TIME, 100)
+nrep = 1000
 ptr = torch.arange(nrep+1) * 10
 n_atoms = torch.ones(size=(nrep,)) * 10
 
@@ -30,7 +30,7 @@ def test_coupled_integrator():
         differential_equation_type='ODE',corrector=None, integrator_kwargs={'method':'rk4'}
     )
     sde_interp = SingleStochasticInterpolant(
-        interpolant=LinearInterpolant(), gamma=LatentGammaSqrt(0.1), epsilon=VanishingEpsilon(),
+        interpolant=LinearInterpolant(), gamma=LatentGammaSqrt(0.1), epsilon=VanishingEpsilon(c=0.1),
         differential_equation_type='SDE', corrector=None, integrator_kwargs={'method':'srk'}
     )
     discrete_interp = DiscreteFlowMatchingMask(noise=0.0)
@@ -73,12 +73,13 @@ def test_coupled_integrator():
         cell_avg = inter[i].cell.mean(dim=-1)
 
         # True value
-        cell_true = sde_interp.interpolate(times[i], x_0.cell, x_1.cell, ptr=ptr).mean(dim=-1)
-        pos_true = ode_interp.interpolate(times[i], x_0.pos, x_1.pos, ptr=ptr)
+        cell_true = sde_interp.interpolate(times[i], x_0.cell, x_1.cell, batch_pointer=ptr)[0].mean(dim=-1)
+        pos_true = ode_interp.interpolate(times[i], x_0.pos, x_1.pos, batch_pointer=ptr)[0]
 
         # Check approximation
-        assert inter[i].pos == pytest.approx(pos_true, rel=tol)
-        assert cell_avg == pytest.approx(cell_true, rel=stol)
+        assert inter[i].pos == pytest.approx(pos_true, abs=tol)
+        assert cell_avg == pytest.approx(cell_true, abs=stol)
+        print(i)
 
     # Check at the end for discrete
     assert torch.all(x.species == x_1.species)

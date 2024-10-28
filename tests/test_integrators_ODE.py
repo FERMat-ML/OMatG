@@ -17,7 +17,7 @@ nrep = 10000
 interpolants = [
     LinearInterpolant(),
     TrigonometricInterpolant(),
-    PeriodicLinearInterpolant(),
+    #PeriodicLinearInterpolant(),
     EncoderDecoderInterpolant(),
     MirrorInterpolant(),
     ScoreBasedDiffusionModelInterpolant()

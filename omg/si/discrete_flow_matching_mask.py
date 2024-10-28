@@ -175,7 +175,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         x_1_probs = functional.softmax(model_function(time, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
         # Sample from distribution for every of the sum(n_atoms) elements.
         # Shift the atom type by one to get the real species.
-        x_1 = Categorical(x_1_probs).sample()  # Shape (sum(n_atoms),)
+        x_1 = Categorical(x_1_probs).sample() # Shape (sum(n_atoms),)
         assert x_1.shape == x_t.shape
         x_1_hot = functional.one_hot(x_1, num_classes=MAX_ATOM_NUM + 1)  # Shape (sum(n_atoms), MAX_ATOM_NUM + 1).
         # Shape (1, MAX_ATOM_NUM + 1).
@@ -206,8 +206,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         rate += rate_db
 
         # Don't mask on the final step.
-        if abs(time + time_step - BIG_TIME) < 1e-6:
+        if abs(time + time_step - BIG_TIME) < 1e-3:
             assert len(rate.shape) == 2
+            rate[torch.arange(rate.shape[0]), rate.argmax(dim=-1)] = torch.finfo(torch.float32).max
             rate[:, 0] = 0.0
 
         # Compute step probabilities and sample.

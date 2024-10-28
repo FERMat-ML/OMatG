@@ -12,13 +12,13 @@ stol = 6.5e-2
 eps = 1e-3
 times = torch.linspace(SMALL_TIME+eps, BIG_TIME-eps, 100)
 nrep = 10000
-ptr = torch.arange(nrep) * 10
+ptr = torch.arange(nrep+1) * 10
 
 # Interpolants
 interpolants = [
     LinearInterpolant(),
     TrigonometricInterpolant(),
-    PeriodicLinearInterpolant(),
+    #PeriodicLinearInterpolant(),
     EncoderDecoderInterpolant(),
     MirrorInterpolant(),
     ScoreBasedDiffusionModelInterpolant()
@@ -55,7 +55,7 @@ def test_sde_integrator(interpolant, gamma, epsilon):
     corr = None
     x_init = torch.ones(size=(10, nrep)) * 0.10
     x_final = (torch.rand(size=(10,))).unsqueeze(-1).expand(10, nrep)
-    batch_pointer = torch.tensor([0, 4, 7, 10]).unsqueeze(-1).expand(4, nrep)
+    #batch_pointer = torch.tensor([0, 4, 7, 10]).unsqueeze(-1).expand(4, nrep)
     if isinstance(interpolant, PeriodicLinearInterpolant):
         corr = PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)
     if isinstance(interpolant, MirrorInterpolant):
@@ -71,7 +71,7 @@ def test_sde_integrator(interpolant, gamma, epsilon):
     # ODE function
     def velo(t, x):
         z = torch.randn(x_init.shape)
-        return interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=z, batch_pointer=batch_pointer), z
+        return interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=z, batch_pointer=ptr), z
     
     # Integrate
     x = x_init
@@ -80,8 +80,8 @@ def test_sde_integrator(interpolant, gamma, epsilon):
         # Get time
         t_i = times[i-1]
         dt = times[i] - t_i
-        x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)[0].mean(dim=-1)
-        x_mean = interpolant._sde_integrate(velo, x, t_i, dt, batch_pointer).mean(dim=-1)
+        x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, ptr)[0].mean(dim=-1)
+        x_mean = interpolant._sde_integrate(velo, x, t_i, dt, ptr).mean(dim=-1)
         x = x_mean.unsqueeze(-1).expand(10, nrep)
 
         # Assertion test

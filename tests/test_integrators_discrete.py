@@ -33,7 +33,7 @@ def test_discrete_mask_integrator():
     while t < 1.0:
 
         # Get time
-        x = interp.integrate(velo, x, t, dt)
+        x = interp.integrate(velo, x, t, dt, batch_pointer=None)
         t += dt
 
     # Assertion test
@@ -62,7 +62,7 @@ def test_discrete_uniform_integrator():
     while t < 1.0:
 
         # Get time
-        x = interp.integrate(velo, x, t, dt)
+        x = interp.integrate(velo, x, t, dt, batch_pointer=None)
         t += dt
 
     # Assertion test
