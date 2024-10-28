@@ -128,6 +128,18 @@ class Interpolant(ABC, TimeChecker):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the interpolant (for instance, a corrector that considers periodic boundary
+        conditions)
+
+        :return:
+            Corrector.
+        :rtype: Corrector
+        """
+        raise NotImplementedError
+
 
 class LatentGamma(ABC, TimeChecker):
     """

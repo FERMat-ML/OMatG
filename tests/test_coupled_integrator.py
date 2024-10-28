@@ -24,19 +24,19 @@ def test_coupled_integrator():
     '''
     Test interpolant integrator
     '''
-    # Initialize three interoplants
-    ode_interp = SingleStochasticInterpolant(
-        interpolant=LinearInterpolant(), gamma=None, epsilon=None, 
-        differential_equation_type='ODE',corrector=None, integrator_kwargs={'method':'rk4'}
+    # Initialize three interpolants
+    pos_interp = SingleStochasticInterpolant(
+        interpolant=PeriodicLinearInterpolant(), gamma=None, epsilon=None, 
+        differential_equation_type='ODE', integrator_kwargs={'method':'rk4'}
     )
-    sde_interp = SingleStochasticInterpolant(
+    cell_interp = SingleStochasticInterpolant(
         interpolant=LinearInterpolant(), gamma=LatentGammaSqrt(0.1), epsilon=VanishingEpsilon(c=0.1),
-        differential_equation_type='SDE', corrector=None, integrator_kwargs={'method':'srk'}
+        differential_equation_type='SDE', integrator_kwargs={'method':'srk'}
     )
     discrete_interp = DiscreteFlowMatchingMask(noise=0.0)
 
     # Sequence
-    interp_seq = [ode_interp, sde_interp, discrete_interp]
+    interp_seq = [pos_interp, cell_interp, discrete_interp]
     coupled_interp = StochasticInterpolants(
         stochastic_interpolants=interp_seq, data_fields=['pos', 'cell', 'species'], 
         integration_time_steps=100
@@ -60,8 +60,8 @@ def test_coupled_integrator():
         z_cell = torch.randn_like(x.cell)
         t_pos = reshape_t(t, n_atoms.long(), DataField.pos)
         t_cell = reshape_t(t, n_atoms.long(), DataField.cell)
-        pos_b = ode_interp._interpolate_derivative(t_pos, x_0.pos, x_1.pos, z=z_x, batch_pointer=ptr)
-        cell_b = sde_interp._interpolate_derivative(t_cell, x_0.cell, x_1.cell, z=z_cell, batch_pointer=ptr)
+        pos_b = pos_interp._interpolate_derivative(t_pos, x_0.pos, x_1.pos, z=z_x, batch_pointer=ptr)
+        cell_b = cell_interp._interpolate_derivative(t_cell, x_0.cell, x_1.cell, z=z_cell, batch_pointer=ptr)
         x1_spec = functional.one_hot(x_1.species - 1, num_classes=MAX_ATOM_NUM).float()
         x1_spec[x1_spec == 0] = -float("INF")
         species_b = x1_spec
@@ -82,11 +82,13 @@ def test_coupled_integrator():
         cell_avg = inter[i].cell.mean(dim=0)
 
         # True value
-        cell_true = sde_interp.interpolate(times[i], x_0.cell, x_1.cell, batch_pointer=ptr)[0].mean(dim=0)
-        pos_true = ode_interp.interpolate(times[i], x_0.pos, x_1.pos, batch_pointer=ptr)[0]
+        cell_true = cell_interp.interpolate(times[i], x_0.cell, x_1.cell, batch_pointer=ptr)[0].mean(dim=0)
+        pos_true = pos_interp.interpolate(times[i], x_0.pos, x_1.pos, batch_pointer=ptr)[0]
 
         # Check approximation
-        assert inter[i].pos == pytest.approx(pos_true, abs=tol)
+        pos_diff = torch.abs(pos_true - inter[i].pos)
+        pos_true_prime = torch.where(pos_diff >= 0.5, pos_true + torch.sign(inter[i].pos - 0.5), pos_true)
+        assert inter[i].pos == pytest.approx(pos_true_prime, abs=tol)
         assert cell_avg == pytest.approx(cell_true, abs=stol)
 
     # Check at the end for discrete

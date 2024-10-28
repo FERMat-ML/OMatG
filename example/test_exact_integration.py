@@ -7,8 +7,10 @@ from omg.si.stochastic_interpolants import StochasticInterpolants
 from omg.si.discrete_flow_matching_uniform import DiscreteFlowMatchingUniform
 from omg.si.single_stochastic_interpolant import SingleStochasticInterpolant
 from omg.si.interpolants import PeriodicLinearInterpolant
-from omg.si.corrector import PeriodicBoundaryConditionsCorrector
+from omg.si.interpolants import PeriodicScoreBasedDiffusionModelInterpolant
+#from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.si.interpolants import LinearInterpolant
+from omg.si.interpolants import ScoreBasedDiffusionModelInterpolant
 from omg.model.model import Model
 from omg.model.encoders.cspnet_full import CSPNetFull
 from omg.model.heads.pass_through import PassThrough
@@ -30,9 +32,13 @@ sampler = SampleFromRNG(cell_distribution=NDependentGamma(a=6.950090673417738,lo
 STEPS = 10
 # Set up SI classes. Will test each integration separately. 
 # TODO: Need to look at how to do this with discrete species without too much of a hack
-pos_si = SingleStochasticInterpolant(interpolant=PeriodicLinearInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE",corrector=PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)) 
+pos_si = SingleStochasticInterpolant(interpolant=PeriodicLinearInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE", integrator_kwargs={'method':'euler'}) 
 
-cell_si = SingleStochasticInterpolant(interpolant=LinearInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE")
+# pos_si = SingleStochasticInterpolant(interpolant=PeriodicScoreBasedDiffusionModelInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE", integrator_kwargs={'method':'euler'})
+
+cell_si = SingleStochasticInterpolant(interpolant=LinearInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE", integrator_kwargs={'method':'euler'})
+
+# cell_si = SingleStochasticInterpolant(interpolant=ScoreBasedDiffusionModelInterpolant(),gamma=None, epsilon=None,differential_equation_type="ODE", integrator_kwargs={'method':'euler'})
 
 species_si = DiscreteFlowMatchingUniform(noise=0)
 
@@ -40,10 +46,28 @@ species_si = DiscreteFlowMatchingUniform(noise=0)
 x_1 = next(iter(dl.train_dataloader()))
 x_0 = sampler.sample_p_0(x_1)
 
+print("x_1")
+print(x_1)
+print("pos")
+print(x_1.pos)
+print("cell")
+print(x_1.cell)
+
+print("x_0")
+print(x_0)
+print("pos")
+print(x_0.pos)
+print("cell")
+print(x_0.cell)
+
 # Set up some "model" functions which just return the exact b field
 # These models need take x_t and t as arguments. But for pos and cell ground truth b field calculation is independent of both
 def pos_model(x_t, t):
     gt_b = pos_si._interpolant.interpolate_derivative(torch.tensor([times[0]]), x_0.pos, x_1.pos, x_0.ptr)
+    return gt_b
+
+def velo_model(x_t, t):
+    gt_b = pos_si._interpolate_derivative(torch.tensor([times[0]]), x_0.pos, x_1.pos, z, x_0.ptr)
     return gt_b
 
 def cell_model(x_t, t):
@@ -60,7 +84,14 @@ def pos_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic
     x = torch.tensor(x)
     t = t.repeat(1,)
     b = pos_model(x, t)
-    b = b.reshape((-1,))
+    #b = b.reshape((-1,))
+    return b, None
+
+def velo(t, x):
+    t = torch.tensor(t)
+    x = torch.tensor(x)
+    t = t.repeat(1, )
+    b = velo_model(x, t)
     return b, None
 
 def cell_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic_interpolants 
@@ -68,18 +99,19 @@ def cell_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochasti
     x = torch.tensor(x)
     t = t.repeat(1,)
     b = cell_model(x, t)
-    b = b.reshape((-1,))
+    #b = b.reshape((-1,))
     return b, None
 
 def species_model_wrapper(t, x): # adapted from model_prediction_fn in si.stochastic_interpolants 
     t = t.repeat(1,)
     b = species_model(x, t)
-    b = b.reshape((-1,))
+    #b = b.reshape((-1,))
     return b, None
 
 # Define times
 STEPS=10
 times = torch.linspace(SMALL_TIME, BIG_TIME, STEPS)
+dt = (BIG_TIME - SMALL_TIME) / (STEPS-1)
 
 
 # Check integration of pos
@@ -87,16 +119,21 @@ pos = x_0.pos
 print ('=========Positions=========')
 for i in range(1,len(times)):
     print (f'========={times[i]}=========')
-    x_t_true, _ = pos_si.interpolate(times[i], x_0.pos, x_1.pos, x_0.ptr)
+    x_t_true, z = pos_si.interpolate(times[i], x_0.pos, x_1.pos, x_0.ptr)
     print ('---------Interpolated Value---------')
     print (x_t_true)
-    pos = pos_si._ode_integrate(pos_model_wrapper, pos, (float(times[i - 1]), float(times[i])))
+    # pos = pos_si._ode_integrate(pos_model_wrapper, pos, (float(times[i - 1]), float(times[i])))
+   #  pos = pos_si._ode_integrate(pos_model_wrapper, pos, times[i], torch.tensor(dt), x_0.ptr)
+    pos = pos_si._ode_integrate(velo, pos, times[i], torch.tensor(dt), x_0.ptr)
+
     print ('---------Integrated Value---------')
     print (pos)
     print ('---------Difference---------')
     print (x_t_true - pos)
     print ()
     print ()
+
+
 # Check integration of cell
 cell = x_0.cell
 print ('=========Cell=========')
@@ -105,7 +142,7 @@ for i in range(1,len(times)):
     x_t_true, _ = cell_si.interpolate(times[i], x_0.cell, x_1.cell, x_0.ptr)
     print ('---------Interpolated Value---------')
     print (x_t_true)
-    cell = cell_si._ode_integrate(cell_model_wrapper, cell, (float(times[i - 1]), float(times[i])))
+    cell = cell_si._ode_integrate(cell_model_wrapper, cell, times[i], torch.tensor(dt), torch.tensor([0]))
     print ('---------Integrated Value---------')
     print (cell)
     print ('---------Difference---------')
@@ -121,7 +158,7 @@ for i in range(1,len(times)):
     print ('---------Interpolated Value---------')
     print (x_t_true)
     species = x_t_true.clone()
-    species = species_si.integrate(species_model_wrapper, species, (float(times[i - 1]), float(times[i])))
+    species = species_si.integrate(species_model_wrapper, species, times[i], torch.tensor(dt), torch.tensor([0]))
     print ('---------Integrated Value---------')
     print (species)
     print ('---------Difference---------')

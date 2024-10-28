@@ -2,6 +2,30 @@ import torch
 from .abstracts import Corrector
 
 
+class IdentityCorrector(Corrector):
+    """
+    Corrector that does nothing.
+    """
+
+    def __init__(self):
+        """Construct identity corrector."""
+        super().__init__()
+
+    def correct(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Correct the input x.
+
+        :param x:
+            Input to correct.
+        :type x: torch.Tensor
+
+        :return:
+            Corrected input.
+        :rtype: torch.Tensor
+        """
+        return x
+
+
 class PeriodicBoundaryConditionsCorrector(Corrector):
     """
     Corrector function that wraps back coordinates to the interval [min, max] with periodic boundary conditions.

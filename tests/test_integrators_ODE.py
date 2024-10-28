@@ -1,7 +1,6 @@
 import pytest
 import torch
 from omg.si.single_stochastic_interpolant import SingleStochasticInterpolant
-from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.si.interpolants import *
 from omg.si.gamma import *
 from omg.si.epsilon import *
@@ -20,7 +19,8 @@ interpolants = [
     PeriodicLinearInterpolant(),
     EncoderDecoderInterpolant(),
     MirrorInterpolant(),
-    ScoreBasedDiffusionModelInterpolant()
+    ScoreBasedDiffusionModelInterpolant(),
+    PeriodicScoreBasedDiffusionModelInterpolant()
 ]
 
 # Interpolant arguments
@@ -46,15 +46,16 @@ def test_ode_integrator(interpolant, gamma):
     Test interpolant integrator
     '''
     # Initialize
-    corr = None
     x_init = torch.ones(size=(10,)) * 0.1
     batch_pointer = torch.tensor([0, 10])
-
     x_final = torch.rand(size=(10,))
-    if isinstance(interpolant, PeriodicLinearInterpolant):
-        corr = PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)
     if isinstance(interpolant, MirrorInterpolant):
         x_init = x_final.clone()
+
+    if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant)):
+        pbc_flag = True
+    else:
+        pbc_flag = False
 
     if isinstance(gamma, LatentGammaSqrt) or isinstance(gamma, LatentGammaEncoderDecoder):
         lat_flag = True
@@ -66,7 +67,7 @@ def test_ode_integrator(interpolant, gamma):
     # Design interpolant
     interpolant = SingleStochasticInterpolant(
         interpolant=interpolant, gamma=gamma,epsilon=None,
-        differential_equation_type='ODE', corrector=corr,
+        differential_equation_type='ODE',
         integrator_kwargs={'method':'rk4'}
     )
 
@@ -90,15 +91,27 @@ def test_ode_integrator(interpolant, gamma):
             x = x_mean.unsqueeze(-1).expand(10, nrep)
 
             # Assertion test
-            assert x_mean == pytest.approx(x_interp_mean, abs=stol)
+            if pbc_flag:
+                # assume pbc is from 0 - 1
+                diff = torch.abs(x_interp_mean - x_mean)
+                x_interp_mean_prime = torch.where(diff >= 0.5, x_interp_mean + torch.sign(x_mean - 0.5), x_interp_mean)
+                assert x_mean == pytest.approx(x_interp_mean_prime, abs=stol)
+            else:
+                assert x_mean == pytest.approx(x_interp_mean, abs=stol)
 
         # If all deterministic
         else:
-       
+
             # Interpolate
             x_interp, z = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)
             x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
             x = x_new
 
             # Test for equality
-            assert x == pytest.approx(x_interp, abs=tol)
+            if pbc_flag:
+                # assume pbc is from 0 - 1
+                diff = torch.abs(x_interp - x)
+                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x - 0.5), x_interp)
+                assert x == pytest.approx(x_interp_prime, abs=tol)
+            else:
+                assert x == pytest.approx(x_interp, abs=tol)
