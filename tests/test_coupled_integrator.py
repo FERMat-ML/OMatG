@@ -79,7 +79,6 @@ def test_coupled_integrator():
         # Check approximation
         assert inter[i].pos == pytest.approx(pos_true, abs=tol)
         assert cell_avg == pytest.approx(cell_true, abs=stol)
-        print(i)
 
     # Check at the end for discrete
     assert torch.all(x.species == x_1.species)

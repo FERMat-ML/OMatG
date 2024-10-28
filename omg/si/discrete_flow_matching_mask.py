@@ -2,7 +2,7 @@ from typing import Callable
 import torch
 from torch.distributions import Categorical
 import torch.nn.functional as functional
-from omg.globals import MAX_ATOM_NUM, BIG_TIME
+from omg.globals import MAX_ATOM_NUM, BIG_TIME, SMALL_TIME
 from .abstracts import StochasticInterpolant
 
 
@@ -206,8 +206,10 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         rate += rate_db
 
         # Don't mask on the final step.
-        if abs(time + time_step - BIG_TIME) < 1e-3:
+        if abs(time + time_step - BIG_TIME) < SMALL_TIME:
             assert len(rate.shape) == 2
+            # Because we are not integrating up to one, we need to force every atom out of the masking state in the
+            # final step by setting the corresponding rate to a very large value.
             rate[torch.arange(rate.shape[0]), rate.argmax(dim=-1)] = torch.finfo(torch.float32).max
             rate[:, 0] = 0.0
 
