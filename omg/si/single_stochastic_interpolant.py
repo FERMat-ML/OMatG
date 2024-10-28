@@ -372,9 +372,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         t_span = torch.tensor([time, time + time_step])
         with torch.no_grad():
             x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)[-1]
-
-        # Applies corrector to output of integration not the b field itself
-        # Can consider only applying corrector after final integration step but useful here for debugging/testing purposes
         return self._corrector.correct(x_t_new)
 
     # Modify wrapper for use in SDE integrator
