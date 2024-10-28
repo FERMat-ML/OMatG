@@ -54,7 +54,7 @@ def test_ode_integrator(interpolant, gamma):
     if isinstance(interpolant, PeriodicLinearInterpolant):
         corr = PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)
     if isinstance(interpolant, MirrorInterpolant):
-        x_init = x_final
+        x_init = x_final.clone()
 
     if isinstance(gamma, LatentGammaSqrt) or isinstance(gamma, LatentGammaEncoderDecoder):
         lat_flag = True
