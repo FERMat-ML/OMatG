@@ -213,12 +213,10 @@ class PeriodicLinearInterpolant(Interpolant):
         omega = 2.0 * torch.pi * (x_1 - x_0)
         out = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
         # TODO: Discuss
-        '''
         # Subtract mean w.r.t. number of atoms in each batch.
         for index in range(1, len(batch_pointer)):
             out[batch_pointer[index - 1]:batch_pointer[index]] -= (
                 out[batch_pointer[index - 1]:batch_pointer[index]].mean(dim=0))
-        '''
         return out
 
 
