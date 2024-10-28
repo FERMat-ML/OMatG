@@ -81,15 +81,16 @@ def test_sde_integrator(interpolant, gamma, epsilon):
         # Get time
         t_i = times[i-1]
         dt = times[i] - t_i
-        x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, ptr)[0].mean(dim=-1)
-        x_mean = interpolant._sde_integrate(velo, x, t_i, dt, ptr).mean(dim=-1)
-        x = x_mean.unsqueeze(-1).expand(10, nrep)
 
         # Assertion test
         if pbc_flag:
             # assume pbc is from 0 - 1
-            diff = torch.abs(x_interp_mean - x_mean)
-            x_interp_mean_prime = torch.where(diff >= 0.5, x_interp_mean + torch.sign(x_mean - 0.5), x_interp_mean)
-            assert x_mean == pytest.approx(x_interp_mean_prime, abs=stol)
+            x_interp = interpolant.interpolate(times[i], x_init, x_final, ptr)[0]
+            x = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
+            diff = torch.abs(x_interp - x)
+            x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x - 0.5), x_interp)
+            assert x.mean(dim=-1) == pytest.approx(x_interp_prime.mean(dim=-1), abs=stol)
         else:
-            assert x_mean == pytest.approx(x_interp_mean, abs=stol)
+            x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, ptr)[0].mean(dim=-1)
+            x = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
+            assert x.mean(dim=-1) == pytest.approx(x_interp_mean, abs=stol)
