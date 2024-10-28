@@ -221,9 +221,7 @@ class StochasticInterpolants(object):
                 x_int_dict = x_int.to_dict()
 
                 def model_prediction_fn(time, x):
-                    # The model expects the time to be repeated for every element in the batch.
-                    # The time argument, however, is just a zero-dimensional tensor.
-                    time = time.repeat(len(x_int_dict['n_atoms']))
+                    time = time.repeat(len(x_int_dict['n_atoms']),)
                     x_int_dict[data_field.name].copy_(x)
                     model_result = model_function(x_int, time)
                     return model_result[b_data_field], model_result[eta_data_field]
