@@ -1,0 +1,23 @@
+WARNING: Could not find any nv files on this host!
+/ext3/miniconda3/lib/python3.12/site-packages/lightning/fabric/utilities/seed.py:42: No seed found, seed set to 0
+[rank: 0] Seed set to 0
+2024-10-21 17:41:22.687 | INFO     | omg.datamodule.datamodule:add_from_lmdb:832 - Reusing existing LMDB file: dataset_59c848811974952f05acb4f14d068fde.lmdb
+2024-10-21 17:41:23.932 | INFO     | omg.datamodule.datamodule:add_from_lmdb:832 - Reusing existing LMDB file: dataset_6a51a4c955b7cb51dfa31f8a759f45fc.lmdb
+2024-10-21 17:41:24.152 | INFO     | omg.datamodule.datamodule:add_from_lmdb:832 - Reusing existing LMDB file: dataset_59c848811974952f05acb4f14d068fde.lmdb
+GPU available: False, used: False
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+SLURM auto-requeueing enabled. Setting signal handlers.
+/ext3/miniconda3/lib/python3.12/site-packages/lightning/pytorch/trainer/connectors/data_connector.py:424: The 'predict_dataloader' does not have many workers which may be a bottleneck. Consider increasing the value of the `num_workers` argument` to `num_workers=12` in the `DataLoader` to improve performance.
+Predicting: |          | 0/? [00:00<?, ?it/s]Predicting:   0%|          | 0/27 [00:00<?, ?it/s]Predicting DataLoader 0:   0%|          | 0/27 [00:00<?, ?it/s]
+Integrating:   0%|          | 0/99 [00:00<?, ?it/s][A/scratch/tje3676/RESEARCH/FERMAT/STAGE1/OMG/omg/si/stochastic_interpolants.py:221: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  time = torch.tensor(time)
+/scratch/tje3676/RESEARCH/FERMAT/STAGE1/OMG/omg/si/stochastic_interpolants.py:222: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  x = torch.tensor(x)
+/scratch/tje3676/RESEARCH/FERMAT/STAGE1/OMG/omg/si/single_stochastic_interpolant.py:426: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+  x_t_new = torch.tensor(x_t_new[-1].reshape(original_shape))
+DataField.species TIME : 11.82938027381897
+DataField.pos TIME : 343.2851312160492
+DataField.cell TIME : 149.07577276229858
+LOOP TIME : 504.19587779045105
+Integrating:   0%|          | 0/99 [08:24<?, ?it/s]

@@ -46,7 +46,7 @@ def test_discrete_uniform_integrator():
 
     # ODE function
     def velo(t, x):
-        x1 = functional.one_hot(x_final, num_classes=MAX_ATOM_NUM).float()
+        x1 = functional.one_hot(x_final, num_classes=MAX_ATOM_NUM+1).float()
         x1[x1 == 0] = -float("INF")
         return x1, None
     

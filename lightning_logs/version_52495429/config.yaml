@@ -1,0 +1,191 @@
+# lightning.pytorch==2.4.0
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: null
+  logger: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: null
+      monitor: val_loss_total
+      verbose: false
+      save_last: null
+      save_top_k: 1
+      save_weights_only: false
+      mode: min
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  fast_dev_run: false
+  max_epochs: null
+  min_epochs: null
+  max_steps: -1
+  min_steps: null
+  max_time: null
+  limit_train_batches: null
+  limit_val_batches: null
+  limit_test_batches: null
+  limit_predict_batches: null
+  overfit_batches: 0.0
+  val_check_interval: null
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: null
+  log_every_n_steps: null
+  enable_checkpointing: null
+  enable_progress_bar: null
+  enable_model_summary: null
+  accumulate_grad_batches: 1
+  gradient_clip_val: null
+  gradient_clip_algorithm: null
+  deterministic: null
+  benchmark: null
+  inference_mode: true
+  use_distributed_sampler: true
+  profiler: null
+  detect_anomaly: false
+  barebones: false
+  plugins: null
+  sync_batchnorm: false
+  reload_dataloaders_every_n_epochs: 0
+  default_root_dir: null
+model:
+  si:
+    class_path: omg.si.StochasticInterpolants
+    init_args:
+      stochastic_interpolants:
+      - class_path: omg.si.DiscreteFlowMatchingUniform
+        init_args:
+          number_integration_steps: 100
+          noise: 0.0
+      - class_path: omg.si.SingleStochasticInterpolant
+        init_args:
+          interpolant:
+            class_path: omg.si.PeriodicLinearInterpolant
+          gamma: null
+          epsilon: null
+          differential_equation_type: ODE
+          sde_number_time_steps: null
+          corrector:
+            class_path: omg.si.PeriodicBoundaryConditionsCorrector
+            init_args:
+              min_value: 0.0
+              max_value: 1.0
+          integrator_kwargs: null
+      - class_path: omg.si.SingleStochasticInterpolant
+        init_args:
+          interpolant:
+            class_path: omg.si.LinearInterpolant
+          gamma:
+            class_path: omg.si.LatentGammaEncoderDecoder
+          epsilon:
+            class_path: omg.si.VanishingEpsilon
+            init_args:
+              c: 0.1
+          differential_equation_type: SDE
+          sde_number_time_steps: 50
+          corrector: null
+          integrator_kwargs: null
+      data_fields:
+      - species
+      - pos
+      - cell
+      integration_time_steps: 100
+  sampler:
+    class_path: omg.sampler.SampleFromRNG
+    init_args:
+      species_distribution: null
+      pos_distribution: null
+      cell_distribution: null
+      n_particle_sampler: 4
+      convert_to_fractional: true
+      batch_size: 2
+  model:
+    class_path: omg.model.model.Model
+    init_args:
+      encoder:
+        class_path: omg.model.encoders.cspnet_full.CSPNetFull
+        init_args:
+          hidden_dim: 512
+          latent_dim: 256
+          num_layers: 6
+          max_atoms: 100
+          act_fn: silu
+          dis_emb: sin
+          num_freqs: 128
+          edge_style: fc
+          cutoff: 7.0
+          max_neighbors: 20
+          ln: true
+          ip: true
+          smooth: false
+          pred_type: true
+          pred_scalar: false
+          am_hidden_dim: 128
+          prop_embed_dim: 32
+          prop: false
+      head:
+        class_path: omg.model.heads.pass_through.PassThrough
+      time_embedder:
+        class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+        init_args:
+          dim: 256
+      prop_embedder: null
+      property_keys: null
+  relative_si_costs:
+  - 0.333333333333
+  - 0.333333333333
+  - 0.333333333333
+  load_checkpoint: null
+  learning_rate: 0.001
+data:
+  train_dataset:
+    class_path: omg.datamodule.dataloader.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+          - data/mp_20/train.lmdb
+          property_keys: null
+      transform: null
+      convert_to_fractional: true
+  val_dataset:
+    class_path: omg.datamodule.dataloader.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+          - data/mp_20/val.lmdb
+          property_keys: null
+      transform: null
+      convert_to_fractional: true
+  predict_dataset:
+    class_path: omg.datamodule.dataloader.NullDataset
+  batch_size: 256
+  follow_batch: null
+  exclude_keys: null
+  sampler: null
+  batch_sampler: null
+  num_workers: 0
+  pin_memory: false
+  drop_last: false
+  timeout: 0
+  worker_init_fn: null
+  multiprocessing_context: null
+  generator: null
+  prefetch_factor: null
+  persistent_workers: false
+  pin_memory_device: ''
+optimizer: null
+lr_scheduler: null
+return_predictions: null
+ckpt_path: null
