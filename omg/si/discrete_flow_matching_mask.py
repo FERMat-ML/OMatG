@@ -2,7 +2,7 @@ from typing import Callable
 import torch
 from torch.distributions import Categorical
 import torch.nn.functional as functional
-from omg.globals import MAX_ATOM_NUM, BIG_TIME, SMALL_TIME
+from omg.globals import MAX_ATOM_NUM, BIG_TIME
 from .abstracts import StochasticInterpolant
 
 
@@ -175,6 +175,8 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         will_unmask = torch.rand(x_t.shape) < (time_step * (1.0 + self._noise * time) / (1.0 - time))
         # Only unmasks currently masked positions.
         will_unmask = will_unmask * (x_t == self._mask_index)  # Shape (sum(n_atoms),).
+        if abs(time + time_step - BIG_TIME) < 5e-3:  # Unmask everyone on the final step.
+            will_unmask = (x_t == self._mask_index)
         will_mask = torch.rand(x_t.shape) < time_step * self._noise  # Shape (sum(n_atoms),).
         # Only re-mask currently unmasked positions.
         will_mask = will_mask * (x_t != self._mask_index)  # Shape (sum(n_atoms),).
