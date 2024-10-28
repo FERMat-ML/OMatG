@@ -86,24 +86,27 @@ def test_ode_integrator(interpolant, gamma):
 
         # If stochastic element
         if lat_flag:
-            x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)[0].mean(dim=-1)
-            x_mean = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer).mean(dim=-1)
-            x = x_mean.unsqueeze(-1).expand(10, nrep)
+            x_interp = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)[0]
+            x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
+            # Set every x to the mean of the batch.
+            x = x_new.mean(dim=-1).unsqueeze(-1).expand(10, nrep)
 
-            # Assertion test
             if pbc_flag:
-                # assume pbc is from 0 - 1
-                diff = torch.abs(x_interp_mean - x_mean)
-                x_interp_mean_prime = torch.where(diff >= 0.5, x_interp_mean + torch.sign(x_mean - 0.5), x_interp_mean)
-                assert x_mean == pytest.approx(x_interp_mean_prime, abs=stol)
+                # First find closest images of x_new and x_interp.
+                diff = torch.abs(x_interp - x_new)
+                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new - 0.5), x_interp)
+                assert x_new.mean(dim=-1) == pytest.approx(x_interp_prime.mean(dim=-1), abs=stol)
             else:
-                assert x_mean == pytest.approx(x_interp_mean, abs=stol)
+                # Take mean across batches.
+                x_interp_mean = x_interp.mean(dim=-1)
+                x_new_mean = x_new.mean(dim=-1)
+                assert x_new_mean == pytest.approx(x_interp_mean, abs=stol)
 
         # If all deterministic
         else:
 
             # Interpolate
-            x_interp, z = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)
+            x_interp = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)[0]
             x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
             x = x_new
 
