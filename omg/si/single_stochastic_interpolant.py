@@ -391,11 +391,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             self.noise_type = "diagonal"
 
         def f(self, t, x):
-            # Because of the noise, the x should be corrected.
+            # Because of the noise, the x should be corrected when it is passed to the model.
             new_x_shape = x.shape
             preds = self._model_func(t, self._corrector.correct(x.reshape(self._original_x_shape)))
             out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
-            return self._corrector.correct(out).reshape(new_x_shape)
+            return out.reshape(new_x_shape)
 
         def g(self, t, x):
             return torch.sqrt(2.0 * self._epsilon.epsilon(t)) * torch.ones_like(x)
