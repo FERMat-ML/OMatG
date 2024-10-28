@@ -70,7 +70,7 @@ def test_ode_integrator(interpolant, gamma):
     )
 
     # ODE function
-    def velo(x, t):
+    def velo(t, x):
         return (interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=torch.randn(x_init.shape),
                                                     batch_pointer=batch_pointer), torch.tensor(torch.nan))
     

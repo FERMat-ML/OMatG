@@ -47,7 +47,7 @@ def test_coupled_integrator():
     x_1 = Data(pos=torch.rand(size=(10,)).unsqueeze(-1).expand(10, nrep), cell=torch.zeros(size=(10,)).unsqueeze(-1).expand(10, nrep), species=torch.randint(size=(10,), low=1, high=MAX_ATOM_NUM).long().unsqueeze(-1).expand(10, nrep).reshape((-1,)), ptr=ptr, n_atoms=n_atoms)
 
     # ODE function
-    def velo(t, x):
+    def velo(x, t):
 
         # Velocities
         z = torch.randn(size=(10, nrep))

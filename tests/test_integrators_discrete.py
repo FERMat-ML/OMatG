@@ -21,7 +21,7 @@ def test_discrete_mask_integrator():
     interp = DiscreteFlowMatchingMask(noise=0.)
 
     # ODE function
-    def velo(x, t):
+    def velo(t, x):
         x1 = functional.one_hot(x_final, num_classes=MAX_ATOM_NUM).float()
         x1[x1 == 0] = -float("INF")
         return x1, None
@@ -50,7 +50,7 @@ def test_discrete_uniform_integrator():
     interp = DiscreteFlowMatchingUniform(noise=0.0)
 
     # ODE function
-    def velo(x, t):
+    def velo(t, x):
         x1 = functional.one_hot(x_final, num_classes=MAX_ATOM_NUM).float()
         x1[x1 == 0] = -float("INF")
         return x1, None

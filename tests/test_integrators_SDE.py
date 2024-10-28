@@ -69,7 +69,7 @@ def test_sde_integrator(interpolant, gamma, epsilon):
     )
 
     # ODE function
-    def velo(x, t):
+    def velo(t, x):
         z = torch.randn(x_init.shape)
         return interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=z, batch_pointer=ptr), z
     
