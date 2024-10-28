@@ -221,7 +221,7 @@ class StochasticInterpolants(object):
                 x_int_dict = x_int.to_dict()
 
                 def model_prediction_fn(time, x):
-                    time = time.repeat(len(x_int_dict['n_atoms']),)
+                    #time = time.repeat(len(x_int_dict['n_atoms']),)
                     x_int_dict[data_field.name].copy_(x)
                     model_result = model_function(x_int, time)
                     return model_result[b_data_field], model_result[eta_data_field]
@@ -230,7 +230,6 @@ class StochasticInterpolants(object):
                 # model_prediction_fn, which leads to unpredictable bugs.
                 new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
                                                     x_t_dict[data_field.name], t, dt, x_0.ptr))
-
 
             x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
             x_t_dict = x_t.to_dict()

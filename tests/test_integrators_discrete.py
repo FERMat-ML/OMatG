@@ -37,8 +37,6 @@ def test_discrete_mask_integrator():
         t += dt
 
     # Assertion test
-    print(x)
-    print(x_final)
     assert torch.all(x == x_final)
 
 # Interpolants

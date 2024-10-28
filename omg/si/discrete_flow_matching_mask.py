@@ -167,7 +167,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         :rtype: torch.Tensor
         """
 
-        logits = model_function(x_t, time * torch.ones((len(batch_pointer) - 1,)))[0] # (B, D, S-1)
+        logits = model_function(time, x_t)[0] # (B, D, S-1)
         x1_probs = functional.softmax(logits, dim=-1) # (B, D, S-1)
         x1 = Categorical(x1_probs).sample() # (B, D)
         will_unmask = torch.rand_like(x_t.float()) < (time_step * (1 + self._noise * time) / (1-time)) # (B, D)
@@ -175,7 +175,8 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         will_mask = torch.rand_like(x_t.float()) < time_step * self._noise # (B, D)
         will_mask = will_mask * (x_t != self._mask_index) # (B, D) 
         x_t[will_unmask] = x1[will_unmask]
-        if time < BIG_TIME - 1e-3: #
+        if time < 0.95: 
+            print('tri')
             x_t[will_mask] = self._mask_index
 
         # Return
