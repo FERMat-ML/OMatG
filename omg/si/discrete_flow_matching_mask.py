@@ -179,6 +179,6 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         # Only re-mask currently unmasked positions.
         will_mask = will_mask * (x_t != self._mask_index)  # Shape (sum(n_atoms),).
         x_t[will_unmask] = x_1[will_unmask]
-        if abs(time + time_step - BIG_TIME) < 1e-3:  # Don't re-mask on the final step.
+        if abs(time + time_step) < BIG_TIME - 5e-3:  # Don't re-mask on the final step.
             x_t[will_mask] = self._mask_index
         return x_t
