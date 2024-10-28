@@ -69,7 +69,7 @@ class OMGData(Data):
         """
         graph = cls()
         if niggli:
-            niggli_reduce_configuration(config)
+            config = niggli_reduce_configuration(config)
 
         n_atoms = torch.tensor(len(config.species))
         graph.n_atoms = n_atoms
