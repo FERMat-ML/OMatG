@@ -59,8 +59,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     :raises ValueError:
         If epsilon is provided for ODEs or not provided for SDEs.
-        If sde_number_time_steps is provided for ODEs or not provided for SDEs.
-        If sde_number_time_steps is not positive.
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],

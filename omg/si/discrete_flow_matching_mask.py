@@ -2,7 +2,7 @@ from typing import Callable
 import torch
 from torch.distributions import Categorical
 import torch.nn.functional as functional
-from omg.globals import MAX_ATOM_NUM, BIG_TIME
+from omg.globals import MAX_ATOM_NUM, BIG_TIME, SMALL_TIME
 from .abstracts import StochasticInterpolant
 
 
@@ -12,9 +12,6 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
 
     This class is currently designed for masking base distributions p_0 for the points x_0.
 
-    :param number_integration_steps:
-        Number of integration steps.
-    :type number_integration_steps: int
     :param noise:
         Parameter scaling the noise that should be added during integration.
     :type noise: float
@@ -63,9 +60,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         assert torch.all(x_0 == self._mask_index)  # Every atom should be masked in the initial state.
         assert torch.all(x_1 != self._mask_index)  # No atom should be masked in the final state.
         # Mask atoms based on t, see Eq. (6) in https://arxiv.org/pdf/2402.04997.
-        x_t = x_1.clone()
-        mask = torch.rand_like(x_1, dtype=t.dtype) < t
-        x_t[mask] = self._mask_index
+        x_t = x_0.clone()
+        mask = torch.rand_like(x_0, dtype=t.dtype) < t
+        x_t[mask] = x_1[mask]
         return x_t, torch.zeros_like(x_t)
 
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],

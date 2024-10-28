@@ -18,7 +18,7 @@ ptr = torch.arange(nrep+1) * 10
 interpolants = [
     LinearInterpolant(),
     TrigonometricInterpolant(),
-    #PeriodicLinearInterpolant(),
+    PeriodicLinearInterpolant(),
     EncoderDecoderInterpolant(),
     MirrorInterpolant(),
     ScoreBasedDiffusionModelInterpolant()
