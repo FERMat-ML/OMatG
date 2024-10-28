@@ -483,7 +483,7 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
         return IdentityCorrector()
 
 
-class PeriodicScoreBasedDifussionModelInterpolant(Interpolant):
+class PeriodicScoreBasedDiffusionModelInterpolant(Interpolant):
     """
     Interpolant mimicking score based diffusion model 
     I(t, x_0, x_1) = I(t, x_0, x_1) = sqrt(1 - t^2) * x_0 + t * x_1 on a torus.
@@ -523,7 +523,7 @@ class PeriodicScoreBasedDifussionModelInterpolant(Interpolant):
         :rtype: torch.Tensor
         """
         assert self._check_t(t)
-
+        
         # Correct for periodic boundaries by using the geodesic to move x_1 to x_1prime
         # Then wrap the interpolated value back onto the torus
         diff = torch.abs(x_0 - x_1)
