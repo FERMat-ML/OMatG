@@ -9,7 +9,7 @@ from omg.globals import SMALL_TIME, BIG_TIME, MAX_ATOM_NUM
 
 # Testing parameters/objects
 #times = torch.linspace(0, 1, 100)
-ptr = None
+ptr = torch.tensor([0,10])
 
 
 # Interpolants
@@ -33,7 +33,7 @@ def test_discrete_mask_integrator():
     while t < 1.0:
 
         # Get time
-        x = interp.integrate(velo, x, t, dt, batch_pointer=None)
+        x = interp.integrate(velo, x, t, dt, batch_pointer=ptr)
         t += dt
 
     # Assertion test
@@ -62,7 +62,7 @@ def test_discrete_uniform_integrator():
     while t < 1.0:
 
         # Get time
-        x = interp.integrate(velo, x, t, dt, batch_pointer=None)
+        x = interp.integrate(velo, x, t, dt, batch_pointer=ptr)
         t += dt
 
     # Assertion test
