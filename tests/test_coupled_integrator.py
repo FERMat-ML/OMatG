@@ -11,6 +11,7 @@ from omg.utils import reshape_t, DataField
 from torch_geometric.data import Data
 import torch.nn.functional as functional
 from omg.globals import SMALL_TIME, BIG_TIME, MAX_ATOM_NUM
+from omg.utils import reshape_t, DataField
 
 # Testing parameters/objects
 stol = 6.5e-2
@@ -49,9 +50,9 @@ def test_coupled_integrator():
     x_0_cell = torch.rand(size=(1, 3, 3)).repeat(nrep, 1, 1)
     x_1_cell = torch.zeros(size=(1, 3, 3)).repeat(nrep, 1, 1)
     x_0_spec = torch.zeros(size=(3 * nrep,)).long()
-    x_1_spec = torch.randint(size=(3 * nrep,), low=0, high=MAX_ATOM_NUM).long()
+    x_1_spec = torch.randint(size=(3 * nrep,), low=1, high=MAX_ATOM_NUM + 1).long()
     x_0 = Data(pos=x_0_pos, cell=x_0_cell, species=x_0_spec, ptr=ptr, n_atoms=n_atoms)
-    x_1 = Data(pos=x_1_pos, cell=x_1_cell, species=x_1_spec, low=1, ptr=ptr, n_atoms=n_atoms)
+    x_1 = Data(pos=x_1_pos, cell=x_1_cell, species=x_1_spec, ptr=ptr, n_atoms=n_atoms)
 
     # ODE function
     def velo(x, t):
@@ -63,7 +64,7 @@ def test_coupled_integrator():
         t_cell = reshape_t(t, n_atoms.long(), DataField.cell)
         pos_b = ode_interp._interpolate_derivative(t_pos, x_0.pos, x_1.pos, z=z_x, batch_pointer=ptr)
         cell_b = sde_interp._interpolate_derivative(t_cell, x_0.cell, x_1.cell, z=z_cell, batch_pointer=ptr)
-        x1_spec = functional.one_hot(x_1.species, num_classes=MAX_ATOM_NUM).float()
+        x1_spec = functional.one_hot(x_1.species - 1, num_classes=MAX_ATOM_NUM).float()
         x1_spec[x1_spec == 0] = -float("INF")
         species_b = x1_spec
 

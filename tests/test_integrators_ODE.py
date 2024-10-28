@@ -49,6 +49,7 @@ def test_ode_integrator(interpolant, gamma):
     corr = None
     x_init = torch.ones(size=(10,)) * 0.1
     batch_pointer = torch.tensor([0, 10])
+
     x_final = torch.rand(size=(10,))
     if isinstance(interpolant, PeriodicLinearInterpolant):
         corr = PeriodicBoundaryConditionsCorrector(min_value=0, max_value=1)

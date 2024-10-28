@@ -166,18 +166,19 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
-
-        logits = model_function(time, x_t)[0] # (B, D, S-1)
-        x1_probs = functional.softmax(logits, dim=-1) # (B, D, S-1)
-        x1 = Categorical(x1_probs).sample() # (B, D)
-        will_unmask = torch.rand_like(x_t.float()) < (time_step * (1 + self._noise * time) / (1-time)) # (B, D)
-        will_unmask = will_unmask * (x_t == self._mask_index) # (B,D)
-        will_mask = torch.rand_like(x_t.float()) < time_step * self._noise # (B, D)
-        will_mask = will_mask * (x_t != self._mask_index) # (B, D) 
-        x_t[will_unmask] = x1[will_unmask]
-        if time < 0.95: 
-            print('tri')
+        x_1_probs = functional.softmax(model_function(time, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
+        x_1_probs = x_1_probs.reshape((-1, MAX_ATOM_NUM))
+        # Sample from distribution for every of the sum(n_atoms) elements.
+        # Shift the atom type by one to get the real species.
+        x_1 = Categorical(x_1_probs).sample() + 1  # Shape (sum(n_atoms),).
+        # Shape (sum(n_atoms),).
+        will_unmask = torch.rand(x_t.shape) < (time_step * (1.0 + self._noise * time) / (1.0 - time))
+        # Only unmasks currently masked positions.
+        will_unmask = will_unmask * (x_t == self._mask_index)  # Shape (sum(n_atoms),).
+        will_mask = torch.rand(x_t.shape) < time_step * self._noise  # Shape (sum(n_atoms),).
+        # Only re-mask currently unmasked positions.
+        will_mask = will_mask * (x_t != self._mask_index)  # Shape (sum(n_atoms),).
+        x_t[will_unmask] = x_1[will_unmask]
+        if abs(time + time_step - BIG_TIME) < 1e-3:  # Don't re-mask on the final step.
             x_t[will_mask] = self._mask_index
-
-        # Return
         return x_t
