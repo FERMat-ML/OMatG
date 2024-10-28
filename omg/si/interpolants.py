@@ -366,7 +366,8 @@ class MirrorInterpolant(Interpolant):
         :rtype: torch.Tensor
         """
         assert self._check_t(t)
-        return x_1
+        # Return new object here.
+        return x_1.clone()
 
     def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                                batch_pointer: torch.Tensor) -> torch.Tensor:
