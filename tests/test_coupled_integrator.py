@@ -10,6 +10,7 @@ from omg.si.discrete_flow_matching_mask import DiscreteFlowMatchingMask
 from torch_geometric.data import Data
 import torch.nn.functional as functional
 from omg.globals import SMALL_TIME, BIG_TIME, MAX_ATOM_NUM
+from omg.utils import reshape_t, DataField
 
 # Testing parameters/objects
 stol = 6.5e-2
@@ -58,9 +59,11 @@ def test_coupled_integrator():
         # Velocities
         z_x = torch.randn_like(x.pos)
         z_cell = torch.randn_like(x.cell)
-        pos_b = ode_interp._interpolate_derivative(t, x_0.pos, x_1.pos, z=z_x, batch_pointer=ptr)
-        cell_b = sde_interp._interpolate_derivative(t, x_0.cell, x_1.cell, z=z_cell, batch_pointer=ptr)
-        x1_spec = functional.one_hot(x_1.species, num_classes=MAX_ATOM_NUM).float()
+        t_pos = reshape_t(t, n_atoms.long(), DataField.pos)
+        t_cell = reshape_t(t, n_atoms.long(), DataField.cell)
+        pos_b = ode_interp._interpolate_derivative(t_pos, x_0.pos, x_1.pos, z=z_x, batch_pointer=ptr)
+        cell_b = sde_interp._interpolate_derivative(t_cell, x_0.cell, x_1.cell, z=z_cell, batch_pointer=ptr)
+        x1_spec = functional.one_hot(x_1.species - 1, num_classes=MAX_ATOM_NUM).float()
         x1_spec[x1_spec == 0] = -float("INF")
         species_b = x1_spec
 
