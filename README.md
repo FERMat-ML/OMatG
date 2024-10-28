@@ -31,7 +31,7 @@ In order to seed the random number generators before training, use `--seed_every
 For generating new structures run the following command:
 
 ```bash
-python scripts/main.py predict --config {config_file}
+python scripts/main.py predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt>
 ```
 
 ## TODO
