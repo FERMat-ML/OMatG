@@ -403,7 +403,7 @@ class MirrorInterpolant(Interpolant):
             Identity corrector that does nothing.
         :rtype: Corrector
         """
-        return IdentityCorrector()
+        return IdentityCorrector()  # TODO: Sometimes you do want to have a Periodic Corrector here?
 
 
 class ScoreBasedDiffusionModelInterpolant(Interpolant):
