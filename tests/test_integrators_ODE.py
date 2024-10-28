@@ -14,20 +14,20 @@ nrep = 10000
 
 # Interpolants
 interpolants = [
-    # LinearInterpolant(),
-    # TrigonometricInterpolant(),
+    LinearInterpolant(),
+    TrigonometricInterpolant(),
     PeriodicLinearInterpolant(),
-    # EncoderDecoderInterpolant(),
-    # MirrorInterpolant(),
-    # ScoreBasedDiffusionModelInterpolant(),
-    PeriodicScoreBasedDiffusionModelInterpolant(),
+    EncoderDecoderInterpolant(),
+    MirrorInterpolant(),
+    ScoreBasedDiffusionModelInterpolant(),
+    PeriodicScoreBasedDiffusionModelInterpolant()
 ]
 
 # Interpolant arguments
 gammas = [
     None,
-    # LatentGammaEncoderDecoder(),
-    # LatentGammaSqrt(.1)
+    LatentGammaEncoderDecoder(),
+    LatentGammaSqrt(.1)
 ]
 
 def get_name(obj):
@@ -52,9 +52,7 @@ def test_ode_integrator(interpolant, gamma):
     if isinstance(interpolant, MirrorInterpolant):
         x_init = x_final
 
-    if isinstance(interpolant, PeriodicScoreBasedDiffusionModelInterpolant):
-        pbc_flag = True
-    elif isinstance(interpolant, PeriodicLinearInterpolant):
+    if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant)):
         pbc_flag = True
     else:
         pbc_flag = False
@@ -115,10 +113,5 @@ def test_ode_integrator(interpolant, gamma):
                 diff = torch.abs(x_interp - x)
                 x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x - 0.5), x_interp)
                 assert x == pytest.approx(x_interp_prime, abs=tol)
-
-                # also works, comparing the difference to tensor of zeros:
-                # diff = torch.abs(x_interp - x)
-                # diff = torch.where(diff >= 0.5, diff + torch.sign(x - 0.5), diff)
-                # assert diff == pytest.approx(torch.zeros_like(diff), abs=tol)
             else:
                 assert x == pytest.approx(x_interp, abs=tol)

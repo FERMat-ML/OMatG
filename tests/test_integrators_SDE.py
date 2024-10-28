@@ -54,13 +54,10 @@ def test_sde_integrator(interpolant, gamma, epsilon):
     # Initialize
     x_init = torch.ones(size=(10, nrep)) * 0.10
     x_final = (torch.rand(size=(10,))).unsqueeze(-1).expand(10, nrep)
-    #batch_pointer = torch.tensor([0, 4, 7, 10]).unsqueeze(-1).expand(4, nrep)
     if isinstance(interpolant, MirrorInterpolant):
         x_init = x_final
 
-    if isinstance(interpolant, PeriodicScoreBasedDiffusionModelInterpolant):
-        pbc_flag = True
-    elif isinstance(interpolant, PeriodicLinearInterpolant):
+    if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant)):
         pbc_flag = True
     else:
         pbc_flag = False

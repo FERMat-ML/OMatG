@@ -6,7 +6,6 @@ model:
         # chemical species
         - class_path: omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform
           init_args:
-            number_integration_steps: 100
             noise: 0.
         # fractional coordinates
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
