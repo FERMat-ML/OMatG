@@ -16,12 +16,12 @@ ptr = torch.arange(nrep+1) * 10
 # Interpolants
 interpolants = [
     LinearInterpolant(),
-    # TrigonometricInterpolant(),
+    TrigonometricInterpolant(),
     PeriodicLinearInterpolant(),
-    # EncoderDecoderInterpolant(),
-    # MirrorInterpolant(),
-    # ScoreBasedDiffusionModelInterpolant(),
-    # PeriodicScoreBasedDiffusionModelInterpolant()
+    EncoderDecoderInterpolant(),
+    MirrorInterpolant(),
+    ScoreBasedDiffusionModelInterpolant(),
+    PeriodicScoreBasedDiffusionModelInterpolant()
 ]
 
 # Interpolant arguments
@@ -88,9 +88,9 @@ def test_sde_integrator(interpolant, gamma, epsilon):
             x_interp = interpolant.interpolate(times[i], x_init, x_final, ptr)[0]
             x_new = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
 
-            x_new_diff = torch.diff(x_new - x_new[0]) # find distances to arbitrary element, 0
-            x_new_diff_mean = x_new_diff.mean # find average distance
-            x_new_pbc = (x_new + x_new_diff_mean) % 1. # add this distance to all points in x_new and wrap with pbcs
+            x_new_dists = torch.diff(x_new - x_new[0]) # find distances to arbitrary element, 0
+            x_new_dists_mean = x_new_dists.mean(dim=-1).unsqueeze(-1).expand(10, nrep) # find average distances # find average distance
+            x_new_pbc = (x_new + x_new_dists_mean) % 1. # add this distance to all points in x_new and wrap with pbcs
             x = x_new_pbc
 
             diff = torch.abs(x_interp - x_new_pbc)
@@ -100,4 +100,4 @@ def test_sde_integrator(interpolant, gamma, epsilon):
             x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, ptr)[0].mean(dim=-1)
             x_new = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
             x = x_new
-            assert x.mean(dim=-1) == pytest.approx(x_interp_mean, abs=stol)
+            assert x_new.mean(dim=-1) == pytest.approx(x_interp_mean, abs=stol)
