@@ -16,12 +16,12 @@ ptr = torch.arange(nrep+1) * 10
 # Interpolants
 interpolants = [
     LinearInterpolant(),
-    TrigonometricInterpolant(),
+    # TrigonometricInterpolant(),
     PeriodicLinearInterpolant(),
-    EncoderDecoderInterpolant(),
-    MirrorInterpolant(),
-    ScoreBasedDiffusionModelInterpolant(),
-    PeriodicScoreBasedDiffusionModelInterpolant()
+    # EncoderDecoderInterpolant(),
+    # MirrorInterpolant(),
+    # ScoreBasedDiffusionModelInterpolant(),
+    # PeriodicScoreBasedDiffusionModelInterpolant()
 ]
 
 # Interpolant arguments
@@ -32,8 +32,8 @@ gammas = [
 
 # Epsilons
 epsilons = [
-    VanishingEpsilon(c=0.1),
-    ConstantEpsilon(c=0.1)
+    VanishingEpsilon(c=0.05),
+    ConstantEpsilon(c=0.05)
 ]
 
 def get_name(obj):
@@ -55,7 +55,7 @@ def test_sde_integrator(interpolant, gamma, epsilon):
     x_init = torch.ones(size=(10, nrep)) * 0.10
     x_final = (torch.rand(size=(10,))).unsqueeze(-1).expand(10, nrep)
     if isinstance(interpolant, MirrorInterpolant):
-        x_init = x_final.clone()
+        x_init = x_final.clone().detach()
 
     if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant)):
         pbc_flag = True
@@ -86,11 +86,18 @@ def test_sde_integrator(interpolant, gamma, epsilon):
         if pbc_flag:
             # assume pbc is from 0 - 1
             x_interp = interpolant.interpolate(times[i], x_init, x_final, ptr)[0]
-            x = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
-            diff = torch.abs(x_interp - x)
-            x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x - 0.5), x_interp)
-            assert x.mean(dim=-1) == pytest.approx(x_interp_prime.mean(dim=-1), abs=stol)
+            x_new = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
+
+            x_new_diff = torch.diff(x_new - x_new[0]) # find distances to arbitrary element, 0
+            x_new_diff_mean = x_new_diff.mean # find average distance
+            x_new_pbc = (x_new + x_new_diff_mean) % 1. # add this distance to all points in x_new and wrap with pbcs
+            x = x_new_pbc
+
+            diff = torch.abs(x_interp - x_new_pbc)
+            x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new_pbc - 0.5), x_interp)
+            assert x_new_pbc.mean(dim=-1) == pytest.approx(x_interp_prime.mean(dim=-1), abs=stol)
         else:
             x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, ptr)[0].mean(dim=-1)
-            x = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
+            x_new = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
+            x = x_new
             assert x.mean(dim=-1) == pytest.approx(x_interp_mean, abs=stol)

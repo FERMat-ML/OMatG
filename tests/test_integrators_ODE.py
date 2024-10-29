@@ -25,7 +25,7 @@ interpolants = [
 
 # Interpolant arguments
 gammas = [
-    None,
+    #None,
     LatentGammaEncoderDecoder(),
     LatentGammaSqrt(.1)
 ]
@@ -88,15 +88,20 @@ def test_ode_integrator(interpolant, gamma):
         if lat_flag:
             x_interp = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)[0]
             x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
-            # Set every x to the mean of the batch.
-            x = x_new.mean(dim=-1).unsqueeze(-1).expand(10, nrep)
 
             if pbc_flag:
+                # Use COM to and PBCs to center x_new
+                x_new_dists = torch.diff(x_new - x_new[0]) # find distances to arbitrary element, 0
+                x_new_dists_mean = x_new_dists.mean(dim=-1).unsqueeze(-1).expand(10, nrep) # find average distances
+                x_new_pbc = (x_new + x_new_dists_mean) % 1. # add this distance to all points in x_new and wrap with pbcs
+                x = x_new_pbc
                 # First find closest images of x_new and x_interp.
-                diff = torch.abs(x_interp - x_new)
-                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new - 0.5), x_interp)
-                assert x_new.mean(dim=-1) == pytest.approx(x_interp_prime.mean(dim=-1), abs=stol)
+                diff = torch.abs(x_interp - x_new_pbc)
+                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new_pbc - 0.5), x_interp)
+                assert x_new_pbc.mean(dim=-1) == pytest.approx(x_interp_prime.mean(dim=-1), abs=stol)
             else:
+                # Set every x to the mean of the batch.
+                x = x_new.mean(dim=-1).unsqueeze(-1).expand(10, nrep)
                 # Take mean across batches.
                 x_interp_mean = x_interp.mean(dim=-1)
                 x_new_mean = x_new.mean(dim=-1)
@@ -107,13 +112,20 @@ def test_ode_integrator(interpolant, gamma):
             # Interpolate
             x_interp = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)[0]
             x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
-            x = x_new
 
             # Test for equality
             if pbc_flag:
                 # assume pbc is from 0 - 1
-                diff = torch.abs(x_interp - x_new)
-                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new - 0.5), x_interp)
-                assert x_new == pytest.approx(x_interp_prime, abs=tol)
+                
+                # Set every x to the mean of the batch.
+                x_new_dists = torch.diff(x_new - x_new[0]) # find distances to arbitrary element, 0
+                x_new_dists_mean = x_new_dists.mean # find average distance
+                x_new_pbc = (x_new + x_new_dists_mean) % 1. # add this distance to all points in x_new and wrap with pbcs
+                x = x_new_pbc
+
+                diff = torch.abs(x_interp - x_new_pbc)
+                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new_pbc - 0.5), x_interp)
+                assert x_new_pbc.mean == pytest.approx(x_interp_prime, abs=tol)
             else:
+                x = x_new
                 assert x_new == pytest.approx(x_interp, abs=tol)

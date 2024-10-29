@@ -118,8 +118,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         interpolate = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
             z = torch.randn_like(x_0)
-            interpolate += self._corrector.correct(self._gamma.gamma(t) * z)
-            interpolate = self._corrector.correct(interpolate) # (amodn + bmodn)modn = (a+b)modn
+            interpolate += self._gamma.gamma(t) * z
+            interpolate = self._corrector.correct(interpolate)
         else:
             z = torch.zeros_like(x_0)
         return interpolate, z
