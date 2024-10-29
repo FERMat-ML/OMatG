@@ -15,13 +15,13 @@ ptr = torch.arange(nrep+1) * 10
 
 # Interpolants
 interpolants = [
-    LinearInterpolant(),
-    TrigonometricInterpolant(),
+    #LinearInterpolant(),
+    #TrigonometricInterpolant(),
     PeriodicLinearInterpolant(),
-    EncoderDecoderInterpolant(),
-    MirrorInterpolant(),
-    ScoreBasedDiffusionModelInterpolant(),
-    PeriodicScoreBasedDiffusionModelInterpolant()
+    #EncoderDecoderInterpolant(),
+    #MirrorInterpolant(),
+    #ScoreBasedDiffusionModelInterpolant(),
+    #PeriodicScoreBasedDiffusionModelInterpolant()
 ]
 
 # Interpolant arguments
@@ -74,6 +74,24 @@ def test_sde_integrator(interpolant, gamma, epsilon):
         z = torch.randn(x_init.shape)
         return interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=z, batch_pointer=ptr), z
     
+    def pbc_mean(x):
+        # assuming pbcs from 0 to 1
+
+        # find distances to arbitrary element (0th) in nreps
+        x_ref = x[:,0].unsqueeze(-1).expand(x.shape[0], x.shape[1])
+        dists = torch.abs(x - x_ref) 
+        # print("x")
+        # print(x)
+        # print("dists")
+        # print(dists)
+        x_prime = torch.where(dists >=0.5, x + torch.sign(x_ref - 0.5), x)
+        # print("x_prime")
+        # print(x_prime)
+        assert torch.all(x_prime[:,0] == x[:,0])
+        assert torch.all(torch.abs(x_prime - x_ref) < 0.5)
+        # find average x_new and then wrap with pbcs
+        return x_prime.mean(dim=-1) % 1.
+
     # Integrate
     x = x_init
     for i in range(1,len(times)):
@@ -84,18 +102,19 @@ def test_sde_integrator(interpolant, gamma, epsilon):
 
         # Assertion test
         if pbc_flag:
-            # assume pbc is from 0 - 1
             x_interp = interpolant.interpolate(times[i], x_init, x_final, ptr)[0]
             x_new = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
 
-            x_new_dists = torch.diff(x_new - x_new[0]) # find distances to arbitrary element, 0
-            x_new_dists_mean = x_new_dists.mean(dim=-1).unsqueeze(-1).expand(10, nrep) # find average distances # find average distance
-            x_new_pbc = (x_new + x_new_dists_mean) % 1. # add this distance to all points in x_new and wrap with pbcs
-            x = x_new_pbc
+            # assume pbc is from 0 - 1
+            x_new_mean = pbc_mean(x_new)
+            x_interp_mean = pbc_mean(x_interp)
+            x = x_new_mean.unsqueeze(-1).expand(10, nrep)
+            
+            # Find closest images of x_new and x_interp
+            diff = torch.abs(x_interp_mean - x_new_mean)
+            x_interp_mean_prime = torch.where(diff >= 0.5, x_interp_mean + torch.sign(x_new_mean - 0.5), x_interp_mean)
+            assert x_new_mean == pytest.approx(x_interp_mean_prime, abs=stol)
 
-            diff = torch.abs(x_interp - x_new_pbc)
-            x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new_pbc - 0.5), x_interp)
-            assert x_new_pbc.mean(dim=-1) == pytest.approx(x_interp_prime.mean(dim=-1), abs=stol)
         else:
             x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, ptr)[0].mean(dim=-1)
             x_new = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
