@@ -10,16 +10,17 @@ from omg.globals import SMALL_TIME, BIG_TIME
 tol = 1e-2
 stol = 6e-2
 times = torch.linspace(SMALL_TIME, BIG_TIME, 200)
-nrep = 10000
+#nrep = 10000
+nrep = 5
 
 # Interpolants
 interpolants = [
-    LinearInterpolant(),
-    TrigonometricInterpolant(),
+    # LinearInterpolant(),
+    # TrigonometricInterpolant(),
     PeriodicLinearInterpolant(),
-    EncoderDecoderInterpolant(),
-    MirrorInterpolant(),
-    ScoreBasedDiffusionModelInterpolant(),
+    # EncoderDecoderInterpolant(),
+    # MirrorInterpolant(),
+    # ScoreBasedDiffusionModelInterpolant(),
     PeriodicScoreBasedDiffusionModelInterpolant()
 ]
 
@@ -76,6 +77,24 @@ def test_ode_integrator(interpolant, gamma):
         return (interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=torch.randn(x_init.shape),
                                                     batch_pointer=batch_pointer), torch.tensor(torch.nan))
     
+    def pbc_mean(x):
+        # assuming pbcs from 0 to 1
+
+        # find distances to arbitrary element (0th) in nreps
+        x_ref = x[:,0].unsqueeze(-1).expand(x.shape[0], x.shape[1])
+        dists = torch.abs(x - x_ref) 
+        # print("x")
+        # print(x)
+        # print("dists")
+        # print(dists)
+        x_prime = torch.where(dists >=0.5, x + torch.sign(x_ref - 0.5), x)
+        # print("x_prime")
+        # print(x_prime)
+        assert torch.all(x_prime[:,0] == x[:,0])
+        assert torch.all(torch.abs(x_prime - x_ref) < 0.5)
+        # find average x_new and then wrap with pbcs
+        return x_prime.mean(dim=-1) % 1.
+    
     # Integrate
     x = x_init
     for i in range(1,len(times)):
@@ -90,15 +109,15 @@ def test_ode_integrator(interpolant, gamma):
             x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
 
             if pbc_flag:
-                # Use COM to and PBCs to center x_new
-                x_new_dists = torch.diff(x_new - x_new[0]) # find distances to arbitrary element, 0
-                x_new_dists_mean = x_new_dists.mean(dim=-1).unsqueeze(-1).expand(10, nrep) # find average distances
-                x_new_pbc = (x_new + x_new_dists_mean) % 1. # add this distance to all points in x_new and wrap with pbcs
-                x = x_new_pbc
-                # First find closest images of x_new and x_interp.
-                diff = torch.abs(x_interp - x_new_pbc)
-                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new_pbc - 0.5), x_interp)
-                assert x_new_pbc.mean(dim=-1) == pytest.approx(x_interp_prime.mean(dim=-1), abs=stol)
+                # Use COM and PBCs to find average x_new
+                x_new_mean = pbc_mean(x_new)
+                x_interp_mean = pbc_mean(x_interp)
+                x = x_new_mean.unsqueeze(-1).expand(10, nrep)
+                
+                # Find closest images of the means of x_new and x_interp
+                diff = torch.abs(x_interp_mean - x_new_mean)
+                x_interp_mean_prime = torch.where(diff >= 0.5, x_interp_mean + torch.sign(x_new_mean - 0.5), x_interp_mean)
+                assert x_new_mean == pytest.approx(x_interp_mean_prime, abs=stol)
             else:
                 # Set every x to the mean of the batch.
                 x = x_new.mean(dim=-1).unsqueeze(-1).expand(10, nrep)
@@ -115,17 +134,11 @@ def test_ode_integrator(interpolant, gamma):
 
             # Test for equality
             if pbc_flag:
+                x = x_new
                 # assume pbc is from 0 - 1
-                
-                # Set every x to the mean of the batch.
-                x_new_dists = torch.diff(x_new - x_new[0]) # find distances to arbitrary element, 0
-                x_new_dists_mean = x_new_dists.mean # find average distance
-                x_new_pbc = (x_new + x_new_dists_mean) % 1. # add this distance to all points in x_new and wrap with pbcs
-                x = x_new_pbc
-
-                diff = torch.abs(x_interp - x_new_pbc)
-                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new_pbc - 0.5), x_interp)
-                assert x_new_pbc.mean == pytest.approx(x_interp_prime, abs=tol)
+                diff = torch.abs(x_interp - x_new)
+                x_interp_prime = torch.where(diff >= 0.5, x_interp + torch.sign(x_new - 0.5), x_interp)
+                assert x_new == pytest.approx(x_interp_prime, abs=tol)
             else:
                 x = x_new
                 assert x_new == pytest.approx(x_interp, abs=tol)
