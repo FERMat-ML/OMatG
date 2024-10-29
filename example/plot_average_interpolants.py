@@ -6,7 +6,6 @@ from omg.si.interpolants import LinearInterpolant
 from omg.si.single_stochastic_interpolant import SingleStochasticInterpolant
 
 
-seed = 3
 tries = 1000
 
 
@@ -42,7 +41,7 @@ def main():
         x_t_path_linear_with_gamma = []
         for t in times:
             full_t = torch.tensor([[t, t]])
-            torch.manual_seed(i)  # TODO: Also check what happens if this is not here
+            torch.manual_seed(i)  # Always choose a different (fixed) seed.
             x_t, _ = linear_interpolant_with_gamma.interpolate(full_t, x_0, x_1_prime, batch_pointer)
             x_t_path_linear_with_gamma.append(x_t[0].numpy())
         x_t_path_linear_with_gamma = np.array(x_t_path_linear_with_gamma)
