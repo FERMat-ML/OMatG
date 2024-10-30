@@ -36,12 +36,13 @@ def main():
 
     x_t_paths_linear_with_gamma = []
     for i in range(tries):
+        seed = torch.seed()  # Always choose a different (fixed) seed.
         if i % 100 == 0:
             print(i)
         x_t_path_linear_with_gamma = []
         for t in times:
             full_t = torch.tensor([[t, t]])
-            torch.manual_seed(i)  # Always choose a different (fixed) seed.
+            torch.manual_seed(seed)
             x_t, _ = linear_interpolant_with_gamma.interpolate(full_t, x_0, x_1_prime, batch_pointer)
             x_t_path_linear_with_gamma.append(x_t[0].numpy())
         x_t_path_linear_with_gamma = np.array(x_t_path_linear_with_gamma)
@@ -54,10 +55,6 @@ def main():
     print(np.abs(mean_x_t_path_linear_with_gamma - x_t_path_linear_without_gamma).max())
     plt.plot(mean_x_t_path_linear_with_gamma[:, 0], mean_x_t_path_linear_with_gamma[:, 1], color="C1")
 
-    plt.axhline(y=0.0, color="black")
-    plt.axvline(x=0.0, color="black")
-    plt.axhline(y=1.0, color="black")
-    plt.axvline(x=1.0, color="black")
     plt.gca().set_aspect("equal")
     plt.show()
     plt.close()
