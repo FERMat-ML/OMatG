@@ -15,13 +15,13 @@ ptr = torch.arange(nrep+1) * 10
 
 # Interpolants
 interpolants = [
-    #LinearInterpolant(),
-    #TrigonometricInterpolant(),
+    LinearInterpolant(),
+    TrigonometricInterpolant(),
     PeriodicLinearInterpolant(),
-    #EncoderDecoderInterpolant(),
-    #MirrorInterpolant(),
-    #ScoreBasedDiffusionModelInterpolant(),
-    #PeriodicScoreBasedDiffusionModelInterpolant()
+    EncoderDecoderInterpolant(),
+    MirrorInterpolant(),
+    ScoreBasedDiffusionModelInterpolant(),
+    PeriodicScoreBasedDiffusionModelInterpolant()
 ]
 
 # Interpolant arguments
@@ -59,6 +59,11 @@ def test_sde_integrator(interpolant, gamma, epsilon):
 
     if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant)):
         pbc_flag = True
+        interpolant_geodesic = SingleStochasticInterpolant(
+            interpolant=interpolant, gamma=None,epsilon=None,
+            differential_equation_type='ODE',
+            integrator_kwargs={'method':'rk4'}
+            )
     else:
         pbc_flag = False
 
@@ -74,22 +79,12 @@ def test_sde_integrator(interpolant, gamma, epsilon):
         z = torch.randn(x_init.shape)
         return interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=z, batch_pointer=ptr), z
     
-    def pbc_mean(x):
+    def pbc_mean(x, x_ref):
         # assuming pbcs from 0 to 1
 
         # find distances to arbitrary element (0th) in nreps
-        x_ref = x[:,0].unsqueeze(-1).expand(x.shape[0], x.shape[1])
         dists = torch.abs(x - x_ref) 
-        # print("x")
-        # print(x)
-        # print("dists")
-        # print(dists)
         x_prime = torch.where(dists >=0.5, x + torch.sign(x_ref - 0.5), x)
-        # print("x_prime")
-        # print(x_prime)
-        assert torch.all(x_prime[:,0] == x[:,0])
-        assert torch.all(torch.abs(x_prime - x_ref) < 0.5)
-        # find average x_new and then wrap with pbcs
         return x_prime.mean(dim=-1) % 1.
 
     # Integrate
@@ -100,14 +95,17 @@ def test_sde_integrator(interpolant, gamma, epsilon):
         t_i = times[i-1]
         dt = times[i] - t_i
 
+        x_new = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
+
         # Assertion test
         if pbc_flag:
             x_interp = interpolant.interpolate(times[i], x_init, x_final, ptr)[0]
-            x_new = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
-
+            x_new_geodesic = interpolant_geodesic.interpolate(times[i], x_init, x_final, ptr)[0]
+            
             # assume pbc is from 0 - 1
-            x_new_mean = pbc_mean(x_new)
-            x_interp_mean = pbc_mean(x_interp)
+            x_ref = x_new_geodesic
+            x_new_mean = pbc_mean(x_new, x_ref)
+            x_interp_mean = pbc_mean(x_interp, x_ref)
             x = x_new_mean.unsqueeze(-1).expand(10, nrep)
             
             # Find closest images of x_new and x_interp
@@ -117,6 +115,5 @@ def test_sde_integrator(interpolant, gamma, epsilon):
 
         else:
             x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, ptr)[0].mean(dim=-1)
-            x_new = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
             x = x_new
             assert x_new.mean(dim=-1) == pytest.approx(x_interp_mean, abs=stol)

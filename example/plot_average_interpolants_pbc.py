@@ -25,7 +25,7 @@ def main():
         differential_equation_type="ODE")
 
     x_0 = torch.tensor([[0.1, 0.2]])
-    x_1 = torch.tensor([[0.9, 0.8]])
+    x_1 = torch.tensor([[0.9, 0.2]])
     diff = torch.abs(x_1 - x_0)
     x_1_prime = torch.where(diff >= 0.5, x_1 + torch.sign(x_0 - 0.5), x_1)
     batch_pointer = torch.tensor([0, 1])
@@ -58,8 +58,8 @@ def main():
         x_t_paths_linear_with_gamma.append(x_t_path_linear_with_gamma)
 
     x_t_paths_linear_with_gamma = np.array(x_t_paths_linear_with_gamma)
-    #x_ref = x_t_path_linear_without_gamma
-    x_ref = np.zeros_like(x_t_path_linear_without_gamma)
+    x_ref = x_t_path_linear_without_gamma
+    #x_ref = np.zeros_like(x_t_path_linear_without_gamma)
     mean_x_t_path_linear_with_gamma = np.array( \
         [[pbc_mean(x_t_paths_linear_with_gamma[:, i, 0], x_ref[i, 0]), 
         pbc_mean(x_t_paths_linear_with_gamma[:, i, 1], x_ref[i, 1])] \

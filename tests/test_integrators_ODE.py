@@ -10,25 +10,24 @@ from omg.globals import SMALL_TIME, BIG_TIME
 tol = 1e-2
 stol = 6e-2
 times = torch.linspace(SMALL_TIME, BIG_TIME, 200)
-#nrep = 10000
-nrep = 5
+nrep = 10000
 
 # Interpolants
 interpolants = [
-    # LinearInterpolant(),
-    # TrigonometricInterpolant(),
+    LinearInterpolant(),
+    TrigonometricInterpolant(),
     PeriodicLinearInterpolant(),
-    # EncoderDecoderInterpolant(),
-    # MirrorInterpolant(),
-    # ScoreBasedDiffusionModelInterpolant(),
+    EncoderDecoderInterpolant(),
+    MirrorInterpolant(),
+    ScoreBasedDiffusionModelInterpolant(),
     PeriodicScoreBasedDiffusionModelInterpolant()
 ]
 
 # Interpolant arguments
 gammas = [
-    #None,
+    None,
     LatentGammaEncoderDecoder(),
-    LatentGammaSqrt(.1)
+    LatentGammaSqrt(1.0)
 ]
 
 def get_name(obj):
@@ -55,10 +54,15 @@ def test_ode_integrator(interpolant, gamma):
 
     if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant)):
         pbc_flag = True
+        interpolant_geodesic = SingleStochasticInterpolant(
+            interpolant=interpolant, gamma=None,epsilon=None,
+            differential_equation_type='ODE',
+            integrator_kwargs={'method':'rk4'}
+            )
     else:
         pbc_flag = False
 
-    if isinstance(gamma, LatentGammaSqrt) or isinstance(gamma, LatentGammaEncoderDecoder):
+    if isinstance(gamma, (LatentGammaSqrt, LatentGammaEncoderDecoder)):
         lat_flag = True
         x_init = x_init.unsqueeze(-1).expand(10, nrep)
         x_final = x_final.unsqueeze(-1).expand(10, nrep)
@@ -77,22 +81,10 @@ def test_ode_integrator(interpolant, gamma):
         return (interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=torch.randn(x_init.shape),
                                                     batch_pointer=batch_pointer), torch.tensor(torch.nan))
     
-    def pbc_mean(x):
+    def pbc_mean(x, x_ref):
         # assuming pbcs from 0 to 1
-
-        # find distances to arbitrary element (0th) in nreps
-        x_ref = x[:,0].unsqueeze(-1).expand(x.shape[0], x.shape[1])
         dists = torch.abs(x - x_ref) 
-        # print("x")
-        # print(x)
-        # print("dists")
-        # print(dists)
         x_prime = torch.where(dists >=0.5, x + torch.sign(x_ref - 0.5), x)
-        # print("x_prime")
-        # print(x_prime)
-        assert torch.all(x_prime[:,0] == x[:,0])
-        assert torch.all(torch.abs(x_prime - x_ref) < 0.5)
-        # find average x_new and then wrap with pbcs
         return x_prime.mean(dim=-1) % 1.
     
     # Integrate
@@ -109,9 +101,11 @@ def test_ode_integrator(interpolant, gamma):
             x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
 
             if pbc_flag:
+                x_new_geodesic = interpolant_geodesic.interpolate(times[i], x_init, x_final, batch_pointer)[0]
                 # Use COM and PBCs to find average x_new
-                x_new_mean = pbc_mean(x_new)
-                x_interp_mean = pbc_mean(x_interp)
+                x_ref = x_new_geodesic
+                x_new_mean = pbc_mean(x_new, x_ref)
+                x_interp_mean = pbc_mean(x_interp, x_ref)
                 x = x_new_mean.unsqueeze(-1).expand(10, nrep)
                 
                 # Find closest images of the means of x_new and x_interp
