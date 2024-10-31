@@ -236,9 +236,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
         if self._use_antithetic:
             assert self._gamma is not None
-            x_t_p = x_t_without_gamma + self._gamma.gamma(t) * z  # TODO: Don't we have to use the corrector here?
+            x_t_p = self._corrector.correct(x_t_without_gamma + self._gamma.gamma(t) * z)
             assert torch.equal(x_t, x_t_p)
-            x_t_m = x_t_without_gamma - self._gamma.gamma(t) * z  # TODO: Also apply corrector here.
+            x_t_m = self._corrector.correct(x_t_without_gamma - self._gamma.gamma(t) * z)
             expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
             expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
             loss = (nn.functional.mse_loss(expected_velocity_p, model_function(x_t_p)[0])
@@ -288,9 +288,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
         if self._use_antithetic:
             assert self._gamma is not None
-            x_t_p = x_t_without_gamma + self._gamma.gamma(t) * z  # TODO: Don't we have to use the corrector here?
+            x_t_p = self._corrector.correct(x_t_without_gamma + self._gamma.gamma(t) * z)
             assert torch.equal(x_t, x_t_p)
-            x_t_m = x_t_without_gamma - self._gamma.gamma(t) * z  # TODO: Also apply corrector here.
+            x_t_m = self._corrector.correct(x_t_without_gamma - self._gamma.gamma(t) * z)
             expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
             expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
             pred_b_p, pred_z = model_function(x_t_p)
