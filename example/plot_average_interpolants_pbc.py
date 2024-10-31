@@ -6,7 +6,9 @@ from omg.si.interpolants import PeriodicLinearInterpolant
 from omg.si.single_stochastic_interpolant import SingleStochasticInterpolant
 
 
-tries = 100
+tries = 10000
+time_steps = 1000
+
 
 def pbc_mean(x):
     # assuming pbcs from 0 to 1
@@ -20,14 +22,15 @@ def main():
     linear_interpolant_without_gamma = SingleStochasticInterpolant(
         interpolant=PeriodicLinearInterpolant(), gamma=None, epsilon=None, differential_equation_type="ODE")
     linear_interpolant_with_gamma = SingleStochasticInterpolant(
-        interpolant=PeriodicLinearInterpolant(), gamma=LatentGammaSqrt(0.5), epsilon=None, differential_equation_type="ODE")
+        interpolant=PeriodicLinearInterpolant(), gamma=LatentGammaSqrt(1.0), epsilon=None,
+        differential_equation_type="ODE")
 
     x_0 = torch.tensor([[0.1, 0.2]])
     x_1 = torch.tensor([[0.9, 0.2]])
     diff = torch.abs(x_1 - x_0)
     x_1_prime = torch.where(diff >= 0.5, x_1 + torch.sign(x_0 - 0.5), x_1)
     batch_pointer = torch.tensor([0, 1])
-    times = torch.linspace(0.0, 1.0, 1000)
+    times = torch.linspace(0.0, 1.0, time_steps)
 
     plt.figure()
 
@@ -37,20 +40,22 @@ def main():
         x_t, _ = linear_interpolant_without_gamma.interpolate(full_t, x_0, x_1_prime, batch_pointer)
         x_t_path_linear_without_gamma.append(x_t[0].numpy())
     x_t_path_linear_without_gamma = np.array(x_t_path_linear_without_gamma)
-    plt.scatter(x_t_path_linear_without_gamma[:, 0], x_t_path_linear_without_gamma[:, 1], color="k", marker=".")
+    plt.scatter(x_t_path_linear_without_gamma[:, 0], x_t_path_linear_without_gamma[:, 1], color="k", marker=".", s=0.5)
 
     x_t_paths_linear_with_gamma = []
     for i in range(tries):
+        seed = torch.seed()  # Always choose a different (fixed) seed.
         if i % 100 == 0:
             print(i)
         x_t_path_linear_with_gamma = []
         for t in times:
             full_t = torch.tensor([[t, t]])
-            torch.manual_seed(i)  # Always choose a different (fixed) seed.
+            torch.manual_seed(seed)
             x_t, _ = linear_interpolant_with_gamma.interpolate(full_t, x_0, x_1_prime, batch_pointer)
             x_t_path_linear_with_gamma.append(x_t[0].numpy())
         x_t_path_linear_with_gamma = np.array(x_t_path_linear_with_gamma)
-        plt.scatter(x_t_path_linear_with_gamma[:, 0], x_t_path_linear_with_gamma[:, 1], color="C0", alpha=0.05, marker=".")
+        plt.scatter(x_t_path_linear_with_gamma[:, 0], x_t_path_linear_with_gamma[:, 1], color="C0", alpha=0.05,
+                    marker=".", s=0.5)
         x_t_paths_linear_with_gamma.append(x_t_path_linear_with_gamma)
 
     x_t_paths_linear_with_gamma = np.array(x_t_paths_linear_with_gamma)
