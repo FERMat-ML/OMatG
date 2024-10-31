@@ -21,7 +21,7 @@ def main():
         differential_equation_type="ODE")
 
     x_0 = torch.tensor([[0.1, 0.2]])
-    x_1 = torch.tensor([[0.8, 0.9]])
+    x_1 = torch.tensor([[0.7, 0.9]])
     omega = 2.0 * torch.pi * (x_1 - x_0)
     diff = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
     x_1_prime = x_0 + diff  # Image of x_1 closest to x_0.
