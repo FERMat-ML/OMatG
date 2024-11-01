@@ -162,6 +162,7 @@ class StochasticInterpolants(object):
                 x_t_clone = x_t.clone()
                 x_t_clone_dict = x_t_clone.to_dict()
                 x_t_clone_dict[data_field.name].copy_(x)
+                # TODO: Cache return of model function.
                 return model_function(x_t_clone, t)[b_data_field], model_function(x_t_clone, t)[eta_data_field]
 
             assert data_field.name in z_dict
