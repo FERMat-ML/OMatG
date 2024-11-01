@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-You can use any Python version between 3.9 and 3.12.
+You can use any Python version between 3.10 and 3.12.
 
 The following packages are required (see pyproject.toml for an up-to-date list; diffcsp should also be installed for 
 CSPNet):
