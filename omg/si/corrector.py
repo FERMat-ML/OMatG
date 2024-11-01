@@ -64,3 +64,22 @@ class PeriodicBoundaryConditionsCorrector(Corrector):
         :rtype: torch.Tensor
         """
         return torch.remainder(x - self._min_value, self._max_value - self._min_value) + self._min_value
+    
+    def unwrap(self, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+        """
+        Unwrap x_1 outside of the periodic boundary.
+
+        :param x_0:
+            Points from p_0.
+        :type x_0: torch.Tensor
+        :param x_1:
+            Points from p_1.
+        :type x_1: torch.Tensor
+
+        :return:
+            Unwrapped x_1 value.
+        :rtype: torch.Tensor
+        """
+        diff = torch.abs(x_0 - x_1)
+        mid_point = (self._max_value - self._min_value)/2
+        return torch.where(diff >= mid_point, x_1 + torch.sign(x_0 - mid_point), x_1)
