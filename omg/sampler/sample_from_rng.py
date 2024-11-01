@@ -51,13 +51,13 @@ class SampleFromRNG(Sampler):
         super().__init__()
 
 
-        rng = np.random.default_rng()
         if species_distribution is None:
-            species_distribution = partial(rng.integers, low=1, high=MAX_ATOM_NUM)
+            # Sample uniformly in interval [1, MAX_ATOM_NUM].
+            species_distribution = partial(np.random.randint, low=1, high=MAX_ATOM_NUM + 1)
         if pos_distribution is None:
-            pos_distribution = partial(rng.uniform, low=0.0, high=1.0)
+            pos_distribution = partial(np.random.uniform, low=0.0, high=1.0)
         if cell_distribution is None:
-            cell_distribution = partial(rng.normal, loc=1.0, scale=1.0)
+            cell_distribution = partial(np.random.normal, loc=1.0, scale=1.0)
         self.distribution = [species_distribution, pos_distribution, cell_distribution]
 
 
