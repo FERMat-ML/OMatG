@@ -67,7 +67,8 @@ class PeriodicBoundaryConditionsCorrector(Corrector):
     
     def unwrap(self, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
-        Unwrap x_1 outside of the periodic boundary.
+        Correct for periodic boundaries by using the geodesic to move x_1 to x_1prime, 
+        which unwraps x_1 outside of the periodic boundary.
 
         :param x_0:
             Points from p_0.
