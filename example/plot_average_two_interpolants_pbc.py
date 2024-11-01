@@ -3,11 +3,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 from omg.si.corrector import IdentityCorrector, PeriodicBoundaryConditionsCorrector
 from omg.si.gamma import LatentGammaSqrt
-from omg.si.interpolants import LinearInterpolant, PeriodicLinearInterpolant
+from omg.si.interpolants import (LinearInterpolant, PeriodicLinearInterpolant,
+                                 ScoreBasedDiffusionModelInterpolant,
+                                 PeriodicScoreBasedDiffusionModelInterpolant)
 from omg.si.single_stochastic_interpolant import SingleStochasticInterpolant, torch
 
 
 time_steps = 1000
+Interpolant = ScoreBasedDiffusionModelInterpolant
+Interpolant = LinearInterpolant
+PeriodicInterpolant = PeriodicScoreBasedDiffusionModelInterpolant
+PeriodicInterpolant = PeriodicLinearInterpolant
 
 
 def mean(x_t_paths, reference=None, distance_corrector=IdentityCorrector(), position_corrector=IdentityCorrector()):
@@ -45,13 +51,13 @@ mean_method_pbc = partial(mean, reference=0,
 
 def main():
     linear_interpolant_without_gamma = SingleStochasticInterpolant(
-        interpolant=LinearInterpolant(), gamma=None, epsilon=None, differential_equation_type="ODE")
+        interpolant=Interpolant(), gamma=None, epsilon=None, differential_equation_type="ODE")
     linear_interpolant_without_gamma_periodic = SingleStochasticInterpolant(
-        interpolant=PeriodicLinearInterpolant(), gamma=None, epsilon=None, differential_equation_type="ODE")
+        interpolant=PeriodicInterpolant(), gamma=None, epsilon=None, differential_equation_type="ODE")
     linear_interpolant_with_gamma = SingleStochasticInterpolant(
-        interpolant=LinearInterpolant(), gamma=LatentGammaSqrt(1.0), epsilon=None, differential_equation_type="ODE")
+        interpolant=Interpolant(), gamma=LatentGammaSqrt(1.0), epsilon=None, differential_equation_type="ODE")
     linear_interpolant_with_gamma_periodic = SingleStochasticInterpolant(
-        interpolant=PeriodicLinearInterpolant(), gamma=LatentGammaSqrt(1.0), epsilon=None,
+        interpolant=PeriodicInterpolant(), gamma=LatentGammaSqrt(1.0), epsilon=None,
         differential_equation_type="ODE")
 
     x_0 = torch.tensor([[0.1, 0.2]])
