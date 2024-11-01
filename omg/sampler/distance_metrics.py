@@ -29,7 +29,7 @@ def compute_com(x):
     # Return
     return torch.tensor(com)
 
-def min_perm_dist(x_0, x_1):
+def min_perm_dist(x_0, x_1, distance):
     '''
     Compute the minimum permutational distance between two configurations
 
@@ -39,9 +39,27 @@ def min_perm_dist(x_0, x_1):
     :param x_1:
         Final configuration.
     :type x_1: torch.tensor
+    :return row, col:
+        Indices of minimum permutation
+    :rtype row, col: (torch.tensor, torch.tensor)
     '''
 
     # Compute distance matrix
-    distance_matrix = torch.norm(x_0[:, None, :] - x_1[None, :, :], dim=-1)
+    distance_matrix = distance(x_0[:, None, :], x_1[None, :, :])
     row, col = linear_sum_assignment(distance_matrix)
-    return x_0[row], x_1[col]
+    return torch.tensor(row), torch.tensor(col)
+
+def periodic_distance(x_0, x_1):
+    '''
+    Compute Periodic distance between points
+    '''
+    dist = x_0 - x_1 - torch.floor(x_0 - x_1)
+    dist = torch.min(dist, 1.0-dist)
+    return torch.norm(dist, dim=-1)
+
+def euclidian_distance(x_0, x_1):
+    '''
+    Compute Euclidian distance between points
+    '''
+    dist = x_1 - x_0
+    return torch.norm(dist, dim=-1)
