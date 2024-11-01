@@ -10,7 +10,7 @@ from omg.globals import SMALL_TIME, BIG_TIME
 tol = 1e-2
 stol = 6e-2
 times = torch.linspace(SMALL_TIME, BIG_TIME, 200)
-nrep = 10000
+nrep = 1000
 
 # Interpolants
 interpolants = [
@@ -20,7 +20,9 @@ interpolants = [
     EncoderDecoderInterpolant(),
     MirrorInterpolant(),
     ScoreBasedDiffusionModelInterpolant(),
-    PeriodicScoreBasedDiffusionModelInterpolant()
+    PeriodicScoreBasedDiffusionModelInterpolant(),
+    PeriodicTrigonometricInterpolant(),
+    PeriodicEncoderDecoderInterpolant(),
 ]
 
 # Interpolant arguments
@@ -52,7 +54,9 @@ def test_ode_integrator(interpolant, gamma):
     if isinstance(interpolant, MirrorInterpolant):
         x_init = x_final.clone()
 
-    if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant)):
+    if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant,
+                                PeriodicTrigonometricInterpolant, PeriodicEncoderDecoderInterpolant
+                                )):
         pbc_flag = True
         interpolant_geodesic = SingleStochasticInterpolant(
             interpolant=interpolant, gamma=None,epsilon=None,

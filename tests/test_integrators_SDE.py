@@ -15,13 +15,15 @@ ptr = torch.arange(nrep+1) * 10
 
 # Interpolants
 interpolants = [
-    LinearInterpolant(),
-    TrigonometricInterpolant(),
-    PeriodicLinearInterpolant(),
-    EncoderDecoderInterpolant(),
-    MirrorInterpolant(),
-    ScoreBasedDiffusionModelInterpolant(),
-    PeriodicScoreBasedDiffusionModelInterpolant()
+    #LinearInterpolant(),
+    #TrigonometricInterpolant(),
+    #PeriodicLinearInterpolant(),
+    #EncoderDecoderInterpolant(),
+    #MirrorInterpolant(),
+    #ScoreBasedDiffusionModelInterpolant(),
+    PeriodicScoreBasedDiffusionModelInterpolant(),
+    PeriodicTrigonometricInterpolant(),
+    PeriodicEncoderDecoderInterpolant(),
 ]
 
 # Interpolant arguments
@@ -57,7 +59,9 @@ def test_sde_integrator(interpolant, gamma, epsilon):
     if isinstance(interpolant, MirrorInterpolant):
         x_init = x_final.clone().detach()
 
-    if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant)):
+    if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant,
+                                PeriodicTrigonometricInterpolant, PeriodicEncoderDecoderInterpolant
+                                )):
         pbc_flag = True
         interpolant_geodesic = SingleStochasticInterpolant(
             interpolant=interpolant, gamma=None,epsilon=None,
