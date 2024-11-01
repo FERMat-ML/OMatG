@@ -10,7 +10,7 @@ from omg.globals import SMALL_TIME, BIG_TIME
 tol = 1e-2
 stol = 6e-2
 times = torch.linspace(SMALL_TIME, BIG_TIME, 200)
-nrep = 1000
+nrep = 10000
 
 # Interpolants
 interpolants = [
