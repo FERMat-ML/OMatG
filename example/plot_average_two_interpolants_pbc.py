@@ -16,41 +16,33 @@ PeriodicInterpolant = PeriodicScoreBasedDiffusionModelInterpolant
 PeriodicInterpolant = PeriodicLinearInterpolant
 
 
-def mean(x_t_paths, reference=None, distance_corrector=IdentityCorrector(), position_corrector=IdentityCorrector()):
+def mean(x_t_paths, reference=None, corrector=IdentityCorrector()):
     if reference is None:
         return np.mean(x_t_paths, axis=0)
     if isinstance(reference, int):
         reference = x_t_paths[reference].copy()
 
-    correct_distance = lambda x: distance_corrector.correct(torch.tensor(x)).numpy()
-    correct_position = lambda x: position_corrector.correct(torch.tensor(x)).numpy()
+    correct = lambda x: corrector.correct(torch.tensor(x)).numpy()
+    unwrap = lambda x, y: corrector.unwrap(torch.tensor(x), torch.tensor(y)).numpy()
 
-    distances = np.array([correct_distance(x - reference) for x in x_t_paths])
-    corrected_x = np.array([reference + distance for distance in distances])
-    return correct_position(np.mean(corrected_x, axis=0))
+    corrected_x = np.array([unwrap(reference, x) for x in x_t_paths])
+    return correct(np.mean(corrected_x, axis=0))
 
 
-mean_method = partial(mean, reference=None, distance_corrector=IdentityCorrector(),
-                      position_corrector=IdentityCorrector())
-mean_method = partial(mean, reference=np.zeros((time_steps, 2)), distance_corrector=IdentityCorrector(),
-                      position_corrector=IdentityCorrector())
-mean_method = partial(mean, reference=np.random.uniform((time_steps, 2)), distance_corrector=IdentityCorrector(),
-                      position_corrector=IdentityCorrector())
-mean_method = partial(mean, reference=1, distance_corrector=IdentityCorrector(), position_corrector=IdentityCorrector())
+mean_method = partial(mean, reference=None, corrector=IdentityCorrector())
+mean_method = partial(mean, reference=np.zeros((time_steps, 2)), corrector=IdentityCorrector())
+mean_method = partial(mean, reference=np.random.uniform((time_steps, 2)), corrector=IdentityCorrector())
+mean_method = partial(mean, reference=1, corrector=IdentityCorrector())
 
-mean_method_pbc = partial(mean, reference=None, distance_corrector=None, position_corrector=None)
+mean_method_pbc = partial(mean, reference=None, corrector=None)
 mean_method_pbc = partial(mean, reference=np.zeros((time_steps, 2)),
-                          distance_corrector=PeriodicBoundaryConditionsCorrector(min_value=-0.5, max_value=0.5),
-                          position_corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
+                          corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
 mean_method_pbc = partial(mean, reference=np.full((time_steps, 2), 0.5),
-                          distance_corrector=PeriodicBoundaryConditionsCorrector(min_value=-0.5, max_value=0.5),
-                          position_corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
+                          corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
 mean_method_pbc = partial(mean, reference=np.random.uniform((time_steps, 2)),
-                          distance_corrector=PeriodicBoundaryConditionsCorrector(min_value=-0.5, max_value=0.5),
-                          position_corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
+                          corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
 mean_method_pbc = partial(mean, reference=0,
-                          distance_corrector=PeriodicBoundaryConditionsCorrector(min_value=-0.5, max_value=0.5),
-                          position_corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
+                          corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
 
 
 def main():
@@ -148,15 +140,13 @@ def main():
     mean_x_t_path_linear_with_gamma_periodic = mean_method_pbc(x_t_paths_linear_with_gamma_periodic)
     correct_mean_x_t_path_linear_with_gamma_periodic = mean(
         x_t_paths_linear_with_gamma_periodic, reference=x_t_path_linear_without_gamma_periodic,
-        distance_corrector=PeriodicBoundaryConditionsCorrector(min_value=-0.5, max_value=0.5),
-        position_corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
+        corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
     #random_index = np.random.randint(0, time_steps)
     #reference_point = x_t_path_linear_without_gamma_periodic[random_index]
     #reference_point = np.tile(reference_point, (time_steps, 1))
     #correct_mean_x_t_path_linear_with_gamma_periodic = mean(
     #    x_t_paths_linear_with_gamma_periodic, reference=reference_point,
-    #    distance_corrector=PeriodicBoundaryConditionsCorrector(min_value=-0.5, max_value=0.5),
-    #    position_corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
+    #    corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
     mean_x_t_path_linear_with_gamma = mean_method(x_t_paths_linear_with_gamma)
 
     print(np.abs(correct_mean_x_t_path_linear_with_gamma_periodic - x_t_path_linear_without_gamma_periodic).max())
