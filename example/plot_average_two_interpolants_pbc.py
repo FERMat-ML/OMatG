@@ -32,6 +32,9 @@ mean_method_pbc = partial(mean, reference=None, distance_corrector=None, positio
 mean_method_pbc = partial(mean, reference=np.zeros((time_steps, 2)),
                           distance_corrector=PeriodicBoundaryConditionsCorrector(min_value=-0.5, max_value=0.5),
                           position_corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
+mean_method_pbc = partial(mean, reference=np.full((time_steps, 2), 0.5),
+                          distance_corrector=PeriodicBoundaryConditionsCorrector(min_value=-0.5, max_value=0.5),
+                          position_corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
 mean_method_pbc = partial(mean, reference=np.random.uniform((time_steps, 2)),
                           distance_corrector=PeriodicBoundaryConditionsCorrector(min_value=-0.5, max_value=0.5),
                           position_corrector=PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0))
