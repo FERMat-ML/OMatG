@@ -233,13 +233,11 @@ class PeriodicLinearInterpolant(Interpolant):
         assert self._check_t(t)
         omega = 2.0 * torch.pi * (x_1 - x_0)
         out = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
-        # TODO: Discuss
-        '''
+        # TODO: This COM issue should be fixed differently.
         # Subtract mean w.r.t. number of atoms in each batch.
         for index in range(1, len(batch_pointer)):
             out[batch_pointer[index - 1]:batch_pointer[index]] -= (
                 out[batch_pointer[index - 1]:batch_pointer[index]].mean(dim=0))
-        '''
         return out
 
     def get_corrector(self) -> Corrector:
@@ -486,7 +484,7 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
 
 class PeriodicScoreBasedDiffusionModelInterpolant(Interpolant):
     """
-    Interpolant mimicking score based diffusion model 
+    Periodic interpolant mimicking score based diffusion model
     I(t, x_0, x_1) = I(t, x_0, x_1) = sqrt(1 - t^2) * x_0 + t * x_1 on a torus.
     between points x_0 and x_1 from two distributions p_0 (assumed to be Gaussian here) 
     and p_1 at times t that can be used to reproduce score-based diffusion models.
@@ -498,7 +496,6 @@ class PeriodicScoreBasedDiffusionModelInterpolant(Interpolant):
         """
         super().__init__()
         self._corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
-        self._mid_point = 0.5  # Mid point of the periodic boundary conditions.
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_pointer: torch.Tensor) -> torch.Tensor:
@@ -524,7 +521,7 @@ class PeriodicScoreBasedDiffusionModelInterpolant(Interpolant):
         :rtype: torch.Tensor
         """
         assert self._check_t(t)
-        
+
         # Correct for periodic boundaries by using the geodesic to move x_1 to x_1prime
         # Then wrap the interpolated value back onto the torus
         x_1prime = self._corrector.unwrap(x_0, x_1)
@@ -560,7 +557,13 @@ class PeriodicScoreBasedDiffusionModelInterpolant(Interpolant):
         # Correct for periodic boundaries by using the geodesic to move x_1 to x_1prime
         # Unlike the interpolation, the derivative does not need to be corrected
         x_1prime = self._corrector.unwrap(x_0, x_1)
-        return -t / torch.sqrt(1.0 - (t ** 2)) * x_0 + x_1prime
+        out = -t / torch.sqrt(1.0 - (t ** 2)) * x_0 + x_1prime
+        # TODO: This COM issue should be fixed differently.
+        # Subtract mean w.r.t. number of atoms in each batch.
+        for index in range(1, len(batch_pointer)):
+            out[batch_pointer[index - 1]:batch_pointer[index]] -= (
+                out[batch_pointer[index - 1]:batch_pointer[index]].mean(dim=0))
+        return out
 
     def get_corrector(self) -> Corrector:
         """
@@ -587,7 +590,6 @@ class PeriodicTrigonometricInterpolant(Interpolant):
         """
         super().__init__()
         self._corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
-        self._mid_point = 0.5  # Mid point of the periodic boundary conditions.
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_pointer: torch.Tensor) -> torch.Tensor:
@@ -643,8 +645,14 @@ class PeriodicTrigonometricInterpolant(Interpolant):
         """
         assert self._check_t(t)
         x_1prime = self._corrector.unwrap(x_0, x_1)
-        return (-torch.pi / 2.0 * torch.sin(torch.pi * t / 2.0) * x_0
-                + torch.pi / 2.0 * torch.cos(torch.pi * t / 2.0) * x_1prime)
+        out = (-torch.pi / 2.0 * torch.sin(torch.pi * t / 2.0) * x_0
+               + torch.pi / 2.0 * torch.cos(torch.pi * t / 2.0) * x_1prime)
+        # TODO: This COM issue should be fixed differently.
+        # Subtract mean w.r.t. number of atoms in each batch.
+        for index in range(1, len(batch_pointer)):
+            out[batch_pointer[index - 1]:batch_pointer[index]] -= (
+                out[batch_pointer[index - 1]:batch_pointer[index]].mean(dim=0))
+        return out
 
     def get_corrector(self) -> Corrector:
         """
@@ -655,6 +663,7 @@ class PeriodicTrigonometricInterpolant(Interpolant):
         :rtype: Corrector
         """
         return self._corrector
+
 
 class PeriodicEncoderDecoderInterpolant(Interpolant):
     """
@@ -670,7 +679,6 @@ class PeriodicEncoderDecoderInterpolant(Interpolant):
         """
         super().__init__()
         self._corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
-        self._mid_point = 0.5  # Mid point of the periodic boundary conditions.
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_pointer: torch.Tensor) -> torch.Tensor:
@@ -726,9 +734,14 @@ class PeriodicEncoderDecoderInterpolant(Interpolant):
         """
         assert self._check_t(t)
         x_1prime = self._corrector.unwrap(x_0, x_1)
-        return (-2.0 * torch.cos(torch.pi * t) * torch.pi * torch.sin(torch.pi * t)
-                * torch.where(t < 0.5, x_0, x_1prime))
-    
+        out = (-2.0 * torch.cos(torch.pi * t) * torch.pi * torch.sin(torch.pi * t)
+               * torch.where(t < 0.5, x_0, x_1prime))
+        # TODO: This COM issue should be fixed differently.
+        # Subtract mean w.r.t. number of atoms in each batch.
+        for index in range(1, len(batch_pointer)):
+            out[batch_pointer[index - 1]:batch_pointer[index]] -= (
+                out[batch_pointer[index - 1]:batch_pointer[index]].mean(dim=0))
+        return out
 
     def get_corrector(self) -> Corrector:
         """

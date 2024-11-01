@@ -57,8 +57,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: str,
-                 integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
+                 differential_equation_type: str, integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -115,11 +114,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: tuple[torch.Tensor, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
+        # Output is already corrected.
         interpolate = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
             z = torch.randn_like(x_0)
-            interpolate += self._gamma.gamma(t) * z
-            interpolate = self._corrector.correct(interpolate)
+            interpolate = self._corrector.correct(interpolate + self._gamma.gamma(t) * z)
         else:
             z = torch.zeros_like(x_0)
         return interpolate, z
@@ -155,6 +154,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         self._check_t(t)
         interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
+            # TODO: Can we plot this?
             interpolate_derivative += self._gamma.gamma_derivative(t) * z
         return interpolate_derivative
 
@@ -370,7 +370,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         # Set up ODE function
         odefunc = lambda t, x: model_function(t, self._corrector.correct(x))[0]
-        t_span = torch.tensor([time, time + time_step])
+        t_span = torch.tensor([time, time + time_step], device=x_t.device)
         with torch.no_grad():
             x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)[-1]
         return self._corrector.correct(x_t_new)

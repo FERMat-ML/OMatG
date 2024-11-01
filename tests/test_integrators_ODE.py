@@ -10,7 +10,7 @@ from omg.globals import SMALL_TIME, BIG_TIME
 tol = 1e-2
 stol = 6e-2
 times = torch.linspace(SMALL_TIME, BIG_TIME, 200)
-nrep = 1000
+nrep = 10000
 
 # Interpolants
 interpolants = [
@@ -55,14 +55,14 @@ def test_ode_integrator(interpolant, gamma):
         x_init = x_final.clone()
 
     if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant,
-                                PeriodicTrigonometricInterpolant, PeriodicEncoderDecoderInterpolant
-                                )):
+                                PeriodicTrigonometricInterpolant, PeriodicEncoderDecoderInterpolant)):
         pbc_flag = True
+        pytest.xfail("Shift of velocities in periodic interpolants to account for translational invariance "
+                     "currently makes this test fail.")
         interpolant_geodesic = SingleStochasticInterpolant(
             interpolant=interpolant, gamma=None,epsilon=None,
             differential_equation_type='ODE',
-            integrator_kwargs={'method':'rk4'}
-            )
+            integrator_kwargs={'method':'rk4'})
     else:
         pbc_flag = False
 

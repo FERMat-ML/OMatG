@@ -76,6 +76,7 @@ def niggli_reduce_configuration(configuration: "Configuration") -> None:
     # TODO: Remove accessing private attributes
     configuration._cell = torch.from_numpy(atoms.cell[:]).to(configuration.cell.dtype)
     configuration._coords = torch.from_numpy(atoms.positions).to(configuration.coords.dtype)
+    return configuration
 
 
 def niggli_reduce_data(species, coordinates, cell) -> Tuple[torch.Tensor, torch.Tensor]:
