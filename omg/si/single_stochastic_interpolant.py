@@ -115,11 +115,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: tuple[torch.Tensor, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
+        # Output is already corrected.
         interpolate = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
             z = torch.randn_like(x_0)
-            interpolate += self._gamma.gamma(t) * z
-            interpolate = self._corrector.correct(interpolate)
+            interpolate = self._corrector.correct(interpolate + self._gamma.gamma(t) * z)
         else:
             z = torch.zeros_like(x_0)
         return interpolate, z
@@ -155,6 +155,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         self._check_t(t)
         interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
+            # TODO: Can we plot this?
             interpolate_derivative += self._gamma.gamma_derivative(t) * z
         return interpolate_derivative
 
