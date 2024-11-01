@@ -47,6 +47,25 @@ class Corrector(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def unwrap(self, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+        """
+        Correct the input x_1 based on the reference input x_0 (for instance, return the image of x_1 closest to x_0 in
+        periodic boundary conditions).
+
+        :param x_0:
+            Reference input.
+        :type x_0: torch.Tensor
+        :param x_1:
+            Input to correct.
+        :type x_1: torch.Tensor
+
+        :return:
+            Unwrapped x_1 value.
+        :rtype: torch.Tensor
+        """
+        raise NotImplementedError
+
 
 class Epsilon(ABC, TimeChecker):
     """

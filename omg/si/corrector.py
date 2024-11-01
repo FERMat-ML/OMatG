@@ -25,6 +25,25 @@ class IdentityCorrector(Corrector):
         """
         return x
 
+    def unwrap(self, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+        """
+        Correct the input x_1 based on the reference input x_0.
+
+        This method just returns x_1.
+
+        :param x_0:
+            Reference input.
+        :type x_0: torch.Tensor
+        :param x_1:
+            Input to correct.
+        :type x_1: torch.Tensor
+
+        :return:
+            Unwrapped x_1 value.
+        :rtype: torch.Tensor
+        """
+        return x_1.clone()
+
 
 class PeriodicBoundaryConditionsCorrector(Corrector):
     """
@@ -67,20 +86,24 @@ class PeriodicBoundaryConditionsCorrector(Corrector):
     
     def unwrap(self, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
-        Correct for periodic boundaries by using the geodesic to move x_1 to x_1prime, 
-        which unwraps x_1 outside of the periodic boundary.
+        Correct the input x_1 based on the reference input x_0.
+
+        This method returns the image of x_1 closest to x_0 in periodic boundary conditions.
 
         :param x_0:
-            Points from p_0.
+            Reference input.
         :type x_0: torch.Tensor
         :param x_1:
-            Points from p_1.
+            Input to correct.
         :type x_1: torch.Tensor
 
         :return:
             Unwrapped x_1 value.
         :rtype: torch.Tensor
         """
-        diff = torch.abs(x_0 - x_1)
-        mid_point = (self._max_value - self._min_value)/2
-        return torch.where(diff >= mid_point, x_1 + torch.sign(x_0 - mid_point), x_1)
+        separation_vector = x_1 - x_0
+        length_over_two = (self._max_value - self._min_value) / 2.0
+        # Shortest separation lies in interval [-L/2, L/2].
+        shortest_separation_vector = torch.remainder(separation_vector + length_over_two,
+                                                     self._max_value - self._min_value) - length_over_two
+        return x_0 + shortest_separation_vector
