@@ -21,9 +21,13 @@ def mean(x_t_paths, reference=None, distance_corrector=IdentityCorrector(), posi
         return np.mean(x_t_paths, axis=0)
     if isinstance(reference, int):
         reference = x_t_paths[reference].copy()
-    distances = np.array([distance_corrector.correct(x - reference) for x in x_t_paths])
+
+    correct_distance = lambda x: distance_corrector.correct(torch.tensor(x)).numpy()
+    correct_position = lambda x: position_corrector.correct(torch.tensor(x)).numpy()
+
+    distances = np.array([correct_distance(x - reference) for x in x_t_paths])
     corrected_x = np.array([reference + distance for distance in distances])
-    return position_corrector.correct(np.mean(corrected_x, axis=0))
+    return correct_position(np.mean(corrected_x, axis=0))
 
 
 mean_method = partial(mean, reference=None, distance_corrector=IdentityCorrector(),
@@ -160,17 +164,18 @@ def main():
     print(np.abs(mean_x_t_path_linear_with_gamma - x_t_path_linear_without_gamma).max())
 
     plt.scatter(mean_x_t_path_linear_with_gamma[:, 0], mean_x_t_path_linear_with_gamma[:, 1],
-                color="C2", marker=".", s=0.5)
+                color="C2", marker=".", s=0.5, label="geodesic")
     plt.scatter(correct_mean_x_t_path_linear_with_gamma_periodic[:, 0],
                 correct_mean_x_t_path_linear_with_gamma_periodic[:, 1],
-                color="C3", marker=".", s=0.5)
+                color="C3", marker=".", s=0.5, label="geodesic reference mean")
     plt.scatter(mean_x_t_path_linear_with_gamma_periodic[:, 0], mean_x_t_path_linear_with_gamma_periodic[:, 1],
-                color="C1", marker=".", s=0.5)
+                color="C1", marker=".", s=0.5, label="wrong reference mean")
 
     plt.axvline(x=0.0, color="k")
     plt.axvline(x=1.0, color="k")
     plt.axhline(y=0.0, color="k")
     plt.axhline(y=1.0, color="k")
+    plt.legend()
 
     plt.gca().set_aspect("equal")
     plt.show()
