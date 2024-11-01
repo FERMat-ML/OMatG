@@ -154,7 +154,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         self._check_t(t)
         interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
-            # TODO: Can we plot this?
             interpolate_derivative += self._gamma.gamma_derivative(t) * z
         return interpolate_derivative
 
