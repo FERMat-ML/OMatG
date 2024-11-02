@@ -6,6 +6,7 @@ from torch import optim
 from typing import Optional, Sequence
 from omg.sampler.sampler import Sampler
 from omg.utils import xyz_saver 
+from omg.sampler.distance_metrics import min_perm_dist
 
 class OMG(L.LightningModule):
     """
@@ -72,7 +73,10 @@ class OMG(L.LightningModule):
             Loss from training step
         :rtype: torch.Tensor
         """
-        x_0 = self.sampler.sample_p_0(x_1).to(self.device) 
+        x_0 = self.sampler.sample_p_0(x_1).to(self.device)
+
+        # Minimize permutational distance between clusters
+        x_0, x_1 = min_perm_dist(x_0, x_1)
 
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)
