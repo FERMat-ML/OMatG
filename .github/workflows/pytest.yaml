@@ -4,8 +4,6 @@
 name: Test OMG package
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
