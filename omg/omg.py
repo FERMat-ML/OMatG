@@ -6,7 +6,7 @@ from torch import optim
 from typing import Optional, Sequence
 from omg.sampler.sampler import Sampler
 from omg.utils import xyz_saver 
-from omg.sampler.distance_metrics import min_perm_dist
+from omg.sampler.distance_metrics import *
 
 class OMG(L.LightningModule):
     """
@@ -16,13 +16,14 @@ class OMG(L.LightningModule):
     # TODO: specify argument types
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module,
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
-                 learning_rate: Optional[float] = 1.e-3) -> None:
+                 learning_rate: Optional[float] = 1.e-3, use_min_perm_dist=True) -> None:
         super().__init__()
         self.si = si 
         self.sampler = sampler
         model = model.double()
         self.learning_rate = learning_rate
         self.model = model
+        self.use_min_perm_dist = use_min_perm_dist
         if not len(relative_si_costs) == len(self.si):
             raise ValueError("The number of stochastic interpolants and costs must be equal.")
         if not all(cost >= 0.0 for cost in relative_si_costs):
@@ -76,7 +77,8 @@ class OMG(L.LightningModule):
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
         # Minimize permutational distance between clusters
-        x_0, x_1 = min_perm_dist(x_0, x_1)
+        if self.use_min_perm_dist:
+            x_0, x_1 = min_perm_dist(x_0, x_1, periodic_distance)
 
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)

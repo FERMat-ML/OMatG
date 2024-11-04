@@ -1,5 +1,7 @@
 import torch
 from scipy.optimize import linear_sum_assignment
+from torch_geometric.data import Data
+from typing import Callable
 
 def compute_com(x):
     '''
@@ -29,7 +31,7 @@ def compute_com(x):
     # Return
     return torch.tensor(com)
 
-def min_perm_dist(x_0, x_1, distance):
+def min_perm_dist(x_0:Data, x_1:Data, distance:Callable[[torch.tensor, torch.tensor],torch.tensor]):
     '''
     Compute the minimum permutational distance between two configurations
 
@@ -53,7 +55,13 @@ def min_perm_dist(x_0, x_1, distance):
         assert x_0.species.shape == x_1.species.shape
 
         # Minimum Perm
-        row, col = min_perm_dist(x_0.pos[ptr[i]:ptr[i+1]], x_1.pos[ptr[i]:ptr[i+1]], periodic_distance)
+        shuffled = torch.randperm(ptr[i+1] - ptr[i])
+        x_1.pos[ptr[i]:ptr[i+1]] = x_1.pos[ptr[i]:ptr[i+1]][shuffled]
+        x_1.species[ptr[i]:ptr[i+1]] = x_1.species[ptr[i]:ptr[i+1]][shuffled]
+        p1 = x_0.pos[ptr[i]:ptr[i+1]] 
+        p2 = x_1.pos[ptr[i]:ptr[i+1]]
+        distance_matrix = distance(p1[:, None, :], p2[None, :, :])
+        row, col = linear_sum_assignment(distance_matrix.cpu())
 
         # Reassign
         x_0.pos[ptr[i]:ptr[i+1]] = x_0.pos[ptr[i]:ptr[i+1]][row]
@@ -62,8 +70,6 @@ def min_perm_dist(x_0, x_1, distance):
         x_1.species[ptr[i]:ptr[i+1]] = x_1.species[ptr[i]:ptr[i+1]][col]
 
     # Compute distance matrix
-    distance_matrix = distance(x_0[:, None, :], x_1[None, :, :])
-    row, col = linear_sum_assignment(distance_matrix)
     return x_0, x_1
 
 def periodic_distance(x_0, x_1):
