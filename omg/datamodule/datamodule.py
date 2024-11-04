@@ -814,7 +814,7 @@ class DataModule:
             self.add_metadata({"dynamic": True})
 
         path = [path] if isinstance(path, (str, Path)) else path
-        save_path = Path("./") if not save_path else save_path
+        save_path = Path("data/cache/") if not save_path else save_path
 
         if not checksum:
             ds_hash = "|".join([str(p) for p in path])
