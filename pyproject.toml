@@ -25,5 +25,6 @@ dependencies = [
     "lightning[pytorch-extra]",
     "pytest ~= 8.3",
     "tqdm ~= 4.65",
-    "smact ~= 2.8"
+    "smact ~= 2.8",
+    "wandb ~= 0.18"
 ]

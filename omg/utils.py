@@ -3,6 +3,7 @@ from enum import Enum, auto
 from torch_geometric.data import Data
 from typing import List, Union
 from lightning.pytorch.callbacks import LearningRateFinder
+from lightning.pytorch.loggers.wandb import WandbLogger
 import matplotlib.pyplot as plt 
 
 class DataField(Enum):
@@ -72,5 +73,9 @@ class OMGLearningRateFinder(LearningRateFinder):
     def on_fit_start(self, trainer, pl_module):
         self.lr_find(trainer, pl_module)
         fig = self.optimal_lr.plot(suggest=True)
-        plt.savefig('lr-finder.png')
-
+        if isinstance(trainer.logger, WandbLogger):
+            # See https://github.com/Lightning-AI/pytorch-lightning/issues/2725
+            directory = trainer.logger.experiment.dir
+        else:
+            directory = trainer.logger.log_dir
+        plt.savefig(directory + "/lr-finder.png")
