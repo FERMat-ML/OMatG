@@ -33,7 +33,3 @@ For generating new structures run the following command:
 ```bash
 python scripts/main.py predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt>
 ```
-
-## TODO
-
-- Add diffcsp as a git submodule and update the dependencies.
