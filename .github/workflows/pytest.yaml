@@ -20,6 +20,9 @@ jobs:
     - name: Start interactive slurm job
       run: |
         srun -c2 -t1:00:00 --mem=4000 --pty /bin/bash
+    - name: Start Ubuntu singularity container
+      run: |
+        singularity exec /scratch/work/public/singularity/ubuntu-22.04.4.sif /bin/bash
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
