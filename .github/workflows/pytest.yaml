@@ -15,13 +15,16 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
+    defaults:
+      run:
+        shell: bash -l {0}
 
     steps:
     - uses: actions/checkout@v4
     - name: Start interactive slurm job
       run: |
         srun -c2 -t1:00:00 --mem=4000 --pty /bin/bash
-    - name: Install python version
+    - name: Install python
       run: |
         # See https://sites.google.com/nyu.edu/nyu-hpc/hpc-systems/greene/software/conda-environments-python-r
         module purge
@@ -33,7 +36,7 @@ jobs:
         export PYTHONNOUSERSITE=True
         conda create -p ./penv python=${{ matrix.python-version }} --channel=conda --channel=conda-forge -y
         conda activate ./penv
-    - name: Install dependencies
+    - name: Install dependencies and package
       run: |
         python -m pip --cache-dir ./pip_pkgs install --upgrade pip
         # Fix https://github.com/rusty1s/pytorch_scatter/issues/424
