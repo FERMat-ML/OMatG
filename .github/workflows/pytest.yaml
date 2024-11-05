@@ -24,20 +24,23 @@ jobs:
     - name: Install python version
       run: |
         # See https://sites.google.com/nyu.edu/nyu-hpc/hpc-systems/greene/software/conda-environments-python-r
+        module purge
         module load anaconda3/2024.02
-        conda create -p ./penv python=${{ matrix.python-version }}
-        conda activate ./penv
+        source /share/apps/anaconda3/2024.02/etc/profile.d/conda.sh 
+        mkdir conda_pkgs
+        mkdir pip_pkgs
+        export CONDA_PKGS_DIRS=$(pwd)/conda_pkgs
         export PYTHONNOUSERSITE=True
-        mkdir conda_pgks
-        ln -s conda_pkgs ~/.conda/pkgs
+        conda create -p ./penv python=${{ matrix.python-version }} --channel=conda --channel=conda-forge -y
+        conda activate ./penv
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip --cache-dir ./pip_pkgs install --upgrade pip
         # Fix https://github.com/rusty1s/pytorch_scatter/issues/424
-        python -m pip install setuptools wheel
-        python -m pip install torch==2.4.0
-        python -m pip install --no-use-pep517 torch_scatter==2.1.2
-        python -m pip install .
+        python -m pip --cache-dir ./pip_pkgs install setuptools wheel
+        python -m pip --cache-dir ./pip_pkgs install torch==2.4.0
+        python -m pip --cache-dir ./pip_pkgs install --no-use-pep517 torch_scatter==2.1.2
+        python -m pip --cache-dir ./pip_pkgs install .
     - name: Test with pytest
       run: |
         pytest tests
@@ -45,5 +48,6 @@ jobs:
       run: |
         conda deactivate
         rm -rf conda_pkgs
+        rm -rf pip_pkgs
         rm -rf ./penv
         exit
