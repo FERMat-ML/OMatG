@@ -24,10 +24,11 @@ jobs:
     # Since GitHub uses a different shell for every step, we put everything in one step.
     - name: Install and test OMG package
       run: |
-        # Start interactive job.
+        # Start interactive job, set up python (see 
+        # https://sites.google.com/nyu.edu/nyu-hpc/hpc-systems/greene/software/conda-environments-python-r), install
+        # dependencies and OMG, run tests, and cleanup. For the installation of torch_scatter, use --no-use-pep517 to
+        # fix https://github.com/rusty1s/pytorch_scatter/issues/424.
         srun -c2 -t2:00:00 --mem=4000 -K /bin/bash -c "
-          # Set up Python.
-          # See https://sites.google.com/nyu.edu/nyu-hpc/hpc-systems/greene/software/conda-environments-python-r
           module purge;
           module load anaconda3/2024.02;
           source /share/apps/anaconda3/2024.02/etc/profile.d/conda.sh;
@@ -37,16 +38,12 @@ jobs:
           export PYTHONNOUSERSITE=True;
           conda create -p ./penv python=${{ matrix.python-version }} --channel=conda --channel=conda-forge -y;
           conda activate ./penv;
-          # Install dependencies and OMG.
           python -m pip --cache-dir ./pip_pkgs install --upgrade pip;
-          # Fix https://github.com/rusty1s/pytorch_scatter/issues/424
           python -m pip --cache-dir ./pip_pkgs install setuptools wheel;
           python -m pip --cache-dir ./pip_pkgs install torch==2.4.0;
           python -m pip --cache-dir ./pip_pkgs install --no-use-pep517 torch_scatter==2.1.2;
           python -m pip --cache-dir ./pip_pkgs install .;
-          # Run tests.
           pytest tests;
-          # Cleanup.
           conda deactivate;
           rm -rf conda_pkgs;
           rm -rf pip_pkgs;
