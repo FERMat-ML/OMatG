@@ -21,15 +21,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Start interactive slurm job
+    # Since GitHub uses a different shell for every step, we put everything in one step.
+    - name: Install and test OMG package
       run: |
+        # Start interactive job.
         srun -c2 -t1:00:00 --mem=4000 --pty /bin/bash
-    # - uses: conda-incubator/setup-miniconda@v3
-    #  with:
-    #    auto-update-conda: true
-    #    python-version: ${{ matrix.python-version }}
-    - name: Install python
-      run: |
+        # Set up Python.
         # See https://sites.google.com/nyu.edu/nyu-hpc/hpc-systems/greene/software/conda-environments-python-r
         module purge
         module load anaconda3/2024.02
@@ -39,21 +36,17 @@ jobs:
         export CONDA_PKGS_DIRS=$(pwd)/conda_pkgs
         export PYTHONNOUSERSITE=True
         conda create -p ./penv python=${{ matrix.python-version }} --channel=conda --channel=conda-forge -y
-    - name: Install dependencies and package
-      run: |
         conda activate ./penv
+        # Install dependencies and OMG.
         python -m pip --cache-dir ./pip_pkgs install --upgrade pip
         # Fix https://github.com/rusty1s/pytorch_scatter/issues/424
         python -m pip --cache-dir ./pip_pkgs install setuptools wheel
         python -m pip --cache-dir ./pip_pkgs install torch==2.4.0
         python -m pip --cache-dir ./pip_pkgs install --no-use-pep517 torch_scatter==2.1.2
         python -m pip --cache-dir ./pip_pkgs install .
-    - name: Test with pytest
-      run: |
-        conda activate ./penv
+        # Run tests.
         pytest tests
-    - name: Cleanup and exit slurm job
-      run: |
+        # Cleanup.
         conda deactivate
         rm -rf conda_pkgs
         rm -rf pip_pkgs
