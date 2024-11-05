@@ -25,7 +25,7 @@ jobs:
       run: |
         # See https://sites.google.com/nyu.edu/nyu-hpc/hpc-systems/greene/software/conda-environments-python-r
         module load anaconda3/2024.02
-        conda create -p conda create -p ./penv python=${{ matrix.python-version }}
+        conda create -p ./penv python=${{ matrix.python-version }}
         conda activate ./penv
         export PYTHONNOUSERSITE=True
         mkdir conda_pgks
