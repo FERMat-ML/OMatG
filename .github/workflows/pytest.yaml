@@ -9,13 +9,16 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
 
     steps:
+    - name: Start interactive slurm job
+      run: |
+        srun -c2 -t1:00:00 --mem=4000 --pty /bin/bash
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
@@ -32,3 +35,6 @@ jobs:
     - name: Test with pytest
       run: |
         pytest tests
+    - name: Exit slurm job
+      run: |
+        exit
