@@ -6,7 +6,6 @@ model:
         # chemical species
         - class_path: omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform
           init_args:
-            number_integration_steps: 100
             noise: 0.
         # fractional coordinates
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
@@ -15,12 +14,6 @@ model:
             gamma: null
             epsilon: null
             differential_equation_type: "ODE"
-            sde_number_time_steps: null
-            corrector: 
-              class_path: omg.si.corrector.PeriodicBoundaryConditionsCorrector
-              init_args:
-                min_value: 0
-                max_value: 1
         # lattice vectors
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
           init_args:
@@ -28,8 +21,6 @@ model:
             gamma: null
             epsilon: null
             differential_equation_type: "ODE"
-            sde_number_time_steps: null
-            corrector: null
       data_fields: 
         # if the order of the data_fields changes,
         # the order of the above StochasticInterpolant inputs must also change
