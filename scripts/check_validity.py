@@ -95,6 +95,6 @@ if __name__ == "__main__":
     f = sys.argv[1]
     s = structural_validity(f)
     print (s,s['True']/(s['True']+s['False']))
-    c = smact_validity('gen_xyzs/gen_bm_more.xyz')
+    c = smact_validity(f)
     print (c,c['True']/(c['True']+c['False']))
 

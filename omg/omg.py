@@ -2,6 +2,7 @@ from omg.si.stochastic_interpolants import StochasticInterpolants
 import lightning as L
 import torch
 import torch.nn as nn
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch import optim
 from typing import Optional, Sequence
 from omg.sampler.sampler import Sampler
@@ -16,7 +17,7 @@ class OMG(L.LightningModule):
     # TODO: specify argument types
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module,
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
-                 learning_rate: Optional[float] = 1.e-3, use_min_perm_dist=True) -> None:
+                 learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False ,use_min_perm_dist=True) -> None:
         super().__init__()
         self.si = si 
         self.sampler = sampler
@@ -34,10 +35,12 @@ class OMG(L.LightningModule):
         if load_checkpoint:
             checkpoint = torch.load(load_checkpoint, map_location=self.device)
             self.load_state_dict(checkpoint['state_dict'])
+        # TODO: hardcoded normalization for losses
         self.loss_norm = {}
         self.loss_norm['loss_species'] = 0.43 
         self.loss_norm['loss_pos'] = 0.020
         self.loss_norm['loss_cell'] = 0.022
+        self.lr_scheduler = lr_scheduler
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
@@ -140,7 +143,7 @@ class OMG(L.LightningModule):
         """
         Performs generation
         """
-        x_0 = self.sampler.sample_p_0().to(self.device)
+        x_0 = self.sampler.sample_p_0(x).to(self.device)
         gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
         xyz_saver(gen.to('cpu'))
@@ -149,7 +152,23 @@ class OMG(L.LightningModule):
     #TODO allow for YAML config
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
-        return optimizer
+        if self.lr_scheduler:
+            lr_scheduler = ReduceLROnPlateau(optimizer,patience=40)
+            lr_scheduler_config = {
+                "scheduler": lr_scheduler,
+                "interval": "epoch",
+                "frequency": 1,
+                "monitor": "val_loss_total",
+                # If set to `True`, will enforce that the value specified 'monitor'
+                # is available when the scheduler is updated, thus stopping
+                # training if not found. If set to `False`, it will only produce a warning
+                "strict": True,
+            }
+            return {"optimizer": optimizer,
+                    "lr_scheduler": lr_scheduler_config
+                    }
+        else:
+            return optimizer
 
 
 

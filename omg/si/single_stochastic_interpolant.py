@@ -57,8 +57,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: str,
-                 integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
+                 differential_equation_type: str, integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -115,11 +114,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: tuple[torch.Tensor, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
+        # Output is already corrected.
         interpolate = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
         if self._gamma is not None:
             z = torch.randn_like(x_0)
-            interpolate += self._corrector.correct(self._gamma.gamma(t) * z)
-            interpolate = self._corrector.correct(interpolate) # (amodn + bmodn)modn = (a+b)modn
+            interpolate = self._corrector.correct(interpolate + self._gamma.gamma(t) * z)
         else:
             z = torch.zeros_like(x_0)
         return interpolate, z
@@ -236,9 +235,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
         if self._use_antithetic:
             assert self._gamma is not None
-            x_t_p = x_t_without_gamma + self._gamma.gamma(t) * z  # TODO: Don't we have to use the corrector here?
+            x_t_p = self._corrector.correct(x_t_without_gamma + self._gamma.gamma(t) * z)
             assert torch.equal(x_t, x_t_p)
-            x_t_m = x_t_without_gamma - self._gamma.gamma(t) * z  # TODO: Also apply corrector here.
+            x_t_m = self._corrector.correct(x_t_without_gamma - self._gamma.gamma(t) * z)
             expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
             expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
             loss = (nn.functional.mse_loss(expected_velocity_p, model_function(x_t_p)[0])
@@ -288,9 +287,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
         if self._use_antithetic:
             assert self._gamma is not None
-            x_t_p = x_t_without_gamma + self._gamma.gamma(t) * z  # TODO: Don't we have to use the corrector here?
+            x_t_p = self._corrector.correct(x_t_without_gamma + self._gamma.gamma(t) * z)
             assert torch.equal(x_t, x_t_p)
-            x_t_m = x_t_without_gamma - self._gamma.gamma(t) * z  # TODO: Also apply corrector here.
+            x_t_m = self._corrector.correct(x_t_without_gamma - self._gamma.gamma(t) * z)
             expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
             expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
             pred_b_p, pred_z = model_function(x_t_p)
@@ -370,7 +369,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         # Set up ODE function
         odefunc = lambda t, x: model_function(t, self._corrector.correct(x))[0]
-        t_span = torch.tensor([time, time + time_step])
+        t_span = torch.tensor([time, time + time_step], device=x_t.device)
         with torch.no_grad():
             x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)[-1]
         return self._corrector.correct(x_t_new)
