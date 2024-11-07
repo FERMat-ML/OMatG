@@ -472,7 +472,7 @@ class DataModule:
         self._return_config_on_getitem = True
         self._property_keys = None
 
-        cache_dir = Path("./data/cache")
+        cache_dir = Path("./cache")
         os.makedirs(cache_dir, exist_ok=True)
 
         if lmdb_paths is not None:
