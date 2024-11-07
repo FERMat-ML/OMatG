@@ -1,6 +1,5 @@
 from enum import Enum, auto
 import torch
-import torch.nn as nn
 from torchdiffeq import odeint
 from torchsde import sdeint
 from typing import Any, Optional, Callable
@@ -240,12 +239,15 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             x_t_m = self._corrector.correct(x_t_without_gamma - self._gamma.gamma(t) * z)
             expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
             expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
-            loss = (nn.functional.mse_loss(expected_velocity_p, model_function(x_t_p)[0])
-                    + nn.functional.mse_loss(expected_velocity_m, model_function(x_t_m)[0])) / 2.0
+            pred_b_p = model_function(x_t_p)[0]
+            pred_b_m = model_function(x_t_m)[0]
+            loss = (0.5 * torch.mean(pred_b_p ** 2) + 0.5 * torch.mean(pred_b_m ** 2)
+                    - torch.mean(pred_b_p * expected_velocity_p) - torch.mean(pred_b_m * expected_velocity_m))
         else:
             assert self._gamma is None
             assert torch.equal(x_t, x_t_without_gamma)
-            loss = nn.functional.mse_loss(expected_velocity_without_gamma, model_function(x_t_without_gamma)[0])
+            pred_b = model_function(x_t_without_gamma)[0]
+            loss = (torch.mean(pred_b ** 2) - 2.0 * torch.mean(pred_b * expected_velocity_without_gamma))
         return loss
 
     def _sde_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
@@ -285,23 +287,21 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         assert x_0.shape == x_1.shape
         x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
         expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
-        if self._use_antithetic:
-            assert self._gamma is not None
-            x_t_p = self._corrector.correct(x_t_without_gamma + self._gamma.gamma(t) * z)
-            assert torch.equal(x_t, x_t_p)
-            x_t_m = self._corrector.correct(x_t_without_gamma - self._gamma.gamma(t) * z)
-            expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
-            expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
-            pred_b_p, pred_z = model_function(x_t_p)
-            loss_b = (nn.functional.mse_loss(expected_velocity_p, pred_b_p)
-                      + nn.functional.mse_loss(expected_velocity_m, model_function(x_t_m)[0])) / 2.0
-        else:
-            assert self._gamma is None
-            assert torch.equal(x_t, x_t_without_gamma)
-            pred_b, pred_z = model_function(x_t_without_gamma)
-            loss_b = nn.functional.mse_loss(expected_velocity_without_gamma, pred_b)
+        assert self._use_antithetic  # SDE cannot be used without gamma or without antithetic sampling.
+        assert self._gamma is not None
+        x_t_p = self._corrector.correct(x_t_without_gamma + self._gamma.gamma(t) * z)
+        assert torch.equal(x_t, x_t_p)
+        x_t_m = self._corrector.correct(x_t_without_gamma - self._gamma.gamma(t) * z)
+        expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
+        expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
+        pred_b_p, pred_z = model_function(x_t_p)
+        pred_b_m, _ = model_function(x_t_m)
 
-        loss_z = nn.functional.mse_loss(z, pred_z)
+        loss_b = (0.5 * torch.mean(pred_b_p ** 2) + 0.5 * torch.mean(pred_b_m ** 2)
+                  - torch.mean(pred_b_p * expected_velocity_p) - torch.mean(pred_b_m * expected_velocity_m))
+
+        loss_z = torch.mean(pred_z ** 2) - 2.0 * torch.mean(pred_z * z)
+
         return loss_b + loss_z
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
