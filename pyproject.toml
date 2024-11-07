@@ -28,3 +28,6 @@ dependencies = [
     "smact ~= 2.8",
     "wandb ~= 0.18"
 ]
+
+[project.scripts]
+omg = "omg.main:main"
