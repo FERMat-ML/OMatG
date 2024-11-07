@@ -1,6 +1,6 @@
 import copy
 import hashlib
-import importlib
+from importlib.resources import as_file, files
 import json
 import os
 import shutil
@@ -472,9 +472,19 @@ class DataModule:
         self._return_config_on_getitem = True
         self._property_keys = None
 
-        if lmdb_paths is not None:
-            self.from_lmdb(lmdb_paths, property_keys=property_keys)
+        cache_dir = Path("./data/cache")
+        os.makedirs(cache_dir, exist_ok=True)
 
+        if lmdb_paths is not None:
+            try:
+                self.from_lmdb(lmdb_paths, property_keys=property_keys, save_path=cache_dir)
+            except lmdb.Error:
+                # Try to use the data from the omg package.
+                if isinstance(lmdb_paths, Iterable):
+                    package_lmdb_paths = [files("omg").joinpath(lmdb_path) for lmdb_path in lmdb_paths]
+                    self.from_lmdb(package_lmdb_paths, property_keys=property_keys, save_path=cache_dir)
+                else:
+                    self.from_lmdb(files("omg").joinpath(lmdb_paths), property_keys=property_keys, save_path=cache_dir)
 
     @classmethod
     @requires(MongoDatabase is not None, "colabfit-tools is not installed")
@@ -814,7 +824,7 @@ class DataModule:
             self.add_metadata({"dynamic": True})
 
         path = [path] if isinstance(path, (str, Path)) else path
-        save_path = Path("data/cache/") if not save_path else save_path
+        save_path = Path("./") if not save_path else save_path
 
         if not checksum:
             ds_hash = "|".join([str(p) for p in path])
