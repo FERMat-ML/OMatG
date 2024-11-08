@@ -36,6 +36,9 @@ python scripts/main.py predict --config {config_file} --model.load_checkpoint=<c
 
 ## Visualize
 
+Run the following command to compare distributions over the generated structures in an xyz file to distributions over 
+training dataset.
+
 ```bash
-python scripts/main.py visualize --config {config_file} --xyz_file {xyz_file}
+python scripts/main.py visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_name}
 ```
