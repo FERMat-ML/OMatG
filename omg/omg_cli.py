@@ -146,14 +146,15 @@ class OMGTrainer(Trainer):
             # Plot Volume KDE
             # KernelDensity expects array of shape (n_samples, n_features).
             # We only have a single feature.
+            bandwidth = np.std(ref_vol) * len(ref_vol) ** (-1 / 5)  # Scott's rule.
             ref_vol = np.array(ref_vol)[:, np.newaxis]
             vol = np.array(vol)[:, np.newaxis]
             min_volume = min(ref_vol.min(), vol.min())
             max_volume = max(ref_vol.max(), vol.max())
             x_d = np.linspace(min_volume - 1.0, max_volume + 1.0, 1000)[:, np.newaxis]
-            kde_gt = KernelDensity(kernel="tophat", bandwidth="scott").fit(ref_vol)
+            kde_gt = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(ref_vol)
             log_density_gt = kde_gt.score_samples(x_d)
-            kde_gen = KernelDensity(kernel="tophat", bandwidth="scott").fit(vol)
+            kde_gen = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(vol)
             log_density_gen = kde_gen.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
             plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
