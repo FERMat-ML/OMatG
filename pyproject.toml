@@ -26,5 +26,7 @@ dependencies = [
     "pytest ~= 8.3",
     "tqdm ~= 4.65",
     "smact ~= 2.8",
-    "wandb ~= 0.18"
+    "wandb ~= 0.18",
+    "scikit-learn ~= 1.5",
+    "matplotlib ~= 3.9"
 ]
