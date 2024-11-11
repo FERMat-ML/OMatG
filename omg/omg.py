@@ -8,6 +8,7 @@ from typing import Optional, Sequence
 from omg.sampler.sampler import Sampler
 from omg.utils import xyz_saver 
 from omg.sampler.distance_metrics import *
+import time
 
 class OMG(L.LightningModule):
     """
@@ -17,7 +18,8 @@ class OMG(L.LightningModule):
     # TODO: specify argument types
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module,
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
-                 learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False ,use_min_perm_dist=True) -> None:
+                 learning_rate: Optional[float] = 1.e-3, 
+                 lr_scheduler: Optional[bool] = False, use_min_perm_dist=False) -> None:
         super().__init__()
         self.si = si 
         self.sampler = sampler
@@ -79,9 +81,10 @@ class OMG(L.LightningModule):
         """
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
-        # Minimize permutational distance between clusters
+        # Minimize permutational distance between clusters:q
         if self.use_min_perm_dist:
             x_0, x_1 = min_perm_dist(x_0, x_1, periodic_distance)
+
 
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)
@@ -112,7 +115,7 @@ class OMG(L.LightningModule):
         Performs one validation step given a batch of x_1
         """
 
-        x_0 = self.sampler.sample_p_0(x_1).to(self.device) 
+        x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)
@@ -146,7 +149,8 @@ class OMG(L.LightningModule):
         x_0 = self.sampler.sample_p_0(x).to(self.device)
         gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
-        xyz_saver(gen.to('cpu'))
+        xyz_saver(inter[0], f'init.xyz')
+        xyz_saver(gen, f'final.xyz')
         return gen
 
     #TODO allow for YAML config
@@ -170,5 +174,8 @@ class OMG(L.LightningModule):
         else:
             return optimizer
 
-
+    def compare_distributions(self):
+        '''
+        Compare the dataset distributions with those generated from some xyz file
+        '''
 

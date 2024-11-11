@@ -8,14 +8,15 @@ from ase import Atoms
 from ase.io import read
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from typing import Dict, Set
+from typing import Dict, Set, List
 from lightning.pytorch import Trainer
+from omg.sampler.distance_metrics import periodic_distance
 
 class OMG_Trainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def visualize(self, xyz_file:str, **kwargs):
+    def visualize(self, init_xyz_file:str, final_xyz_file:str, **kwargs):
         '''
         Visualize dataset vs generated data
 
@@ -25,11 +26,12 @@ class OMG_Trainer(Trainer):
         '''
 
         # Get atoms
-        gen_atoms = self._load_xyz_atoms(xyz_file)
+        init_atoms = self._load_xyz_atoms(init_xyz_file)
+        gen_atoms = self._load_xyz_atoms(final_xyz_file)
         ref_atoms = self._load_dataset_atoms(kwargs['datamodule'].train_dataset)
 
         # Plot data
-        self._plot_to_pdf(ref_atoms, gen_atoms)
+        self._plot_to_pdf(ref_atoms, init_atoms, gen_atoms)
 
     def _load_xyz_atoms(self, xyz_file:str):
         '''
@@ -53,7 +55,7 @@ class OMG_Trainer(Trainer):
 
         return ref_atoms
 
-    def _plot_to_pdf(self, reference:list, generated:list, plot_name:str='viz.pdf'):
+    def _plot_to_pdf(self, reference:list, init:list, generated:list, plot_name:str='viz.pdf'):
         '''
         Plot figures for data analysis/matching
         between GT and Generated
@@ -67,6 +69,7 @@ class OMG_Trainer(Trainer):
         '''
 
         ref_vol = []
+        ref_distances = []
         ref_nums = {}
         ref_n_types = {}
         ref_num_atoms = 0
@@ -86,6 +89,13 @@ class OMG_Trainer(Trainer):
             for n in num:
                 ref_nums[n] +=1
 
+            # Distributions for Distance to target
+            x_1 = np.dot(a.get_positions(), np.linalg.inv(a.get_cell()))
+            x_0 = np.random.rand(*x_1.shape)
+            pairwise_dist = periodic_distance(torch.tensor(x_0), torch.tensor(x_1))
+            ref_distances.append(torch.sqrt((pairwise_dist ** 2).mean()))
+
+
         ref_h = []
         ref_n = []
         for k,v in ref_n_types.items():
@@ -95,6 +105,7 @@ class OMG_Trainer(Trainer):
 
         # Generated data
         vol = []
+        distances = []
         nums = {}
         n_types = {}
         num_atoms = 0
@@ -102,7 +113,7 @@ class OMG_Trainer(Trainer):
             n_types[i] = 0
         for i in range(1,110):
             nums[i] = 0
-        for a in generated:
+        for a, b in zip(generated, init):
             v = a.get_volume()
             num_atoms += len(a)
             vol.append(a.get_volume())
@@ -111,8 +122,20 @@ class OMG_Trainer(Trainer):
             if n_type > 6:
                 n_type = 6
             n_types[n_type] += 1
-            for n in num:
+            for n in num:    
                 nums[n] +=1
+
+            # Distributions for Distance to target
+            x_1 = np.dot(a.get_positions(), np.linalg.inv(a.get_cell()))
+            x_0 = np.dot(b.get_positions(), np.linalg.inv(b.get_cell()))
+            pairwise_dist = periodic_distance(torch.tensor(x_0), torch.tensor(x_1))    
+            distances.append(torch.sqrt((pairwise_dist ** 2).mean()))
+
+        # Random distance
+        #rand_distances = []
+        #for i in range(10000):
+        #    rand_distances.append(periodic_distance(torch.rand(size=(1,)), torch.rand(size=(1,))))
+
 
         h = []
         n = []
@@ -164,6 +187,29 @@ class OMG_Trainer(Trainer):
             plt.title('N-ary')
             plt.xlabel('Unique Elements/Structure')
             plt.ylabel('Density')
+            plt.legend()
+            pdf.savefig()
+            plt.close()
+
+            # Compute distributions for fractional coordinate movement
+            w = np.std(distances) * len(distances) ** (-1/5)
+            ref_distances = np.array(ref_distances)[:, np.newaxis]
+            distances = np.array(distances)[:, np.newaxis]
+            #rand_distances = np.array(rand_distances)[:, np.newaxis]
+            x_d = np.linspace(distances.min() - 1, distances.max() + 1, 1000)[:, np.newaxis]
+            kde_gt = KernelDensity(kernel='tophat', bandwidth=w).fit(ref_distances)
+            density_gt = kde_gt.score_samples(x_d)
+            kde_gen = KernelDensity(kernel='tophat', bandwidth=w).fit(distances)
+            density_gen = kde_gen.score_samples(x_d)
+            #kde_rand = KernelDensity(kernel='tophat', bandwidth=w).fit(rand_distances)
+            #density_rand = kde_rand.score_samples(x_d)
+            plt.plot(x_d, np.exp(density_gen), color='blueviolet', label='Generated')
+            plt.plot(x_d, np.exp(density_gt), color='darkslategrey', label='Ground Truth')
+            plt.xlim(0, 1.0)
+            #plt.plot(x_d, np.exp(density_rand), color='black', label='Reference', linestyle='--')
+            plt.xlabel(r'Distance ($\AA$)')
+            plt.ylabel('Density')
+            plt.title('Distances')
             plt.legend()
             pdf.savefig()
             plt.close()
