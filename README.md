@@ -33,3 +33,9 @@ For generating new structures run the following command:
 ```bash
 python scripts/main.py predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt>
 ```
+
+## Visualize
+
+```bash
+python scripts/main.py visualize --config {config_file} --xyz_file {xyz_file}
+```
