@@ -1,13 +1,15 @@
-from omg.si.stochastic_interpolants import StochasticInterpolants
+from pathlib import Path
+import time
+from typing import Optional, Sequence
 import lightning as L
 import torch
 import torch.nn as nn
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch import optim
-from typing import Optional, Sequence
-from omg.sampler.sampler import Sampler
-from omg.utils import xyz_saver
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from omg.sampler.distance_metrics import correct_for_min_perm_dist
+from omg.sampler.sampler import Sampler
+from omg.si.stochastic_interpolants import StochasticInterpolants
+from omg.utils import xyz_saver
 
 
 class OMG(L.LightningModule):
@@ -17,7 +19,7 @@ class OMG(L.LightningModule):
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module,
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
                  learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False,
-                 use_min_perm_dist: bool = False) -> None:
+                 use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None) -> None:
         super().__init__()
         self.si = si
         self.sampler = sampler
@@ -45,6 +47,7 @@ class OMG(L.LightningModule):
         self.loss_norm['loss_pos'] = 0.020
         self.loss_norm['loss_cell'] = 0.022
         self.lr_scheduler = lr_scheduler
+        self.generation_xyz_filename = generation_xyz_filename
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
@@ -152,8 +155,11 @@ class OMG(L.LightningModule):
         x_0 = self.sampler.sample_p_0(x).to(self.device)
         gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
-        xyz_saver(inter[0], f'init.xyz')
-        xyz_saver(gen, f'final.xyz')
+        filename = (Path(self.generation_xyz_filename) if self.generation_xyz_filename is not None
+                    else Path(f"{time.strftime("%Y%m%d-%H%M%S")}.xyz"))
+        init_filename = filename.with_stem(filename.stem + "_init")
+        xyz_saver(x_0.to("cpu"), init_filename)
+        xyz_saver(gen.to("cpu"), filename)
         return gen
 
     # TODO allow for YAML config
@@ -176,8 +182,3 @@ class OMG(L.LightningModule):
                     }
         else:
             return optimizer
-
-    def compare_distributions(self):
-        '''
-        Compare the dataset distributions with those generated from some xyz file
-        '''

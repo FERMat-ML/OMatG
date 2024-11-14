@@ -1,15 +1,20 @@
-import torch
 from enum import Enum, auto
-from torch_geometric.data import Data
+from pathlib import Path
 from typing import List, Union
+from ase import Atoms
+from ase.io import write
 from lightning.pytorch.callbacks import LearningRateFinder
 from lightning.pytorch.loggers.wandb import WandbLogger
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
+import torch
+from torch_geometric.data import Data
+
 
 class DataField(Enum):
     pos = auto()
     cell = auto()
     species = auto()
+
 
 def reshape_t(t: torch.Tensor, n_atoms: torch.Tensor, data_field: DataField) -> torch.Tensor:
     """
@@ -46,25 +51,27 @@ def reshape_t(t: torch.Tensor, n_atoms: torch.Tensor, data_field: DataField) -> 
         return t.repeat_interleave(3 * 3).reshape(batch_size, 3, 3)
     else:
         assert data_field == DataField.species
-        return t_per_atom                                                        
+        return t_per_atom
+
 
 # TODO: make options accesible to OMG via CLI
-def xyz_saver(data: Union [Data, List[Data]]):
+def xyz_saver(data: Union[Data, List[Data]], filename: Path) -> None:
     """
     Takes data that has been generated and saves it as xyz file
     """
-    from ase import Atoms
-    from ase.io import write
-    import time
+    if not filename.suffix == ".xyz":
+        raise ValueError("The filename must have the suffix '.xyz'.")
     if not isinstance(data, list):
         data = [data]
     atoms = []
     for d in data:
         batch_size = len(d.n_atoms)
         for i in range(batch_size):
-            lower, upper = d.ptr[i*1], d.ptr[(i*1)+1]
-            atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :], cell=d.cell[i, :, :], pbc=(1,1,1)))
-    write(f'{time.strftime("%Y%m%d-%H%M%S")}.xyz', atoms)
+            lower, upper = d.ptr[i * 1], d.ptr[(i * 1) + 1]
+            atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :],
+                               cell=d.cell[i, :, :], pbc=(1, 1, 1)))
+    write(filename, atoms)
+
 
 class OMGLearningRateFinder(LearningRateFinder):
     def __init__(self, *args, **kwargs):

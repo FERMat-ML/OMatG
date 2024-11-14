@@ -38,23 +38,21 @@ exemplary configuration files).
 
 ## Sampling
 
-For generating new structures run the following command:
+For generating new structures in an xyz file, run the following command:
 
 ```bash
-omg predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt>
+omg predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt> --model.generation_xyz_filename=<xyz_file>
 ```
+
+For an xyz filename `filename.xyz`, this command will also create a file `filename_init.xyz` that contains the initial
+structures that were integrated to yield the structures in `filename.xyz`. This file is required for the visualization
+below.
 
 ## Visualize
 
 Run the following command to compare distributions over the generated structures in an xyz file to distributions over 
-training dataset.
+training dataset:
 
 ```bash
 omg visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_name}
-```
-
-## Visualize
-
-```bash
-python scripts/main.py visualize --config {config_file} --xyz_file {xyz_file}
 ```
