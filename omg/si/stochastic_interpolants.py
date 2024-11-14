@@ -2,8 +2,9 @@ from typing import Callable, List, Tuple, Union, Sequence
 from tqdm import trange
 import torch
 from torch_geometric.data import Data
-from omg.utils import reshape_t, DataField
 from omg.globals import SMALL_TIME, BIG_TIME
+from omg.si import Corrector
+from omg.utils import reshape_t, DataField
 from .abstracts import StochasticInterpolant
 
 
@@ -243,3 +244,22 @@ class StochasticInterpolants(object):
             return x_t, inter_list
         else:
             return x_t
+
+    def get_corrector(self, data_field: str) -> Corrector:
+        """
+        Return the corrector associated with the data field.
+
+        :param data_field:
+            Data field for which the corrector is requested.
+        :type data_field: str
+
+        :return:
+            Corrector associated with the data field.
+        :rtype: Corrector
+        """
+        try:
+            df = DataField[data_field.lower()]
+        except AttributeError:
+            raise ValueError(f"Data field must be in {[d.name for d in DataField]}.")
+        index = self._data_fields.index(df)
+        return self._stochastic_interpolants[index].get_corrector()

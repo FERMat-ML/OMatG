@@ -1,88 +1,74 @@
-import torch
 from scipy.optimize import linear_sum_assignment
+import torch
 from torch_geometric.data import Data
-from typing import Callable
+from omg.si.corrector import Corrector
 
-def compute_com(x):
-    '''
-    Function to compute center of mass
-    :param x:
-        Configuration
-    :type x: torch.tensor
-    :return com:
-        Center of mass
-    :rtype com: torch.tensor
-    '''
-    
-    # Compute COM
-    com = []
-    for i in range(x.shape[-1]):
-        dimension_max = 1.0
-        theta = (x[:,i] / dimension_max) * 2 * torch.pi
-        xi = torch.cos(theta)
-        zeta = torch.sin(theta)
-        N = x.shape[0]
-        xi_bar = (1 / N) * torch.sum(xi, dim=-1)
-        zeta_bar = (1 / N) * torch.sum(zeta, dim=-1)
-        theta_bar = torch.atan2(-zeta_bar, -xi_bar) + torch.pi
-        dimension_com = dimension_max * (theta_bar / (2 * torch.pi))
-        com.append(dimension_com)
 
-    # Return
-    return torch.tensor(com)
+def correct_for_min_perm_dist(x_0: Data, x_1: Data, corrector: Corrector):
+    """
+    For every configuration in the batch, permute the fractional coordinates (and species) in x_0 so that it minimizes
+    the distance with respect to the corresponding configuration in x_1.
 
-def min_perm_dist(x_0:Data, x_1:Data, distance:Callable[[torch.tensor, torch.tensor],torch.tensor]):
-    '''
-    Compute the minimum permutational distance between two configurations
+    This function modifies x_0 in place.
 
     :param x_0:
-        Initial configuration.
+        Batch of initial configurations stored in a torch_geometric.data.Data object.
+    :type x_0: torch_geometric.data.Data
+    :param x_1:
+        Batch of final configurations stored in a torch_geometric.data.Data object.
+    :type x_1: torch_geometric.data.Data
+    :param corrector:
+        Corrector that corrects the distances (for instance, to consider periodic boundary conditions).
+    :type corrector: Corrector
+    """
+    assert torch.all(x_0.ptr == x_1.ptr)
+    assert x_0.pos.shape == x_1.pos.shape
+    assert x_0.species.shape == x_1.species.shape
+    assert x_0.cell.shape == x_1.cell.shape
+
+    # Pointers to start and end of each configuration.
+    ptr = x_0.ptr
+    # TODO: This could be trivially parallelized.
+    for i in range(len(ptr) - 1):
+        # Find minimum permutation for configuration.
+        p1 = x_0.pos[ptr[i]:ptr[i + 1]]  # Shape (n, 3).
+        p2 = x_1.pos[ptr[i]:ptr[i + 1]]  # Shape (n, 3).
+        distance_matrix = _distance_matrix(p1, p2, corrector)  # Shape (n, n)
+        row, col = linear_sum_assignment(distance_matrix.cpu())
+        # For square cost matrices, the row indices are sorted.
+        # See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linear_sum_assignment.html.
+        assert torch.all(row == torch.arange(len(row)))
+        # Reassign
+        x_0.pos[ptr[i]:ptr[i + 1]] = x_0.pos[ptr[i]:ptr[i + 1]][col]
+        x_0.species[ptr[i]:ptr[i + 1]] = x_0.species[ptr[i]:ptr[i + 1]][col]
+
+
+def _distance_matrix(x_0: torch.tensor, x_1: torch.tensor, corrector: Corrector) -> torch.tensor:
+    """
+    Compute the distance matrix between two sets of n positions.
+
+    The distance matrix is a matrix of shape (n, n) where the element (i, j) is the distance between the i-th position
+    in x_0 and the j-th position in x_1.
+
+    :param x_0:
+        First set of positions of shape (n, 3).
     :type x_0: torch.tensor
     :param x_1:
-        Final configuration.
+        Second set of positions of shape (n, 3).
     :type x_1: torch.tensor
-    :return row, col:
-        Indices of minimum permutation
-    :rtype row, col: (torch.tensor, torch.tensor)
-    '''
+    :param corrector:
+        Corrector that corrects the distances (for instance, to consider periodic boundary conditions).
+    :type corrector: Corrector
 
-    # Get data
-    ptr = x_0.ptr
-    for i in range(len(ptr)-1):
-
-        # Shuffle
-        assert x_0.pos.shape == x_1.pos.shape
-        assert x_0.species.shape == x_1.species.shape
-
-        # Minimum Perm
-        shuffled = torch.randperm(ptr[i+1] - ptr[i])
-        x_1.pos[ptr[i]:ptr[i+1]] = x_1.pos[ptr[i]:ptr[i+1]][shuffled]
-        x_1.species[ptr[i]:ptr[i+1]] = x_1.species[ptr[i]:ptr[i+1]][shuffled]
-        p1 = x_0.pos[ptr[i]:ptr[i+1]] 
-        p2 = x_1.pos[ptr[i]:ptr[i+1]]
-        distance_matrix = distance(p1[:, None, :], p2[None, :, :])
-        row, col = linear_sum_assignment(distance_matrix.cpu())
-
-        # Reassign
-        x_0.pos[ptr[i]:ptr[i+1]] = x_0.pos[ptr[i]:ptr[i+1]][row]
-        x_0.species[ptr[i]:ptr[i+1]] = x_0.species[ptr[i]:ptr[i+1]][row]
-        x_1.pos[ptr[i]:ptr[i+1]] = x_1.pos[ptr[i]:ptr[i+1]][col]
-        x_1.species[ptr[i]:ptr[i+1]] = x_1.species[ptr[i]:ptr[i+1]][col]
-
-    # Compute distance matrix
-    return x_0, x_1
-
-def periodic_distance(x_0, x_1):
-    '''
-    Compute Periodic distance between points
-    '''
-    dist = x_0 - x_1 - torch.floor(x_0 - x_1)
-    dist = torch.min(dist, 1.0-dist)
-    return torch.norm(dist, dim=-1)
-
-def euclidian_distance(x_0, x_1):
-    '''
-    Compute Euclidian distance between points
-    '''
-    dist = x_1 - x_0
-    return torch.norm(dist, dim=-1)
+    :return:
+        Distance matrix of shape (n, n).
+    :rtype distance: torch.tensor
+    """
+    assert x_0.shape == x_1.shape
+    assert len(x_0.shape) == 2
+    assert x_0.shape[1] == 3
+    # Unwrap all x_1 configurations with respect to all x_0 configurations.
+    # Use broadcasting: Shape (1, n, 3) - (n, 1, 3) = (n, n, 3).
+    x_1_prime = corrector.unwrap(x_0[None, :, :], x_1[:, None, :])  # Shape (n, n, 3).
+    # Use norm along last dimension.
+    return torch.norm(x_1_prime - x_0[None, :, :], dim=-1)

@@ -151,7 +151,7 @@ class Interpolant(ABC, TimeChecker):
     def get_corrector(self) -> Corrector:
         """
         Get the corrector implied by the interpolant (for instance, a corrector that considers periodic boundary
-        conditions)
+        conditions).
 
         :return:
             Corrector.
@@ -296,4 +296,16 @@ class StochasticInterpolant(ABC, TimeChecker):
             Integrated position.
         :rtype: torch.Tensor
         """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_corrector(self) -> Corrector:
+        """
+       Get the corrector implied by the stochastic interpolant (for instance, a corrector that considers periodic
+       boundary conditions).
+
+       :return:
+           Corrector.
+       :rtype: Corrector
+       """
         raise NotImplementedError

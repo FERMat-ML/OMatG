@@ -1,6 +1,7 @@
 from typing import Callable
 import torch
-from .abstracts import StochasticInterpolant
+from .abstracts import Corrector, StochasticInterpolant
+from .corrector import IdentityCorrector
 
 
 class SingleStochasticInterpolantIdentity(StochasticInterpolant):
@@ -109,3 +110,14 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         """
         # Always return new object.
         return x_t.clone()
+
+    def get_corrector(self) -> Corrector:
+        """
+       Get the corrector implied by the stochastic interpolant (for instance, a corrector that considers periodic
+       boundary conditions).
+
+       :return:
+           Corrector.
+       :rtype: Corrector
+       """
+        return IdentityCorrector()

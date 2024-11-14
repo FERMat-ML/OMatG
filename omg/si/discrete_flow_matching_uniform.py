@@ -3,7 +3,7 @@ import torch
 from torch.distributions import Categorical
 import torch.nn.functional as functional
 from omg.globals import MAX_ATOM_NUM
-from .abstracts import StochasticInterpolant
+from .abstracts import Corrector, StochasticInterpolant
 
 
 class DiscreteFlowMatchingUniform(StochasticInterpolant):
@@ -213,3 +213,14 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         x_t = Categorical(step_probs).sample() + 1
 
         return x_t
+
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the stochastic interpolant (for instance, a corrector that considers periodic
+        boundary conditions).
+
+        :return:
+            Corrector.
+        :rtype: Corrector
+        """
+        raise RuntimeError("Corrector not defined for DiscreteFlowMatchingUniform.")
