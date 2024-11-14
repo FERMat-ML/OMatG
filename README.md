@@ -50,5 +50,5 @@ Run the following command to compare distributions over the generated structures
 training dataset.
 
 ```bash
-python scripts/main.py visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_name}
+omg visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_name}
 ```
