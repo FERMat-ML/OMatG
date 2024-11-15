@@ -29,3 +29,8 @@ class NDependentGamma:
         cell = [a,a,a] * np.identity(3)
         return cell        
 
+class MaskDistribution:
+    def __init__(self, token=0):
+        self.token = token
+    def __call__(self, size):
+        return np.ones(size) * self.token

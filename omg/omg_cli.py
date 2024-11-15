@@ -198,10 +198,10 @@ class OMGTrainer(Trainer):
             plt.close()
 
             # Plot N-ary
-            plt.bar([k for k in n_types.keys()], [v / len(generated) for v in n_types.values()], alpha=0.8,
+            plt.bar([k for k in n_types.keys()], [v / len(generated.n_atoms) for v in n_types.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
-            plt.bar([k for k in ref_n_types], [v / len(reference) for v in ref_n_types.values()], alpha=0.5,
-                    label="Training", color="darkslategrey")
+            plt.bar([k for k in ref_n_types], [v / len(reference.n_atoms) for v in ref_n_types.values()], alpha=0.5,
+                    label="Training", color="darkslategrey", )
             plt.title("N-ary")
             plt.xlabel("Unique elements per structure")
             plt.ylabel("Density")
