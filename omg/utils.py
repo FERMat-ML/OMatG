@@ -1,10 +1,14 @@
 import torch
+import numpy as np
+from omg.globals import TOTAL_PARTICLES, MAX_ATOM_NUM
 from enum import Enum, auto
 from torch_geometric.data import Data
 from typing import List, Union
 from lightning.pytorch.callbacks import LearningRateFinder
 from lightning.pytorch.loggers.wandb import WandbLogger
 import matplotlib.pyplot as plt 
+import freud
+from ase import Atoms, Atom
 
 class DataField(Enum):
     pos = auto()
@@ -49,7 +53,7 @@ def reshape_t(t: torch.Tensor, n_atoms: torch.Tensor, data_field: DataField) -> 
         return t_per_atom                                                        
 
 # TODO: make options accesible to OMG via CLI
-def xyz_saver(data: Union [Data, List[Data]]):
+def xyz_saver(data: Union [Data, List[Data]], filename:str):
     """
     Takes data that has been generated and saves it as xyz file
     """
@@ -60,11 +64,12 @@ def xyz_saver(data: Union [Data, List[Data]]):
         data = [data]
     atoms = []
     for d in data:
+        d = d.cpu()
         batch_size = len(d.n_atoms)
         for i in range(batch_size):
             lower, upper = d.ptr[i*1], d.ptr[(i*1)+1]
             atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :], cell=d.cell[i, :, :], pbc=(1,1,1)))
-    write(f'{time.strftime("%Y%m%d-%H%M%S")}.xyz', atoms)
+    write(filename, atoms, append=True)
 
 class OMGLearningRateFinder(LearningRateFinder):
     def __init__(self, *args, **kwargs):
@@ -79,3 +84,37 @@ class OMGLearningRateFinder(LearningRateFinder):
         else:
             directory = trainer.logger.log_dir
         plt.savefig(directory + "/lr-finder.png")
+
+def add_ghost_particles(atoms:Atoms):
+    '''
+    Add fictitious particles at Voronoi vertices to enable the
+    "birth" and "death" of particles
+
+    :param atoms:
+        Object with crystal info
+    :type data: ase.Atoms
+    :return:
+        Maximally spaces particles
+    :rtype: torch.tensor
+    '''
+
+    # Get coordinates
+
+    # Initial Voronoi
+    box = freud.box.Box.from_matrix(atoms.get_cell())
+    voro = freud.locality.Voronoi()
+    while len(atoms) < TOTAL_PARTICLES:
+
+        # Recompote Voronoi
+        coords = atoms.get_positions()
+        vertices = np.round(np.concatenate(voro.compute((box, coords)).polytopes), decimals=5)
+        index = np.random.randint(0, len(vertices))
+        vertex = vertices[index]
+
+        # Add point
+        to_append = Atom('X', position=vertex)
+        to_append.tag = -1
+        atoms.append(to_append)
+
+    # Return
+    return atoms

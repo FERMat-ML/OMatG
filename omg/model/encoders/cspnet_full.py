@@ -32,7 +32,9 @@ class CSPNetFull(Encoder, CSPNet):
         pred_scalar = False,
         am_hidden_dim = 128, # added to acomodate adapter module
         prop_embed_dim = 32,  # needs to match the property embedding dimension of yaml file for time
-        prop = False
+        prop = False,
+        mask = False,
+        ghost = True
     ):
 
         super().__init__()
@@ -42,7 +44,12 @@ class CSPNetFull(Encoder, CSPNet):
         if self.smooth:
             self.node_embedding = nn.Linear(max_atoms, hidden_dim)
         else:
-            self.node_embedding = nn.Embedding(max_atoms, hidden_dim)
+            if self.ghost:
+                max_atoms += 1
+            if mask:
+                self.node_embedding = nn.Embedding(max_atoms + 1, hidden_dim)
+            else:
+                 self.node_embedding = nn.Embedding(max_atoms, hidden_dim)
         self.atom_latent_emb = nn.Linear(hidden_dim + latent_dim, hidden_dim)
         if act_fn == 'silu':
             self.act_fn = nn.SiLU()
@@ -65,6 +72,8 @@ class CSPNetFull(Encoder, CSPNet):
         self.max_atoms = max_atoms
         self.ln = ln
         self.edge_style = edge_style
+        self.mask = mask
+        self.ghost = ghost
         if self.ln:
             self.final_layer_norm = nn.LayerNorm(hidden_dim)
         if self.pred_type:
@@ -97,7 +106,11 @@ class CSPNetFull(Encoder, CSPNet):
         if self.smooth:
             node_features = self.node_embedding(atom_types)
         else:
-            node_features = self.node_embedding(atom_types - 1)
+            if self.mask:
+                node_features = self.node_embedding(atom_types)
+            else:
+                node_features = self.node_embedding(atom_types - 1)
+
         t_per_atom = t.repeat_interleave(num_atoms, dim=0)
         node_features = torch.cat([node_features, t_per_atom], dim=1)
         node_features = self.atom_latent_emb(node_features)
