@@ -2,7 +2,7 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import List, Union
 from ase import Atoms
-from ase.io import write
+from ase.io import read, write
 from lightning.pytorch.callbacks import LearningRateFinder
 from lightning.pytorch.loggers.wandb import WandbLogger
 import matplotlib.pyplot as plt
@@ -71,6 +71,39 @@ def xyz_saver(data: Union[Data, List[Data]], filename: Path) -> None:
             atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :],
                                cell=d.cell[i, :, :], pbc=(1, 1, 1)))
     write(filename, atoms)
+
+
+def xyz_reader(filename: Path) -> Data:
+    """
+    Reads an xyz file and returns a Data object
+    """
+    if not filename.suffix == ".xyz":
+        raise ValueError("The filename must have the suffix '.xyz'.")
+    # Read all atoms from the file.
+    all_configs = read(filename, index=":")
+    batch_size = len(all_configs)
+    n_atoms = torch.tensor([len(config) for config in all_configs], dtype=torch.int64)
+    sum_n_atoms = n_atoms.sum()
+    batch = torch.repeat_interleave(torch.arange(batch_size), n_atoms)
+    assert len(batch) == sum_n_atoms
+    ptr = torch.cat((torch.zeros(1, dtype=torch.int64), torch.cumsum(n_atoms, dim=0)))
+    assert len(ptr) == batch_size + 1
+    all_pos = torch.zeros((sum_n_atoms, 3))
+    all_species = torch.zeros(sum_n_atoms, dtype=torch.int64)
+    all_cell = torch.zeros((batch_size, 3, 3))
+
+    for config_index, config in enumerate(all_configs):
+        species = config.get_atomic_numbers()
+        pos = config.get_scaled_positions(wrap=True)
+        cell = config.get_cell()
+        assert len(species) == len(pos)
+        assert ptr[config_index + 1] - ptr[config_index] == len(species)
+        all_pos[ptr[config_index]:ptr[config_index + 1]] = torch.tensor(pos)
+        all_species[ptr[config_index]:ptr[config_index + 1]] = torch.tensor(species)
+        # cell[:] converts the ase.cell.Cell object to a numpy array.
+        all_cell[config_index] = torch.tensor(cell[:])
+
+    return Data(pos=all_pos, cell=all_cell, species=all_species, ptr=ptr, n_atoms=n_atoms, batch=batch)
 
 
 class OMGLearningRateFinder(LearningRateFinder):
