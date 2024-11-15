@@ -79,8 +79,15 @@ def xyz_reader(filename: Path) -> Data:
     """
     if not filename.suffix == ".xyz":
         raise ValueError("The filename must have the suffix '.xyz'.")
-    # Read all atoms from the file.
+    # Read all atoms from the file by using index=":".
     all_configs = read(filename, index=":")
+    return convert_ase_atoms_to_data(all_configs)
+
+
+def convert_ase_atoms_to_data(all_configs: List[Atoms]) -> Data:
+    """
+    Convert a list of ASE Atoms objects to a PyTorch Geometric Data object.
+    """
     batch_size = len(all_configs)
     n_atoms = torch.tensor([len(config) for config in all_configs], dtype=torch.int64)
     sum_n_atoms = n_atoms.sum()
