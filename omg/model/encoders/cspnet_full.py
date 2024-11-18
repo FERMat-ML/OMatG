@@ -40,7 +40,6 @@ class CSPNetFull(Encoder, CSPNet):
         self.ip = ip
         self.smooth = smooth
         self.hidden_dim = hidden_dim
-        self.max_atoms = max_atoms
         self.species_shift = 1
         if self.smooth:
             self.node_embedding = nn.Linear(max_atoms, hidden_dim)
