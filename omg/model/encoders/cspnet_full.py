@@ -27,7 +27,6 @@ class CSPNetFull(Encoder, CSPNet):
         max_neighbors = 20,
         ln = True,
         ip = True,
-        smooth = False,
         pred_type = True,
         pred_scalar = False,
         am_hidden_dim = 128, # added to acomodate adapter module
@@ -38,13 +37,9 @@ class CSPNetFull(Encoder, CSPNet):
         super().__init__()
 
         self.ip = ip
-        self.smooth = smooth
         self.hidden_dim = hidden_dim
         self.species_shift = 1
-        if self.smooth:
-            self.node_embedding = nn.Linear(max_atoms, hidden_dim)
-        else:
-            self.node_embedding = nn.Embedding(max_atoms, hidden_dim)
+        self.node_embedding = nn.Embedding(max_atoms, hidden_dim)
         self.atom_latent_emb = nn.Linear(hidden_dim + latent_dim, hidden_dim)
         if act_fn == 'silu':
             self.act_fn = nn.SiLU()
@@ -96,10 +91,7 @@ class CSPNetFull(Encoder, CSPNet):
 
         edges, frac_diff = self.gen_edges(num_atoms, frac_coords, lattices, node2graph)
         edge2graph = node2graph[edges[0]]
-        if self.smooth:
-            node_features = self.node_embedding(atom_types - self.species_shift)
-        else:
-            node_features = self.node_embedding(atom_types - self.species_shift)
+        node_features = self.node_embedding(atom_types - self.species_shift)
             
         t_per_atom = t.repeat_interleave(num_atoms, dim=0)
         node_features = torch.cat([node_features, t_per_atom], dim=1)
@@ -154,8 +146,5 @@ class CSPNetFull(Encoder, CSPNet):
         Enable a masked species (with token 0) in the encoder.
         """
         # The nodes have to be able to handle the additional masked species.
-        if self.smooth:
-            self.node_embedding = nn.Linear(self.max_atoms + 1, self.hidden_dim)
-        else:
-            self.node_embedding = nn.Embedding(self.max_atoms + 1, self.hidden_dim)
+        self.node_embedding = nn.Embedding(self.max_atoms + 1, self.hidden_dim)
         self.species_shift = 0
