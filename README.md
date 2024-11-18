@@ -56,3 +56,16 @@ training dataset:
 ```bash
 omg visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_name}
 ```
+
+## OMG Data Format
+
+For a batch size of batch_size, the `torch_geometric.data.Data` instances contain the following attributes:
+- `n_atoms`: `torch.Tensor` of shape `(batch_size, )` containing the number of atoms in each configuration.
+- `batch`: `torch.Tensor` of shape `(sum(n_atoms),)` containing the index of the configuration to which each atom 
+belongs.
+- `species`: `torch.Tensor` of shape `(sum(n_atoms),)` containing the atomic numbers of the atoms in the configurations.
+- `pos`: `torch.Tensor` of shape `(sum(n_atoms), 3)` containing the atomic positions of the atoms in the configurations.
+- `cell`: `torch.Tensor` of shape `(batch_size, 3, 3)` containing the cell vectors of the configurations.
+- `ptr`: `torch.Tensor` of shape `(batch_size + 1,)` containing the indices of the first atom of each configuration in 
+the `species` and `pos` tensors.
+- `property`: dict containing the properties of the configurations.
