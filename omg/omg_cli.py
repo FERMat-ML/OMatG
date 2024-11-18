@@ -202,6 +202,7 @@ class OMGTrainer(Trainer):
                     label="Generated", color="blueviolet")
             plt.bar([k for k in ref_n_types], [v / len(reference.n_atoms) for v in ref_n_types.values()], alpha=0.5,
                     label="Training", color="darkslategrey", )
+            plt.xticks(ticks=np.arange(1, 21, 1))
             plt.title("N-ary")
             plt.xlabel("Unique elements per structure")
             plt.ylabel("Density")
