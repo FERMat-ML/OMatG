@@ -1,3 +1,6 @@
+import torch
+import numpy as np
+from omg.globals import TOTAL_PARTICLES, MAX_ATOM_NUM
 from enum import Enum, auto
 from pathlib import Path
 from typing import List, Union
@@ -6,6 +9,8 @@ from ase.io import read, write
 from lightning.pytorch.callbacks import LearningRateFinder
 from lightning.pytorch.loggers.wandb import WandbLogger
 import matplotlib.pyplot as plt
+import freud
+from ase import Atoms, Atom
 import torch
 from torch_geometric.data import Data
 
@@ -65,6 +70,7 @@ def xyz_saver(data: Union[Data, List[Data]], filename: Path) -> None:
         data = [data]
     atoms = []
     for d in data:
+        d = d.cpu()
         batch_size = len(d.n_atoms)
         for i in range(batch_size):
             lower, upper = d.ptr[i * 1], d.ptr[(i * 1) + 1]
@@ -126,3 +132,37 @@ class OMGLearningRateFinder(LearningRateFinder):
         else:
             directory = trainer.logger.log_dir
         plt.savefig(directory + "/lr-finder.png")
+
+def add_ghost_particles(atoms:Atoms):
+    '''
+    Add fictitious particles at Voronoi vertices to enable the
+    "birth" and "death" of particles
+
+    :param atoms:
+        Object with crystal info
+    :type data: ase.Atoms
+    :return:
+        Maximally spaces particles
+    :rtype: torch.tensor
+    '''
+
+    # Get coordinates
+
+    # Initial Voronoi
+    box = freud.box.Box.from_matrix(atoms.get_cell())
+    voro = freud.locality.Voronoi()
+    while len(atoms) < TOTAL_PARTICLES:
+
+        # Recompote Voronoi
+        coords = atoms.get_positions()
+        vertices = np.round(np.concatenate(voro.compute((box, coords)).polytopes), decimals=5)
+        index = np.random.randint(0, len(vertices))
+        vertex = vertices[index]
+
+        # Add point
+        to_append = Atom('X', position=vertex)
+        to_append.tag = -1
+        atoms.append(to_append)
+
+    # Return
+    return atoms

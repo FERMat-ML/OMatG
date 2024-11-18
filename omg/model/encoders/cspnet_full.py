@@ -33,7 +33,8 @@ class CSPNetFull(Encoder, CSPNet):
         am_hidden_dim = 128, # added to acomodate adapter module
         prop_embed_dim = 32,  # needs to match the property embedding dimension of yaml file for time
         prop = False,
-        mask = True
+        mask = False,
+        ghost = True
     ):
 
         super().__init__()
@@ -70,6 +71,8 @@ class CSPNetFull(Encoder, CSPNet):
         self.ln = ln
         self.mask = mask
         self.edge_style = edge_style
+        self.mask = mask
+        self.ghost = ghost
         if self.ln:
             self.final_layer_norm = nn.LayerNorm(hidden_dim)
         if self.pred_type:
