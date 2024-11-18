@@ -1,7 +1,7 @@
 import pytest
 import torch
 from torch_geometric.data import Data
-from omg.sampler.distance_metrics import correct_for_min_perm_dist
+from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
 from omg.si.corrector import IdentityCorrector, PeriodicBoundaryConditionsCorrector
 
 

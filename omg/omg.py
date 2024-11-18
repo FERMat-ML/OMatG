@@ -6,7 +6,7 @@ import torch
 from torch import optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from omg.model.model import Model
-from omg.sampler.distance_metrics import correct_for_min_perm_dist
+from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
 from omg.sampler.sampler import Sampler
 from omg.si.abstracts import StochasticInterpolantSpecies
 from omg.si.stochastic_interpolants import StochasticInterpolants

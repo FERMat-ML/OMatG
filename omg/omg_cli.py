@@ -12,7 +12,7 @@ from torch_geometric.data import Data
 from omg.omg import OMG
 from omg.datamodule.dataloader import OMGDataModule, OMGTorchDataset
 from omg.globals import MAX_ATOM_NUM
-from omg.sampler.distance_metrics import correct_for_min_perm_dist
+from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
 
