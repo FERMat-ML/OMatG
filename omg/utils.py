@@ -64,7 +64,6 @@ def xyz_saver(data: Union[Data, List[Data]], filename: Path) -> None:
         data = [data]
     atoms = []
     for d in data:
-        d = d.cpu()
         batch_size = len(d.n_atoms)
         for i in range(batch_size):
             lower, upper = d.ptr[i * 1], d.ptr[(i * 1) + 1]
