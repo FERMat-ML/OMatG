@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABC
+import torch
 import torch.nn as nn
 
 
@@ -12,8 +13,12 @@ class Head(ABC, nn.Module):
         raise NotImplementedError
 
     @abstractmethod
-    def enable_masked_species(self) -> None:
+    def enable_masked_species(self, dtype: torch.dtype) -> None:
         """
-        Enable a masked species (with token 0) in the head.
+        Enable a masked species (with token 0) in the head while using the given data type.
+
+        :param dtype:
+            The data type.
+        :type dtype: torch.dtype
         """
         raise NotImplementedError
