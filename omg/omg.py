@@ -34,7 +34,7 @@ class OMG(L.LightningModule):
         if not isinstance(species_stochastic_interpolant, StochasticInterpolantSpecies):
             raise ValueError("Species stochastic interpolant must be of type StochasticInterpolantSpecies.")
         if species_stochastic_interpolant.uses_masked_species():
-            model.enable_masked_species(self.dtype)
+            model.enable_masked_species()
         model = model.double()  # TODO: Should this be an option?
         self.model = model
 

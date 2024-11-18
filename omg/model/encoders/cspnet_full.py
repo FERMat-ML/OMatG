@@ -40,6 +40,7 @@ class CSPNetFull(Encoder, CSPNet):
         self.ip = ip
         self.smooth = smooth
         self.hidden_dim = hidden_dim
+        self.max_atoms = max_atoms
         self.species_shift = 1
         if self.smooth:
             self.node_embedding = nn.Linear(max_atoms, hidden_dim)
@@ -149,17 +150,13 @@ class CSPNetFull(Encoder, CSPNet):
     def _convert_outputs(self, x, **kwargs):
         return x
 
-    def enable_masked_species(self, dtype: torch.dtype) -> None:
+    def enable_masked_species(self) -> None:
         """
-        Enable a masked species (with token 0) in the encoder while using the given data type.
-
-        :param dtype:
-            The data type.
-        :type dtype: torch.dtype
+        Enable a masked species (with token 0) in the encoder.
         """
         # The nodes have to be able to handle the additional masked species.
         if self.smooth:
-            self.node_embedding = nn.Linear(self.max_atoms + 1, self.hidden_dim, dtype=dtype)
+            self.node_embedding = nn.Linear(self.max_atoms + 1, self.hidden_dim)
         else:
-            self.node_embedding = nn.Embedding(self.max_atoms + 1, self.hidden_dim, dtype=dtype)
+            self.node_embedding = nn.Embedding(self.max_atoms + 1, self.hidden_dim)
         self.species_shift = 0

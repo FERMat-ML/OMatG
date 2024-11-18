@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-import torch
 import torch.nn as nn
 
-
 class Encoder(ABC, nn.Module):
+
     def __init__(self) -> None:
         super().__init__()
         pass
@@ -41,13 +40,9 @@ class Encoder(ABC, nn.Module):
         return x
 
     @abstractmethod
-    def enable_masked_species(self, dtype: torch.dtype) -> None:
+    def enable_masked_species(self) -> None:
         """
-        Enable a masked species (with token 0) in the encoder while using the given data type.
-
-        :param dtype:
-            The data type.
-        :type dtype: torch.dtype
+        Enable a masked species (with token 0) in the encoder.
         """
         raise NotImplementedError
 

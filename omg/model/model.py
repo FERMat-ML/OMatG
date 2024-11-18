@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 from omg.model.encoders.encoder import Encoder
 from omg.model.heads.head import Head
@@ -33,13 +32,9 @@ class Model(nn.Module):
         x = self.head(x, t, prop)
         return x
 
-    def enable_masked_species(self, dtype: torch.dtype) -> None:
+    def enable_masked_species(self) -> None:
         """
-        Enable a masked species (with token 0) in the model while using the given data type.
-
-        :param dtype:
-            The data type.
-        :type dtype: torch.dtype
+        Enable a masked species (with token 0) in the model.
         """
-        self.encoder.enable_masked_species(dtype)
-        self.head.enable_masked_species(dtype)
+        self.encoder.enable_masked_species()
+        self.head.enable_masked_species()
