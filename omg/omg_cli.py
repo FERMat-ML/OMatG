@@ -102,18 +102,24 @@ class OMGTrainer(Trainer):
         # Dictionary mapping number of unique elements in every training structure to occurrences of that number of
         # unique elements in all training structures.
         ref_n_types = {}
+        # Dictionary mapping number of elements in every training structure to occurrences of that number of elements.
+        ref_n_atoms = {}
 
         for i in range(1, MAX_ATOM_NUM + 1):
             ref_nums[i] = 0
         for i in range(len(reference.ptr) - 1):
             num = reference.species[reference.ptr[i]:reference.ptr[i + 1]]
             ref_vol.append(float(torch.abs(torch.det(reference.cell[i]))))
-            n_type = len(set(num))
+            n_type = len(set(int(n) for n in num))
             if n_type not in ref_n_types:
                 ref_n_types[n_type] = 0
             ref_n_types[n_type] += 1
             for n in num:
                 ref_nums[int(n)] += 1
+            n_atom = len(num)
+            if n_atom not in ref_n_atoms:
+                ref_n_atoms[n_atom] = 0
+            ref_n_atoms[n_atom] += 1
         assert sum(v for v in ref_n_types.values()) == len(reference.n_atoms)
 
         ref_root_mean_square_distances = []
@@ -137,17 +143,24 @@ class OMGTrainer(Trainer):
         # Dictionary mapping number of unique elements in every generated structure to occurrences of that number of
         # unique elements in all generated structures.
         n_types = {}
+        # Dictionary mapping number of elements in every generated structure to occurrences of that number of elements.
+        n_atoms = {}
+
         for i in range(1, MAX_ATOM_NUM + 1):
             nums[i] = 0
         for i in range(len(generated.ptr) - 1):
             num = generated.species[generated.ptr[i]:generated.ptr[i + 1]]
             vol.append(float(torch.abs(torch.det(generated.cell[i]))))
-            n_type = len(set(num))
+            n_type = len(set(int(n) for n in num))
             if n_type not in n_types:
                 n_types[n_type] = 0
             n_types[n_type] += 1
             for n in num:
                 nums[int(n)] += 1
+            n_atom = len(num)
+            if n_atom not in n_atoms:
+                n_atoms[n_atom] = 0
+            n_atoms[n_atom] += 1
         assert sum(v for v in n_types.values()) == len(generated.n_atoms)
 
         root_mean_square_distances = []
@@ -197,11 +210,23 @@ class OMGTrainer(Trainer):
             pdf.savefig()
             plt.close()
 
+            # Plot N-atoms
+            plt.bar([k for k in n_atoms.keys()], [v / len(generated.n_atoms) for v in n_atoms.values()], alpha=0.8,
+                    label="Generated", color="blueviolet")
+            plt.bar([k for k in ref_n_atoms.keys()], [v / len(reference.n_atoms) for v in ref_n_atoms.values()],
+                    alpha=0.5, label="Training", color="darkslategrey")
+            plt.title("Number of atoms")
+            plt.xlabel("Number of atoms per structure")
+            plt.ylabel("Density")
+            plt.legend()
+            pdf.savefig()
+            plt.close()
+
             # Plot N-ary
             plt.bar([k for k in n_types.keys()], [v / len(generated.n_atoms) for v in n_types.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
-            plt.bar([k for k in ref_n_types], [v / len(reference.n_atoms) for v in ref_n_types.values()], alpha=0.5,
-                    label="Training", color="darkslategrey", )
+            plt.bar([k for k in ref_n_types.keys()], [v / len(reference.n_atoms) for v in ref_n_types.values()],
+                    alpha=0.5, label="Training", color="darkslategrey")
             plt.title("N-ary")
             plt.xlabel("Unique elements per structure")
             plt.ylabel("Density")
