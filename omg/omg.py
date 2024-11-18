@@ -24,9 +24,7 @@ class OMG(L.LightningModule):
         super().__init__()
         self.si = si
         self.sampler = sampler
-        model = model.double()
         self.learning_rate = learning_rate
-        self.model = model
         self.use_min_perm_dist = use_min_perm_dist
         if self.use_min_perm_dist:
             self._pos_corrector = self.si.get_stochastic_interpolant("pos").get_corrector()
@@ -37,6 +35,8 @@ class OMG(L.LightningModule):
             raise ValueError("Species stochastic interpolant must be of type StochasticInterpolantSpecies.")
         if species_stochastic_interpolant.uses_masked_species():
             model.enable_masked_species(self.dtype)
+        model = model.double()  # TODO: Should this be an option?
+        self.model = model
 
         if not len(relative_si_costs) == len(self.si):
             raise ValueError("The number of stochastic interpolants and costs must be equal.")
