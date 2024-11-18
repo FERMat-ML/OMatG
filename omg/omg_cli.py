@@ -215,6 +215,11 @@ class OMGTrainer(Trainer):
                     label="Generated", color="blueviolet")
             plt.bar([k for k in ref_n_atoms.keys()], [v / len(reference.n_atoms) for v in ref_n_atoms.values()],
                     alpha=0.5, label="Training", color="darkslategrey")
+            plt.xticks(ticks=np.arange(min(min(k for k in n_atoms.keys()),
+                                           min(k for k in ref_n_atoms.keys())),
+                                       max(max(k for k in n_atoms.keys()),
+                                           max(k for k in ref_n_atoms.keys())),
+                                       1))
             plt.title("Number of atoms")
             plt.xlabel("Number of atoms per structure")
             plt.ylabel("Density")
@@ -227,6 +232,11 @@ class OMGTrainer(Trainer):
                     label="Generated", color="blueviolet")
             plt.bar([k for k in ref_n_types.keys()], [v / len(reference.n_atoms) for v in ref_n_types.values()],
                     alpha=0.5, label="Training", color="darkslategrey")
+            plt.xticks(ticks=np.arange(min(min(k for k in n_types.keys()),
+                                           min(k for k in ref_n_types.keys())),
+                                       max(max(k for k in n_types.keys()),
+                                           max(k for k in ref_n_types.keys())),
+                                       1))
             plt.title("N-ary")
             plt.xlabel("Unique elements per structure")
             plt.ylabel("Density")
