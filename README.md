@@ -17,7 +17,7 @@ executed again to also change the code of the installed package.
 Run the following command in any directory to train from scratch based on the configuration file `config.yaml`:
 
 ```bash
-omg fit --config config.yaml --trainer.accelerator=cpu
+omg fit --config config.yaml --trainer.accelerator=gpu
 ```
 
 This command will create checkpoints, log files, and cache files in the working directory.
@@ -30,7 +30,7 @@ In order to restart training from a checkpoint, add the `--model.load_checkpoint
 In order to seed the random number generators before training, use `--seed_everything=<seed>`.
 
 Exemplary configuration files can be found in the `omg/conf_examples` directory.
-
+K
 The training command can be executed in any directory. The configuration files contain paths to lmbd data files that are 
 used, e.g., for training. The path to these data files can either be relative to the working directory, or relative to 
 the `omg` directory (that is, use `"data/mp_20/val.lmdb"` for `lmdb_paths` in order to use the `mp_20` data set as in 
