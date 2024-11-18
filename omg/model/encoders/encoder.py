@@ -38,3 +38,11 @@ class Encoder(ABC, nn.Module):
         x = self._forward(*x, t, prop, **kwargs)
         x = self._convert_outputs(x, **kwargs)
         return x
+
+    @abstractmethod
+    def enable_masked_species(self) -> None:
+        """
+        Enable a masked species (with token 0) in the encoder.
+        """
+        raise NotImplementedError
+

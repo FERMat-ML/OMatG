@@ -32,21 +32,20 @@ class CSPNetFull(Encoder, CSPNet):
         pred_scalar = False,
         am_hidden_dim = 128, # added to acomodate adapter module
         prop_embed_dim = 32,  # needs to match the property embedding dimension of yaml file for time
-        prop = False,
-        mask = False
+        prop = False
     ):
 
         super().__init__()
 
         self.ip = ip
         self.smooth = smooth
+        self.hidden_dim = hidden_dim
+        self.max_atoms = max_atoms
+        self.species_shift = 1
         if self.smooth:
             self.node_embedding = nn.Linear(max_atoms, hidden_dim)
         else:
-            if mask:
-                self.node_embedding = nn.Embedding(max_atoms + 1, hidden_dim)
-            else:
-                 self.node_embedding = nn.Embedding(max_atoms, hidden_dim)
+            self.node_embedding = nn.Embedding(max_atoms, hidden_dim)
         self.atom_latent_emb = nn.Linear(hidden_dim + latent_dim, hidden_dim)
         if act_fn == 'silu':
             self.act_fn = nn.SiLU()
@@ -68,10 +67,7 @@ class CSPNetFull(Encoder, CSPNet):
         self.pred_type = pred_type
         self.max_atoms = max_atoms
         self.ln = ln
-        self.mask = mask
         self.edge_style = edge_style
-        self.mask = mask
-        self.ghost = ghost
         if self.ln:
             self.final_layer_norm = nn.LayerNorm(hidden_dim)
         if self.pred_type:
@@ -102,12 +98,9 @@ class CSPNetFull(Encoder, CSPNet):
         edges, frac_diff = self.gen_edges(num_atoms, frac_coords, lattices, node2graph)
         edge2graph = node2graph[edges[0]]
         if self.smooth:
-            node_features = self.node_embedding(atom_types)
+            node_features = self.node_embedding(atom_types - self.species_shift)
         else:
-            if self.mask:
-                node_features = self.node_embedding(atom_types)
-            else:
-                node_features = self.node_embedding(atom_types - 1)
+            node_features = self.node_embedding(atom_types - self.species_shift)
             
         t_per_atom = t.repeat_interleave(num_atoms, dim=0)
         node_features = torch.cat([node_features, t_per_atom], dim=1)
@@ -156,3 +149,14 @@ class CSPNetFull(Encoder, CSPNet):
 
     def _convert_outputs(self, x, **kwargs):
         return x
+
+    def enable_masked_species(self) -> None:
+        """
+        Enable a masked species (with token 0) in the encoder.
+        """
+        # The nodes have to be able to handle the additional masked species.
+        if self.smooth:
+            self.node_embedding = nn.Linear(self.max_atoms + 1, self.hidden_dim)
+        else:
+            self.node_embedding = nn.Embedding(self.max_atoms + 1, self.hidden_dim)
+        self.species_shift = 0

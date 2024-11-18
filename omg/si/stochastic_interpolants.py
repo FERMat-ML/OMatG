@@ -3,7 +3,6 @@ from tqdm import trange
 import torch
 from torch_geometric.data import Data
 from omg.globals import SMALL_TIME, BIG_TIME
-from omg.si import Corrector
 from omg.utils import reshape_t, DataField
 from .abstracts import StochasticInterpolant
 
@@ -245,21 +244,21 @@ class StochasticInterpolants(object):
         else:
             return x_t
 
-    def get_corrector(self, data_field: str) -> Corrector:
+    def get_stochastic_interpolant(self, data_field: str) -> StochasticInterpolant:
         """
-        Return the corrector associated with the data field.
+        Return the stochastic interpolant associated with the data field.
 
         :param data_field:
-            Data field for which the corrector is requested.
+            Data field for which the stochastic interpolant is requested.
         :type data_field: str
 
         :return:
-            Corrector associated with the data field.
-        :rtype: Corrector
+            Stochastic interpolant associated with the data field.
+        :rtype: StochasticInterpolant
         """
         try:
             df = DataField[data_field.lower()]
         except AttributeError:
             raise ValueError(f"Data field must be in {[d.name for d in DataField]}.")
         index = self._data_fields.index(df)
-        return self._stochastic_interpolants[index].get_corrector()
+        return self._stochastic_interpolants[index]

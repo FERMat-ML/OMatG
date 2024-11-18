@@ -309,3 +309,20 @@ class StochasticInterpolant(ABC, TimeChecker):
        :rtype: Corrector
        """
         raise NotImplementedError
+
+
+class StochasticInterpolantSpecies(ABC, StochasticInterpolant):
+    """
+    Abstract class for defining a stochastic interpolant between species x_0 and x_1 from two distributions p_0 and
+    p_1 at times t.
+    """
+    @abstractmethod
+    def uses_masked_species(self) -> bool:
+        """
+        Whether the stochastic interpolant uses an additional masked species.
+
+        :return:
+            Whether the stochastic interpolant uses an additional masked species.
+        :rtype: bool
+        """
+        raise NotImplementedError

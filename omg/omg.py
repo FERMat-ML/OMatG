@@ -3,11 +3,12 @@ import time
 from typing import Optional, Sequence
 import lightning as L
 import torch
-import torch.nn as nn
 from torch import optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from omg.model.model import Model
 from omg.sampler.distance_metrics import correct_for_min_perm_dist
 from omg.sampler.sampler import Sampler
+from omg.si.abstracts import StochasticInterpolantSpecies
 from omg.si.stochastic_interpolants import StochasticInterpolants
 from omg.utils import xyz_saver
 
@@ -16,7 +17,7 @@ class OMG(L.LightningModule):
     """
     Main module which is fit and and used to generate structures using Lightning CLI.
     """
-    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module,
+    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
                  learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False,
                  use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None) -> None:
@@ -28,9 +29,15 @@ class OMG(L.LightningModule):
         self.model = model
         self.use_min_perm_dist = use_min_perm_dist
         if self.use_min_perm_dist:
-            self._pos_corrector = self.si.get_corrector("pos")
+            self._pos_corrector = self.si.get_stochastic_interpolant("pos").get_corrector()
         else:
             self._pos_corrector = None
+        species_stochastic_interpolant = self.si.get_stochastic_interpolant("species")
+        if not isinstance(species_stochastic_interpolant, StochasticInterpolantSpecies):
+            raise ValueError("Species stochastic interpolant must be of type StochasticInterpolantSpecies.")
+        if species_stochastic_interpolant.uses_masked_species():
+            model.enable_masked_species()
+
         if not len(relative_si_costs) == len(self.si):
             raise ValueError("The number of stochastic interpolants and costs must be equal.")
         if not all(cost >= 0.0 for cost in relative_si_costs):
