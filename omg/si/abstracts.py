@@ -311,7 +311,7 @@ class StochasticInterpolant(ABC, TimeChecker):
         raise NotImplementedError
 
 
-class StochasticInterpolantSpecies(ABC, StochasticInterpolant):
+class StochasticInterpolantSpecies(StochasticInterpolant, ABC):
     """
     Abstract class for defining a stochastic interpolant between species x_0 and x_1 from two distributions p_0 and
     p_1 at times t.
