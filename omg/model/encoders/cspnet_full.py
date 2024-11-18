@@ -33,8 +33,7 @@ class CSPNetFull(Encoder, CSPNet):
         am_hidden_dim = 128, # added to acomodate adapter module
         prop_embed_dim = 32,  # needs to match the property embedding dimension of yaml file for time
         prop = False,
-        mask = False,
-        ghost = True
+        mask = False
     ):
 
         super().__init__()
