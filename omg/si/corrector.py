@@ -1,4 +1,5 @@
 import torch
+from torch_scatter import scatter_mean
 from .abstracts import Corrector
 
 
@@ -43,6 +44,33 @@ class IdentityCorrector(Corrector):
         :rtype: torch.Tensor
         """
         return x_1.clone()
+
+    def compute_center_of_mass(self, x: torch.Tensor, batch_indices: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the center of masses of the configurations in the batch with respect to the correction applied by this
+        corrector. This method just computes the standard center of mass.
+
+        The first dimension of the input tensor x is the batch dimension. Here, different elements in the batch can
+        belong to different configurations. The one-dimensional tensor batch_indices contains the indices of the
+        configurations for the first dimension of the input tensor x. The center of mass for every configuration should
+        be computed separately.
+
+        The dimensions of the returned tensor are the same as the dimensions of the input tensor x. This means that the
+        center of mass for every configuration is replicated for every element in the configuration.
+
+        :param x:
+            Input whose center of masses will be returned.
+        :type x: torch.Tensor
+        :param batch_indices:
+            The batch indices for the input tensor x.
+        :type batch_indices: torch.Tensor
+
+        :return:
+            Center of masses.
+        :rtype: torch.Tensor
+        """
+        x_com = scatter_mean(x, batch_indices, dim=0)
+        return torch.index_select(x_com, 0, batch_indices)
 
 
 class PeriodicBoundaryConditionsCorrector(Corrector):
@@ -107,3 +135,39 @@ class PeriodicBoundaryConditionsCorrector(Corrector):
         shortest_separation_vector = torch.remainder(separation_vector + length_over_two,
                                                      self._max_value - self._min_value) - length_over_two
         return x_0 + shortest_separation_vector
+
+    def compute_center_of_mass(self, x: torch.Tensor, batch_indices: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the center of masses of the configurations in the batch with respect to periodic boundary conditions.
+
+        The first dimension of the input tensor x is the batch dimension. Here, different elements in the batch can
+        belong to different configurations. The one-dimensional tensor batch_indices contains the indices of the
+        configurations for the first dimension of the input tensor x. The center of mass for every configuration should
+        be computed separately.
+
+        The dimensions of the returned tensor are the same as the dimensions of the input tensor x. This means that the
+        center of mass for every configuration is replicated for every element in the configuration.
+
+        This function uses the approach detailed in https://en.wikipedia.org/wiki/Center_of_mass.
+
+        :param x:
+            Input whose center of masses will be returned.
+        :type x: torch.Tensor
+        :param batch_indices:
+            The batch indices for the input tensor x.
+        :type batch_indices: torch.Tensor
+
+        :return:
+            Center of masses.
+        :rtype: torch.Tensor
+        """
+        assert torch.all(x >= self._min_value)
+        assert torch.all(x < self._max_value)
+        thetas = (x - self._min_value) / (self._max_value - self._min_value) * 2.0 * torch.pi
+        x_coordinates = torch.cos(thetas)
+        y_coordinates = torch.sin(thetas)
+        x_mean = scatter_mean(x_coordinates, batch_indices, dim=0)
+        y_mean = scatter_mean(y_coordinates, batch_indices, dim=0)
+        mean_theta = torch.atan2(-y_mean, -x_mean) + torch.pi  # Get angle with respect to (1, 0) in [0, 2pi).
+        x_com = mean_theta / (2.0 * torch.pi) * (self._max_value - self._min_value) + self._min_value
+        return torch.index_select(x_com, 0, batch_indices)
