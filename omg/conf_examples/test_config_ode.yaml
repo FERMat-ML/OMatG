@@ -27,8 +27,6 @@ model:
             differential_equation_type: "ODE"
             integrator_kwargs:
               method: "euler"
-            correct_center_of_mass: false
-            correct_center_of_mass_motion: true
       data_fields: 
         # if the order of the data_fields changes,
         # the order of the above StochasticInterpolant inputs must also change
