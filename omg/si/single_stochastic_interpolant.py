@@ -3,7 +3,7 @@ import torch
 from torchdiffeq import odeint
 from torchsde import sdeint
 from typing import Any, Optional, Callable
-from .abstracts import Epsilon, Interpolant, LatentGamma, StochasticInterpolant
+from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
 
 
 class DifferentialEquationType(Enum):
@@ -438,3 +438,14 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             x_t_new = sdeint(sde, x_t.reshape((len(batch_pointer) - 1, -1)), t_span, **self._integrator_kwargs)
 
         return self._corrector.correct(torch.tensor(x_t_new[-1].reshape(original_shape)))
+
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the stochastic interpolant (for instance, a corrector that considers periodic
+        boundary conditions).
+
+        :return:
+           Corrector.
+        :rtype: Corrector
+        """
+        return self._corrector

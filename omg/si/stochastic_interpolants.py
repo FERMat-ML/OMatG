@@ -2,8 +2,8 @@ from typing import Callable, List, Tuple, Union, Sequence
 from tqdm import trange
 import torch
 from torch_geometric.data import Data
-from omg.utils import reshape_t, DataField
 from omg.globals import SMALL_TIME, BIG_TIME
+from omg.utils import reshape_t, DataField
 from .abstracts import StochasticInterpolant
 
 
@@ -243,3 +243,22 @@ class StochasticInterpolants(object):
             return x_t, inter_list
         else:
             return x_t
+
+    def get_stochastic_interpolant(self, data_field: str) -> StochasticInterpolant:
+        """
+        Return the stochastic interpolant associated with the data field.
+
+        :param data_field:
+            Data field for which the stochastic interpolant is requested.
+        :type data_field: str
+
+        :return:
+            Stochastic interpolant associated with the data field.
+        :rtype: StochasticInterpolant
+        """
+        try:
+            df = DataField[data_field.lower()]
+        except AttributeError:
+            raise ValueError(f"Data field must be in {[d.name for d in DataField]}.")
+        index = self._data_fields.index(df)
+        return self._stochastic_interpolants[index]

@@ -3,10 +3,10 @@ import torch
 from torch.distributions import Categorical
 import torch.nn.functional as functional
 from omg.globals import MAX_ATOM_NUM
-from .abstracts import StochasticInterpolant
+from .abstracts import Corrector, StochasticInterpolantSpecies
 
 
-class DiscreteFlowMatchingUniform(StochasticInterpolant):
+class DiscreteFlowMatchingUniform(StochasticInterpolantSpecies):
     """
     Class for discrete flow matching (DFM) between categorical distributions based on https://arxiv.org/pdf/2402.04997.
 
@@ -213,3 +213,24 @@ class DiscreteFlowMatchingUniform(StochasticInterpolant):
         x_t = Categorical(step_probs).sample() + 1
 
         return x_t
+
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the stochastic interpolant (for instance, a corrector that considers periodic
+        boundary conditions).
+
+        :return:
+            Corrector.
+        :rtype: Corrector
+        """
+        raise RuntimeError("Corrector not defined for DiscreteFlowMatchingUniform.")
+
+    def uses_masked_species(self) -> bool:
+        """
+        Whether the stochastic interpolant uses an additional masked species.
+
+        :return:
+            Whether the stochastic interpolant uses an additional masked species.
+        :rtype: bool
+        """
+        return False

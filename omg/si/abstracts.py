@@ -151,7 +151,7 @@ class Interpolant(ABC, TimeChecker):
     def get_corrector(self) -> Corrector:
         """
         Get the corrector implied by the interpolant (for instance, a corrector that considers periodic boundary
-        conditions)
+        conditions).
 
         :return:
             Corrector.
@@ -295,5 +295,34 @@ class StochasticInterpolant(ABC, TimeChecker):
         :return:
             Integrated position.
         :rtype: torch.Tensor
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_corrector(self) -> Corrector:
+        """
+       Get the corrector implied by the stochastic interpolant (for instance, a corrector that considers periodic
+       boundary conditions).
+
+       :return:
+           Corrector.
+       :rtype: Corrector
+       """
+        raise NotImplementedError
+
+
+class StochasticInterpolantSpecies(StochasticInterpolant, ABC):
+    """
+    Abstract class for defining a stochastic interpolant between species x_0 and x_1 from two distributions p_0 and
+    p_1 at times t.
+    """
+    @abstractmethod
+    def uses_masked_species(self) -> bool:
+        """
+        Whether the stochastic interpolant uses an additional masked species.
+
+        :return:
+            Whether the stochastic interpolant uses an additional masked species.
+        :rtype: bool
         """
         raise NotImplementedError

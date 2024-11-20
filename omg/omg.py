@@ -1,30 +1,43 @@
-from omg.si.stochastic_interpolants import StochasticInterpolants
+from pathlib import Path
+import time
+from typing import Optional, Sequence
 import lightning as L
 import torch
-import torch.nn as nn
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch import optim
-from typing import Optional, Sequence
+from torch.optim.lr_scheduler import ReduceLROnPlateau
+from omg.model.model import Model
+from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
 from omg.sampler.sampler import Sampler
-from omg.utils import xyz_saver 
+from omg.si.abstracts import StochasticInterpolantSpecies
+from omg.si.stochastic_interpolants import StochasticInterpolants
+from omg.utils import xyz_saver
+
 
 class OMG(L.LightningModule):
     """
     Main module which is fit and and used to generate structures using Lightning CLI.
     """
-    
-    # TODO: specify argument types
-    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: nn.Module,
+    def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
-                 learning_rate: Optional[float] = 1.e-3,
-                 # TODO: make adjustable
-                 lr_scheduler: Optional[bool] = False) -> None:
+                 learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False,
+                 use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None) -> None:
         super().__init__()
-        self.si = si 
+        self.si = si
         self.sampler = sampler
-        model = model.double()
         self.learning_rate = learning_rate
+        self.use_min_perm_dist = use_min_perm_dist
+        if self.use_min_perm_dist:
+            self._pos_corrector = self.si.get_stochastic_interpolant("pos").get_corrector()
+        else:
+            self._pos_corrector = None
+        species_stochastic_interpolant = self.si.get_stochastic_interpolant("species")
+        if not isinstance(species_stochastic_interpolant, StochasticInterpolantSpecies):
+            raise ValueError("Species stochastic interpolant must be of type StochasticInterpolantSpecies.")
+        if species_stochastic_interpolant.uses_masked_species():
+            model.enable_masked_species()
+        model = model.double()  # TODO: Should this be an option?
         self.model = model
+
         if not len(relative_si_costs) == len(self.si):
             raise ValueError("The number of stochastic interpolants and costs must be equal.")
         if not all(cost >= 0.0 for cost in relative_si_costs):
@@ -37,10 +50,11 @@ class OMG(L.LightningModule):
             self.load_state_dict(checkpoint['state_dict'])
         # TODO: hardcoded normalization for losses
         self.loss_norm = {}
-        self.loss_norm['loss_species'] = 0.43 
+        self.loss_norm['loss_species'] = 0.43
         self.loss_norm['loss_pos'] = 0.020
         self.loss_norm['loss_cell'] = 0.022
         self.lr_scheduler = lr_scheduler
+        self.generation_xyz_filename = generation_xyz_filename
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
@@ -77,8 +91,12 @@ class OMG(L.LightningModule):
             Loss from training step
         :rtype: torch.Tensor
         """
-        x_0 = self.sampler.sample_p_0(x_1).to(self.device) 
-        
+        x_0 = self.sampler.sample_p_0(x_1).to(self.device)
+
+        # Minimize permutational distance between clusters.
+        if self.use_min_perm_dist:
+            correct_for_min_perm_dist(x_0, x_1, self._pos_corrector)
+
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)
 
@@ -87,8 +105,9 @@ class OMG(L.LightningModule):
         total_loss = torch.tensor(0.0, device=self.device)
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
-            losses[loss_key] = cost * losses[loss_key] # Don't normalize here so we can inspect the losses
-            total_loss += losses[loss_key] / self.loss_norm[loss_key] # normalize weights TODO: Look at how SDE losses are combined
+            losses[loss_key] = cost * losses[loss_key]  # Don't normalize here so we can inspect the losses
+            total_loss += losses[loss_key] / self.loss_norm[loss_key]  # normalize weights
+        # TODO: Look at how SDE losses are combined
 
         assert "loss_total" not in losses
         losses["loss_total"] = total_loss
@@ -108,7 +127,7 @@ class OMG(L.LightningModule):
         Performs one validation step given a batch of x_1
         """
 
-        x_0 = self.sampler.sample_p_0(x_1).to(self.device) 
+        x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)
@@ -134,6 +153,7 @@ class OMG(L.LightningModule):
         )
 
         return total_loss
+
     # TODO: what do we want to return
     def predict_step(self, x):
         """
@@ -142,14 +162,18 @@ class OMG(L.LightningModule):
         x_0 = self.sampler.sample_p_0(x).to(self.device)
         gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
-        xyz_saver(gen.to('cpu'))
+        filename = (Path(self.generation_xyz_filename) if self.generation_xyz_filename is not None
+                    else Path(f"{time.strftime("%Y%m%d-%H%M%S")}.xyz"))
+        init_filename = filename.with_stem(filename.stem + "_init")
+        xyz_saver(x_0.to("cpu"), init_filename)
+        xyz_saver(gen.to("cpu"), filename)
         return gen
 
-    #TODO allow for YAML config
+    # TODO allow for YAML config
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
         if self.lr_scheduler:
-            lr_scheduler = ReduceLROnPlateau(optimizer,patience=40)
+            lr_scheduler = ReduceLROnPlateau(optimizer, patience=40)
             lr_scheduler_config = {
                 "scheduler": lr_scheduler,
                 "interval": "epoch",
@@ -165,6 +189,3 @@ class OMG(L.LightningModule):
                     }
         else:
             return optimizer
-
-
-

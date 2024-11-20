@@ -63,7 +63,7 @@ model:
             init_args:
                 dim: 32 # has to be sam eas prop_emb_dim of adapter module
       property_keys: "band_gap"
-
+  use_min_perm_dist: false
 data:
   train_dataset:
     class_path: omg.datamodule.dataloader.OMGTorchDataset

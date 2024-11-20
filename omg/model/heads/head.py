@@ -1,15 +1,19 @@
+from abc import abstractmethod, ABC
 import torch.nn as nn
 
-# Might not even need base class for head but it's probably safer to assume we do so we can add additional functionalties if needed
-class Head(nn.Module):
 
+class Head(ABC, nn.Module):
     def __init__(self):
-        pass
+        super().__init__()
 
+    @abstractmethod
     def forward(self, x, t, prop=None):
         # need to define standard way of performing message passing
-
         raise NotImplementedError
 
-
-        #return ( (type_b, type_eta), (coord_b, coord_eta), (lattice_b, lattice_eta) ) 
+    @abstractmethod
+    def enable_masked_species(self) -> None:
+        """
+        Enable a masked species (with token 0) in the head.
+        """
+        raise NotImplementedError

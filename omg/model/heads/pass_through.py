@@ -1,9 +1,16 @@
-from torch import nn
+from .head import Head
 
-class PassThrough(nn.Module):
+
+class PassThrough(Head):
 
     def __init__(self):
         super().__init__() 
 
-    def forward(self, x, t, prop):
+    def forward(self, x, t, prop=None):
         return x
+
+    def enable_masked_species(self) -> None:
+        """
+        Enable a masked species (with token 0) in the head.
+        """
+        pass

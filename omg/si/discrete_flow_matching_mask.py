@@ -3,10 +3,10 @@ import torch
 from torch.distributions import Categorical
 import torch.nn.functional as functional
 from omg.globals import MAX_ATOM_NUM, BIG_TIME
-from .abstracts import StochasticInterpolant
+from .abstracts import Corrector, StochasticInterpolantSpecies
 
 
-class DiscreteFlowMatchingMask(StochasticInterpolant):
+class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
     """
     Class for discrete flow matching (DFM) between categorical distributions based on https://arxiv.org/pdf/2402.04997.
 
@@ -184,3 +184,24 @@ class DiscreteFlowMatchingMask(StochasticInterpolant):
         if abs(time + time_step) < BIG_TIME - 5e-3:  # Don't re-mask on the final step.
             x_t[will_mask] = self._mask_index
         return x_t
+
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the stochastic interpolant (for instance, a corrector that considers periodic
+        boundary conditions).
+
+        :return:
+            Corrector.
+        :rtype: Corrector
+        """
+        raise RuntimeError("Corrector not defined for DiscreteFlowMatchingMask.")
+
+    def uses_masked_species(self) -> bool:
+        """
+        Whether the stochastic interpolant uses an additional masked species.
+
+        :return:
+            Whether the stochastic interpolant uses an additional masked species.
+        :rtype: bool
+        """
+        return True

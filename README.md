@@ -17,7 +17,7 @@ executed again to also change the code of the installed package.
 Run the following command in any directory to train from scratch based on the configuration file `config.yaml`:
 
 ```bash
-omg fit --config config.yaml --trainer.accelerator=cpu
+omg fit --config config.yaml --trainer.accelerator=gpu
 ```
 
 This command will create checkpoints, log files, and cache files in the working directory.
@@ -38,17 +38,34 @@ exemplary configuration files).
 
 ## Sampling
 
-For generating new structures run the following command:
+For generating new structures in an xyz file, run the following command:
 
 ```bash
-omg predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt>
+omg predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt> --model.generation_xyz_filename=<xyz_file>
 ```
+
+For an xyz filename `filename.xyz`, this command will also create a file `filename_init.xyz` that contains the initial
+structures that were integrated to yield the structures in `filename.xyz`. This file is required for the visualization
+below.
 
 ## Visualize
 
 Run the following command to compare distributions over the generated structures in an xyz file to distributions over 
-training dataset.
+training dataset:
 
 ```bash
 omg visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_name}
 ```
+
+## OMG Data Format
+
+For a batch size of batch_size, the `torch_geometric.data.Data` instances contain the following attributes:
+- `n_atoms`: `torch.Tensor` of shape `(batch_size, )` containing the number of atoms in each configuration.
+- `batch`: `torch.Tensor` of shape `(sum(n_atoms),)` containing the index of the configuration to which each atom 
+belongs.
+- `species`: `torch.Tensor` of shape `(sum(n_atoms),)` containing the atomic numbers of the atoms in the configurations.
+- `pos`: `torch.Tensor` of shape `(sum(n_atoms), 3)` containing the atomic positions of the atoms in the configurations.
+- `cell`: `torch.Tensor` of shape `(batch_size, 3, 3)` containing the cell vectors of the configurations.
+- `ptr`: `torch.Tensor` of shape `(batch_size + 1,)` containing the indices of the first atom of each configuration in 
+the `species` and `pos` tensors.
+- `property`: dict containing the properties of the configurations.
