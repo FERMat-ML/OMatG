@@ -15,8 +15,7 @@ class LinearInterpolant(Interpolant):
         """
         super().__init__()
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -29,10 +28,6 @@ class LinearInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -41,8 +36,7 @@ class LinearInterpolant(Interpolant):
         assert self._check_t(t)
         return (1.0 - t) * x_0 + t * x_1
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -56,10 +50,6 @@ class LinearInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -91,8 +81,7 @@ class TrigonometricInterpolant(Interpolant):
         """
         super().__init__()
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -105,10 +94,6 @@ class TrigonometricInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -117,8 +102,7 @@ class TrigonometricInterpolant(Interpolant):
         assert self._check_t(t)
         return torch.cos(torch.pi * t / 2.0) * x_0 + torch.sin(torch.pi * t / 2.0) * x_1
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -132,10 +116,6 @@ class TrigonometricInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -173,8 +153,7 @@ class PeriodicLinearInterpolant(Interpolant):
         """
         super().__init__()
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -187,10 +166,6 @@ class PeriodicLinearInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -201,8 +176,7 @@ class PeriodicLinearInterpolant(Interpolant):
         out = t * torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
         return out + x_0 - torch.floor(out + x_0)
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -221,10 +195,6 @@ class PeriodicLinearInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -232,13 +202,7 @@ class PeriodicLinearInterpolant(Interpolant):
         """
         assert self._check_t(t)
         omega = 2.0 * torch.pi * (x_1 - x_0)
-        out = torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
-        # TODO: This COM issue should be fixed differently.
-        # Subtract mean w.r.t. number of atoms in each batch.
-        for index in range(1, len(batch_pointer)):
-            out[batch_pointer[index - 1]:batch_pointer[index]] -= (
-                out[batch_pointer[index - 1]:batch_pointer[index]].mean(dim=0))
-        return out
+        return torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
 
     def get_corrector(self) -> Corrector:
         """
@@ -264,8 +228,7 @@ class EncoderDecoderInterpolant(Interpolant):
         """
         super().__init__()
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -278,10 +241,6 @@ class EncoderDecoderInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -290,8 +249,7 @@ class EncoderDecoderInterpolant(Interpolant):
         assert self._check_t(t)
         return (torch.cos(torch.pi * t) ** 2) * torch.where(t < 0.5, x_0, x_1)
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -305,10 +263,6 @@ class EncoderDecoderInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -340,8 +294,7 @@ class MirrorInterpolant(Interpolant):
         """
         super().__init__()
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -354,10 +307,6 @@ class MirrorInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -367,8 +316,7 @@ class MirrorInterpolant(Interpolant):
         # Return new object here.
         return x_1.clone()
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -382,10 +330,6 @@ class MirrorInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -418,8 +362,7 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
         """
         super().__init__()
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -432,10 +375,6 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -444,8 +383,7 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
         assert self._check_t(t)
         return torch.sqrt(1.0 - (t ** 2)) * x_0 + t * x_1
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
@@ -459,10 +397,6 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -497,8 +431,7 @@ class PeriodicScoreBasedDiffusionModelInterpolant(Interpolant):
         super().__init__()
         self._corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t on a torus.
 
@@ -511,10 +444,6 @@ class PeriodicScoreBasedDiffusionModelInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -528,8 +457,7 @@ class PeriodicScoreBasedDiffusionModelInterpolant(Interpolant):
         x_t = torch.sqrt(1.0 - (t ** 2)) * x_0 + t * x_1prime
         return self._corrector.correct(x_t)
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 on a torus
         from two distributions p_0 and p_1 at times t with respect to time.
@@ -543,10 +471,6 @@ class PeriodicScoreBasedDiffusionModelInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -557,13 +481,7 @@ class PeriodicScoreBasedDiffusionModelInterpolant(Interpolant):
         # Correct for periodic boundaries by using the geodesic to move x_1 to x_1prime
         # Unlike the interpolation, the derivative does not need to be corrected
         x_1prime = self._corrector.unwrap(x_0, x_1)
-        out = -t / torch.sqrt(1.0 - (t ** 2)) * x_0 + x_1prime
-        # TODO: This COM issue should be fixed differently.
-        # Subtract mean w.r.t. number of atoms in each batch.
-        for index in range(1, len(batch_pointer)):
-            out[batch_pointer[index - 1]:batch_pointer[index]] -= (
-                out[batch_pointer[index - 1]:batch_pointer[index]].mean(dim=0))
-        return out
+        return -t / torch.sqrt(1.0 - (t ** 2)) * x_0 + x_1prime
 
     def get_corrector(self) -> Corrector:
         """
@@ -591,8 +509,7 @@ class PeriodicTrigonometricInterpolant(Interpolant):
         super().__init__()
         self._corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t on a torus.
 
@@ -605,10 +522,6 @@ class PeriodicTrigonometricInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -619,8 +532,7 @@ class PeriodicTrigonometricInterpolant(Interpolant):
         x_t = torch.cos(torch.pi * t / 2.0) * x_0 + torch.sin(torch.pi * t / 2.0) * x_1prime
         return self._corrector.correct(x_t)
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 on a torus
         from two distributions p_0 and p_1 at times t with respect to time.
@@ -634,10 +546,6 @@ class PeriodicTrigonometricInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -645,14 +553,8 @@ class PeriodicTrigonometricInterpolant(Interpolant):
         """
         assert self._check_t(t)
         x_1prime = self._corrector.unwrap(x_0, x_1)
-        out = (-torch.pi / 2.0 * torch.sin(torch.pi * t / 2.0) * x_0
-               + torch.pi / 2.0 * torch.cos(torch.pi * t / 2.0) * x_1prime)
-        # TODO: This COM issue should be fixed differently.
-        # Subtract mean w.r.t. number of atoms in each batch.
-        for index in range(1, len(batch_pointer)):
-            out[batch_pointer[index - 1]:batch_pointer[index]] -= (
-                out[batch_pointer[index - 1]:batch_pointer[index]].mean(dim=0))
-        return out
+        return (-torch.pi / 2.0 * torch.sin(torch.pi * t / 2.0) * x_0
+                + torch.pi / 2.0 * torch.cos(torch.pi * t / 2.0) * x_1prime)
 
     def get_corrector(self) -> Corrector:
         """
@@ -680,8 +582,7 @@ class PeriodicEncoderDecoderInterpolant(Interpolant):
         super().__init__()
         self._corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t on a torus.
 
@@ -694,10 +595,6 @@ class PeriodicEncoderDecoderInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -708,8 +605,7 @@ class PeriodicEncoderDecoderInterpolant(Interpolant):
         x_t = (torch.cos(torch.pi * t) ** 2) * torch.where(t < 0.5, x_0, x_1prime)
         return self._corrector.correct(x_t)
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Compute the derivative of the interpolant between points x_0 and x_1 on a torus
         from two distributions p_0 and p_1 at times t with respect to time.
@@ -723,10 +619,6 @@ class PeriodicEncoderDecoderInterpolant(Interpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -734,14 +626,8 @@ class PeriodicEncoderDecoderInterpolant(Interpolant):
         """
         assert self._check_t(t)
         x_1prime = self._corrector.unwrap(x_0, x_1)
-        out = (-2.0 * torch.cos(torch.pi * t) * torch.pi * torch.sin(torch.pi * t)
-               * torch.where(t < 0.5, x_0, x_1prime))
-        # TODO: This COM issue should be fixed differently.
-        # Subtract mean w.r.t. number of atoms in each batch.
-        for index in range(1, len(batch_pointer)):
-            out[batch_pointer[index - 1]:batch_pointer[index]] -= (
-                out[batch_pointer[index - 1]:batch_pointer[index]].mean(dim=0))
-        return out
+        return (-2.0 * torch.cos(torch.pi * t) * torch.pi * torch.sin(torch.pi * t)
+                * torch.where(t < 0.5, x_0, x_1prime))
 
     def get_corrector(self) -> Corrector:
         """
