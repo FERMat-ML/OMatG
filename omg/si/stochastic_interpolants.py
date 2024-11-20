@@ -94,7 +94,7 @@ class StochasticInterpolants(object):
             reshaped_t = reshape_t(t, n_atoms, data_field)
             assert reshaped_t.shape == x_0_dict[data_field.name].shape
             interpolated_x_t, z = stochastic_interpolant.interpolate(reshaped_t, x_0_dict[data_field.name],
-                                                                     x_1_dict[data_field.name])
+                                                                     x_1_dict[data_field.name], x_0.batch)
             # Assignment does not update x_t.
             x_t_dict[data_field.name].copy_(interpolated_x_t)
             assert data_field.name not in z_data

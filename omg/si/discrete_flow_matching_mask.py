@@ -30,7 +30,8 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
         self._mask_index = 0  # Real atoms start at index 1.
         self._noise = noise
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                    batch_indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t using discrete flow
         matching.
@@ -46,6 +47,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Interpolated points x_t, random variables z used for interpolation.

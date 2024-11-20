@@ -105,7 +105,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         self._correct_center_of_mass = correct_center_of_mass
         self._correct_center_of_mass_motion = correct_center_of_mass_motion
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                    batch_indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Stochastically interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -118,12 +119,18 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Stochastically interpolated points x_t, random variables z used for interpolation.
         :rtype: tuple[torch.Tensor, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
+        if self._correct_center_of_mass:
+            x_0 = self._corrector.correct(x_0 - self._corrector.compute_center_of_mass(x_0, batch_indices))
+            x_1 = self._corrector.correct(x_1 - self._corrector.compute_center_of_mass(x_1, batch_indices))
         # Output is already corrected.
         interpolate = self._interpolant.interpolate(t, x_0, x_1)
         if self._gamma is not None:
