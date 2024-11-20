@@ -14,6 +14,8 @@ model:
             gamma: null
             epsilon: null
             differential_equation_type: "ODE"
+            correct_center_of_mass: false
+            correct_center_of_mass_motion: true
         # lattice vectors
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
           init_args:
@@ -24,6 +26,8 @@ model:
               init_args:
                 c: 0.1
             differential_equation_type: "SDE"
+            correct_center_of_mass: false
+            correct_center_of_mass_motion: true
             # Some SDE kwargs
             #method: "euler"
             #adaptive: "False"
