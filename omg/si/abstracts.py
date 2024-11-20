@@ -326,6 +326,19 @@ class StochasticInterpolantSpecies(StochasticInterpolant, ABC):
     Abstract class for defining a stochastic interpolant between species x_0 and x_1 from two distributions p_0 and
     p_1 at times t.
     """
+
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the stochastic interpolant.
+
+        The stochastic interpolants for atom species should not define a corrector.
+
+        :return:
+            Corrector.
+        :rtype: Corrector
+        """
+        raise RuntimeError("Corrector not defined for StochasticInterpolantSpecies.")
+
     @abstractmethod
     def uses_masked_species(self) -> bool:
         """
