@@ -93,8 +93,10 @@ class StochasticInterpolants(object):
             assert data_field.name in x_t_dict
             reshaped_t = reshape_t(t, n_atoms, data_field)
             assert reshaped_t.shape == x_0_dict[data_field.name].shape
-            interpolated_x_t, z = stochastic_interpolant.interpolate(reshaped_t, x_0_dict[data_field.name],
-                                                                     x_1_dict[data_field.name], x_0.batch)
+            # Cell data requires different batch indices.
+            interpolated_x_t, z = stochastic_interpolant.interpolate(
+                reshaped_t, x_0_dict[data_field.name], x_1_dict[data_field.name],
+                x_0.batch if data_field != DataField.cell else torch.arange(len(x_0.n_atoms)))
             # Assignment does not update x_t.
             x_t_dict[data_field.name].copy_(interpolated_x_t)
             assert data_field.name not in z_data
@@ -168,9 +170,11 @@ class StochasticInterpolants(object):
 
             assert data_field.name in z_dict
             assert "loss_" + data_field.name not in losses
+            # Cell data requires different batch indices.
             losses["loss_" + data_field.name] = stochastic_interpolant.loss(
                 model_prediction_fn, reshaped_t, x_0_dict[data_field.name], x_1_dict[data_field.name],
-                x_t_dict[data_field.name], z[data_field.name], x_0.batch)
+                x_t_dict[data_field.name], z[data_field.name],
+                x_0.batch if data_field != DataField.cell else torch.arange(len(x_0.n_atoms)))
         return losses
 
     def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data],
@@ -232,8 +236,10 @@ class StochasticInterpolants(object):
 
                 # Do not use x_int_dict[data_field.name] here because it will be implicitly updated in the
                 # model_prediction_fn, which leads to unpredictable bugs.
-                new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(model_prediction_fn,
-                                                    x_t_dict[data_field.name], t, dt, x_0.batch))
+                # Cell data requires different batch indices.
+                new_x_t_dict[data_field.name].copy_(stochastic_interpolant.integrate(
+                    model_prediction_fn, x_t_dict[data_field.name], t, dt,
+                    x_0.batch if data_field != DataField.cell else torch.arange(len(x_0.n_atoms))))
 
             x_t = new_x_t.clone(*[data_field.name for data_field in self._data_fields])
             x_t_dict = x_t.to_dict()
