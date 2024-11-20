@@ -122,6 +122,24 @@ class OMGTrainer(Trainer):
             ref_n_atoms[n_atom] += 1
         assert sum(v for v in ref_n_types.values()) == len(reference.n_atoms)
 
+        rand_root_mean_square_distances = []
+        rand_pos_one = torch.rand_like(reference.pos)
+        rand_pos_two = torch.rand_like(reference.pos)
+        # Cell and species are not important here.
+        rand_data_one = Data(pos=rand_pos_one, cell=reference.cell, species=reference.species, ptr=reference.ptr,
+                             n_atoms=reference.n_atoms, batch=reference.batch)
+        rand_data_two = Data(pos=rand_pos_two, cell=reference.cell, species=reference.species, ptr=reference.ptr,
+                             n_atoms=reference.n_atoms, batch=reference.batch)
+        if use_min_perm_dist:
+            correct_for_min_perm_dist(rand_data_one, rand_data_two, fractional_coordinates_corrector)
+            rand_pos_one = rand_data_one.pos
+            rand_pos_two = rand_data_two.pos
+        rand_pos_prime = fractional_coordinates_corrector.unwrap(rand_pos_one, rand_pos_two)
+        distances_squared = torch.sum((rand_pos_prime - rand_pos_one) ** 2, dim=-1)
+        for i in range(len(reference.ptr) - 1):
+            ds = distances_squared[reference.ptr[i]:reference.ptr[i + 1]]
+            rand_root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
+
         ref_root_mean_square_distances = []
         rand_pos = torch.rand_like(reference.pos)
         # Cell and species are not important here.
@@ -264,6 +282,7 @@ class OMGTrainer(Trainer):
             ref_rmsds = np.array(ref_root_mean_square_distances)[:, np.newaxis]
             rmsds = np.array(root_mean_square_distances)[:, np.newaxis]
             trmsds = np.array(traveled_root_mean_square_distances)[:, np.newaxis]
+            rand_rmsds = np.array(rand_root_mean_square_distances)[:, np.newaxis]
             x_d = np.linspace(0.0, (3 * 0.5 * 0.5) ** 0.5, 1000)[:, np.newaxis]
             kde_gt = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(ref_rmsds)
             log_density_gt = kde_gt.score_samples(x_d)
@@ -271,9 +290,12 @@ class OMGTrainer(Trainer):
             log_density_gen = kde_gen.score_samples(x_d)
             kde_traveled = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(trmsds)
             log_density_traveled = kde_traveled.score_samples(x_d)
+            kde_rand = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(rand_rmsds)
+            log_density_rand = kde_rand.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
             plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
             plt.plot(x_d, np.exp(log_density_traveled), color="cadetblue", label="Traveled")
+            plt.plot(x_d, np.exp(log_density_rand), color="steelblue", label="Random")
             plt.xlabel("Root Mean Square Distance of Fractional Coordinates")
             plt.ylabel("Density")
             plt.legend()
