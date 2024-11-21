@@ -441,7 +441,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             # affects only on state-size dimension.
             x_t_new = sdeint(sde, x_t.reshape((original_shape[0], -1)), t_span, **self._integrator_kwargs)
 
-        return self._corrector.correct(torch.tensor(x_t_new[-1].reshape(original_shape)))
+        return self._corrector.correct(x_t_new[-1].reshape(original_shape))
 
     def get_corrector(self) -> Corrector:
         """
