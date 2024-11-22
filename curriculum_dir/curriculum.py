@@ -1,5 +1,5 @@
 import subprocess
-import sys
+from argparse import ArgumentParser
 import torch
 import yaml
 import numpy as np
@@ -12,7 +12,7 @@ class ValidLessons(Enum):
     pos = 1
     cell = 2
 
-def write_lesson(filename:str, lessons:ValidLessons):
+def write_lesson(filename:str, lessons:list):
     '''
     Write a config file for a particular "lesson" in curriculum learning style
     whereby only one interpolant will be trained
@@ -36,16 +36,16 @@ def write_lesson(filename:str, lessons:ValidLessons):
     distributions = template['model']['sampler']['init_args']
     costs = template['model']['relative_si_costs']
     valid_lessons = list(ValidLessons)
-    for lesson in lessons:
-        for i in range(len(interpolants)):
-            if i == lesson.value:
-                interpolants[i] = interpolants[i]
-                costs[i] = 1 / (len(lessons))
-            else:
-                distributions[f'{valid_lessons[i].name}_distribution'] = 'omg.sampler.distributions.MirrorData'
-                interpolants[i]['class_path'] = mask_path
-                interpolants[i]['init_args'] = None
-                costs[i] = 0.0
+    lesson_ints = [element.value for element in lessons]
+    for i in range(len(interpolants)):
+        if i in lesson_ints:
+            interpolants[i] = interpolants[i]
+            costs[i] = 1 / (len(lessons))
+        else:
+            distributions[f'{valid_lessons[i].name}_distribution'] = 'omg.sampler.distributions.MirrorData'
+            interpolants[i]['class_path'] = mask_path
+            interpolants[i]['init_args'] = None
+            costs[i] = 0.0
 
     # Save lesson
     template['model']['si']['init_args']['stochastic_interpolants'] = interpolants
@@ -61,8 +61,11 @@ def write_lesson(filename:str, lessons:ValidLessons):
 if __name__ == '__main__':
 
     # Get config file
-    filename = sys.argv[1]
+    parser = ArgumentParser(prog="FlowMMConverter", description="convert FlowMM data to xyz files")
+    parser.add_argument("--lessons", type=str, nargs='+', help="Lessons to train model")
+    parser.add_argument("--template", type=str, help="Path to template file")
+    args = parser.parse_args()
 
     # Write a lesson
-    lesson = [ValidLessons(1)]
-    write_lesson(filename, lesson)
+    lesson = [ValidLessons[element] for element in args.lessons]
+    write_lesson(args.template, lesson)
