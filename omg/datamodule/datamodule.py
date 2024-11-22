@@ -1,6 +1,5 @@
-import copy
 import hashlib
-from importlib.resources import as_file, files
+from importlib.resources import files
 import json
 import os
 import shutil
@@ -11,7 +10,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, Callable
 import pickle as pkl
 import lmdb
 import torch
-# import numpy as np
+import numpy as np
 from loguru import logger
 from monty.dev import requires
 from tqdm import tqdm
@@ -1203,6 +1202,40 @@ class DataModule:
 
     pass
 
+
+class OverfittingDataModule(DataModule):
+    """
+    Datamodule that always returns a single configuration.
+
+    Can be used to overfit the model to a single configuration.
+    """
+    def __init__(self, lmdb_paths=None, property_keys=None, structure_index: Optional[int] = None) -> None:
+        super().__init__(lmdb_paths=lmdb_paths, property_keys=property_keys)
+        if structure_index is not None:
+            if not 0 <= structure_index < len(self):
+                raise DataModuleError(f"Invalid structure index {structure_index}, "
+                                      f"possible values are 0 to {len(self) - 1}.")
+            self._structure_index = structure_index
+        else:
+            self._structure_index = np.random.randint(0, len(self))
+
+    def __getitem__(self, idx: Union[int, torch.Tensor, List]) -> Union[Configuration, "DataModule"]:
+        """
+        Get the configuration at index `idx`. If the index is a list, it returns a new
+        dataset with the configurations at the indices.
+
+        This method ignores the given indices and always return the same configuration.
+
+        Args:
+         idx: Index of the configuration to get or a list of indices.
+
+        Returns:
+            The fixed configuration at a fixed index or a new dataset with the the same configuration replicated.
+        """
+        if isinstance(idx, int):
+            return super().__getitem__(self._structure_index)
+        else:
+            return super().__getitem__([self._structure_index for _ in idx])
 
 
 class ConfigurationError(Exception):
