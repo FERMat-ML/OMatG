@@ -40,7 +40,8 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
 
         """
         assert torch.equal(x_0, x_1)
-        return x_0, torch.zeros_like(x_0)
+        # Always return new object.
+        return x_0.clone(), torch.zeros_like(x_0)
 
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
