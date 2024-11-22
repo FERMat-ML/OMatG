@@ -1,4 +1,4 @@
-from typing import List, Union, Callable
+from typing import Union, Callable
 from functools import partial
 
 import torch
@@ -9,7 +9,7 @@ from omg.globals import MAX_ATOM_NUM
 from .sampler import Sampler
 from ..datamodule.dataloader import OMGData
 from torch_geometric.data import Batch
-from .distributions import NDependentGamma 
+from .distributions import NDependentGamma, InformedLatticeDistribution
 
 class SampleFromRNG(Sampler):
     """
@@ -72,7 +72,7 @@ class SampleFromRNG(Sampler):
         self._frac = convert_to_fractional
         self.batch_size = batch_size
 
-    def sample_p_0(self, x1: "OMGDataBatch" = None):
+    def sample_p_0(self, x1: "OMGDataBatch" = None) -> "OMGDataBatch":
         if x1 is not None:
             n = x1.n_atoms
             n = n.to(torch.int64)
@@ -91,7 +91,7 @@ class SampleFromRNG(Sampler):
 
             # TODO: maybe we don't need to restrict to symmetric->At least we aren't doing so for p1
             # TODO: make more generic in the future
-            if isinstance(self.distribution[2],NDependentGamma):
+            if isinstance(self.distribution[2], (NDependentGamma, InformedLatticeDistribution)):
                 lattice_ = self.distribution[2](n[i].item())
             else:
                 lattice_ = self.distribution[2](size=(3,3))

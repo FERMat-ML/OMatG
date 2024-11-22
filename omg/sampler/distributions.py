@@ -58,28 +58,27 @@ class InformedLatticeDistribution(object):
         self._length_distribution = LogNormal(torch.tensor(self._length_log_means),
                                               torch.tensor(self._length_log_stds))
 
-    def __call__(self, size: int):
+    def __call__(self, number_of_atoms: int):
         """
-        Sample a batch of 3x3 lattice vectors.
+        Sample three three-dimensional lattice vectors in a 3x3 matrix for the given number of atoms.
 
-        :param size:
-            Number of samples to generate.
-        :type size: int
+        This method ignores the given number of atoms.
+
+        :param number_of_atoms:
+            Number of atoms.
+        :type number_of_atoms: int
 
         :return:
             A numpy array of shape (size, 3, 3).
         :rtype: numpy.ndarray
         """
-        lengths = self._length_distribution.sample((size,)).numpy()
+        lengths = self._length_distribution.sample().numpy()
         # Generate uniform angles between 60 and 120 degrees.
         # Ase wants angles in degrees.
-        angles = ((torch.rand((size, 3)) * 60.0) + 60.0).numpy()
-        assert lengths.shape == (size, 3)
-        assert angles.shape == (size, 3)
-        cells = np.zeros((size, 3, 3))
-        for i in range(size):
-            cells[i] = cellpar_to_cell(np.concatenate((lengths[i], angles[i])))
-        return cells
+        angles = ((torch.rand(3) * 60.0) + 60.0).numpy()
+        assert lengths.shape == (3,)
+        assert angles.shape == (3,)
+        return cellpar_to_cell(np.concatenate((lengths, angles)))
 
 
 class MaskDistribution:
