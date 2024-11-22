@@ -91,7 +91,7 @@ class OMGData(Data):
 
         if convert_to_fractional:
             with torch.no_grad():
-                graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell))
+                graph.pos = torch.remainder(torch.matmul(graph.pos, torch.inverse(graph.cell)), 1.0)
 
         graph.cell = graph.cell.unsqueeze(0)
         return graph
@@ -136,7 +136,7 @@ class OMGData(Data):
         graph.property = {}
         if convert_to_fractional:
             with torch.no_grad():
-                graph.pos = torch.matmul(graph.pos, torch.inverse(graph.cell).to(graph.pos.dtype))
+                graph.pos = torch.remainder(torch.matmul(graph.pos, torch.inverse(graph.cell).to(graph.pos.dtype)), 1.0)
 
         graph.property = property_dict
 

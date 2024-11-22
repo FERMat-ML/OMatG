@@ -31,9 +31,9 @@ model:
         - "cell"
       integration_time_steps: 100
   relative_si_costs:
-    - 0.333333333333
-    - 0.333333333333
-    - 0.333333333333
+    - 0.0  # Irrelevant.
+    - 0.5
+    - 0.5
   sampler:
     class_path: omg.sampler.sample_from_rng.SampleFromRNG
     init_args:
@@ -61,7 +61,7 @@ model:
       #       init_args:
       #           dim: 32 # has to be sam eas prop_emb_dim of adapter module
       # property_keys: "band_gap"
-  use_min_perm_dist: false
+  use_min_perm_dist: true
 data:
   train_dataset:
     class_path: omg.datamodule.dataloader.OMGTorchDataset

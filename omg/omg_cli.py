@@ -12,7 +12,7 @@ from torch_geometric.data import Data
 from omg.omg_lightning import OMGLightning
 from omg.datamodule.dataloader import OMGDataModule, OMGTorchDataset
 from omg.globals import MAX_ATOM_NUM
-from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
+from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
 
@@ -131,7 +131,8 @@ class OMGTrainer(Trainer):
         rand_data_two = Data(pos=rand_pos_two, cell=reference.cell, species=reference.species, ptr=reference.ptr,
                              n_atoms=reference.n_atoms, batch=reference.batch)
         if use_min_perm_dist:
-            correct_for_min_perm_dist(rand_data_one, rand_data_two, fractional_coordinates_corrector)
+            correct_for_minimum_permutation_distance(rand_data_one, rand_data_two, fractional_coordinates_corrector,
+                                                     switch_species=False)
             rand_pos_one = rand_data_one.pos
             rand_pos_two = rand_data_two.pos
         rand_pos_prime = fractional_coordinates_corrector.unwrap(rand_pos_one, rand_pos_two)
@@ -146,7 +147,8 @@ class OMGTrainer(Trainer):
         rand_data = Data(pos=rand_pos, cell=reference.cell, species=reference.species, ptr=reference.ptr,
                          n_atoms=reference.n_atoms, batch=reference.batch)
         if use_min_perm_dist:
-            correct_for_min_perm_dist(rand_data, reference, fractional_coordinates_corrector)
+            correct_for_minimum_permutation_distance(rand_data, reference, fractional_coordinates_corrector,
+                                                     switch_species=False)
             rand_pos = rand_data.pos
         rand_pos_prime = fractional_coordinates_corrector.unwrap(reference.pos, rand_pos)
         distances_squared = torch.sum((rand_pos_prime - reference.pos) ** 2, dim=-1)
@@ -196,7 +198,8 @@ class OMGTrainer(Trainer):
         rand_data = Data(pos=rand_pos, cell=generated.cell, species=generated.species, ptr=generated.ptr,
                          n_atoms=generated.n_atoms, batch=generated.batch)
         if use_min_perm_dist:
-            correct_for_min_perm_dist(rand_data, generated, fractional_coordinates_corrector)
+            correct_for_minimum_permutation_distance(rand_data, generated, fractional_coordinates_corrector,
+                                                     switch_species=False)
             rand_pos = rand_data.pos
         rand_pos_prime = fractional_coordinates_corrector.unwrap(generated.pos, rand_pos)
         distances_squared = torch.sum((rand_pos_prime - generated.pos) ** 2, dim=-1)

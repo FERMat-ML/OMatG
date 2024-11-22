@@ -94,7 +94,7 @@ class SampleFromRNG(Sampler):
                 pos = self.distribution[1](x1.pos[x1.ptr[i]:x1.ptr[i+1]])
             else:
                 pos = self.distribution[1](size=(n[i].item(), 3))
-            pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
+                pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
 
             # TODO: maybe we don't need to restrict to symmetric->At least we aren't doing so for p1
             # TODO: make more generic in the future
@@ -112,7 +112,7 @@ class SampleFromRNG(Sampler):
             #cell = cell + cell.T # TODO: A27 equation looks redundant.
 
             # its already [0,1) fractional coordinates so no need to convert
-            if not self._frac:
+            if not self._frac and not isinstance(self.distribution[1], MirrorData):
                 pos = np.dot(pos, cell)
 
             configs.append(OMGData.from_data(species, pos, cell, convert_to_fractional=False))
