@@ -1,10 +1,10 @@
 from typing import Callable
 import torch
-from .abstracts import Corrector, StochasticInterpolant
+from .abstracts import Corrector, StochasticInterpolantSpecies
 from .corrector import IdentityCorrector
 
 
-class SingleStochasticInterpolantIdentity(StochasticInterpolant):
+class SingleStochasticInterpolantIdentity(StochasticInterpolantSpecies):
     """
     Stochastic interpolant x_t = x_0 = x_1, between points x_0 and x_1 from two distributions p_0 and p_1 at
     times t. Differs from the SingleStochasticInterpolant class insofar as the quantity represented 
@@ -122,3 +122,13 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
        :rtype: Corrector
        """
         return IdentityCorrector()
+
+    def uses_masked_species(self) -> bool:
+        """
+        Return whether the stochastic interpolant uses masked species.
+
+        :return:
+            Whether the stochastic interpolant uses masked species.
+        :rtype: bool
+        """
+        return False
