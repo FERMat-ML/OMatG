@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, Callable
 import pickle as pkl
 import lmdb
 import torch
-import numpy as np
 from loguru import logger
 from monty.dev import requires
 from tqdm import tqdm
@@ -1209,15 +1208,12 @@ class OverfittingDataModule(DataModule):
 
     Can be used to overfit the model to a single configuration.
     """
-    def __init__(self, lmdb_paths=None, property_keys=None, structure_index: Optional[int] = None) -> None:
+    def __init__(self, lmdb_paths=None, property_keys=None, structure_index: int = 0) -> None:
         super().__init__(lmdb_paths=lmdb_paths, property_keys=property_keys)
-        if structure_index is not None:
-            if not 0 <= structure_index < len(self):
-                raise DataModuleError(f"Invalid structure index {structure_index}, "
+        if not 0 <= structure_index < len(self):
+            raise DataModuleError(f"Invalid structure index {structure_index}, "
                                       f"possible values are 0 to {len(self) - 1}.")
-            self._structure_index = structure_index
-        else:
-            self._structure_index = np.random.randint(0, len(self))
+        self._structure_index = structure_index
 
     def __getitem__(self, idx: Union[int, torch.Tensor, List]) -> Union[Configuration, "DataModule"]:
         """
