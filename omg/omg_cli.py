@@ -192,7 +192,6 @@ class OMGTrainer(Trainer):
 
             sg_group, sg_num, cs = get_space_group(struc)
             if (sg_group is None) or (sg_num is None) or (cs is None):
-                print("Space group could not be determined.")
                 ref_sg_fail += 1
                 continue
             else:
@@ -284,12 +283,6 @@ class OMGTrainer(Trainer):
             sg_group, sg_num, cs = get_space_group(struc)
             if (sg_group is None) or (sg_num is None) or (cs is None):
                 sg_fail += 1
-                print("cell")
-                print(struc.get_cell())
-                print("frac_positions")
-                print(struc.get_scaled_positions())
-                print("species")
-                print(struc.get_chemical_symbols())
                 continue
             else:
                 assert isinstance(sg_num, int)

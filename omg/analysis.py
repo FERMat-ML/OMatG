@@ -122,7 +122,7 @@ def get_coordination_numbers_species(atoms, covalent_percent=1.25, dis=None, nam
     return cn_dict
 
 
-def get_space_group(atoms, niggli=False, symprec=1e-5, angle_tolerance=5):
+def get_space_group(atoms, niggli=False, symprec=1e-3, angle_tolerance=0.5):
     """Calculate the space group of a given structure, optionally using the primitive cell.
     Assumes atoms is a ase Atoms object. 
     Niggli will generate the Niggli reduced cell. 
@@ -142,6 +142,7 @@ def get_space_group(atoms, niggli=False, symprec=1e-5, angle_tolerance=5):
     if sg is None:
         #raise RuntimeError("Space group could not be determined.")
         print("Space group could not be determined.")
+        print(spglib.get_error_message())
         return None, None, None
     
     sg_group = sg.split()[0]
