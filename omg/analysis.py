@@ -55,7 +55,7 @@ def get_coordination_numbers(atoms, covalent_percent=1.25, dis=None):
         cn.append(len(i))
     return cn
 
-def get_coordination_numbers_species(atoms, covalent_percent=1.25, dis=None, naming='number'):
+def get_coordination_numbers_species(atoms, covalent_percent=1.25, dis=None, naming='species'):
     """
     Returns a dictionary with the species as keys and the coordination numbers as values, determined by
     distance and covalent radii averaged over each species.  By default a bond is defined as 120% of the combined radii
@@ -122,10 +122,10 @@ def get_coordination_numbers_species(atoms, covalent_percent=1.25, dis=None, nam
     return cn_dict
 
 
-def get_space_group(atoms, niggli=False, symprec=0.1):
+def get_space_group(atoms, niggli=False, symprec=1e-5, angle_tolerance=5):
     """Calculate the space group of a given structure, optionally using the primitive cell.
     Assumes atoms is a ase Atoms object. 
-    Niggli will use the Niggli reduced cell. 
+    Niggli will generate the Niggli reduced cell. 
     Symprec is the symmetry precision used by spglib.
 
     Returns the space group symbol (str) and space group number (int) and crystal system (str).
@@ -134,10 +134,15 @@ def get_space_group(atoms, niggli=False, symprec=0.1):
     if niggli:
         atoms = atoms.niggli_reduce() # TODO: SEEMS BROKEN (returning NoneType on test case)
     
-    sg = spglib.get_spacegroup((atoms.get_cell(), atoms.get_scaled_positions(), atoms.get_atomic_numbers()), symprec=symprec)
+    spglib_cell = (atoms.get_cell(), atoms.get_scaled_positions(), atoms.get_atomic_numbers())
+    #spglib_cell_primitive = spglib.find_primitive(spglib_cell)
+
+    sg = spglib.get_spacegroup(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
 
     if sg is None:
-        raise RuntimeError("Space group could not be determined.")
+        #raise RuntimeError("Space group could not be determined.")
+        print("Space group could not be determined.")
+        return None, None, None
     
     sg_group = sg.split()[0]
     sg_num = int(sg.split()[1].replace('(', '').replace(')', ''))

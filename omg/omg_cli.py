@@ -15,6 +15,7 @@ from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
+from omg.analysis import get_coordination_numbers, get_coordination_numbers_species, get_space_group
 
 
 class OMGTrainer(Trainer):
@@ -49,31 +50,31 @@ class OMGTrainer(Trainer):
         init_atoms = xyz_reader(initial_file)
         gen_atoms = xyz_reader(final_file)
         ref_atoms = self._load_dataset_atoms(datamodule.train_dataset, datamodule.train_dataset.convert_to_fractional)
-
+        
         # Plot data
         self._plot_to_pdf(ref_atoms, init_atoms, gen_atoms, plot_name, model.use_min_perm_dist)
 
     @staticmethod
-    def _load_dataset_atoms(dataset: OMGTorchDataset, fractional: bool = True) -> Data:
+    def _load_dataset_atoms(dataset: OMGTorchDataset, fractional: bool = True) -> List[Atoms]:
         """
         Load lmdb file atoms.
         """
         all_ref_atoms = []
-        for element in dataset:
-            assert len(element.species) == element.pos.shape[0]
-            assert element.pos.shape[1] == 3
-            assert element.cell[0].shape == (3, 3)
+        for struc in dataset:
+            assert len(struc.species) == struc.pos.shape[0]
+            assert struc.pos.shape[1] == 3
+            assert struc.cell[0].shape == (3, 3)
             if fractional:
-                atoms = Atoms(numbers=element.species, scaled_positions=element.pos, cell=element.cell[0],
+                atoms = Atoms(numbers=struc.species, scaled_positions=struc.pos, cell=struc.cell[0],
                               pbc=(True, True, True))
             else:
-                atoms = Atoms(numbers=element.species, positions=element.pos, cell=element.cell[0],
+                atoms = Atoms(numbers=struc.species, positions=struc.pos, cell=struc.cell[0],
                               pbc=(True, True, True))
             all_ref_atoms.append(atoms)
-        return convert_ase_atoms_to_data(all_ref_atoms)
+        return all_ref_atoms
 
     @staticmethod
-    def _plot_to_pdf(reference: Data, initial: Data, generated: Data, plot_name: str, use_min_perm_dist: bool) -> None:
+    def _plot_to_pdf(reference: List[Atoms], initial: List[Atoms], generated: List[Atoms], plot_name: str, use_min_perm_dist: bool) -> None:
         """
         Plot figures for data analysis/matching between training and generated data.
 
@@ -95,6 +96,15 @@ class OMGTrainer(Trainer):
         """
         fractional_coordinates_corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
 
+        # Keep ASE Atoms versions of certain inputs
+        reference_atoms = reference
+        generated_atoms = generated
+
+        # Convert to Data
+        reference = convert_ase_atoms_to_data(reference)
+        initial = convert_ase_atoms_to_data(initial)
+        generated = convert_ase_atoms_to_data(generated)
+
         # List of volumes of all training structures.
         ref_vol = []
         # Dictionary mapping atom number to occurrences of that atom number in all training structures.
@@ -104,6 +114,14 @@ class OMGTrainer(Trainer):
         ref_n_types = {}
         # Dictionary mapping number of elements in every training structure to occurrences of that number of elements.
         ref_n_atoms = {}
+        # List mapping distribution of avg coordination numbers across all training structures.
+        ref_avg_cn = []
+        # Dictionary mapping coordination numbers by species in training structures.
+        ref_cn_species = {}
+        # Dictionary mapping occurences of space groups in training structures.
+        ref_sg = {}
+        # Dictionary mapping occurences of crystal systems in training structures.
+        ref_crystal_sys = {}
 
         for i in range(1, MAX_ATOM_NUM + 1):
             ref_nums[i] = 0
@@ -154,6 +172,40 @@ class OMGTrainer(Trainer):
             ds = distances_squared[reference.ptr[i]:reference.ptr[i + 1]]
             ref_root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
 
+        ref_sg_fail = 0
+        for struc in reference_atoms:
+            ref_avg_cn.append(np.mean(get_coordination_numbers(struc)))
+
+            naming = 'species'
+            cn_dict = get_coordination_numbers_species(struc, naming=naming)
+            for key, val in cn_dict.items():
+                if naming == 'species':
+                    assert isinstance(key, str)
+                elif naming == 'number':
+                    assert isinstance(key, int)
+                else:
+                    raise ValueError("Invalid naming argument. Must be 'species' or 'number'.")
+                assert isinstance(val, list)
+                if key not in ref_cn_species:
+                    ref_cn_species[key] = []
+                ref_cn_species[key].extend(val)
+
+            sg_group, sg_num, cs = get_space_group(struc)
+            if (sg_group is None) or (sg_num is None) or (cs is None):
+                print("Space group could not be determined.")
+                ref_sg_fail += 1
+                continue
+            else:
+                assert isinstance(sg_num, int)
+                assert 1 <= sg_num <= 230
+                assert isinstance(cs, str)
+                if sg_num not in ref_sg:
+                    ref_sg[sg_num] = 0
+                ref_sg[sg_num] += 1
+                if cs not in ref_crystal_sys:
+                    ref_crystal_sys[cs] = 0
+                ref_crystal_sys[cs] += 1
+
         # List of volumes of all generated structures.
         vol = []
         # Dictionary mapping atom number to occurrences of that atom number in all generated structures.
@@ -163,6 +215,14 @@ class OMGTrainer(Trainer):
         n_types = {}
         # Dictionary mapping number of elements in every generated structure to occurrences of that number of elements.
         n_atoms = {}
+        # List mapping distribution of avg coordination numbers across all generated structures.
+        avg_cn = []
+        # Dictionary mapping coordination numbers by species in generated structures.
+        cn_species = {}
+        # Dictionary mapping occurences of space groups in generated structures.
+        sg = {}
+        # Dictionary mapping occurences of crystal systems in generated structures.
+        crystal_sys = {}
 
         for i in range(1, MAX_ATOM_NUM + 1):
             nums[i] = 0
@@ -203,6 +263,47 @@ class OMGTrainer(Trainer):
         for i in range(len(generated.ptr) - 1):
             ds = distances_squared[generated.ptr[i]:generated.ptr[i + 1]]
             root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
+
+        sg_fail = 0
+        for struc in generated_atoms:
+            avg_cn.append(np.mean(get_coordination_numbers(struc)))
+
+            cn_dict = get_coordination_numbers_species(struc, naming=naming)
+            for key, val in cn_dict.items():
+                if naming == 'species':
+                    assert isinstance(key, str)
+                elif naming == 'number':
+                    assert isinstance(key, int)
+                else:
+                    raise ValueError("Invalid naming argument. Must be 'species' or 'number'.")
+                assert isinstance(val, list)
+                if key not in cn_species:
+                    cn_species[key] = []
+                cn_species[key].extend(val)
+
+            sg_group, sg_num, cs = get_space_group(struc)
+            if (sg_group is None) or (sg_num is None) or (cs is None):
+                sg_fail += 1
+                print("cell")
+                print(struc.get_cell())
+                print("frac_positions")
+                print(struc.get_scaled_positions())
+                print("species")
+                print(struc.get_chemical_symbols())
+                continue
+            else:
+                assert isinstance(sg_num, int)
+                assert 1 <= sg_num <= 230
+                assert isinstance(cs, str)
+                if sg_num not in sg:
+                    sg[sg_num] = 0
+                sg[sg_num] += 1
+                if cs not in crystal_sys:
+                    crystal_sys[cs] = 0
+                crystal_sys[cs] += 1
+
+        print("Number of times space group identification failed for training dataset: {}/{} total".format(ref_sg_fail, len(reference_atoms)))
+        print("Number of times space group identification failed for generated dataset: {}/{} total".format(sg_fail, len(generated_atoms)))
 
         # Plot
         with PdfPages(plot_name) as pdf:
@@ -278,6 +379,7 @@ class OMGTrainer(Trainer):
 
             # Compute distributions for fractional coordinate movement.
             # Scott's rule for bandwidth.
+            
             bandwidth = np.std(ref_root_mean_square_distances) * len(ref_root_mean_square_distances) ** (-1 / 5)
             ref_rmsds = np.array(ref_root_mean_square_distances)[:, np.newaxis]
             rmsds = np.array(root_mean_square_distances)[:, np.newaxis]
@@ -302,6 +404,93 @@ class OMGTrainer(Trainer):
             pdf.savefig()
             plt.close()
 
+            # Compute distributions of structures by average coordination number
+            # Plot avg cn KDE
+            # KernelDensity expects array of shape (n_samples, n_features).
+            # We only have a single feature.
+            bandwidth = np.std(ref_avg_cn) * len(ref_avg_cn) ** (-1 / 5)  # Scott's rule.
+            ref_avg_cn = np.array(ref_avg_cn)[:, np.newaxis]
+            avg_cn = np.array(avg_cn)[:, np.newaxis]
+            min_cn = min(ref_avg_cn.min(), avg_cn.min())
+            max_cn = max(ref_avg_cn.max(), avg_cn.max())
+            x_d = np.linspace(min_cn - 1.0, max_cn + 1.0, 1000)[:, np.newaxis]
+            kde_gt = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(ref_avg_cn)
+            log_density_gt = kde_gt.score_samples(x_d)
+            kde_gen = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(avg_cn)
+            log_density_gen = kde_gen.score_samples(x_d)
+            plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
+            plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
+            plt.title("Average coordination number by structure")
+            plt.xlabel("Average CN")
+            plt.ylabel("Density")
+            plt.legend()
+            pdf.savefig()
+            plt.close()
+
+            # Compute distributions of average coordination number by species
+            ref_avg_cn_species = {}
+            avg_cn_species = {}
+            for key, val in ref_cn_species.items():
+                if naming == 'species':
+                    assert isinstance(key, str)
+                elif naming == 'number':
+                    assert isinstance(key, int)
+                else:
+                    raise ValueError("Invalid naming argument. Must be 'species' or 'number'.")
+                assert isinstance(val, list)
+                ref_avg_cn_species[key] = np.mean(val)
+            for key, val in cn_species.items():
+                if naming == 'species':
+                    assert isinstance(key, str)
+                elif naming == 'number':
+                    assert isinstance(key, int)
+                else:
+                    raise ValueError("Invalid naming argument. Must be 'species' or 'number'.")
+                assert isinstance(val, list)
+                avg_cn_species[key] = np.mean(val)
+
+            plt.bar([k for k in avg_cn_species.keys()], [v for v in avg_cn_species.values()], alpha=0.8,
+                    label="Generated", color="blueviolet")
+            plt.bar([k for k in ref_avg_cn_species.keys()], [v for v in ref_avg_cn_species.values()], alpha=0.5,
+                    label="Training", color="darkslategrey")
+            plt.xticks(rotation=75, ha='right', fontsize=4) 
+            plt.title("Average coordination number by species")
+            plt.xlabel("Species")
+            plt.ylabel("Average CN")
+            plt.tight_layout()
+            plt.legend()
+            pdf.savefig()
+            plt.close()
+
+            # Compute distributions of space groups
+            total_sg = sum(v for v in sg.values())
+            plt.bar([k for k in sg.keys()], [v / total_sg for v in sg.values()], alpha=0.8,
+                    label="Generated", color="blueviolet")
+            total_sg_ref = sum(v for v in ref_sg.values())
+            plt.bar([k for k in ref_sg.keys()], [v / total_sg_ref for v in ref_sg.values()], alpha=0.5,
+                    label="Training", color="darkslategrey")
+            plt.title("Space group distribution")
+            plt.xlabel("Space group number")
+            plt.ylabel("Density")
+            plt.legend()
+            pdf.savefig()
+            plt.close()
+
+            # Compute distributions of crystal systems
+            total_cs = sum(v for v in crystal_sys.values())
+            plt.bar([k for k in crystal_sys.keys()], [v / total_cs for v in crystal_sys.values()], alpha=0.8,
+                    label="Generated", color="blueviolet")
+            total_cs_ref = sum(v for v in ref_crystal_sys.values())
+            plt.bar([k for k in ref_crystal_sys.keys()], [v / total_cs_ref for v in ref_crystal_sys.values()], alpha=0.5,
+                    label="Training", color="darkslategrey")
+            plt.xticks(rotation=45, ha='right', fontsize=8)
+            plt.title("Crystal system distribution")
+            plt.xlabel("Crystal system")
+            plt.ylabel("Density")
+            plt.tight_layout()
+            plt.legend()
+            pdf.savefig()
+            plt.close()
 
 class OMGCLI(LightningCLI):
     def __init__(self, *args, **kwargs):
