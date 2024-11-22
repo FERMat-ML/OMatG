@@ -13,9 +13,9 @@ from omg.si.stochastic_interpolants import StochasticInterpolants
 from omg.utils import xyz_saver
 
 
-class OMG(L.LightningModule):
+class OMGLightning(L.LightningModule):
     """
-    Main module which is fit and and used to generate structures using Lightning CLI.
+    Main module which is fit and used to generate structures using Lightning CLI.
     """
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
@@ -72,7 +72,7 @@ class OMG(L.LightningModule):
             Predicted b and etas for species, coordinates and lattices, respectively.
         :rtype: Sequence[Sequence[torch.Tensor]]
         """
-        x = self.model(x, t)
+        x = self.model(x_t, t)
         return x
 
     def on_fit_start(self):

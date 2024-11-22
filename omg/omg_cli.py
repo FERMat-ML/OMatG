@@ -9,7 +9,7 @@ import numpy as np
 from sklearn.neighbors import KernelDensity
 import torch
 from torch_geometric.data import Data
-from omg.omg import OMG
+from omg.omg_lightning import OMGLightning
 from omg.datamodule.dataloader import OMGDataModule, OMGTorchDataset
 from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
@@ -21,7 +21,7 @@ class OMGTrainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def visualize(self, model: OMG, datamodule: OMGDataModule, xyz_file: str, plot_name: str = "viz.pdf") -> None:
+    def visualize(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str, plot_name: str = "viz.pdf") -> None:
         """
         Compare the distributions of the volume, the element composition, and the number of unique elements per
         structure in the training and generated dataset. Also, plot the root mean-square distance between the fractional
@@ -30,7 +30,7 @@ class OMGTrainer(Trainer):
 
         :param model:
             OMG model (argument required and automatically passed by lightning CLI).
-        :type model: OMG
+        :type model: OMGLightning
         :param datamodule:
             OMG datamodule (argument required and automatically passed by lightning CLI).
         :param xyz_file:

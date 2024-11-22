@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 
 class Sampler(ABC):
@@ -10,9 +11,12 @@ class Sampler(ABC):
         pass
 
     @abstractmethod
-    def sample_p_0(self):
+    def sample_p_0(self, x_1: Optional["OMGDataBatch"]) -> "OMGDataBatch":
         """
         Sample initial configuration.
+
+        TODO: Document what exactly is stored OMGDataBatch.
+        TODO: Do we even need the possibility for None?
 
         The sample will always have the format
         [species, positions, cell]

@@ -435,9 +435,13 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         with torch.no_grad():
             # Diagonal noise in torchsde expects a tensor of shape (batch_size, state_size).
             # See https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md.
-            x_t_new = sdeint(sde, x_t.reshape((len(batch_pointer) - 1, -1)), t_span, **self._integrator_kwargs)
+            # Since every configuration in the batch can have a different number of atoms, such a reshape is generally
+            # not possible. Therefore, we keep the first dimension as the batch size and flatten the rest.
+            # This should not matter for the integration, as the noise is diagonal. Every noise term is independent and
+            # affects only on state-size dimension.
+            x_t_new = sdeint(sde, x_t.reshape((original_shape[0], -1)), t_span, **self._integrator_kwargs)
 
-        return self._corrector.correct(torch.tensor(x_t_new[-1].reshape(original_shape)))
+        return self._corrector.correct(x_t_new[-1].reshape(original_shape))
 
     def get_corrector(self) -> Corrector:
         """
