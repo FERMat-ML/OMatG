@@ -131,4 +131,5 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolantSpecies):
             Whether the stochastic interpolant uses masked species.
         :rtype: bool
         """
+        # Dataset does not contain masked species.
         return False
