@@ -72,7 +72,7 @@ class OMGLightning(L.LightningModule):
             Predicted b and etas for species, coordinates and lattices, respectively.
         :rtype: Sequence[Sequence[torch.Tensor]]
         """
-        x = self.model(x, t)
+        x = self.model(x_t, t)
         return x
 
     def on_fit_start(self):
