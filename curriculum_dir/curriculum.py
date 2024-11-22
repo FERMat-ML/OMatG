@@ -42,9 +42,9 @@ def write_lesson(filename:str, lessons:list):
             interpolants[i] = interpolants[i]
             costs[i] = 1 / (len(lessons))
         else:
-            distributions[f'{valid_lessons[i].name}_distribution'] = 'omg.sampler.distributions.MirrorData'
+            distributions[f'{valid_lessons[i].name}_distribution'] = {'class_path' : 'omg.sampler.distributions.MirrorData'}
             interpolants[i]['class_path'] = mask_path
-            interpolants[i]['init_args'] = None
+            interpolants[i]['init_args'] = {}
             costs[i] = 0.0
 
     # Save lesson
@@ -53,8 +53,8 @@ def write_lesson(filename:str, lessons:list):
     base, ext = filename.split(".", 1)
     lesson_slice = ''
     for lesson in lessons:
-        lesson_slice += f'{lesson.name}_'
-    lesson_name = f"{base}_{lesson_slice}.{ext}"
+        lesson_slice += f'_{lesson.name}'
+    lesson_name = f"{base}{lesson_slice}.{ext}"
     with open(f'lessons/{lesson_name}', 'w') as file:
         yaml.safe_dump(template, file)
 
