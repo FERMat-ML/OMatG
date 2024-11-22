@@ -1,5 +1,8 @@
+from ase.geometry.cell import cellpar_to_cell
 import numpy as np
 import scipy
+import torch
+from torch.distributions import LogNormal
 # TODO: !!!Highly WIP!!! from MatterGen for lattice sampling. Not sure it actually works like they say it does!
 '''
 class NDependentScaledNormal:
@@ -28,6 +31,56 @@ class NDependentGamma:
         a = v ** (1/3)
         cell = [a,a,a] * np.identity(3)
         return cell        
+
+
+class InformedLatticeDistribution(object):
+    """
+    Informed lattice distribution for different datasets as used by FlowMM (see https://arxiv.org/abs/2406.04713).
+    """
+
+    def __init__(self, dataset_name: str) -> None:
+        # Numbers taken from
+        # https://github.com/facebookresearch/flowmm/blob/main/src/flowmm/rfm/manifolds/lattice_params_stats.yaml
+        if dataset_name == "carbon_24":
+            self._length_log_means = [0.9852757453918457, 1.3865314722061157, 1.7068126201629639]
+            self._length_log_stds = [0.14957907795906067, 0.20431114733219147, 0.2403733879327774]
+        elif dataset_name == "mp_20":
+            self._length_log_means = [1.575442910194397, 1.7017393112182617, 1.9781638383865356]
+            self._length_log_stds = [0.24437622725963593, 0.26526379585266113, 0.3535512685775757]
+        elif dataset_name == "mpts_52":
+            self._length_log_means = [1.6565313339233398, 1.8407557010650635, 2.1225264072418213]
+            self._length_log_stds = [0.2952289581298828, 0.3340013027191162, 0.41885802149772644]
+        elif dataset_name == "perov":
+            self._length_log_means = [1.419227957725525, 1.419227957725525, 1.419227957725525]
+            self._length_log_stds = [0.07268335670232773, 0.07268335670232773, 0.07268335670232773]
+        else:
+            raise ValueError(f"Unknown dataset name: {dataset_name}")
+        self._length_distribution = LogNormal(torch.tensor(self._length_log_means),
+                                              torch.tensor(self._length_log_stds))
+
+    def __call__(self, size: int):
+        """
+        Sample a batch of 3x3 lattice vectors.
+
+        :param size:
+            Number of samples to generate.
+        :type size: int
+
+        :return:
+            A numpy array of shape (size, 3, 3).
+        :rtype: numpy.ndarray
+        """
+        lengths = self._length_distribution.sample((size,)).numpy()
+        # Generate uniform angles between 60 and 120 degrees.
+        # Ase wants angles in degrees.
+        angles = ((torch.rand((size, 3)) * 60.0) + 60.0).numpy()
+        assert lengths.shape == (size, 3)
+        assert angles.shape == (size, 3)
+        cells = np.zeros((size, 3, 3))
+        for i in range(size):
+            cells[i] = cellpar_to_cell(np.concatenate((lengths[i], angles[i])))
+        return cells
+
 
 class MaskDistribution:
     def __init__(self, token=0):
