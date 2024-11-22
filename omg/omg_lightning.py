@@ -6,7 +6,7 @@ import torch
 from torch import optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from omg.model.model import Model
-from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
+from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.sampler.sampler import Sampler
 from omg.si.abstracts import StochasticInterpolantSpecies
 from omg.si.stochastic_interpolants import StochasticInterpolants
@@ -95,7 +95,8 @@ class OMGLightning(L.LightningModule):
 
         # Minimize permutational distance between clusters.
         if self.use_min_perm_dist:
-            correct_for_min_perm_dist(x_0, x_1, self._pos_corrector)
+            # Don't switch species to allow for crystal-structure prediction.
+            correct_for_minimum_permutation_distance(x_0, x_1, self._pos_corrector, switch_species=False)
 
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)
