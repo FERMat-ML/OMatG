@@ -39,6 +39,8 @@ model:
   sampler:
     class_path: omg.sampler.sample_from_rng.SampleFromRNG
     init_args:
+      species_distribution: 
+        class_path: omg.sampler.distributions.MaskDistribution
       cell_distribution:
         class_path: omg.sampler.distributions.NDependentGamma
         init_args:
