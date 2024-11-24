@@ -106,4 +106,4 @@ class MirrorData(object):
     def __call__(self, data: torch.Tensor) -> np.ndarray:
         # TODO: Introduce an abstract base class for all of these distributions.
         # I think all classes should just get the entire pos, species, cell data.
-        return data.clone().numpy(force=True)
+        return data.detach().clone().cpu().numpy()
