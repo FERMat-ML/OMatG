@@ -90,6 +90,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 def structure_matcher(s1, s2, ltol=0.2, stol=0.3, angle_tol=5):
     """ Checks if structures s1 and s2 of ase type Atoms are the same."""
     sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
+    # conversion to pymatgen type
     a1 = AseAtomsAdaptor.get_structure(s1)
     a2 = AseAtomsAdaptor.get_structure(s2)
     return sm.fit(a1, a2)
