@@ -99,6 +99,13 @@ trainer:
       init_args:
         save_top_k: 1
         monitor: "val_loss_total"
+        save_weights_only: false
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        save_top_k: -1  # Store every checkpoint after 100 epochs.
+        monitor: "val_loss_total"
+        every_n_epochs: 100
+        save_weights_only: false
     - class_path: omg.utils.OMGLearningRateFinder
       init_args:
         min_lr: 0.00001
