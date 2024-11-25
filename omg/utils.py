@@ -8,6 +8,7 @@ from lightning.pytorch.loggers.wandb import WandbLogger
 import matplotlib.pyplot as plt
 import torch
 from torch_geometric.data import Data
+from scipy.spatial import KDTree as kdtree
 
 
 class DataField(Enum):
@@ -82,6 +83,30 @@ def xyz_reader(filename: Path) -> Data:
     all_configs = read(filename, index=":")
     return convert_ase_atoms_to_data(all_configs)
 
+# TODO: please move me to analysis.py when branches have been merged!
+from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.io.ase import AseAtomsAdaptor
+
+def structure_matcher(s1, s2, ltol=0.2, stol=0.3, angle_tol=5):
+    """ Checks if structures s1 and s2 of ase type Atoms are the same."""
+    sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
+    a1 = AseAtomsAdaptor.get_structure(s1)
+    a2 = AseAtomsAdaptor.get_structure(s2)
+    return sm.fit(a1, a2)
+
+# TODO: please move me to analysis.py when branches have been merged!
+from omg.globals import MAX_ATOM_NUM
+import numpy as np
+def element_check(s1, s2):
+    """Check if s1 and s2 (both ase Atoms types) are of same composition
+    """
+    s1_counts = np.bincount(s1.numbers, minlength=MAX_ATOM_NUM)
+    s2_counts = np.bincount(s2.numbers, minlength=MAX_ATOM_NUM)
+    
+    s1_min = np.amin(s1_counts[np.where(s1_counts>0)])
+    s2_min = np.amin(s2_counts[np.where(s2_counts>0)])
+
+    return np.array_equal(s1_counts/s1_min, s2_counts/s2_min)
 
 def convert_ase_atoms_to_data(all_configs: List[Atoms]) -> Data:
     """
