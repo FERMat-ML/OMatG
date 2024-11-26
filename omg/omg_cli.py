@@ -15,6 +15,7 @@ from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
+from omg.utils import match_rate, reduce
 
 
 class OMGTrainer(Trainer):
@@ -70,10 +71,10 @@ class OMGTrainer(Trainer):
                 atoms = Atoms(numbers=element.species, positions=element.pos, cell=element.cell[0],
                               pbc=(True, True, True))
             all_ref_atoms.append(atoms)
-        return convert_ase_atoms_to_data(all_ref_atoms)
+        return all_ref_atoms
 
     @staticmethod
-    def _plot_to_pdf(reference: Data, initial: Data, generated: Data, plot_name: str, use_min_perm_dist: bool) -> None:
+    def _plot_to_pdf(reference: List[Atoms], initial: List[Atoms], generated: List[Atoms], plot_name: str, use_min_perm_dist: bool) -> None:
         """
         Plot figures for data analysis/matching between training and generated data.
 
@@ -94,6 +95,10 @@ class OMGTrainer(Trainer):
         :type use_min_perm_dist: bool
         """
         fractional_coordinates_corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
+
+        reference = convert_ase_atoms_to_data(reference)
+        initial = convert_ase_atoms_to_data(initial)
+        generated = convert_ase_atoms_to_data(generated)
 
         # List of volumes of all training structures.
         ref_vol = []
@@ -306,6 +311,36 @@ class OMGTrainer(Trainer):
             plt.close()
 
 
+    def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str) -> None:
+        """ Use to check match rate for crystal structure prediction task."""
+        
+        final_file = Path(xyz_file)
+
+        # Get atoms
+        gen_atoms = xyz_reader(final_file)
+        ref_atoms = self._load_dataset_atoms(datamodule.train_dataset, datamodule.train_dataset.convert_to_fractional)
+
+        # TODO: add MLIP/DFT relaxation step on generated atoms here
+
+        self._structure_match(gen_atoms, ref_atoms)
+        self._structure_match(gen_atoms)
+    
+    @staticmethod
+    def _structure_match(atoms_list: List[Atoms], ref_list: List[Atoms] = None) -> float:
+        """ Check whether a structure in atoms_1_list exists in atoms_2_list.
+            OR
+            Check whether a structure in atoms_1_list is unique.
+        """
+        
+        if ref_list:
+            # comparing between files
+            x = match_rate(atoms_list, ref_list, ltol=1.5, stol=0.3, angle_tol=4)
+            print("The match rate between the xyz files is: {}%".format(100*x))
+        else:
+            # comparing within file
+            x = reduce(atoms_list)
+            print("The occurence of unique structures within the xyz file is: {}%".format(100*x))
+
 class OMGCLI(LightningCLI):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, trainer_class=OMGTrainer)
@@ -315,4 +350,5 @@ class OMGCLI(LightningCLI):
         """Defines the list of available subcommands and the arguments to skip."""
         d = LightningCLI.subcommands()
         d["visualize"] = {"model", "datamodule"}
+        d["match"] = {"model", "datamodule"}
         return d
