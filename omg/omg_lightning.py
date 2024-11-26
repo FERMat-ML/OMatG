@@ -184,8 +184,9 @@ class OMGLightning(L.LightningModule):
         xyz_saver(gen.to("cpu"), filename)
 
         if self.overfitting_test:
-            xyz_saver(x.to("cpu"), filename.with_stem(filename.stem + "_base"))
-            atoms_one = read(init_filename)
+            base_filename = filename.with_stem(filename.stem + "_base")
+            xyz_saver(x.to("cpu"), base_filename)
+            atoms_one = read(base_filename)
             atoms_two = read(filename)
             assert len(atoms_one) == len(atoms_two)
             successes = 0
