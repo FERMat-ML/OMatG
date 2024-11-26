@@ -16,6 +16,7 @@ from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
 from omg.analysis import get_coordination_numbers, get_coordination_numbers_species, get_space_group
+from collections import OrderedDict
 
 
 class OMGTrainer(Trainer):
@@ -190,7 +191,7 @@ class OMGTrainer(Trainer):
                     ref_cn_species[key] = []
                 ref_cn_species[key].extend(val)
 
-            sg_group, sg_num, cs = get_space_group(struc)
+            sg_group, sg_num, cs, _ = get_space_group(struc, var_prec=False, angle_tolerance=-1)
             if (sg_group is None) or (sg_num is None) or (cs is None):
                 ref_sg_fail += 1
                 continue
@@ -280,7 +281,7 @@ class OMGTrainer(Trainer):
                     cn_species[key] = []
                 cn_species[key].extend(val)
 
-            sg_group, sg_num, cs = get_space_group(struc)
+            sg_group, sg_num, cs, sym_struc = get_space_group(struc)
             if (sg_group is None) or (sg_num is None) or (cs is None):
                 sg_fail += 1
                 continue
@@ -294,6 +295,10 @@ class OMGTrainer(Trainer):
                 if cs not in crystal_sys:
                     crystal_sys[cs] = 0
                 crystal_sys[cs] += 1
+
+                from ase.io import write
+                if sg_num >= 3:
+                    write("symmetric.xyz", sym_struc, format='extxyz', append=True)
 
         print("Number of times space group identification failed for training dataset: {}/{} total".format(ref_sg_fail, len(reference_atoms)))
         print("Number of times space group identification failed for generated dataset: {}/{} total".format(sg_fail, len(generated_atoms)))
@@ -442,6 +447,10 @@ class OMGTrainer(Trainer):
                 assert isinstance(val, list)
                 avg_cn_species[key] = np.mean(val)
 
+            if naming == 'species':
+                species_order = Atoms(numbers=np.arange(1, MAX_ATOM_NUM + 1)).get_chemical_symbols()
+                avg_cn_species = OrderedDict((key, avg_cn_species[key]) for key in species_order if key in avg_cn_species)
+                ref_avg_cn_species = OrderedDict((key, ref_avg_cn_species[key]) for key in species_order if key in ref_avg_cn_species)
             plt.bar([k for k in avg_cn_species.keys()], [v for v in avg_cn_species.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             plt.bar([k for k in ref_avg_cn_species.keys()], [v for v in ref_avg_cn_species.values()], alpha=0.5,
@@ -470,11 +479,14 @@ class OMGTrainer(Trainer):
             plt.close()
 
             # Compute distributions of crystal systems
+            cs_order = ['Triclinic', 'Monoclinic', 'Orthorhombic', 'Tetragonal', 'Hexagonal', 'Cubic']
+            crystal_sys_ord = OrderedDict((key, crystal_sys[key]) for key in cs_order if key in crystal_sys)
+            ref_crystal_sys_ord = OrderedDict((key, ref_crystal_sys[key]) for key in cs_order if key in ref_crystal_sys)
             total_cs = sum(v for v in crystal_sys.values())
-            plt.bar([k for k in crystal_sys.keys()], [v / total_cs for v in crystal_sys.values()], alpha=0.8,
+            plt.bar([k for k in crystal_sys_ord.keys()], [v / total_cs for v in crystal_sys_ord.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             total_cs_ref = sum(v for v in ref_crystal_sys.values())
-            plt.bar([k for k in ref_crystal_sys.keys()], [v / total_cs_ref for v in ref_crystal_sys.values()], alpha=0.5,
+            plt.bar([k for k in ref_crystal_sys_ord.keys()], [v / total_cs_ref for v in ref_crystal_sys_ord.values()], alpha=0.5,
                     label="Training", color="darkslategrey")
             plt.xticks(rotation=45, ha='right', fontsize=8)
             plt.title("Crystal system distribution")

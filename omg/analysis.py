@@ -6,6 +6,7 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import spglib
+from ase import Atoms
 
 # Adapted from: https://gist.github.com/tgmaxson/8b9d8b40dc0ba4395240
 def get_coordination_numbers(atoms, covalent_percent=1.25, dis=None):
@@ -121,8 +122,52 @@ def get_coordination_numbers_species(atoms, covalent_percent=1.25, dis=None, nam
     
     return cn_dict
 
+from collections import Counter
+def identify_spacegroup_varprec(spg_cell, angle_tolerance, max_iterations = 200):
+    """Identifying the best space group using varying tolerances"""
 
-def get_space_group(atoms, niggli=False, symprec=1e-3, angle_tolerance=0.5):
+    # precision to spglib is in cartesian distance,
+    prec = 5.
+    precs = []
+    grps = []
+    grp = 'None'
+    highest_symmetry_group = 'None'
+    max_group = 0
+
+    # Try a range of precisions and record the determined spacegroups
+    counter = 0
+    while grp is None or grp.split()[-1] not in ['(1)', '(2)']:
+        counter += 1
+        if counter > max_iterations:
+            break
+        grp = spglib.get_spacegroup(spg_cell, symprec=prec, angle_tolerance=angle_tolerance)
+        grps.append(grp)
+        precs.append(prec)
+        prec /= 2
+
+        if grp is not None:
+            group_num = int(grp.split()[-1].replace('(', '').replace(')', ''))
+            if group_num > max_group:
+                max_group = group_num
+                highest_symmetry_group = grp
+
+    if all(g is None for g in grps):
+        raise ValueError("No symmetry groups found!")
+    # One measure of best group is the highest symmetry group
+    highest_symmetry_group_prec = precs[::-1][grps[::-1].index(highest_symmetry_group)]
+
+    # An alternative measure is the most commonly occurring group
+    counts = Counter(grps)
+    if None in counts:
+        del counts[None]
+    most_common_group = counts.most_common(1)[0][0]
+    most_common_group_prec = precs[::-1][grps[::-1].index(most_common_group)]
+
+    return {'common': (most_common_group, most_common_group_prec),
+            'highest': (highest_symmetry_group, highest_symmetry_group_prec)}
+
+
+def get_space_group(atoms, niggli=False, var_prec=True, symprec=1e-3, angle_tolerance=4.):
     """Calculate the space group of a given structure, optionally using the primitive cell.
     Assumes atoms is a ase Atoms object. 
     Niggli will generate the Niggli reduced cell. 
@@ -137,7 +182,18 @@ def get_space_group(atoms, niggli=False, symprec=1e-3, angle_tolerance=0.5):
     spglib_cell = (atoms.get_cell(), atoms.get_scaled_positions(), atoms.get_atomic_numbers())
     #spglib_cell_primitive = spglib.find_primitive(spglib_cell)
 
-    sg = spglib.get_spacegroup(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
+    if var_prec:
+        sg_symprec_dict = identify_spacegroup_varprec(spglib_cell, angle_tolerance)
+        print(sg_symprec_dict['common'], sg_symprec_dict['highest'])
+        #sg = spglib.get_spacegroup(spglib_cell, symprec=sg_symprec_dict['common'][1], angle_tolerance=angle_tolerance)
+        #sym_struc = spglib.get_symmetry_dataset(spglib_cell, sg_symprec_dict['common'][1])
+        sg = spglib.get_spacegroup(spglib_cell, symprec=sg_symprec_dict['highest'][1], angle_tolerance=angle_tolerance)
+        sym_data= spglib.get_symmetry_dataset(spglib_cell, sg_symprec_dict['highest'][1], angle_tolerance=angle_tolerance)
+        sym_struc = Atoms(numbers=sym_data.std_types, scaled_positions=sym_data.std_positions, cell=sym_data.std_lattice, pbc=True)
+    else:
+        sg = spglib.get_spacegroup(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
+        sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
+        sym_struc = Atoms(numbers=sym_data.std_types, scaled_positions=sym_data.std_positions, cell=sym_data.std_lattice, pbc=True)
 
     if sg is None:
         #raise RuntimeError("Space group could not be determined.")
@@ -167,5 +223,5 @@ def get_space_group(atoms, niggli=False, symprec=1e-3, angle_tolerance=0.5):
     else:
         raise RuntimeError("Crystal system could not be determined.")
     
-    return sg_group, sg_num, crystal_system
+    return sg_group, sg_num, crystal_system, sym_struc
 
