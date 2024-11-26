@@ -4,12 +4,22 @@ from torch_geometric.data import Data
 from omg.si.corrector import Corrector
 
 
-def correct_for_min_perm_dist(x_0: Data, x_1: Data, corrector: Corrector):
+def correct_for_minimum_permutation_distance(x_0: Data, x_1: Data, corrector: Corrector,
+                                             switch_species: bool = False) -> None:
     """
     For every configuration in the batch, permute the fractional coordinates (and species) in x_0 so that it minimizes
     the distance with respect to the corresponding configuration in x_1.
 
     This function modifies x_0 in place.
+
+    Switching both the species and the fractional coordinations will keep the original configuration intact and just
+    change the order of atoms. This order is relevant for the pairings in the stochastic interpolants during training.
+
+    However, in crystal-structure prediction, the species should not be permuted so that stochastic interpolants are
+    constructed between the same species.
+
+    In de-novo generation, we either use fully masked species or uniformly distributed species, so that keeping the
+    species or not does not yield any difference.
 
     :param x_0:
         Batch of initial configurations stored in a torch_geometric.data.Data object.
@@ -20,6 +30,9 @@ def correct_for_min_perm_dist(x_0: Data, x_1: Data, corrector: Corrector):
     :param corrector:
         Corrector that corrects the distances (for instance, to consider periodic boundary conditions).
     :type corrector: Corrector
+    :param switch_species:
+        Whether to switch species as well to keep the original configuration intact.
+    :type switch_species: bool
     """
     assert torch.all(x_0.ptr == x_1.ptr)
     assert x_0.pos.shape == x_1.pos.shape
@@ -40,7 +53,8 @@ def correct_for_min_perm_dist(x_0: Data, x_1: Data, corrector: Corrector):
         assert torch.all(row == torch.arange(len(row)))
         # Reassign
         x_0.pos[ptr[i]:ptr[i + 1]] = x_0.pos[ptr[i]:ptr[i + 1]][col]
-        x_0.species[ptr[i]:ptr[i + 1]] = x_0.species[ptr[i]:ptr[i + 1]][col]
+        if switch_species:
+            x_0.species[ptr[i]:ptr[i + 1]] = x_0.species[ptr[i]:ptr[i + 1]][col]
 
 
 def _distance_matrix(x_0: torch.tensor, x_1: torch.tensor, corrector: Corrector) -> torch.tensor:

@@ -1,10 +1,10 @@
 from typing import Callable
 import torch
-from .abstracts import Corrector, StochasticInterpolant
+from .abstracts import Corrector, StochasticInterpolantSpecies
 from .corrector import IdentityCorrector
 
 
-class SingleStochasticInterpolantIdentity(StochasticInterpolant):
+class SingleStochasticInterpolantIdentity(StochasticInterpolantSpecies):
     """
     Stochastic interpolant x_t = x_0 = x_1, between points x_0 and x_1 from two distributions p_0 and p_1 at
     times t. Differs from the SingleStochasticInterpolant class insofar as the quantity represented 
@@ -39,7 +39,8 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
 
         """
         assert torch.equal(x_0, x_1)
-        return x_0, torch.zeros_like(x_0)
+        # Always return new object.
+        return x_0.clone(), torch.zeros_like(x_0)
 
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
@@ -75,7 +76,7 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         assert torch.equal(x_0, x_1)
-        return torch.tensor(0.0)
+        return torch.tensor(0.0, device=x_0.device)
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
@@ -118,3 +119,14 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolant):
        :rtype: Corrector
        """
         return IdentityCorrector()
+
+    def uses_masked_species(self) -> bool:
+        """
+        Return whether the stochastic interpolant uses masked species.
+
+        :return:
+            Whether the stochastic interpolant uses masked species.
+        :rtype: bool
+        """
+        # Dataset does not contain masked species.
+        return False

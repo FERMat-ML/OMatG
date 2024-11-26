@@ -4,9 +4,7 @@ model:
     init_args:
       stochastic_interpolants:
         # chemical species
-        - class_path: omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform
-          init_args:
-            noise: 0.
+        - class_path: omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity
         # fractional coordinates
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
           init_args:
@@ -16,8 +14,6 @@ model:
             differential_equation_type: "ODE"
             integrator_kwargs:
               method: "euler"
-            correct_center_of_mass: false
-            correct_center_of_mass_motion: true
         # lattice vectors
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
           init_args:
@@ -35,27 +31,18 @@ model:
         - "cell"
       integration_time_steps: 100
   relative_si_costs:
-    - 0.333333333333
-    - 0.333333333333
-    - 0.333333333333
+    - 0.0  # Irrelevant.
+    - 0.5
+    - 0.5
   sampler:
     class_path: omg.sampler.sample_from_rng.SampleFromRNG
     init_args:
       cell_distribution:
-        class_path: omg.sampler.distributions.NDependentGamma
+        class_path: omg.sampler.distributions.InformedLatticeDistribution
         init_args:
-          a: 6.950090673417738 
-          loc: 0.0011311460889336065
-          scale: 0.008141385751601667
-      n_particle_sampler: 6
-      convert_to_fractional: true
-      batch_size: 2000
-    # Code for sampling from dataset
-    # class_path: omg.sampler.sample_from_dataset.SampleFromDataset
-    # init_args:
-    #   dataset:
-    #   convert_to_fractional: 
-    #   batch_size: 
+          dataset_name: "mp_20"
+      species_distribution:
+        class_path: omg.sampler.distributions.MirrorData
   model:
     class_path: omg.model.model.Model
     init_args:
@@ -74,7 +61,7 @@ model:
       #       init_args:
       #           dim: 32 # has to be sam eas prop_emb_dim of adapter module
       # property_keys: "band_gap"
-  use_min_perm_dist: false
+  use_min_perm_dist: true
 data:
   train_dataset:
     class_path: omg.datamodule.dataloader.OMGTorchDataset
@@ -84,7 +71,7 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/train.lmdb"
-      niggli: True
+      niggli: False
           # property_keys: # specify only when you wanna do guided training
           #  - "band_gap"
   val_dataset:
@@ -95,7 +82,7 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/val.lmdb"
-      niggli: True
+      niggli: False
   predict_dataset:
     class_path: omg.datamodule.dataloader.OMGTorchDataset
     init_args:
@@ -104,7 +91,7 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/train.lmdb"
-      niggli: True
+      niggli: False
   batch_size: 256
 trainer:
   callbacks:

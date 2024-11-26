@@ -9,10 +9,10 @@ import numpy as np
 from sklearn.neighbors import KernelDensity
 import torch
 from torch_geometric.data import Data
-from omg.omg import OMG
+from omg.omg_lightning import OMGLightning
 from omg.datamodule.dataloader import OMGDataModule, OMGTorchDataset
 from omg.globals import MAX_ATOM_NUM
-from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
+from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
 
@@ -21,7 +21,7 @@ class OMGTrainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def visualize(self, model: OMG, datamodule: OMGDataModule, xyz_file: str, plot_name: str = "viz.pdf") -> None:
+    def visualize(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str, plot_name: str = "viz.pdf") -> None:
         """
         Compare the distributions of the volume, the element composition, and the number of unique elements per
         structure in the training and generated dataset. Also, plot the root mean-square distance between the fractional
@@ -30,7 +30,7 @@ class OMGTrainer(Trainer):
 
         :param model:
             OMG model (argument required and automatically passed by lightning CLI).
-        :type model: OMG
+        :type model: OMGLightning
         :param datamodule:
             OMG datamodule (argument required and automatically passed by lightning CLI).
         :param xyz_file:
@@ -122,13 +122,33 @@ class OMGTrainer(Trainer):
             ref_n_atoms[n_atom] += 1
         assert sum(v for v in ref_n_types.values()) == len(reference.n_atoms)
 
+        rand_root_mean_square_distances = []
+        rand_pos_one = torch.rand_like(reference.pos)
+        rand_pos_two = torch.rand_like(reference.pos)
+        # Cell and species are not important here.
+        rand_data_one = Data(pos=rand_pos_one, cell=reference.cell, species=reference.species, ptr=reference.ptr,
+                             n_atoms=reference.n_atoms, batch=reference.batch)
+        rand_data_two = Data(pos=rand_pos_two, cell=reference.cell, species=reference.species, ptr=reference.ptr,
+                             n_atoms=reference.n_atoms, batch=reference.batch)
+        if use_min_perm_dist:
+            correct_for_minimum_permutation_distance(rand_data_one, rand_data_two, fractional_coordinates_corrector,
+                                                     switch_species=False)
+            rand_pos_one = rand_data_one.pos
+            rand_pos_two = rand_data_two.pos
+        rand_pos_prime = fractional_coordinates_corrector.unwrap(rand_pos_one, rand_pos_two)
+        distances_squared = torch.sum((rand_pos_prime - rand_pos_one) ** 2, dim=-1)
+        for i in range(len(reference.ptr) - 1):
+            ds = distances_squared[reference.ptr[i]:reference.ptr[i + 1]]
+            rand_root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
+
         ref_root_mean_square_distances = []
         rand_pos = torch.rand_like(reference.pos)
         # Cell and species are not important here.
         rand_data = Data(pos=rand_pos, cell=reference.cell, species=reference.species, ptr=reference.ptr,
                          n_atoms=reference.n_atoms, batch=reference.batch)
         if use_min_perm_dist:
-            correct_for_min_perm_dist(rand_data, reference, fractional_coordinates_corrector)
+            correct_for_minimum_permutation_distance(rand_data, reference, fractional_coordinates_corrector,
+                                                     switch_species=False)
             rand_pos = rand_data.pos
         rand_pos_prime = fractional_coordinates_corrector.unwrap(reference.pos, rand_pos)
         distances_squared = torch.sum((rand_pos_prime - reference.pos) ** 2, dim=-1)
@@ -163,11 +183,26 @@ class OMGTrainer(Trainer):
             n_atoms[n_atom] += 1
         assert sum(v for v in n_types.values()) == len(generated.n_atoms)
 
-        root_mean_square_distances = []
+        traveled_root_mean_square_distances = []
         assert initial.pos.shape == generated.pos.shape
         assert torch.all(initial.ptr == generated.ptr)
         generated_pos_prime = fractional_coordinates_corrector.unwrap(initial.pos, generated.pos)
         distances_squared = torch.sum((generated_pos_prime - initial.pos) ** 2, dim=-1)
+        for i in range(len(generated.ptr) - 1):
+            ds = distances_squared[generated.ptr[i]:generated.ptr[i + 1]]
+            traveled_root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
+
+        root_mean_square_distances = []
+        rand_pos = torch.rand_like(generated.pos)
+        # Cell and species are not important here.
+        rand_data = Data(pos=rand_pos, cell=generated.cell, species=generated.species, ptr=generated.ptr,
+                         n_atoms=generated.n_atoms, batch=generated.batch)
+        if use_min_perm_dist:
+            correct_for_minimum_permutation_distance(rand_data, generated, fractional_coordinates_corrector,
+                                                     switch_species=False)
+            rand_pos = rand_data.pos
+        rand_pos_prime = fractional_coordinates_corrector.unwrap(generated.pos, rand_pos)
+        distances_squared = torch.sum((rand_pos_prime - generated.pos) ** 2, dim=-1)
         for i in range(len(generated.ptr) - 1):
             ds = distances_squared[generated.ptr[i]:generated.ptr[i + 1]]
             root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
@@ -249,13 +284,21 @@ class OMGTrainer(Trainer):
             bandwidth = np.std(ref_root_mean_square_distances) * len(ref_root_mean_square_distances) ** (-1 / 5)
             ref_rmsds = np.array(ref_root_mean_square_distances)[:, np.newaxis]
             rmsds = np.array(root_mean_square_distances)[:, np.newaxis]
+            trmsds = np.array(traveled_root_mean_square_distances)[:, np.newaxis]
+            rand_rmsds = np.array(rand_root_mean_square_distances)[:, np.newaxis]
             x_d = np.linspace(0.0, (3 * 0.5 * 0.5) ** 0.5, 1000)[:, np.newaxis]
             kde_gt = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(ref_rmsds)
             log_density_gt = kde_gt.score_samples(x_d)
             kde_gen = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(rmsds)
             log_density_gen = kde_gen.score_samples(x_d)
+            kde_traveled = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(trmsds)
+            log_density_traveled = kde_traveled.score_samples(x_d)
+            kde_rand = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(rand_rmsds)
+            log_density_rand = kde_rand.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
             plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
+            plt.plot(x_d, np.exp(log_density_traveled), color="cadetblue", label="Traveled")
+            plt.plot(x_d, np.exp(log_density_rand), color="steelblue", label="Random")
             plt.xlabel("Root Mean Square Distance of Fractional Coordinates")
             plt.ylabel("Density")
             plt.legend()

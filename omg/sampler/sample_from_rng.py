@@ -1,4 +1,4 @@
-from typing import List, Union, Callable
+from typing import Union, Callable
 from functools import partial
 
 import torch
@@ -9,7 +9,7 @@ from omg.globals import MAX_ATOM_NUM
 from .sampler import Sampler
 from ..datamodule.dataloader import OMGData
 from torch_geometric.data import Batch
-from .distributions import NDependentGamma 
+from .distributions import InformedLatticeDistribution, MirrorData, NDependentGamma
 
 class SampleFromRNG(Sampler):
     """
@@ -47,10 +47,9 @@ class SampleFromRNG(Sampler):
                 n_particle_sampler: Union[int, Callable] = 1,
                 convert_to_fractional: bool = True,
                 batch_size: int = 1):
-
         super().__init__()
 
-
+        # TODO: I think the code would be cleaner if these things are exported to separate distributions.
         if species_distribution is None:
             # Sample uniformly in interval [1, MAX_ATOM_NUM].
             species_distribution = partial(np.random.randint, low=1, high=MAX_ATOM_NUM + 1)
@@ -72,7 +71,7 @@ class SampleFromRNG(Sampler):
         self._frac = convert_to_fractional
         self.batch_size = batch_size
 
-    def sample_p_0(self, x1: "OMGDataBatch" = None):
+    def sample_p_0(self, x1: "OMGDataBatch" = None) -> "OMGDataBatch":
         if x1 is not None:
             n = x1.n_atoms
             n = n.to(torch.int64)
@@ -84,14 +83,25 @@ class SampleFromRNG(Sampler):
 
         configs = []
         for i in range(len(n)):
-            species = self.distribution[0](size=n[i].item())
+            if isinstance(self.distribution[0], MirrorData):
+                assert x1 is not None
+                species = self.distribution[0](x1.species[x1.ptr[i]:x1.ptr[i+1]])
+            else:
+                species = self.distribution[0](size=n[i].item())
 
-            pos = self.distribution[1](size=(n[i].item(), 3))
-            pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
+            if isinstance(self.distribution[1], MirrorData):
+                assert x1 is not None
+                pos = self.distribution[1](x1.pos[x1.ptr[i]:x1.ptr[i+1]])
+            else:
+                pos = self.distribution[1](size=(n[i].item(), 3))
+                pos = pos - np.floor(pos) # wrap to [0,1) fractional coordinates
 
             # TODO: maybe we don't need to restrict to symmetric->At least we aren't doing so for p1
             # TODO: make more generic in the future
-            if isinstance(self.distribution[2],NDependentGamma):
+            if isinstance(self.distribution[2], MirrorData):
+                assert x1 is not None
+                lattice_ = self.distribution[2](x1.cell[i])
+            elif isinstance(self.distribution[2], (NDependentGamma, InformedLatticeDistribution)):
                 lattice_ = self.distribution[2](n[i].item())
             else:
                 lattice_ = self.distribution[2](size=(3,3))
@@ -102,10 +112,11 @@ class SampleFromRNG(Sampler):
             #cell = cell + cell.T # TODO: A27 equation looks redundant.
 
             # its already [0,1) fractional coordinates so no need to convert
-            if not self._frac:
+            if not self._frac and not isinstance(self.distribution[1], MirrorData):
                 pos = np.dot(pos, cell)
 
             configs.append(OMGData.from_data(species, pos, cell, convert_to_fractional=False))
+
         return Batch.from_data_list(configs)
 
     def add_n_particle_sampler(self, n_particle_sampler: Callable):

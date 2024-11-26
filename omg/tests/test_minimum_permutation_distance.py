@@ -1,7 +1,7 @@
 import pytest
 import torch
 from torch_geometric.data import Data
-from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
+from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import IdentityCorrector, PeriodicBoundaryConditionsCorrector
 
 
@@ -10,7 +10,12 @@ def corrector(request):
     return request.param
 
 
-def test_min_perm_data_trivial(corrector):
+@pytest.fixture(params=[True, False])
+def switch_species(request):
+    return request.param
+
+
+def test_min_perm_data_trivial(corrector, switch_species):
     # Test minimum permutation data for equal data.
     ptr = torch.tensor([0, 4, 9, 12, 15, 20]).long()
     n_atoms = [4, 5, 3, 3, 5]
@@ -37,7 +42,7 @@ def test_min_perm_data_trivial(corrector):
     x_0 = Data(pos=x_0_pos, cell=x_0_cell, species=x_0_spec, ptr=ptr, n_atoms=n_atoms)
     x_1 = Data(pos=x_1_pos, cell=x_1_cell, species=x_1_spec, ptr=ptr, n_atoms=n_atoms)
 
-    correct_for_min_perm_dist(x_0, x_1, corrector)
+    correct_for_minimum_permutation_distance(x_0, x_1, corrector, switch_species)
 
     # x_1 should always be unchanged.
     assert torch.all(x_1.pos == original_x_1_pos)
@@ -55,7 +60,7 @@ def test_min_perm_data_trivial(corrector):
     assert torch.all(x_0.species == x_1.species)
 
 
-def test_min_perm_data_permuted(corrector):
+def test_min_perm_data_permuted(corrector, switch_species):
     # Test minimum permutation data for permuted data.
     ptr = torch.tensor([0, 4, 9, 12, 15, 20]).long()
     n_atoms = [4, 5, 3, 3, 5]
@@ -85,17 +90,21 @@ def test_min_perm_data_permuted(corrector):
         while torch.all(shuffled == torch.arange(ptr[i + 1] - ptr[i])):
             shuffled = torch.randperm(ptr[i + 1] - ptr[i])
         x_0_pos[ptr[i]:ptr[i + 1]] = x_0_pos[ptr[i]:ptr[i + 1]][shuffled]
-        x_0_species[ptr[i]:ptr[i + 1]] = x_0_species[ptr[i]:ptr[i + 1]][shuffled]
+        if switch_species:
+            x_0_species[ptr[i]:ptr[i + 1]] = x_0_species[ptr[i]:ptr[i + 1]][shuffled]
     original_x_0_pos = x_0_pos.clone()
     original_x_0_species = x_0_species.clone()
     assert not torch.all(original_x_0_pos == original_x_1_pos)
-    assert not torch.all(original_x_0_species == original_x_1_species)
+    if switch_species:
+        assert not torch.all(original_x_0_species == original_x_1_species)
+    else:
+        assert torch.all(original_x_0_species == original_x_1_species)
 
     x_0 = Data(pos=x_0_pos, cell=x_0_cell, species=x_0_species, ptr=ptr, n_atoms=n_atoms)
     x_1 = Data(pos=x_1_pos, cell=x_1_cell, species=x_1_species, ptr=ptr, n_atoms=n_atoms)
     assert not torch.all(x_0.pos == x_1.pos)
 
-    correct_for_min_perm_dist(x_0, x_1, corrector)
+    correct_for_minimum_permutation_distance(x_0, x_1, corrector, switch_species)
 
     # x_1 should always be unchanged.
     assert torch.all(x_1.pos == original_x_1_pos)
@@ -104,7 +113,10 @@ def test_min_perm_data_permuted(corrector):
 
     # In this case, x_0 should be changed (except for the cell).
     assert not torch.all(x_0.pos == original_x_0_pos)
-    assert not torch.all(x_0.species == original_x_0_species)
+    if switch_species:
+        assert not torch.all(x_0.species == original_x_0_species)
+    else:
+        assert torch.all(x_0.species == original_x_0_species)
     assert torch.all(x_0.cell == original_x_0_cell)
 
     # x_0 and x_1 should now be equal (except for the cell).
@@ -112,7 +124,7 @@ def test_min_perm_data_permuted(corrector):
     assert torch.all(x_0.species == x_1.species)
 
 
-def test_min_perm_data_permuted_and_distorted(corrector):
+def test_min_perm_data_permuted_and_distorted(corrector, switch_species):
     # Test minimum permutation data for permuted and slightly distorted data.
     ptr = torch.tensor([0, 4, 9, 12, 15, 20]).long()
     n_atoms = [4, 5, 3, 3, 5]
@@ -144,7 +156,12 @@ def test_min_perm_data_permuted_and_distorted(corrector):
         while torch.all(shuffled == torch.arange(ptr[i + 1] - ptr[i])):
             shuffled = torch.randperm(ptr[i + 1] - ptr[i])
         x_0_pos[ptr[i]:ptr[i + 1]] = x_0_pos[ptr[i]:ptr[i + 1]][shuffled]
-        x_0_species[ptr[i]:ptr[i + 1]] = x_0_species[ptr[i]:ptr[i + 1]][shuffled]
+        if switch_species:
+            x_0_species[ptr[i]:ptr[i + 1]] = x_0_species[ptr[i]:ptr[i + 1]][shuffled]
+    if switch_species:
+        assert not torch.all(original_x_0_species == x_0_species)
+    else:
+        assert torch.all(original_x_0_species == x_0_species)
 
     # Distort x_0.
     x_0_pos += (torch.rand(size=(sum_n_atoms, 3)) * 1.0e-3 - 5.0e-4)  # Don't correct with respect to periodic boundaries.
@@ -156,7 +173,7 @@ def test_min_perm_data_permuted_and_distorted(corrector):
     x_1 = Data(pos=x_1_pos, cell=x_1_cell, species=x_1_species, ptr=ptr, n_atoms=n_atoms)
     assert not torch.allclose(x_0.pos, x_1.pos, atol=1.0e-3)
 
-    correct_for_min_perm_dist(x_0, x_1, corrector)
+    correct_for_minimum_permutation_distance(x_0, x_1, corrector, switch_species)
 
     # x_1 should always be unchanged.
     assert torch.all(x_1.pos == original_x_1_pos)
@@ -175,7 +192,7 @@ def test_min_perm_data_permuted_and_distorted(corrector):
     assert torch.allclose(x_0.pos, x_1.pos, atol=1.0e-3)
 
 
-def test_min_perm_data_permuted_pbc():
+def test_min_perm_data_permuted_pbc(switch_species):
     # Test minimum permutation data for specific permuted data with periodic boundaries.
     ptr = torch.tensor([0, 2]).long()
     n_atoms = [2]
@@ -198,7 +215,8 @@ def test_min_perm_data_permuted_pbc():
     x_0 = Data(pos=x_0_pos, cell=x_0_cell, species=x_0_species, ptr=ptr, n_atoms=n_atoms)
     x_1 = Data(pos=x_1_pos, cell=x_1_cell, species=x_1_species, ptr=ptr, n_atoms=n_atoms)
 
-    correct_for_min_perm_dist(x_0, x_1, PeriodicBoundaryConditionsCorrector(0.0, 1.0))
+    correct_for_minimum_permutation_distance(x_0, x_1, PeriodicBoundaryConditionsCorrector(0.0, 1.0),
+                                             switch_species)
 
     # x_1 should always be unchanged.
     assert torch.all(x_1.pos == torch.tensor([[0.99, 0.015, 0.98], [0.5, 0.4, 0.55]]))
@@ -207,7 +225,10 @@ def test_min_perm_data_permuted_pbc():
 
     # In this case, x_0 should be changed (except for the cell).
     assert torch.all(x_0.pos == torch.tensor([[0.02, 0.97, 0.01], [0.6, 0.38, 0.7]]))
-    assert torch.all(x_0.species == torch.tensor([7, 4]).long())
+    if switch_species:
+        assert torch.all(x_0.species == torch.tensor([7, 4]).long())
+    else:
+        assert torch.all(x_0.species == torch.tensor([4, 7]).long())
     assert torch.all(x_0.cell == original_x_0_cell)
 
 

@@ -6,16 +6,16 @@ import torch
 from torch import optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from omg.model.model import Model
-from omg.sampler.minimum_permutation_distance import correct_for_min_perm_dist
+from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.sampler.sampler import Sampler
 from omg.si.abstracts import StochasticInterpolantSpecies
 from omg.si.stochastic_interpolants import StochasticInterpolants
 from omg.utils import xyz_saver
 
 
-class OMG(L.LightningModule):
+class OMGLightning(L.LightningModule):
     """
-    Main module which is fit and and used to generate structures using Lightning CLI.
+    Main module which is fit and used to generate structures using Lightning CLI.
     """
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
@@ -72,7 +72,7 @@ class OMG(L.LightningModule):
             Predicted b and etas for species, coordinates and lattices, respectively.
         :rtype: Sequence[Sequence[torch.Tensor]]
         """
-        x = self.model(x, t)
+        x = self.model(x_t, t)
         return x
 
     def on_fit_start(self):
@@ -95,7 +95,8 @@ class OMG(L.LightningModule):
 
         # Minimize permutational distance between clusters.
         if self.use_min_perm_dist:
-            correct_for_min_perm_dist(x_0, x_1, self._pos_corrector)
+            # Don't switch species to allow for crystal-structure prediction.
+            correct_for_minimum_permutation_distance(x_0, x_1, self._pos_corrector, switch_species=False)
 
         # sample t uniformly for each structure
         t = torch.rand(len(x_1.n_atoms)).to(self.device)
