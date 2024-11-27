@@ -449,11 +449,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         # Set up ODE function
         if self._correct_center_of_mass:
-            x_t = self._corrector.correct(x_t - self._corrector.compute_center_of_mass(x_t, batch_indices))
-            correct_func = lambda x: self._corrector.correct(x - self._corrector.compute_center_of_mass(x, batch_indices))
+            x_t = self._corrector.correct(x_t - self._corrector.compute_center_of_mass(self._corrector.correct(x_t), batch_indices))
+            correct_func = lambda x: self._corrector.correct(x - self._corrector.compute_center_of_mass(self._corrector.correct(x), batch_indices))
         elif self._correct_first_atom:
-            x_t = self._corrector.correct(self._shift_first_atom(x_t, batch_indices))
-            correct_func = lambda x: self._corrector.correct(self._shift_first_atom(x, batch_indices))
+            x_t = self._corrector.correct(self._shift_first_atom(self._corrector.correct(x_t), batch_indices))
+            correct_func = lambda x: self._corrector.correct(self._shift_first_atom(self._corrector.correct(x), batch_indices))
         else:
             correct_func = self._corrector.correct
         odefunc = lambda t, x: model_function(t, correct_func(x))[0]
