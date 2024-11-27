@@ -63,14 +63,19 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         This is the approach chosen by FlowMM.
         Defaults to False.
     :type correct_center_of_mass_motion: bool
-
+    :param correct_first_atom:
+        TODO: Do we want to correct x_t_p and x_t_m in the antithetic case?
+        TODO: Do we also want to do that during integration?
+        Whether to correct the positions of the first atoms of the points x_0 and x_1 to zero before computing the loss.
+        Defaults to False.
     :raises ValueError:
         If epsilon is provided for ODEs or not provided for SDEs.
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
                  differential_equation_type: str, integrator_kwargs: Optional[dict[str, Any]] = None,
-                 correct_center_of_mass: bool = False, correct_center_of_mass_motion: bool = False) -> None:
+                 correct_center_of_mass: bool = False, correct_center_of_mass_motion: bool = False,
+                 correct_first_atom: bool = False) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -104,6 +109,17 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
         self._correct_center_of_mass = correct_center_of_mass
         self._correct_center_of_mass_motion = correct_center_of_mass_motion
+        self._correct_first_atom = correct_first_atom
+        if self._correct_center_of_mass and self._correct_first_atom:
+            raise ValueError("Correcting the center of mass and the first atom at the same time is not possible.")
+
+    @staticmethod
+    def _shift_first_atom(x: torch.Tensor, batch_indices: torch.Tensor) -> torch.Tensor:
+        unique_indices = torch.unique(batch_indices)
+        first_occurrences = torch.tensor([torch.nonzero(batch_indices == i, as_tuple=True)[0][0]
+                                          for i in unique_indices], device=x.device)
+        first_atoms = torch.index_select(x[first_occurrences], 0, batch_indices)
+        return x - first_atoms
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -131,6 +147,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         if self._correct_center_of_mass:
             x_0 = self._corrector.correct(x_0 - self._corrector.compute_center_of_mass(x_0, batch_indices))
             x_1 = self._corrector.correct(x_1 - self._corrector.compute_center_of_mass(x_1, batch_indices))
+        if self._correct_first_atom:
+            x_0 = self._corrector.correct(self._shift_first_atom(x_0, batch_indices))
+            x_1 = self._corrector.correct(self._shift_first_atom(x_1, batch_indices))
         # Output is already corrected.
         interpolate = self._interpolant.interpolate(t, x_0, x_1)
         if self._gamma is not None:
@@ -245,6 +264,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         if self._correct_center_of_mass:
             x_0 = self._corrector.correct(x_0 - self._corrector.compute_center_of_mass(x_0, batch_indices))
             x_1 = self._corrector.correct(x_1 - self._corrector.compute_center_of_mass(x_1, batch_indices))
+        if self._correct_first_atom:
+            x_0 = self._corrector.correct(self._shift_first_atom(x_0, batch_indices))
+            x_1 = self._corrector.correct(self._shift_first_atom(x_1, batch_indices))
         expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
         if self._use_antithetic:
             assert self._gamma is not None
@@ -324,6 +346,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         if self._correct_center_of_mass:
             x_0 = self._corrector.correct(x_0 - self._corrector.compute_center_of_mass(x_0, batch_indices))
             x_1 = self._corrector.correct(x_1 - self._corrector.compute_center_of_mass(x_1, batch_indices))
+        if self._correct_first_atom:
+            x_0 = self._corrector.correct(self._shift_first_atom(x_0, batch_indices))
+            x_1 = self._corrector.correct(self._shift_first_atom(x_1, batch_indices))
         x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
         expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
         assert self._use_antithetic  # SDE cannot be used without gamma or without antithetic sampling.
@@ -423,11 +448,19 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         # Set up ODE function
-        odefunc = lambda t, x: model_function(t, self._corrector.correct(x))[0]
+        if self._correct_center_of_mass:
+            x_t = self._corrector.correct(x_t - self._corrector.compute_center_of_mass(x_t, batch_indices))
+            correct_func = lambda x: self._corrector.correct(x - self._corrector.compute_center_of_mass(x, batch_indices))
+        elif self._correct_first_atom:
+            x_t = self._corrector.correct(self._shift_first_atom(x_t, batch_indices))
+            correct_func = lambda x: self._corrector.correct(self._shift_first_atom(x, batch_indices))
+        else:
+            correct_func = self._corrector.correct
+        odefunc = lambda t, x: model_function(t, correct_func(x))[0]
         t_span = torch.tensor([time, time + time_step], device=x_t.device)
         with torch.no_grad():
             x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)[-1]
-        return self._corrector.correct(x_t_new)
+        return correct_func(x_t_new)
 
     # Modify wrapper for use in SDE integrator
     class SDE(torch.nn.Module):
@@ -480,6 +513,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
+        # TODO: Introduce corrections here.
+        raise NotImplementedError
         # SDE Integrator
         original_shape = x_t.shape
         sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon,
