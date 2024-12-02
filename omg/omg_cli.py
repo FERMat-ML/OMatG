@@ -341,13 +341,13 @@ class OMGTrainer(Trainer):
             log_density_gen = kde_gen.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
             plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
-            plt.text(
-                0.05, 0.95,
-                f'KS Test for identical distributions: p-value={kstest(vol, ref_vol).pvalue}',
-                verticalalignment='top',
-                bbox=props,
-                transform=plt.gca().transAxes
-            )
+            #plt.text(
+            #    0.05, 0.95,
+            #    f'KS Test for identical distributions: p-value={kstest(vol, ref_vol).pvalue}',
+            #    verticalalignment='top',
+            #    bbox=props,
+            #    transform=plt.gca().transAxes
+            #)
             plt.xlabel(r"Volume ($\AA^3$)")
             plt.ylabel("Density")
             plt.title("Volume")
@@ -413,13 +413,13 @@ class OMGTrainer(Trainer):
             plt.xlabel("Root Mean Square Distance of Fractional Coordinates")
             plt.ylabel("Density")
             plt.legend()
-            plt.text(
-                0.05, 0.95,
-                f'KS Test for identical distributions: p-value={kstest(trmsds, trmsds).pvalue}',
-                verticalalignment='top',
-                bbox=props,
-                transform=plt.gca().transAxes
-            )
+            #plt.text(
+            #    0.05, 0.95,
+            #    f'KS Test for identical distributions: p-value={kstest(trmsds, trmsds).pvalue}',
+            #    verticalalignment='top',
+            #    bbox=props,
+            #    transform=plt.gca().transAxes
+            #)
             pdf.savefig()
             plt.close()
 
@@ -541,7 +541,7 @@ class OMGTrainer(Trainer):
 
         if ref_list:
             # comparing between files
-            x = match_rate(atoms_list, ref_list, ltol=1.5, stol=0.3, angle_tol=4)
+            x = match_rate(atoms_list, ref_list, ltol=0.3, stol=0.5, angle_tol=10.0)
             print("The match rate between the xyz files is: {}%".format(100*x))
         else:
             # comparing within file
