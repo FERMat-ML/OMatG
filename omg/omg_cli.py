@@ -15,6 +15,7 @@ from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
+from scipy.stats import kstest
 
 
 class OMGTrainer(Trainer):
@@ -209,12 +210,15 @@ class OMGTrainer(Trainer):
 
         # Plot
         with PdfPages(plot_name) as pdf:
+            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             # Plot Element distribution
             total_number_atoms = sum(v for v in nums.values())
-            plt.bar([k for k in nums.keys()], [v / total_number_atoms for v in nums.values()], alpha=0.8,
+            elements = [k for k in nums.keys()]
+            ref_elements = [k for k in ref_nums.keys()] 
+            plt.bar(elements, [v / total_number_atoms for v in nums.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             total_number_atoms_ref = sum(v for v in ref_nums.values())
-            plt.bar([k for k in ref_nums.keys()], [v / total_number_atoms_ref for v in ref_nums.values()], alpha=0.5,
+            plt.bar(ref_elements, [v / total_number_atoms_ref for v in ref_nums.values()], alpha=0.5,
                     label="Training", color="darkslategrey")
             plt.title("Fractional element composition")
             plt.xlabel("Atomic Number")
@@ -238,6 +242,13 @@ class OMGTrainer(Trainer):
             log_density_gen = kde_gen.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
             plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
+            plt.text(
+                0.05, 0.95, 
+                f'KS Test: D={kstest(vol, ref_vol).statistic}', 
+                verticalalignment='top', 
+                bbox=props, 
+                transform=plt.gca().transAxes
+            )
             plt.xlabel(r"Volume ($\AA^3$)")
             plt.ylabel("Density")
             plt.title("Volume")
@@ -302,6 +313,13 @@ class OMGTrainer(Trainer):
             plt.xlabel("Root Mean Square Distance of Fractional Coordinates")
             plt.ylabel("Density")
             plt.legend()
+            plt.text(
+                0.05, 0.95, 
+                f'KS Test: D={kstest(trmsds, trmsds).statistic}', 
+                verticalalignment='top', 
+                bbox=props, 
+                transform=plt.gca().transAxes
+            )
             pdf.savefig()
             plt.close()
 
