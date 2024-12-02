@@ -152,7 +152,9 @@ def identify_spacegroup_varprec(spg_cell, angle_tolerance, max_iterations = 200)
                 highest_symmetry_group = grp
 
     if all(g is None for g in grps):
-        raise ValueError("No symmetry groups found!")
+        #raise ValueError("No symmetry groups found!")
+        print("No symmetry groups found!")
+        return None
     # One measure of best group is the highest symmetry group
     highest_symmetry_group_prec = precs[::-1][grps[::-1].index(highest_symmetry_group)]
 
@@ -184,28 +186,34 @@ def get_space_group(atoms, niggli=False, var_prec=True, symprec=1e-3, angle_tole
 
     if var_prec:
         sg_symprec_dict = identify_spacegroup_varprec(spglib_cell, angle_tolerance)
-        print(sg_symprec_dict['common'], sg_symprec_dict['highest'])
-        #sg = spglib.get_spacegroup(spglib_cell, symprec=sg_symprec_dict['common'][1], angle_tolerance=angle_tolerance)
-        #sym_struc = spglib.get_symmetry_dataset(spglib_cell, sg_symprec_dict['common'][1])
-        sg = spglib.get_spacegroup(spglib_cell, symprec=sg_symprec_dict['highest'][1], angle_tolerance=angle_tolerance)
-        sym_data= spglib.get_symmetry_dataset(spglib_cell, sg_symprec_dict['highest'][1], angle_tolerance=angle_tolerance)
-        sym_struc = Atoms(numbers=sym_data.std_types, scaled_positions=sym_data.std_positions, cell=sym_data.std_lattice, pbc=True)
+        if sg_symprec_dict is not None:
+            print(sg_symprec_dict['common'], sg_symprec_dict['highest'])
+            sg = spglib.get_spacegroup(spglib_cell, symprec=sg_symprec_dict['common'][1], angle_tolerance=angle_tolerance)
+            sym_data = spglib.get_symmetry_dataset(spglib_cell, sg_symprec_dict['common'][1], angle_tolerance=angle_tolerance)
+            #sg = spglib.get_spacegroup(spglib_cell, symprec=sg_symprec_dict['highest'][1], angle_tolerance=angle_tolerance)
+            #sym_data= spglib.get_symmetry_dataset(spglib_cell, sg_symprec_dict['highest'][1], angle_tolerance=angle_tolerance)
+            sym_struc = Atoms(numbers=sym_data.std_types, scaled_positions=sym_data.std_positions, cell=sym_data.std_lattice, pbc=True)
+        else:
+            print("Space group could not be determined.")
+            print(spglib.get_error_message())
+            return None, None, None, None
     else:
         sg = spglib.get_spacegroup(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
-        sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
-        sym_struc = Atoms(numbers=sym_data.std_types, scaled_positions=sym_data.std_positions, cell=sym_data.std_lattice, pbc=True)
+        if sg is None:
+            #raise RuntimeError("Space group could not be determined.")
+            print("Space group could not be determined.")
+            print(spglib.get_error_message())
+            return None, None, None, None
+        else:
+            sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
+            sym_struc = Atoms(numbers=sym_data.std_types, scaled_positions=sym_data.std_positions, cell=sym_data.std_lattice, pbc=True)
 
-    if sg is None:
-        #raise RuntimeError("Space group could not be determined.")
-        print("Space group could not be determined.")
-        print(spglib.get_error_message())
-        return None, None, None
-    
     sg_group = sg.split()[0]
     sg_num = int(sg.split()[1].replace('(', '').replace(')', ''))
 
     if sg_num < 1 or sg_num > 230:
-        raise RuntimeError("Space group number is out of range.")
+        # RuntimeError("Space group number is out of range.")
+        print("Space group number is out of range.")
     elif sg_num < 3:
         crystal_system = "Triclinic"
     elif 3 <= sg_num <= 15:
@@ -221,7 +229,8 @@ def get_space_group(atoms, niggli=False, var_prec=True, symprec=1e-3, angle_tole
     elif 195 <= sg_num <= 230:
         crystal_system = "Cubic"
     else:
-        raise RuntimeError("Crystal system could not be determined.")
+        #raise RuntimeError("Crystal system could not be determined.")
+        print("Crystal system could not be determined.")
     
     return sg_group, sg_num, crystal_system, sym_struc
 
