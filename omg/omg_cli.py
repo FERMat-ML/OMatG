@@ -6,6 +6,7 @@ from lightning.pytorch.cli import LightningCLI
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
+from scipy.stats import kstest
 from sklearn.neighbors import KernelDensity
 import torch
 from torch_geometric.data import Data
@@ -14,7 +15,7 @@ from omg.datamodule.dataloader import OMGDataModule, OMGTorchDataset
 from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
-from omg.utils import convert_ase_atoms_to_data, xyz_reader
+from omg.utils import convert_ase_atoms_to_data, xyz_reader, match_rate, reduce
 from omg.analysis import get_coordination_numbers, get_coordination_numbers_species, get_space_group
 from collections import OrderedDict
 
@@ -51,7 +52,7 @@ class OMGTrainer(Trainer):
         init_atoms = xyz_reader(initial_file)
         gen_atoms = xyz_reader(final_file)
         ref_atoms = self._load_dataset_atoms(datamodule.train_dataset, datamodule.train_dataset.convert_to_fractional)
-        
+
         # Plot data
         self._plot_to_pdf(ref_atoms, init_atoms, gen_atoms, plot_name, model.use_min_perm_dist)
 
@@ -308,12 +309,15 @@ class OMGTrainer(Trainer):
 
         # Plot
         with PdfPages(plot_name) as pdf:
+            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             # Plot Element distribution
             total_number_atoms = sum(v for v in nums.values())
-            plt.bar([k for k in nums.keys()], [v / total_number_atoms for v in nums.values()], alpha=0.8,
+            elements = [k for k in nums.keys()]
+            ref_elements = [k for k in ref_nums.keys()]
+            plt.bar(elements, [v / total_number_atoms for v in nums.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             total_number_atoms_ref = sum(v for v in ref_nums.values())
-            plt.bar([k for k in ref_nums.keys()], [v / total_number_atoms_ref for v in ref_nums.values()], alpha=0.5,
+            plt.bar(ref_elements, [v / total_number_atoms_ref for v in ref_nums.values()], alpha=0.5,
                     label="Training", color="darkslategrey")
             plt.title("Fractional element composition")
             plt.xlabel("Atomic Number")
@@ -337,6 +341,13 @@ class OMGTrainer(Trainer):
             log_density_gen = kde_gen.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
             plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
+            plt.text(
+                0.05, 0.95,
+                f'KS Test: D={kstest(vol, ref_vol).statistic}',
+                verticalalignment='top',
+                bbox=props,
+                transform=plt.gca().transAxes
+            )
             plt.xlabel(r"Volume ($\AA^3$)")
             plt.ylabel("Density")
             plt.title("Volume")
@@ -380,7 +391,7 @@ class OMGTrainer(Trainer):
 
             # Compute distributions for fractional coordinate movement.
             # Scott's rule for bandwidth.
-            
+
             bandwidth = np.std(ref_root_mean_square_distances) * len(ref_root_mean_square_distances) ** (-1 / 5)
             ref_rmsds = np.array(ref_root_mean_square_distances)[:, np.newaxis]
             rmsds = np.array(root_mean_square_distances)[:, np.newaxis]
@@ -402,6 +413,13 @@ class OMGTrainer(Trainer):
             plt.xlabel("Root Mean Square Distance of Fractional Coordinates")
             plt.ylabel("Density")
             plt.legend()
+            plt.text(
+                0.05, 0.95,
+                f'KS Test: D={kstest(trmsds, trmsds).statistic}',
+                verticalalignment='top',
+                bbox=props,
+                transform=plt.gca().transAxes
+            )
             pdf.savefig()
             plt.close()
 
@@ -458,7 +476,7 @@ class OMGTrainer(Trainer):
                     label="Generated", color="blueviolet")
             plt.bar([k for k in ref_avg_cn_species.keys()], [v for v in ref_avg_cn_species.values()], alpha=0.5,
                     label="Training", color="darkslategrey")
-            plt.xticks(rotation=75, ha='right', fontsize=4) 
+            plt.xticks(rotation=75, ha='right', fontsize=4)
             plt.title("Average coordination number by species")
             plt.xlabel("Species")
             plt.ylabel("Average CN")
@@ -500,6 +518,36 @@ class OMGTrainer(Trainer):
             pdf.savefig()
             plt.close()
 
+    def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str) -> None:
+        """ Use to check match rate for crystal structure prediction task."""
+
+        final_file = Path(xyz_file)
+
+        # Get atoms
+        gen_atoms = xyz_reader(final_file)
+        ref_atoms = self._load_dataset_atoms(datamodule.train_dataset, datamodule.train_dataset.convert_to_fractional)
+
+        # TODO: add MLIP/DFT relaxation step on generated atoms here
+
+        self._structure_match(gen_atoms, ref_atoms)
+        self._structure_match(gen_atoms)
+
+    @staticmethod
+    def _structure_match(atoms_list: List[Atoms], ref_list: List[Atoms] = None) -> float:
+        """ Check whether a structure in atoms_1_list exists in atoms_2_list.
+            OR
+            Check whether a structure in atoms_1_list is unique.
+        """
+
+        if ref_list:
+            # comparing between files
+            x = match_rate(atoms_list, ref_list, ltol=1.5, stol=0.3, angle_tol=4)
+            print("The match rate between the xyz files is: {}%".format(100*x))
+        else:
+            # comparing within file
+            x = reduce(atoms_list)
+            print("The occurence of unique structures within the xyz file is: {}%".format(100*x))
+
 class OMGCLI(LightningCLI):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs, trainer_class=OMGTrainer)
@@ -509,4 +557,5 @@ class OMGCLI(LightningCLI):
         """Defines the list of available subcommands and the arguments to skip."""
         d = LightningCLI.subcommands()
         d["visualize"] = {"model", "datamodule"}
+        d["match"] = {"model", "datamodule"}
         return d
