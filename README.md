@@ -57,6 +57,14 @@ training dataset:
 omg visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_name}
 ```
 
+## Structure Match (CSP)
+
+Run the following command to compare generated structures to reference dataset:
+
+```bash
+omg match --config {config_file} --xyz_file {xyz_file}
+```
+
 ## OMG Data Format
 
 For a batch size of batch_size, the `torch_geometric.data.Data` instances contain the following attributes:
