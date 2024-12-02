@@ -73,15 +73,15 @@ def xyz_saver(data: Union[Data, List[Data]], filename: Path) -> None:
     write(filename, atoms)
 
 
-def xyz_reader(filename: Path) -> Data:
+def xyz_reader(filename: Path) -> List[Atoms]:
     """
     Reads an xyz file and returns a Data object.
     """
     if not filename.suffix == ".xyz":
         raise ValueError("The filename must have the suffix '.xyz'.")
     # Read all atoms from the file by using index=":".
-    all_configs = read(filename, index=":")
-    return convert_ase_atoms_to_data(all_configs)
+    all_configs = read(filename, index=":", format='extxyz')
+    return all_configs
 
 # TODO: please move me to analysis.py when branches have been merged!
 from pymatgen.analysis.structure_matcher import StructureMatcher
