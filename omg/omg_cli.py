@@ -343,7 +343,7 @@ class OMGTrainer(Trainer):
             plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
             plt.text(
                 0.05, 0.95,
-                f'KS Test: D={kstest(vol, ref_vol).statistic}',
+                f'KS Test for identical distributions: p-value={kstest(vol, ref_vol).pvalue}',
                 verticalalignment='top',
                 bbox=props,
                 transform=plt.gca().transAxes
@@ -415,7 +415,7 @@ class OMGTrainer(Trainer):
             plt.legend()
             plt.text(
                 0.05, 0.95,
-                f'KS Test: D={kstest(trmsds, trmsds).statistic}',
+                f'KS Test for identical distributions: p-value={kstest(trmsds, trmsds).pvalue}',
                 verticalalignment='top',
                 bbox=props,
                 transform=plt.gca().transAxes
