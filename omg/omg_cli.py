@@ -15,8 +15,8 @@ from omg.datamodule.dataloader import OMGDataModule, OMGTorchDataset
 from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
-from omg.utils import convert_ase_atoms_to_data, xyz_reader, match_rate, reduce
-from omg.analysis import get_coordination_numbers, get_coordination_numbers_species, get_space_group
+from omg.utils import convert_ase_atoms_to_data, xyz_reader
+from omg.analysis import get_coordination_numbers, get_coordination_numbers_species, get_space_group, match_rate, reduce
 from collections import OrderedDict
 
 

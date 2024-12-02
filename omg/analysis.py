@@ -234,3 +234,64 @@ def get_space_group(atoms, niggli=False, var_prec=True, symprec=1e-3, angle_tole
     
     return sg_group, sg_num, crystal_system, sym_struc
 
+
+def structure_matcher(s1, s2, ltol=0.2, stol=0.3, angle_tol=5):
+    """ Checks if structures s1 and s2 of ase type Atoms are the same."""
+    from pymatgen.analysis.structure_matcher import StructureMatcher
+    from pymatgen.io.ase import AseAtomsAdaptor
+
+    sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
+    # conversion to pymatgen type
+    a1 = AseAtomsAdaptor.get_structure(s1)
+    a2 = AseAtomsAdaptor.get_structure(s2)
+    return sm.fit(a1, a2)
+
+def element_check(s1, s2):
+    """Check if s1 and s2 (both ase Atoms types) are of same composition
+    """
+    from omg.globals import MAX_ATOM_NUM
+    import numpy as np
+
+    s1_counts = np.bincount(s1.numbers, minlength=MAX_ATOM_NUM)
+    s2_counts = np.bincount(s2.numbers, minlength=MAX_ATOM_NUM)
+    
+    s1_min = np.amin(s1_counts[np.where(s1_counts>0)])
+    s2_min = np.amin(s2_counts[np.where(s2_counts>0)])
+
+    return np.array_equal(s1_counts/s1_min, s2_counts/s2_min)
+
+def match_rate(atoms_list, ref_list, ltol=0.2, stol=0.3, angle_tol=5):
+    """
+    Compare the structures in two xyz files. Return rate of matches between the two files.
+    Returns rate of matches within atoms_list.
+    """
+    match_count = 0
+    # Check if the structures are the same
+    for atoms_1 in atoms_list:
+        for atoms_2 in ref_list:
+            if element_check(atoms_1, atoms_2):
+                if structure_matcher(atoms_1, atoms_2, ltol=ltol, stol=stol, angle_tol=angle_tol):
+                    match_count += 1
+                    break
+
+    return match_count / len(atoms_list)
+
+def reduce(atoms_1_list):
+    """
+    Compare structures within one xyz file. Return rate of unique structures.
+    """
+    match_counts = {}
+    for i, atoms_1 in enumerate(atoms_1_list):
+        match_counts[i] = []
+        for j, atoms_2 in enumerate(atoms_1_list):
+            # to save time, only compare if not already compared or not self
+            if (i != j) and not (j in match_counts[i]):
+                if element_check(atoms_1, atoms_2):
+                    if structure_matcher(atoms_1, atoms_2):
+                        match_counts[i].append(j)
+    
+    match_count = len(atoms_1_list)
+    for key in match_counts.keys():
+        match_count -= len(match_counts[key])
+
+    return match_count / len(atoms_1_list)
