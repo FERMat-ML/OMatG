@@ -90,7 +90,7 @@ data:
         class_path: omg.datamodule.datamodule.DataModule
         init_args:
           lmdb_paths:
-           - "data/mp_20/train.lmdb"
+           - "data/mp_20/test.lmdb"
       niggli: False
   batch_size: 256
 trainer:

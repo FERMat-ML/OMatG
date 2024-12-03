@@ -51,7 +51,7 @@ class OMGTrainer(Trainer):
         # Get atoms
         init_atoms = xyz_reader(initial_file)
         gen_atoms = xyz_reader(final_file)
-        ref_atoms = self._load_dataset_atoms(datamodule.train_dataset, datamodule.train_dataset.convert_to_fractional)
+        ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset, datamodule.predict_dataset.convert_to_fractional)
 
         # Plot data
         self._plot_to_pdf(ref_atoms, init_atoms, gen_atoms, plot_name, model.use_min_perm_dist)
@@ -304,7 +304,7 @@ class OMGTrainer(Trainer):
                 if sg_num >= 3:
                     write("symmetric.xyz", sym_struc, format='extxyz', append=True)
 
-        print("Number of times space group identification failed for training dataset: {}/{} total".format(ref_sg_fail, len(reference_atoms)))
+        print("Number of times space group identification failed for prediction dataset: {}/{} total".format(ref_sg_fail, len(reference_atoms)))
         print("Number of times space group identification failed for generated dataset: {}/{} total".format(sg_fail, len(generated_atoms)))
 
         # Plot
@@ -525,7 +525,7 @@ class OMGTrainer(Trainer):
 
         # Get atoms
         gen_atoms = xyz_reader(final_file)
-        ref_atoms = self._load_dataset_atoms(datamodule.train_dataset, datamodule.train_dataset.convert_to_fractional)
+        ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset, datamodule.predict_dataset.convert_to_fractional)
 
         # TODO: add MLIP/DFT relaxation step on generated atoms here
 
