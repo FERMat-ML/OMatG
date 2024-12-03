@@ -41,7 +41,7 @@ exemplary configuration files).
 For generating new structures in an xyz file, run the following command:
 
 ```bash
-omg predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt> --model.generation_xyz_filename=<xyz_file>
+omg predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt> --model.generation_xyz_filename=<xyz_file> --data.batch_size=1024 --seed_everything=42 --trainer.max_epochs=1
 ```
 
 For an xyz filename `filename.xyz`, this command will also create a file `filename_init.xyz` that contains the initial

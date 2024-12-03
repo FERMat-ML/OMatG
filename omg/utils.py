@@ -69,7 +69,7 @@ def xyz_saver(data: Union[Data, List[Data]], filename: Path) -> None:
             lower, upper = d.ptr[i * 1], d.ptr[(i * 1) + 1]
             atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :],
                                cell=d.cell[i, :, :], pbc=(1, 1, 1)))
-    write(filename, atoms)
+    write(filename, atoms, append=True)
 
 
 def xyz_reader(filename: Path) -> Data:
