@@ -27,7 +27,7 @@ class OMGTrainer(Trainer):
     def visualize(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str, plot_name: str = "viz.pdf") -> None:
         """
         Compare the distributions of the volume, the element composition, and the number of unique elements per
-        structure in the training and generated dataset. Also, plot the root mean-square distance between the fractional
+        structure in the test and generated dataset. Also, plot the root mean-square distance between the fractional
         coordinates in the initial structures (sampled from rho_0) and the final generated structures (generated from
         rho_1).
 
@@ -78,10 +78,10 @@ class OMGTrainer(Trainer):
     @staticmethod
     def _plot_to_pdf(reference: List[Atoms], initial: List[Atoms], generated: List[Atoms], plot_name: str, use_min_perm_dist: bool) -> None:
         """
-        Plot figures for data analysis/matching between training and generated data.
+        Plot figures for data analysis/matching between test and generated data.
 
         :param reference:
-            Reference training structures.
+            Reference test structures.
         :type reference: List[Atoms]
         :param initial:
             Initial structures.
@@ -107,22 +107,22 @@ class OMGTrainer(Trainer):
         initial = convert_ase_atoms_to_data(initial)
         generated = convert_ase_atoms_to_data(generated)
 
-        # List of volumes of all training structures.
+        # List of volumes of all test structures.
         ref_vol = []
-        # Dictionary mapping atom number to occurrences of that atom number in all training structures.
+        # Dictionary mapping atom number to occurrences of that atom number in all test structures.
         ref_nums = {}
-        # Dictionary mapping number of unique elements in every training structure to occurrences of that number of
-        # unique elements in all training structures.
+        # Dictionary mapping number of unique elements in every test structure to occurrences of that number of
+        # unique elements in all test structures.
         ref_n_types = {}
-        # Dictionary mapping number of elements in every training structure to occurrences of that number of elements.
+        # Dictionary mapping number of elements in every test structure to occurrences of that number of elements.
         ref_n_atoms = {}
-        # List mapping distribution of avg coordination numbers across all training structures.
+        # List mapping distribution of avg coordination numbers across all test structures.
         ref_avg_cn = []
-        # Dictionary mapping coordination numbers by species in training structures.
+        # Dictionary mapping coordination numbers by species in test structures.
         ref_cn_species = {}
-        # Dictionary mapping occurences of space groups in training structures.
+        # Dictionary mapping occurences of space groups in test structures.
         ref_sg = {}
-        # Dictionary mapping occurences of crystal systems in training structures.
+        # Dictionary mapping occurences of crystal systems in test structures.
         ref_crystal_sys = {}
 
         for i in range(1, MAX_ATOM_NUM + 1):
@@ -318,7 +318,7 @@ class OMGTrainer(Trainer):
                     label="Generated", color="blueviolet")
             total_number_atoms_ref = sum(v for v in ref_nums.values())
             plt.bar(ref_elements, [v / total_number_atoms_ref for v in ref_nums.values()], alpha=0.5,
-                    label="Training", color="darkslategrey")
+                    label="Test", color="darkslategrey")
             plt.title("Fractional element composition")
             plt.xlabel("Atomic Number")
             plt.ylabel("Density")
@@ -340,7 +340,7 @@ class OMGTrainer(Trainer):
             kde_gen = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(vol)
             log_density_gen = kde_gen.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
-            plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
+            plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Test")
             #plt.text(
             #    0.05, 0.95,
             #    f'KS Test for identical distributions: p-value={kstest(vol, ref_vol).pvalue}',
@@ -359,7 +359,7 @@ class OMGTrainer(Trainer):
             plt.bar([k for k in n_atoms.keys()], [v / len(generated.n_atoms) for v in n_atoms.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             plt.bar([k for k in ref_n_atoms.keys()], [v / len(reference.n_atoms) for v in ref_n_atoms.values()],
-                    alpha=0.5, label="Training", color="darkslategrey")
+                    alpha=0.5, label="Test", color="darkslategrey")
             plt.xticks(ticks=np.arange(min(min(k for k in n_atoms.keys()),
                                            min(k for k in ref_n_atoms.keys())),
                                        max(max(k for k in n_atoms.keys()),
@@ -376,7 +376,7 @@ class OMGTrainer(Trainer):
             plt.bar([k for k in n_types.keys()], [v / len(generated.n_atoms) for v in n_types.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             plt.bar([k for k in ref_n_types.keys()], [v / len(reference.n_atoms) for v in ref_n_types.values()],
-                    alpha=0.5, label="Training", color="darkslategrey")
+                    alpha=0.5, label="Test", color="darkslategrey")
             plt.xticks(ticks=np.arange(min(min(k for k in n_types.keys()),
                                            min(k for k in ref_n_types.keys())),
                                        max(max(k for k in n_types.keys()),
@@ -407,7 +407,7 @@ class OMGTrainer(Trainer):
             kde_rand = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(rand_rmsds)
             log_density_rand = kde_rand.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
-            plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
+            plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Test")
             plt.plot(x_d, np.exp(log_density_traveled), color="cadetblue", label="Traveled")
             plt.plot(x_d, np.exp(log_density_rand), color="steelblue", label="Random")
             plt.xlabel("Root Mean Square Distance of Fractional Coordinates")
@@ -438,7 +438,7 @@ class OMGTrainer(Trainer):
             kde_gen = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(avg_cn)
             log_density_gen = kde_gen.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
-            plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Training")
+            plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Test")
             plt.title("Average coordination number by structure")
             plt.xlabel("Average CN")
             plt.ylabel("Density")
@@ -475,7 +475,7 @@ class OMGTrainer(Trainer):
             plt.bar([k for k in avg_cn_species.keys()], [v for v in avg_cn_species.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             plt.bar([k for k in ref_avg_cn_species.keys()], [v for v in ref_avg_cn_species.values()], alpha=0.5,
-                    label="Training", color="darkslategrey")
+                    label="Test", color="darkslategrey")
             plt.xticks(rotation=75, ha='right', fontsize=4)
             plt.title("Average coordination number by species")
             plt.xlabel("Species")
@@ -491,7 +491,7 @@ class OMGTrainer(Trainer):
                     label="Generated", color="blueviolet")
             total_sg_ref = sum(v for v in ref_sg.values())
             plt.bar([k for k in ref_sg.keys()], [v / total_sg_ref for v in ref_sg.values()], alpha=0.5,
-                    label="Training", color="darkslategrey")
+                    label="Test", color="darkslategrey")
             plt.title("Space group distribution")
             plt.xlabel("Space group number")
             plt.ylabel("Density")
@@ -508,7 +508,7 @@ class OMGTrainer(Trainer):
                     label="Generated", color="blueviolet")
             total_cs_ref = sum(v for v in ref_crystal_sys.values())
             plt.bar([k for k in ref_crystal_sys_ord.keys()], [v / total_cs_ref for v in ref_crystal_sys_ord.values()], alpha=0.5,
-                    label="Training", color="darkslategrey")
+                    label="Test", color="darkslategrey")
             plt.xticks(rotation=45, ha='right', fontsize=8)
             plt.title("Crystal system distribution")
             plt.xlabel("Crystal system")
