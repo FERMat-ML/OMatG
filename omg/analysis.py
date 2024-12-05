@@ -326,9 +326,28 @@ def element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
     return np.allclose(atoms_one_counts / atoms_one_min, atoms_two_counts / atoms_two_min)
 
 
-def _check(x: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
-    """Helper function to check the composition and structure of two structures. Required for multiprocessing."""
-    return element_check(x[0], x[1]) and structure_matcher(x[0], x[1], ltol=ltol, stol=stol, angle_tol=angle_tol)
+def _check(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
+    """
+    Helper function to check whether the given first structure appears in the second list of structures by using
+    pymatgen's StructureMatcher.
+
+    This function is required for multiprocessing (see match_rate and unique_rate functions below).
+
+    :param atoms_one:
+        First structure.
+    :type atoms_one: Atoms
+    :param list_atoms_two:
+        List of second structures.
+    :type list_atoms_two: List[Atoms]
+    :param ltol:
+        Fractional length tolerance for pymatgen's StructureMatcher.
+        Defaults to 0.2 (pymatgen's default).
+    """
+    for atoms_two in list_atoms_two:
+        if (element_check(atoms_one, atoms_two)
+                and structure_matcher(atoms_one, atoms_two, ltol=ltol, stol=stol, angle_tol=angle_tol)):
+            return True
+    return False
 
 
 def match_rate(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.3,
@@ -360,12 +379,8 @@ def match_rate(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], ltol: flo
     """
     with Pool() as p:
         # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
-        cfunc = partial(_check, ltol=ltol, stol=stol, angle_tol=angle_tol)
-        # len(atoms_list) * len(ref_list) // os.cpu_count() would be optimal value for chunksize because it distributes
-        # the same amount of work to all processes. However, the memory usage can become quite large. Therefore, we
-        # cap the chunksize at 100000.
-        match_count = sum(p.imap_unordered(cfunc, product(atoms_list, ref_list),
-                                           chunksize=min(len(atoms_list) * len(ref_list) // os.cpu_count(), 100000)))
+        cfunc = partial(_check, list_atoms_two=ref_list, ltol=ltol, stol=stol, angle_tol=angle_tol)
+        match_count = sum(p.map(cfunc, atoms_list))
 
     return match_count / len(atoms_list)
 
