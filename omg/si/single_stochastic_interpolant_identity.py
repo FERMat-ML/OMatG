@@ -78,7 +78,7 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolantSpecies):
         :rtype: torch.Tensor
         """
         assert torch.equal(x_0, x_1)
-        return torch.tensor(0.0)
+        return torch.tensor(0.0, device=x_0.device)
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,

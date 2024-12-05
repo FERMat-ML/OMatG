@@ -65,14 +65,12 @@ def xyz_saver(data: Union[Data, List[Data]], filename: Path) -> None:
         data = [data]
     atoms = []
     for d in data:
-        d = d.to("cpu")
         batch_size = len(d.n_atoms)
         for i in range(batch_size):
             lower, upper = d.ptr[i * 1], d.ptr[(i * 1) + 1]
             atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :],
                                cell=d.cell[i, :, :], pbc=(1, 1, 1)))
-    with open(filename, mode="a") as file_handle:
-        write(file_handle, atoms)
+    write(filename, atoms, append=True)
 
 
 def xyz_reader(filename: Path) -> List[Atoms]:

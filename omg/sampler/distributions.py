@@ -59,8 +59,9 @@ class InformedLatticeDistribution(object):
             self._length_log_stds = [0.07268335670232773, 0.07268335670232773, 0.07268335670232773]
         else:
             raise ValueError(f"Unknown dataset name: {dataset_name}")
-        self._length_distribution = LogNormal(torch.tensor(self._length_log_means),
-                                              torch.tensor(self._length_log_stds))
+        # Use CPU device to align with other distributions.
+        self._length_distribution = LogNormal(torch.tensor(self._length_log_means, device="cpu"),
+                                              torch.tensor(self._length_log_stds, device="cpu"))
 
     def __call__(self, number_of_atoms: int):
         """
@@ -79,7 +80,7 @@ class InformedLatticeDistribution(object):
         lengths = self._length_distribution.sample().numpy()
         # Generate uniform angles between 60 and 120 degrees.
         # Ase wants angles in degrees.
-        angles = ((torch.rand(3) * 60.0) + 60.0).numpy()
+        angles = ((torch.rand(3, device="cpu") * 60.0) + 60.0).numpy()
         assert lengths.shape == (3,)
         assert angles.shape == (3,)
         return cellpar_to_cell(np.concatenate((lengths, angles)))
@@ -105,4 +106,4 @@ class MirrorData(object):
     def __call__(self, data: torch.Tensor) -> np.ndarray:
         # TODO: Introduce an abstract base class for all of these distributions.
         # I think all classes should just get the entire pos, species, cell data.
-        return data.clone().numpy(force=True)
+        return data.detach().clone().cpu().numpy()
