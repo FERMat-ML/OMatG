@@ -15,58 +15,61 @@ class LinearInterpolant(Interpolant):
         """
         super().__init__()
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def alpha(self, t:torch.Tensor):
         """
-        Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
+        Alpha term in stochastic interpolant
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.Tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
-            Interpolated value.
+            Value of alpha.
         :rtype: torch.Tensor
         """
-        assert self._check_t(t)
-        return (1.0 - t) * x_0 + t * x_1
+        return (1.0 - t)
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def alpha_dot(self, t: torch.Tensor):
         """
-        Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
-        t with respect to time.
+        Derivative of alpha term in stochastic interpolant
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.Tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
-            Derivative of the interpolant.
+            Value of alpha derivative.
         :rtype: torch.Tensor
         """
-        self._check_t(t)
-        return x_1 - x_0
+        return - 1.0
+
+    def beta(self, t:torch.Tensor):
+        """
+        Alpha term in stochastic interpolant
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+
+        :return:
+            Value of beta.
+        :rtype: torch.Tensor
+        """
+        return t
+
+    def beta_dot(self, t:torch.Tensor):
+        """
+        Derivative of beta term in stochastic interpolant
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+
+        :return:
+            Value of beta derivative.
+        :rtype: torch.Tensor
+        """
+        return 1.0
 
     def get_corrector(self) -> Corrector:
         """
@@ -91,59 +94,61 @@ class TrigonometricInterpolant(Interpolant):
         """
         super().__init__()
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def alpha(self, t:torch.Tensor):
         """
-        Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
+        Alpha term in stochastic interpolant
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.Tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
-            Interpolated value.
+            Value of alpha.
         :rtype: torch.Tensor
         """
-        assert self._check_t(t)
-        return torch.cos(torch.pi * t / 2.0) * x_0 + torch.sin(torch.pi * t / 2.0) * x_1
+        return torch.cos((torch.pi * t) / 2)
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                               batch_pointer: torch.Tensor) -> torch.Tensor:
+    def alpha_dot(self, t: torch.Tensor):
         """
-        Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
-        t with respect to time.
+        Derivative of alpha term in stochastic interpolant
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.Tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
-            Derivative of the interpolant.
+            Value of alpha derivative.
         :rtype: torch.Tensor
         """
-        assert self._check_t(t)
-        return (-torch.pi / 2.0 * torch.sin(torch.pi * t / 2.0) * x_0
-                + torch.pi / 2.0 * torch.cos(torch.pi * t / 2.0) * x_1)
+        return - (torch.pi / 2) * torch.sin((torch.pi * t) / 2)
+
+    def beta(self, t:torch.Tensor):
+        """
+        Alpha term in stochastic interpolant
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+
+        :return:
+            Value of beta.
+        :rtype: torch.Tensor
+        """
+        return torch.sin((torch.pi * t) / 2)
+
+    def beta_dot(self, t:torch.Tensor):
+        """
+        Derivative of beta term in stochastic interpolant
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+
+        :return:
+            Value of beta derivative.
+        :rtype: torch.Tensor
+        """
+        return (torch.pi / 2) * torch.cos((torch.pi * t) / 2)
 
     def get_corrector(self) -> Corrector:
         """

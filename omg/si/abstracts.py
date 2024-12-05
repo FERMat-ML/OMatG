@@ -94,7 +94,6 @@ class Interpolant(ABC, TimeChecker):
     from two distributions p_0 and p_1 at times t.
     """
 
-    @abstractmethod
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_pointer: torch.Tensor) -> torch.Tensor:
         """
@@ -118,7 +117,7 @@ class Interpolant(ABC, TimeChecker):
             Interpolated value.
         :rtype: torch.Tensor
         """
-        raise NotImplementedError
+        return self.alpha(t) * x_0 + self.beta(t) * x_1
 
     @abstractmethod
     def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
@@ -145,7 +144,7 @@ class Interpolant(ABC, TimeChecker):
             Derivative of the interpolant.
         :rtype: torch.Tensor
         """
-        raise NotImplementedError
+        return self.alpha_dot(t) * x_0 + self.beta_dot(t) * x_1
 
     @abstractmethod
     def get_corrector(self) -> Corrector:
@@ -159,6 +158,65 @@ class Interpolant(ABC, TimeChecker):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def alpha(self, t:torch.Tensor):
+        """
+        Alpha term in linear interpolant
+
+        :param t:
+            Time.
+        :type t: torch.Tensor
+
+        :return:
+            Value of alpha term.
+        :rtype: torch.tensor
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def alpha_dot(self, t:torch.Tensor):
+        """
+        Time derivative of alpha term in linear interpolant
+
+        :param t:
+            Time.
+        :type t: torch.Tensor
+
+        :return:
+            Value of alpha term derivative.
+        :rtype: torch.tensor
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def beta(self, t:torch.Tensor):
+        """
+        Beta term in linear interpolant
+
+        :param t:
+            Time.
+        :type t: torch.Tensor
+
+        :return:
+            Value of beta term.
+        :rtype: torch.tensor
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def beta_dot(self, t:torch.Tensor):
+        """
+        Time derivative of beta term in linear interpolant
+
+        :param t:
+            Time.
+        :type t: torch.Tensor
+
+        :return:
+            Value of beta term derivative.
+        :rtype: torch.tensor
+        """
+        raise NotImplementedError
 
 class LatentGamma(ABC, TimeChecker):
     """
@@ -309,7 +367,6 @@ class StochasticInterpolant(ABC, TimeChecker):
        :rtype: Corrector
        """
         raise NotImplementedError
-
 
 class StochasticInterpolantSpecies(StochasticInterpolant, ABC):
     """
