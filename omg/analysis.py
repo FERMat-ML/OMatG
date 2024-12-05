@@ -1,219 +1,177 @@
-from ase.io import read
-from tqdm import tqdm
-from ase.data import covalent_radii as CR
-import sys
-from datetime import datetime
-import numpy as np
-import matplotlib.pyplot as plt
-import spglib
-from ase import Atoms
-
-# Adapted from: https://gist.github.com/tgmaxson/8b9d8b40dc0ba4395240
-def get_coordination_numbers(atoms, covalent_percent=1.25, dis=None):
-    """
-    Returns an array of coordination numbers determined by
-    distance and covalent radii.  By default a bond is defined as 120% of the combined radii
-    or less. This can be changed by setting 'covalent_percent' to a float representing a 
-    factor to multiple by (default = 1.2).
-
-    If 'exclude' is set to an array,  these atomic numbers with be unable to form bonds.
-    This only excludes them from being counted from other atoms,  the coordination
-    numbers for these atoms will still be calculated,  but will be unable to form
-    bonds to other excluded atomic numbers.
-
-    atoms: type ase.Atoms. The structure to calculate the average coordination number for.
-    covalent_percent: type float. The percentage of the covalent radii to use as a cutoff distance.
-    dis: type float. radial cutoff distance (to be used instead of covalent radii) 
-    """
-
-    # Get all the distances
-    distances = np.divide(atoms.get_all_distances(mic=True), covalent_percent)
-    
-    # Atomic Numbers
-    numbers = atoms.numbers
-    # Coordination Numbers for each atom
-    cn = []
-    cr = np.take(CR, numbers)
-    # Array of indices of bonded atoms.  len(bonded[x]) == cn[x]
-    bonded = []
-    indices = list(range(len(atoms)))
-    for i in indices:
-        bondedi = []
-        for ii in indices:
-            # Skip if measuring the same atom
-            if i == ii:
-                continue
-            # if dis is set, use that instead of the covalent radii
-            if dis:
-                if dis >= distances[i,ii]:
-                    bondedi.append(ii)
-            else:
-                if (cr[i] + cr[ii]) >= distances[i,ii]:
-                    bondedi.append(ii)
-        # Add this atoms bonds to the bonded list
-        bonded.append(bondedi)
-    for i in bonded:
-        cn.append(len(i))
-    return cn
-
-def get_coordination_numbers_species(atoms, covalent_percent=1.25, dis=None, naming='species'):
-    """
-    Returns a dictionary with the species as keys and the coordination numbers as values, determined by
-    distance and covalent radii averaged over each species.  By default a bond is defined as 120% of the combined radii
-    or less. This can be changed by setting 'covalent_percent' to a float representing a 
-    factor to multiple by (default = 1.2).
-
-    If 'exclude' is set to an array,  these atomic numbers with be unable to form bonds.
-    This only excludes them from being counted from other atoms,  the coordination
-    numbers for these atoms will still be calculated,  but will be unable to form
-    bonds to other excluded atomic numbers.
-
-    atoms: type ase.Atoms. The structure to calculate the average coordination number for.
-    covalent_percent: type float. The percentage of the covalent radii to use as a cutoff distance.
-    dis: type float. radial cutoff distance (to be used instead of covalent radii) 
-    naming: type str. 'species' or 'number'. 
-    If 'species', the keys of the dictionary will be the chemical symbol. If 'number', the keys will be the atomic number.
-    """
-
-    # Get all the distances
-    distances = np.divide(atoms.get_all_distances(mic=True), covalent_percent)
-    
-    # Atomic Numbers
-    numbers = atoms.numbers
-    # Coordination Numbers for each atom
-    cn = []
-    cr = np.take(CR, numbers)
-    # Array of indices of bonded atoms.  len(bonded[x]) == cn[x]
-    bonded = []
-    indices = list(range(len(atoms)))
-    for i in indices:
-        bondedi = []
-        for ii in indices:
-            # Skip if measuring the same atom
-            if i == ii:
-                continue
-            # if dis is set, use that instead of the covalent radii
-            if dis:
-                if dis >= distances[i,ii]:
-                    bondedi.append(ii)
-            else:
-                if (cr[i] + cr[ii]) >= distances[i,ii]:
-                    bondedi.append(ii)
-        # Add this atoms bonds to the bonded list
-        bonded.append(bondedi)
-    for i in bonded:
-        cn.append(len(i))
-    
-    cn_dict = {}
-
-    if naming == 'species':
-        symbols = atoms.get_chemical_symbols()
-        species_list = [str(i) for i in np.unique(symbols)]
-        for species in species_list:
-            cn_dict[species] = [coord_num for atom, coord_num in zip(symbols, cn) if atom == species]
-        
-    elif naming == 'number':
-        elements = np.unique(numbers)
-        for element in elements:
-            cn_dict[element] = [coord_num for atom, coord_num in zip(numbers, cn) if atom == element]
-
-    else:
-        raise ValueError("Invalid naming argument. Must be 'species' or 'number'.")
-    
-    return cn_dict
-
 from collections import Counter
-def identify_spacegroup_varprec(spg_cell, angle_tolerance, max_iterations = 200):
-    """Identifying the best space group using varying tolerances"""
-
-    # precision to spglib is in cartesian distance,
-    prec = 5.
-    precs = []
-    grps = []
-    grp = 'None'
-    highest_symmetry_group = 'None'
-    max_group = 0
-
-    # Try a range of precisions and record the determined spacegroups
-    counter = 0
-    while grp is None or grp.split()[-1] not in ['(1)', '(2)']:
-        counter += 1
-        if counter > max_iterations:
-            break
-        grp = spglib.get_spacegroup(spg_cell, symprec=prec, angle_tolerance=angle_tolerance)
-        grps.append(grp)
-        precs.append(prec)
-        prec /= 2
-
-        if grp is not None:
-            group_num = int(grp.split()[-1].replace('(', '').replace(')', ''))
-            if group_num > max_group:
-                max_group = group_num
-                highest_symmetry_group = grp
-
-    if all(g is None for g in grps):
-        #raise ValueError("No symmetry groups found!")
-        print("No symmetry groups found!")
-        return None
-    # One measure of best group is the highest symmetry group
-    highest_symmetry_group_prec = precs[::-1][grps[::-1].index(highest_symmetry_group)]
-
-    # An alternative measure is the most commonly occurring group
-    counts = Counter(grps)
-    if None in counts:
-        del counts[None]
-    most_common_group = counts.most_common(1)[0][0]
-    most_common_group_prec = precs[::-1][grps[::-1].index(most_common_group)]
-
-    return {'common': (most_common_group, most_common_group_prec),
-            'highest': (highest_symmetry_group, highest_symmetry_group_prec)}
+from functools import partial
+from itertools import product
+from multiprocessing import Pool
+import os
+from typing import Dict, List, Optional, Sequence, Tuple
+from ase import Atoms
+from ase.data import covalent_radii
+import numpy as np
+from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.io.ase import AseAtomsAdaptor
+import spglib
+from omg.globals import MAX_ATOM_NUM
 
 
-def get_space_group(atoms, niggli=False, var_prec=True, symprec=1e-3, angle_tolerance=4.):
-    """Calculate the space group of a given structure, optionally using the primitive cell.
-    Assumes atoms is a ase Atoms object. 
-    Niggli will generate the Niggli reduced cell. 
-    Symprec is the symmetry precision used by spglib.
-
-    Returns the space group symbol (str) and space group number (int) and crystal system (str).
+def get_bonds(atoms: Atoms, covalent_increase_factor: float = 1.25) -> List[List[int]]:
     """
+    Compute the list of bonds for every atom in the given structure.
 
-    if niggli:
-        atoms = atoms.niggli_reduce() # TODO: SEEMS BROKEN (returning NoneType on test case)
-    
+    The bonds are determined by comparing the distances between the atoms and the involved covalent radii. A bond is
+    present if the two atoms are closer than the sum of their covalent radii times a given multiplicative factor.
+
+    :param atoms:
+        The structure to calculate the bonds for.
+    :type atoms: Atoms
+    :param covalent_increase_factor:
+        The factor by which to multiply the sum of the covalent radii to determine the bond distance.
+        Defaults to 1.25.
+    :type covalent_increase_factor: float
+
+    :return:
+        List of bonds for the atoms in the structure.
+    :rtype: List[List[int]]
+    """
+    distances = atoms.get_all_distances(mic=True)
+    cr = [covalent_radii[number] for number in atoms.numbers]
+
+    # List of bonded atoms for every atom.
+    bonds = [[] for _ in range(len(atoms))]
+
+    for first_index in range(len(atoms)):
+        for second_index in range(first_index + 1, len(atoms)):
+            if (cr[first_index] + cr[second_index]) * covalent_increase_factor >= distances[first_index, second_index]:
+                bonds[first_index].append(second_index)
+                bonds[second_index].append(first_index)
+
+    return bonds
+
+
+def get_coordination_numbers(atoms: Atoms, covalent_increase_factor: float = 1.25) -> List[int]:
+    """
+    Compute the coordination numbers for the atoms in the given structure.
+
+    The coordination numbers are determined by comparing the distances between the atoms and the involved covalent
+    radii. A bond that increases the coordination number is present if the two atoms are closer than the sum of their
+    covalent radii times a given multiplicative factor.
+
+    :param atoms:
+        The structure to calculate the coordination numbers for.
+    :type atoms: Atoms
+    :param covalent_increase_factor:
+        The factor by which to multiply the sum of the covalent radii to determine the bond distance.
+        Defaults to 1.25.
+    :type covalent_increase_factor: float
+
+    :return:
+        List of coordination numbers for the atoms in the structure.
+    :rtype: List[int]
+    """
+    bonds = get_bonds(atoms, covalent_increase_factor)
+    return [len(b) for b in bonds]
+
+
+def get_coordination_numbers_species(atoms: Atoms, covalent_increase_factor: float = 1.25) -> Dict[str, List[int]]:
+    """
+    Compute a dictionary from the species to their coordination numbers in the given structure.
+
+    The coordination numbers are determined by comparing the distances between the atoms and the involved covalent
+    radii. A bond that increases the coordination number is present if the two atoms are closer than the sum of their
+    covalent radii times a given multiplicative factor.
+
+    Since any species can be present more than once in the structure, their coordination numbers are stored in a list.
+
+    :param atoms:
+        The structure to calculate the coordination numbers for.
+    :type atoms: Atoms
+    :param covalent_increase_factor:
+        The factor by which to multiply the sum of the covalent radii to determine the bond distance.
+        Defaults to 1.25.
+    :type covalent_increase_factor: float
+
+    :return:
+        Dictionary from the species to their coordination numbers in the structure.
+    :rtype: Dict[str, List[int]]
+    """
+    coordination_numbers = get_coordination_numbers(atoms, covalent_increase_factor)
+    symbols = atoms.get_chemical_symbols()
+    unique_species = [str(i) for i in np.unique(symbols)]
+    return {species: [cn for cn, symb in zip(coordination_numbers, symbols) if symb == species]
+            for species in unique_species}
+
+
+def get_space_group(atoms: Atoms, symprec: float = 1.0e-5, angle_tolerance: float = -1.0,
+                    var_prec: bool = False) -> (Optional[str], Optional[int], Optional[str], Optional[Atoms]):
+    """
+    Calculate the space group of a given structure using spglib with the given precision arguments.
+
+    In addition to the space group name and number, the crystal system and a perfectly symmetrized structure are
+    returned.
+
+    If var_prec is False, this function effectively uses the get_spacegroup function of spglib (see
+    https://spglib.readthedocs.io/en/stable/api/python-api/spglib/spglib.html#spglib.get_spacegroup and
+    https://spglib.readthedocs.io/en/stable/api/python-api/spglib/spglib.html#spglib.get_symmetry for a documentation
+    of the arguments). Note, however, that we directly use the get_symmetry_dataset function of spglib instead of the
+    get_spacegroup function and then mirror the order of operations in the get_spacegroup function. This allows us to
+    create a symmetrized structure.
+
+    Spglib's get_symmetry_dataset function possibly returns None when the space group could not be determined, which
+    mostly happens if symprec was chosen too large (or if there are overlaps between atoms). At the same time, if we
+    choose symprec too small, one only gets triclinic space groups except for perfect crystals. If var_prec is True, in
+    order to find a symprec value that gives something non-trivial, we start at a very large symprec value which either
+    returns None or a non-triclinic space group. We then iteratively decrease symprec until the spacegroup becomes
+    triclinic. We then return symmetry dataset corresponding to the most commonly occuring space group during this
+    iteration.
+
+    :param atoms:
+        Structure to calculate the space group for.
+    :type atoms: Atoms
+    :param symprec:
+        Symmetry search tolerance in the unit of length.
+        Defaults to 1.0e-05 (spglib's default).
+    :type symprec: float
+    :param angle_tolerance:
+        Symmetry search tolerance in the unit of angle deg. Normally, spglib does not recommend to use this argument. If
+        the value is negative, spglib uses an internally optimized routine to judge symmetry.
+        Defaults to -1.0 (spglib's default).
+    :type angle_tolerance: float
+    :param var_prec:
+        If True, the function uses a variable precision to determine the space group.
+        Defaults to False.
+    :type var_prec: bool
+
+    :return:
+        The space-group name, the space-group number, the crystal system, symmetrized structure.
+        If the space-group could not be determined, all return values are None.
+    :rtype: (Optional[str], Optional[int], Optional[str], Optional[Atoms])
+    """
+    # Cell arguments for spglib, see
+    # https://spglib.readthedocs.io/en/stable/api/python-api/spglib/spglib.html#spglib.get_symmetry.
     spglib_cell = (atoms.get_cell(), atoms.get_scaled_positions(), atoms.get_atomic_numbers())
-    #spglib_cell_primitive = spglib.find_primitive(spglib_cell)
 
     if var_prec:
-        sg_symprec_dict = identify_spacegroup_varprec(spglib_cell, angle_tolerance)
-        if sg_symprec_dict is not None:
-            print(sg_symprec_dict['common'], sg_symprec_dict['highest'])
-            sg = spglib.get_spacegroup(spglib_cell, symprec=sg_symprec_dict['common'][1], angle_tolerance=angle_tolerance)
-            sym_data = spglib.get_symmetry_dataset(spglib_cell, sg_symprec_dict['common'][1], angle_tolerance=angle_tolerance)
-            #sg = spglib.get_spacegroup(spglib_cell, symprec=sg_symprec_dict['highest'][1], angle_tolerance=angle_tolerance)
-            #sym_data= spglib.get_symmetry_dataset(spglib_cell, sg_symprec_dict['highest'][1], angle_tolerance=angle_tolerance)
-            sym_struc = Atoms(numbers=sym_data.std_types, scaled_positions=sym_data.std_positions, cell=sym_data.std_lattice, pbc=True)
-        else:
-            print("Space group could not be determined.")
-            print(spglib.get_error_message())
-            return None, None, None, None
+        sym_data = _get_symmetry_dataset_var_prec(atoms, angle_tolerance=angle_tolerance)
     else:
-        sg = spglib.get_spacegroup(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
-        if sg is None:
-            #raise RuntimeError("Space group could not be determined.")
-            print("Space group could not be determined.")
-            print(spglib.get_error_message())
-            return None, None, None, None
-        else:
-            sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
-            sym_struc = Atoms(numbers=sym_data.std_types, scaled_positions=sym_data.std_positions, cell=sym_data.std_lattice, pbc=True)
+        sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
+
+    # This is the order of operations in spglib's get_spacegroup function.
+    if sym_data is None:
+        print("[WARNING] get_space_group: Space group could not be determined.")
+        return None, None, None, None
+
+    spg_type = spglib.get_spacegroup_type(sym_data.hall_number)
+    if spg_type is None:
+        print("[WARNING] get_space_group: Space group could not be determined.")
+        return None, None, None, None
+
+    sg = "%s (%d)" % (spg_type.international_short, sym_data.number)
 
     sg_group = sg.split()[0]
     sg_num = int(sg.split()[1].replace('(', '').replace(')', ''))
 
     if sg_num < 1 or sg_num > 230:
-        # RuntimeError("Space group number is out of range.")
-        print("Space group number is out of range.")
+        print("[WARNING] get_space_group: Space group could not be determined.")
+        return None, None, None, None
     elif sg_num < 3:
         crystal_system = "Triclinic"
     elif 3 <= sg_num <= 15:
@@ -226,72 +184,226 @@ def get_space_group(atoms, niggli=False, var_prec=True, symprec=1e-3, angle_tole
         crystal_system = "Trigonal"
     elif 168 <= sg_num <= 194:
         crystal_system = "Hexagonal"
-    elif 195 <= sg_num <= 230:
-        crystal_system = "Cubic"
     else:
-        #raise RuntimeError("Crystal system could not be determined.")
-        print("Crystal system could not be determined.")
-    
+        assert 195 <= sg_num <= 230
+        crystal_system = "Cubic"
+
+    sym_struc = Atoms(numbers=sym_data.std_types, scaled_positions=sym_data.std_positions,
+                      cell=sym_data.std_lattice, pbc=True)
+
     return sg_group, sg_num, crystal_system, sym_struc
 
 
-def structure_matcher(s1, s2, ltol=0.2, stol=0.3, angle_tol=5):
-    """ Checks if structures s1 and s2 of ase type Atoms are the same."""
-    from pymatgen.analysis.structure_matcher import StructureMatcher
-    from pymatgen.io.ase import AseAtomsAdaptor
+def _get_symmetry_dataset_var_prec(atoms: Atoms, angle_tolerance: float = -1.0,
+                                   max_iterations: int = 200) -> Optional[spglib.SpglibDataset]:
+    """
+    Calculate the symmetry dataset of a given structure using spglib with a variable precision.
 
+    Spglib's get_symmetry_dataset function possibly returns None when the space group could not be determined, which
+    mostly happens if symprec was chosen too large (or if there are overlaps between atoms). At the same time, if we
+    choose symprec too small, one only gets triclinic space groups except for perfect crystals. In order to find a
+    symprec value that gives something non-trivial, we start at a very large symprec value which either returns None or
+    a non-triclinic space group. We then iteratively decrease symprec until the spacegroup becomes triclinic. We then
+    return symmetry dataset corresponding to the most commonly occuring space group during this iteration.
+
+    :param atoms:
+        Structure to calculate the symmetry dataset for.
+    :type atoms: Atoms
+    :param angle_tolerance:
+        Symmetry search tolerance in the unit of angle deg. Normally, spglib does not recommend to use this argument. If
+        the value is negative, spglib uses an internally optimized routine to judge symmetry.
+        Defaults to -1.0 (spglib's default).
+    :type angle_tolerance: float
+    :param max_iterations:
+        Maximum number of iterations to try to find a space group.
+        Defaults to 200.
+    :type max_iterations: int
+
+    :return:
+        The most commonly occurring symmetry dataset.
+    :rtype: Optional[spglib.SpglibDataset]
+    """
+    # Cell arguments for spglib, see
+    # https://spglib.readthedocs.io/en/stable/api/python-api/spglib/spglib.html#spglib.get_symmetry.
+    spglib_cell = (atoms.get_cell(), atoms.get_scaled_positions(), atoms.get_atomic_numbers())
+    # Precision to spglib is in cartesian distance.
+    prec = 5.0
+    symmetry_datasets = []
+    groups = []
+    current_group = None
+    iteration = 0
+
+    # Space groups ending with (1) and (2) are triclinic. We decrease the precision until we get something triclinic.
+    while current_group is None or current_group.split()[-1] not in ['(1)', '(2)']:
+        iteration += 1
+        if iteration > max_iterations:
+            break
+
+        dataset = spglib.get_symmetry_dataset(spglib_cell, symprec=prec, angle_tolerance=angle_tolerance)
+        prec /= 2.0
+        if dataset is None:
+            continue
+        spg_type = spglib.get_spacegroup_type(dataset.hall_number)
+        if spg_type is None:
+            continue
+        current_group = "%s (%d)" % (spg_type.international_short, dataset.number)
+        symmetry_datasets.append(dataset)
+        groups.append(current_group)
+
+    # All space groups were None.
+    if len(groups) == 0:
+        return None
+
+    # Counting the number of occurrences should be done on the groups which are simple strings.
+    counts = Counter(groups)
+    most_common_group = counts.most_common(1)[0][0]
+    return symmetry_datasets[groups.index(most_common_group)]
+
+
+def structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, stol: float = 0.3,
+                      angle_tol: float = 5.0) -> bool:
+    """
+    Checks if the two structures are the same by using pymatgen's StructureMatcher.
+
+    The documentation of pymatgen's StructureMatcher can be found here: https://pymatgen.org/pymatgen.analysis.html.
+
+    :param atoms_one:
+        First structure.
+    :type atoms_one: Atoms
+    :param atoms_two:
+        Second structure.
+    :type atoms_two: Atoms
+    :param ltol:
+        Fractional length tolerance for pymatgen's StructureMatcher.
+        Defaults to 0.2 (pymatgen's default).
+    :type ltol: float
+    :param stol:
+        Site tolerance for pymatgen's StructureMatcher.
+        Defaults to 0.3 (pymatgen's default).
+    :type stol: float
+    :param angle_tol:
+        Angle tolerance in degrees for pymatgen's StructureMatcher.
+        Defaults to 5.0 (pymatgen's default).
+    :type angle_tol: float
+
+    :return:
+        True if the structures are the same, False otherwise.
+    :rtype: bool
+    """
     sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
-    # conversion to pymatgen type
-    a1 = AseAtomsAdaptor.get_structure(s1)
-    a2 = AseAtomsAdaptor.get_structure(s2)
+    # Conversion to pymatgen type.
+    a1 = AseAtomsAdaptor.get_structure(atoms_one)
+    a2 = AseAtomsAdaptor.get_structure(atoms_two)
     return sm.fit(a1, a2)
 
-def element_check(s1, s2):
-    """Check if s1 and s2 (both ase Atoms types) are of same composition
-    """
-    from omg.globals import MAX_ATOM_NUM
-    import numpy as np
 
-    s1_counts = np.bincount(s1.numbers, minlength=MAX_ATOM_NUM)
-    s2_counts = np.bincount(s2.numbers, minlength=MAX_ATOM_NUM)
-    
-    s1_min = np.amin(s1_counts[np.where(s1_counts>0)])
-    s2_min = np.amin(s2_counts[np.where(s2_counts>0)])
-
-    return np.array_equal(s1_counts/s1_min, s2_counts/s2_min)
-
-def match_rate(atoms_list, ref_list, ltol=0.2, stol=0.3, angle_tol=5):
+def element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
     """
-    Compare the structures in two xyz files. Return rate of matches between the two files.
-    Returns rate of matches within atoms_list.
+    Check whether the two structures are of the same composition.
+
+    Note that one of the structures could be a simple multiple of the other structure (e.g., storing C H_4 twice
+    resulting in the species C_2 H_8). This method will still return True in this case. This is achieved by finding
+    the element with the minimum number of occurrences in each structure and dividing all occurrences by that number.
+
+    :param atoms_one:
+        First structure.
+    :type atoms_one: Atoms
+    :param atoms_two:
+        Second structure.
+    :type atoms_two: Atoms
+
+    :return:
+        True if the structures are of the same composition, False otherwise.
+    :rtype: bool
     """
-    match_count = 0
-    # Check if the structures are the same
-    for atoms_1 in atoms_list:
-        for atoms_2 in ref_list:
-            if element_check(atoms_1, atoms_2):
-                if structure_matcher(atoms_1, atoms_2, ltol=ltol, stol=stol, angle_tol=angle_tol):
-                    match_count += 1
-                    break
+    atoms_one_counts = np.bincount(atoms_one.numbers, minlength=MAX_ATOM_NUM)
+    atoms_two_counts = np.bincount(atoms_two.numbers, minlength=MAX_ATOM_NUM)
+
+    # Find the element with the minimum number of occurrences in each structure.
+    atoms_one_min = np.min(atoms_one_counts[np.nonzero(atoms_one_counts > 0)])
+    atoms_two_min = np.min(atoms_two_counts[np.nonzero(atoms_two_counts > 0)])
+
+    return np.allclose(atoms_one_counts / atoms_one_min, atoms_two_counts / atoms_two_min)
+
+
+def _check(x: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
+    """Helper function to check the composition and structure of two structures. Required for multiprocessing."""
+    return element_check(x[0], x[1]) and structure_matcher(x[0], x[1], ltol=ltol, stol=stol, angle_tol=angle_tol)
+
+
+def match_rate(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.3,
+               angle_tol: float = 5.0) -> float:
+    """
+    Compute the rate of structures in the first sequence of atoms appearing in the second sequence atoms.
+
+    This method uses pymatgen's StructureMatcher to compare the structures (see
+    https://pymatgen.org/pymatgen.analysis.html).
+
+    :param atoms_list:
+        First sequence of ase.Atoms instances.
+    :type atoms_list: Sequence[Atoms]
+    :param ref_list:
+        Second sequence of ase.Atoms instances.
+    :type ref_list: Sequence[Atoms]
+    :param ltol:
+        Fractional length tolerance for pymatgen's StructureMatcher.
+        Defaults to 0.2 (pymatgen's default).
+    :type ltol: float
+    :param stol:
+        Site tolerance for pymatgen's StructureMatcher.
+        Defaults to 0.3 (pymatgen's default).
+    :type stol: float
+    :param angle_tol:
+        Angle tolerance in degrees for pymatgen's StructureMatcher.
+        Defaults to 5.0 (pymatgen's default).
+    :type angle_tol: float
+    """
+    with Pool() as p:
+        # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
+        cfunc = partial(_check, ltol=ltol, stol=stol, angle_tol=angle_tol)
+        # len(atoms_list) * len(ref_list) // os.cpu_count() would be optimal value for chunksize because it distributes
+        # the same amount of work to all processes. However, the memory usage can become quite large. Therefore, we
+        # cap the chunksize at 100000.
+        match_count = sum(p.imap_unordered(cfunc, product(atoms_list, ref_list),
+                                           chunksize=min(len(atoms_list) * len(ref_list) // os.cpu_count(), 100000)))
 
     return match_count / len(atoms_list)
 
-def reduce(atoms_1_list):
-    """
-    Compare structures within one xyz file. Return rate of unique structures.
-    """
-    match_counts = {}
-    for i, atoms_1 in enumerate(atoms_1_list):
-        match_counts[i] = []
-        for j, atoms_2 in enumerate(atoms_1_list):
-            # to save time, only compare if not already compared or not self
-            if (i != j) and not (j in match_counts[i]):
-                if element_check(atoms_1, atoms_2):
-                    if structure_matcher(atoms_1, atoms_2):
-                        match_counts[i].append(j)
-    
-    match_count = len(atoms_1_list)
-    for key in match_counts.keys():
-        match_count -= len(match_counts[key])
 
-    return match_count / len(atoms_1_list)
+def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.3, angle_tol: float = 5.0) -> float:
+    """
+    Compute the rate of unique structures in the given sequence of atoms.
+
+    This method uses pymatgen's StructureMatcher to compare the structures with the sequence (see
+    https://pymatgen.org/pymatgen.analysis.html).
+
+    :param atoms_list:
+        Sequence of ase.Atoms instances.
+    :type atoms_list: Sequence[Atoms]
+    :param ltol:
+        Fractional length tolerance for pymatgen's StructureMatcher.
+        Defaults to 0.2 (pymatgen's default).
+    :type ltol: float
+    :param stol:
+        Site tolerance for pymatgen's StructureMatcher.
+        Defaults to 0.3 (pymatgen's default).
+    :type stol: float
+    :param angle_tol:
+        Angle tolerance in degrees for pymatgen's StructureMatcher.
+        Defaults to 5.0 (pymatgen's default).
+    :type angle_tol: float
+    """
+    with Pool() as p:
+        # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
+        cfunc = partial(_check, ltol=ltol, stol=stol, angle_tol=angle_tol)
+        # (len(atoms_list) * (len(ref_list) - 1) / 2) // os.cpu_count() would be optimal value for chunksize because it distributes
+        # the same amount of work to all processes. However, the memory usage can become quite large. Therefore, we
+        # cap the chunksize at 100000.
+        match_count = sum(
+            p.imap_unordered(cfunc,
+                             ((atoms_list[first_index], atoms_list[second_index])
+                              for first_index in range(len(atoms_list))
+                              for second_index in range(first_index + 1, len(atoms_list))),
+                             chunksize=min((len(atoms_list) * (len(atoms_list) - 1) / 2) // os.cpu_count(), 100000)))
+
+    return 1.0 - match_count / len(atoms_list)

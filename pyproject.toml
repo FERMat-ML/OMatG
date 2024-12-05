@@ -28,7 +28,9 @@ dependencies = [
     "smact ~= 2.8",
     "wandb ~= 0.18",
     "scikit-learn ~= 1.5",
-    "matplotlib ~= 3.9"
+    "matplotlib ~= 3.9",
+    "pymatgen ~= 2024.11",
+    "spglib ~= 2.5"
 ]
 
 [project.scripts]
