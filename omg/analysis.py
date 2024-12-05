@@ -331,18 +331,15 @@ def element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
     return np.allclose(atoms_one_counts / atoms_one_min, atoms_two_counts / atoms_two_min)
 
 
-def _check_atoms_pair(atoms_one: Atoms, atoms_two: Atoms, ltol: float, stol: float, angle_tol: float) -> bool:
+def _check_atoms_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
     """
     Helper function to check whether the two given structures match by using pymatgen's StructureMatcher.
 
     This function is required for multiprocessing (see match_rate and unique_rate functions below).
 
-    :param atoms_one:
-        First structure.
-    :type atoms_one: Atoms
-    :param atoms_two:
-        Second structure.
-    :type atoms_two: Atoms
+    :param atoms:
+        Tuple of two structures.
+    :type atoms_two: Tuple[Atoms, Atoms]
     :param ltol:
         Fractional length tolerance for pymatgen's StructureMatcher.
     :type ltol: float
@@ -357,8 +354,8 @@ def _check_atoms_pair(atoms_one: Atoms, atoms_two: Atoms, ltol: float, stol: flo
         True if the structures are the same, False otherwise.
     :rtype: bool
     """
-    return element_check(atoms_one, atoms_two) and structure_matcher(atoms_one, atoms_two, ltol=ltol, stol=stol,
-                                                                     angle_tol=angle_tol)
+    return element_check(atoms[0], atoms[1]) and structure_matcher(atoms[0], atoms[1], ltol=ltol, stol=stol,
+                                                                   angle_tol=angle_tol)
 
 
 def _check(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
@@ -379,7 +376,7 @@ def _check(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: flo
         Defaults to 0.2 (pymatgen's default).
     """
     for atoms_two in list_atoms_two:
-        if _check_atoms_pair(atoms_one, atoms_two, ltol=ltol, stol=stol, angle_tol=angle_tol):
+        if _check_atoms_pair((atoms_one, atoms_two), ltol=ltol, stol=stol, angle_tol=angle_tol):
             return True
     return False
 
