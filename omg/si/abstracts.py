@@ -119,7 +119,6 @@ class Interpolant(ABC, TimeChecker):
         """
         return self.alpha(t) * x_0 + self.beta(t) * x_1
 
-    @abstractmethod
     def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                                batch_pointer: torch.Tensor) -> torch.Tensor:
         """
