@@ -339,7 +339,7 @@ def _check_atoms_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angl
 
     :param atoms:
         Tuple of two structures.
-    :type atoms_two: Tuple[Atoms, Atoms]
+    :type atoms: Tuple[Atoms, Atoms]
     :param ltol:
         Fractional length tolerance for pymatgen's StructureMatcher.
     :type ltol: float
