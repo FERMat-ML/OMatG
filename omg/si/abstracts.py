@@ -66,6 +66,33 @@ class Corrector(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def compute_center_of_mass(self, x: torch.Tensor, batch_indices: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the center of masses of the configurations in the batch with respect to the correction applied by this
+        corrector (as, for instance, periodic boundary conditions).
+
+        The first dimension of the input tensor x is the batch dimension. Here, different elements in the batch can
+        belong to different configurations. The one-dimensional tensor batch_indices contains the indices of the
+        configurations for the first dimension of the input tensor x. The center of mass for every configuration should
+        be computed separately.
+
+        The dimensions of the returned tensor should be the same as the dimensions of the input tensor x. This means
+        that the center of mass for every configuration should be replicated for every element in the configuration.
+
+        :param x:
+            Input whose center of masses will be returned.
+        :type x: torch.Tensor
+        :param batch_indices:
+            The batch indices for the input tensor x.
+        :type batch_indices: torch.Tensor
+
+        :return:
+            Center of masses.
+        :rtype: torch.Tensor
+        """
+        raise NotImplementedError
+
 
 class Epsilon(ABC, TimeChecker):
     """
@@ -108,10 +135,6 @@ class Interpolant(ABC, TimeChecker):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Interpolated value.
@@ -134,10 +157,6 @@ class Interpolant(ABC, TimeChecker):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Derivative of the interpolant.
@@ -262,7 +281,7 @@ class StochasticInterpolant(ABC, TimeChecker):
 
     @abstractmethod
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+                    batch_indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Stochastically interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -275,10 +294,9 @@ class StochasticInterpolant(ABC, TimeChecker):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Stochastically interpolated points x_t, random variables z used for interpolation.
@@ -289,7 +307,7 @@ class StochasticInterpolant(ABC, TimeChecker):
     @abstractmethod
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
-             batch_pointer: torch.Tensor) -> torch.Tensor:
+             batch_indices: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -312,10 +330,9 @@ class StochasticInterpolant(ABC, TimeChecker):
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Loss.
@@ -326,7 +343,7 @@ class StochasticInterpolant(ABC, TimeChecker):
     @abstractmethod
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
-                  batch_pointer: torch.Tensor) -> torch.Tensor:
+                  batch_indices: torch.Tensor) -> torch.Tensor:
         """
         Integrate the current positions x_t at the given time for the given time step based on the velocity fields b and
         the denoisers eta returned by the model function.
@@ -344,10 +361,9 @@ class StochasticInterpolant(ABC, TimeChecker):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Integrated position.
@@ -372,6 +388,19 @@ class StochasticInterpolantSpecies(StochasticInterpolant, ABC):
     Abstract class for defining a stochastic interpolant between species x_0 and x_1 from two distributions p_0 and
     p_1 at times t.
     """
+
+    def get_corrector(self) -> Corrector:
+        """
+        Get the corrector implied by the stochastic interpolant.
+
+        The stochastic interpolants for atom species should not define a corrector.
+
+        :return:
+            Corrector.
+        :rtype: Corrector
+        """
+        raise RuntimeError("Corrector not defined for StochasticInterpolantSpecies.")
+
     @abstractmethod
     def uses_masked_species(self) -> bool:
         """

@@ -43,7 +43,7 @@ class VanishingEpsilon(Epsilon):
     :type c: float
     """
 
-    def __init__(self, c:float=1, sigma:float=0.01, mu:float=0.05) -> None:
+    def __init__(self, c: float = 1.0, sigma: float = 0.01, mu: float = 0.05) -> None:
         """
         Construct epsilon. Some product of Fermi functions that 
         vanishes at endpoints
@@ -66,6 +66,6 @@ class VanishingEpsilon(Epsilon):
         :rtype: torch.Tensor
         """
         self._check_t(t)
-        f1 = 1 / (1 + torch.exp(- (t - self._mu) / self._sigma)) 
+        f1 = 1 / (1 + torch.exp(- (t - self._mu) / self._sigma))
         f2 = 1 / (1 + torch.exp(- (1 - self._mu - t) / self._sigma))
         return self._c * f1 * f2
