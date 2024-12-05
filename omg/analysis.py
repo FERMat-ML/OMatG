@@ -1,6 +1,6 @@
 from collections import Counter
+import contextlib
 from functools import partial
-from itertools import product
 from multiprocessing import Pool
 import os
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -152,14 +152,17 @@ def get_space_group(atoms: Atoms, symprec: float = 1.0e-5, angle_tolerance: floa
     if var_prec:
         sym_data = _get_symmetry_dataset_var_prec(atoms, angle_tolerance=angle_tolerance)
     else:
-        sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
+        # Suppress output of spglib.
+        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+            sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
 
     # This is the order of operations in spglib's get_spacegroup function.
     if sym_data is None:
         print("[WARNING] get_space_group: Space group could not be determined.")
         return None, None, None, None
 
-    spg_type = spglib.get_spacegroup_type(sym_data.hall_number)
+    with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+        spg_type = spglib.get_spacegroup_type(sym_data.hall_number)
     if spg_type is None:
         print("[WARNING] get_space_group: Space group could not be determined.")
         return None, None, None, None
@@ -239,11 +242,13 @@ def _get_symmetry_dataset_var_prec(atoms: Atoms, angle_tolerance: float = -1.0,
         if iteration > max_iterations:
             break
 
-        dataset = spglib.get_symmetry_dataset(spglib_cell, symprec=prec, angle_tolerance=angle_tolerance)
+        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+            dataset = spglib.get_symmetry_dataset(spglib_cell, symprec=prec, angle_tolerance=angle_tolerance)
         prec /= 2.0
         if dataset is None:
             continue
-        spg_type = spglib.get_spacegroup_type(dataset.hall_number)
+        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+            spg_type = spglib.get_spacegroup_type(dataset.hall_number)
         if spg_type is None:
             continue
         current_group = "%s (%d)" % (spg_type.international_short, dataset.number)
@@ -326,6 +331,36 @@ def element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
     return np.allclose(atoms_one_counts / atoms_one_min, atoms_two_counts / atoms_two_min)
 
 
+def _check_atoms_pair(atoms_one: Atoms, atoms_two: Atoms, ltol: float, stol: float, angle_tol: float) -> bool:
+    """
+    Helper function to check whether the two given structures match by using pymatgen's StructureMatcher.
+
+    This function is required for multiprocessing (see match_rate and unique_rate functions below).
+
+    :param atoms_one:
+        First structure.
+    :type atoms_one: Atoms
+    :param atoms_two:
+        Second structure.
+    :type atoms_two: Atoms
+    :param ltol:
+        Fractional length tolerance for pymatgen's StructureMatcher.
+    :type ltol: float
+    :param stol:
+        Site tolerance for pymatgen's StructureMatcher.
+    :type stol: float
+    :param angle_tol:
+        Angle tolerance in degrees for pymatgen's StructureMatcher.
+    :type angle_tol: float
+
+    :return:
+        True if the structures are the same, False otherwise.
+    :rtype: bool
+    """
+    return element_check(atoms_one, atoms_two) and structure_matcher(atoms_one, atoms_two, ltol=ltol, stol=stol,
+                                                                     angle_tol=angle_tol)
+
+
 def _check(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
     """
     Helper function to check whether the given first structure appears in the second list of structures by using
@@ -344,8 +379,7 @@ def _check(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: flo
         Defaults to 0.2 (pymatgen's default).
     """
     for atoms_two in list_atoms_two:
-        if (element_check(atoms_one, atoms_two)
-                and structure_matcher(atoms_one, atoms_two, ltol=ltol, stol=stol, angle_tol=angle_tol)):
+        if _check_atoms_pair(atoms_one, atoms_two, ltol=ltol, stol=stol, angle_tol=angle_tol):
             return True
     return False
 
@@ -410,7 +444,7 @@ def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.
     """
     with Pool() as p:
         # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
-        cfunc = partial(_check, ltol=ltol, stol=stol, angle_tol=angle_tol)
+        cfunc = partial(_check_atoms_pair, ltol=ltol, stol=stol, angle_tol=angle_tol)
         # (len(atoms_list) * (len(ref_list) - 1) / 2) // os.cpu_count() would be optimal value for chunksize because it distributes
         # the same amount of work to all processes. However, the memory usage can become quite large. Therefore, we
         # cap the chunksize at 100000.
