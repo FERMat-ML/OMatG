@@ -265,8 +265,8 @@ def _get_symmetry_dataset_var_prec(atoms: Atoms, angle_tolerance: float = -1.0,
     return symmetry_datasets[groups.index(most_common_group)]
 
 
-def structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, stol: float = 0.3,
-                      angle_tol: float = 5.0) -> bool:
+def _structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, stol: float = 0.3,
+                       angle_tol: float = 5.0) -> bool:
     """
     Checks if the two structures are the same by using pymatgen's StructureMatcher.
 
@@ -302,7 +302,7 @@ def structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, sto
     return sm.fit(a1, a2)
 
 
-def element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
+def _element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
     """
     Check whether the two structures are of the same composition.
 
@@ -331,7 +331,7 @@ def element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
     return np.allclose(atoms_one_counts / atoms_one_min, atoms_two_counts / atoms_two_min)
 
 
-def _check_atoms_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
+def _check_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
     """
     Helper function to check whether the two given structures match by using pymatgen's StructureMatcher.
 
@@ -354,8 +354,8 @@ def _check_atoms_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angl
         True if the structures are the same, False otherwise.
     :rtype: bool
     """
-    return element_check(atoms[0], atoms[1]) and structure_matcher(atoms[0], atoms[1], ltol=ltol, stol=stol,
-                                                                   angle_tol=angle_tol)
+    return _element_check(atoms[0], atoms[1]) and _structure_matcher(atoms[0], atoms[1], ltol=ltol, stol=stol,
+                                                                     angle_tol=angle_tol)
 
 
 def _check(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
@@ -376,7 +376,7 @@ def _check(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: flo
         Defaults to 0.2 (pymatgen's default).
     """
     for atoms_two in list_atoms_two:
-        if _check_atoms_pair((atoms_one, atoms_two), ltol=ltol, stol=stol, angle_tol=angle_tol):
+        if _check_pair((atoms_one, atoms_two), ltol=ltol, stol=stol, angle_tol=angle_tol):
             return True
     return False
 
@@ -441,7 +441,7 @@ def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.
     """
     with Pool() as p:
         # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
-        cfunc = partial(_check_atoms_pair, ltol=ltol, stol=stol, angle_tol=angle_tol)
+        cfunc = partial(_check_pair, ltol=ltol, stol=stol, angle_tol=angle_tol)
         # (len(atoms_list) * (len(ref_list) - 1) / 2) // os.cpu_count() would be optimal value for chunksize because it
         # distributes the same amount of work to all processes. However, the memory usage can become quite large.
         # Therefore, we cap the chunksize at 100000.
@@ -450,9 +450,9 @@ def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.
             ((atoms_list[first_index], atoms_list[second_index])
              for first_index in range(len(atoms_list))
              for second_index in range(first_index + 1, len(atoms_list))),
-            chunksize=min((len(atoms_list) * (len(atoms_list) - 1) / 2) // os.cpu_count(), 100000)))
+            chunksize=max(min((len(atoms_list) * (len(atoms_list) - 1) // 2) // os.cpu_count(), 100000), 1)))
 
-    assert len(matches) == len(atoms_list) * (len(atoms_list) - 1) / 2
+    assert len(matches) == len(atoms_list) * (len(atoms_list) - 1) // 2
 
     # matches basically stores the upper triangle of the match matrix (without the diagonal).
     # We now count the number of unique structures by returning the number of rows where all values are False.
