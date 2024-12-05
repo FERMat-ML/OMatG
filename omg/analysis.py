@@ -442,14 +442,28 @@ def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.
     with Pool() as p:
         # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
         cfunc = partial(_check_atoms_pair, ltol=ltol, stol=stol, angle_tol=angle_tol)
-        # (len(atoms_list) * (len(ref_list) - 1) / 2) // os.cpu_count() would be optimal value for chunksize because it distributes
-        # the same amount of work to all processes. However, the memory usage can become quite large. Therefore, we
-        # cap the chunksize at 100000.
-        match_count = sum(
-            p.imap_unordered(cfunc,
-                             ((atoms_list[first_index], atoms_list[second_index])
-                              for first_index in range(len(atoms_list))
-                              for second_index in range(first_index + 1, len(atoms_list))),
-                             chunksize=min((len(atoms_list) * (len(atoms_list) - 1) / 2) // os.cpu_count(), 100000)))
+        # (len(atoms_list) * (len(ref_list) - 1) / 2) // os.cpu_count() would be optimal value for chunksize because it
+        # distributes the same amount of work to all processes. However, the memory usage can become quite large.
+        # Therefore, we cap the chunksize at 100000.
+        matches = list(p.imap(
+            cfunc,
+            ((atoms_list[first_index], atoms_list[second_index])
+             for first_index in range(len(atoms_list))
+             for second_index in range(first_index + 1, len(atoms_list))),
+            chunksize=min((len(atoms_list) * (len(atoms_list) - 1) / 2) // os.cpu_count(), 100000)))
 
-    return 1.0 - match_count / len(atoms_list)
+    assert len(matches) == len(atoms_list) * (len(atoms_list) - 1) / 2
+
+    # matches basically stores the upper triangle of the match matrix (without the diagonal).
+    # We now count the number of unique structures by returning the number of rows where all values are False.
+    # This should automatically consider cases where the same structure appears multiple times because only the last
+    # appearance is considered unique.
+    unique_count = 0
+    start_index = 0
+    for first_index in range(len(atoms_list)):
+        number_second_indices = len(atoms_list) - first_index - 1
+        if all(not matches[start_index + i] for i in range(number_second_indices)):
+            unique_count += 1
+        start_index += number_second_indices
+
+    return unique_count / len(atoms_list)
