@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, List, Set
 from ase import Atoms
@@ -18,7 +19,6 @@ from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
 from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_space_group, match_rate,
                           unique_rate)
-from collections import OrderedDict
 
 
 class OMGTrainer(Trainer):
@@ -120,13 +120,13 @@ class OMGTrainer(Trainer):
         ref_n_types = {}
         # Dictionary mapping number of elements in every test structure to occurrences of that number of elements.
         ref_n_atoms = {}
-        # List mapping distribution of avg coordination numbers across all test structures.
+        # List of average coordination numbers across all test structures.
         ref_avg_cn = []
-        # Dictionary mapping coordination numbers by species in test structures.
+        # Dictionary mapping from species to their list of coordination numbers in test structures.
         ref_cn_species = {}
-        # Dictionary mapping occurences of space groups in test structures.
+        # Dictionary mapping from space-group numbers to their occurences in test structures.
         ref_sg = {}
-        # Dictionary mapping occurences of crystal systems in test structures.
+        # Dictionary mapping from crystal systems to their ccurences in test structures.
         ref_crystal_sys = {}
 
         for i in range(1, MAX_ATOM_NUM + 1):
@@ -186,26 +186,24 @@ class OMGTrainer(Trainer):
 
             cn_dict = get_coordination_numbers_species(struc)
             for key, val in cn_dict.items():
-                assert isinstance(key, str)
-                assert isinstance(val, list)
                 if key not in ref_cn_species:
                     ref_cn_species[key] = []
                 ref_cn_species[key].extend(val)
 
-            sg_group, sg_num, cs, _ = get_space_group(struc, var_prec=False, angle_tolerance=-1)
-            if (sg_group is None) or (sg_num is None) or (cs is None):
+            sg_group, sg_num, cs, _ = get_space_group(struc, var_prec=False)
+            if sg_group is None:
+                assert sg_num is None and cs is None
                 ref_sg_fail += 1
-                continue
             else:
-                assert isinstance(sg_num, int)
                 assert 1 <= sg_num <= 230
-                assert isinstance(cs, str)
                 if sg_num not in ref_sg:
                     ref_sg[sg_num] = 0
                 ref_sg[sg_num] += 1
                 if cs not in ref_crystal_sys:
                     ref_crystal_sys[cs] = 0
                 ref_crystal_sys[cs] += 1
+        print("Number of times space group identification failed for prediction dataset: "
+              "{}/{}".format(ref_sg_fail, len(reference_atoms)))
 
         # List of volumes of all generated structures.
         vol = []
@@ -216,19 +214,17 @@ class OMGTrainer(Trainer):
         n_types = {}
         # Dictionary mapping number of elements in every generated structure to occurrences of that number of elements.
         n_atoms = {}
-        # List mapping distribution of avg coordination numbers across all generated structures.
+        # List of average coordination numbers across all generated structures.
         avg_cn = []
-        # Dictionary mapping coordination numbers by species in generated structures.
+        # Dictionary mapping from species to their list of coordination numbers in generated structures.
         cn_species = {}
-        # Dictionary mapping occurences of space groups in generated structures.
+        # Dictionary mapping from space-group numbers to their occurences in generated structures (var_prec=True).
         sg = {}
-        # Dictionary mapping occurences of crystal systems in generated structures.
+        # Dictionary mapping from crystal systems to their ccurences in generated structures (var_prec=True).
         crystal_sys = {}
-
-        # for varprec=False
-        # Dictionary mapping occurences of space groups in generated structures.
+        # Dictionary mapping from space-group numbers to their occurences in generated structures (var_prec=False).
         sg_F = {}
-        # Dictionary mapping occurences of crystal systems in generated structures.
+        # Dictionary mapping from crystal systems to their ccurences in generated structures (var_prec=False).
         crystal_sys_F = {}
 
         for i in range(1, MAX_ATOM_NUM + 1):
@@ -279,71 +275,62 @@ class OMGTrainer(Trainer):
 
             cn_dict = get_coordination_numbers_species(struc)
             for key, val in cn_dict.items():
-                assert isinstance(key, str)
-                assert isinstance(val, list)
                 if key not in cn_species:
                     cn_species[key] = []
                 cn_species[key].extend(val)
 
-            sg_group, sg_num, cs, sym_struc = get_space_group(struc, var_prec=True, angle_tolerance=-1)
-            # testing with var_prec = False, with tolerances reasonable for DFT-relaxed structures
-            sg_group_F, sg_num_F, cs_F, sym_struc_F = get_space_group(struc, var_prec=False, symprec=1e-2,
-                                                                      angle_tolerance=-1)
-
-            # case for var_prec = True
-            if (sg_group is None) or (sg_num is None) or (cs is None):
+            sg_group, sg_num, cs, sym_struc = get_space_group(struc, var_prec=True, angle_tolerance=-1.0)
+            if sg_group is None:
+                assert sg_num is None and cs is None
                 sg_fail += 1
-                continue
             else:
-                assert isinstance(sg_num, int)
                 assert 1 <= sg_num <= 230
-                assert isinstance(cs, str)
                 if sg_num not in sg:
                     sg[sg_num] = 0
                 sg[sg_num] += 1
                 if cs not in crystal_sys:
                     crystal_sys[cs] = 0
                 crystal_sys[cs] += 1
-
+                # Only write symmetric structures.
                 if sg_num >= 3:
+                    # Write original and symmetrized structures one after another for easier comparison.
                     write("symmetric.xyz", struc, format='extxyz', append=True)
                     write("symmetric.xyz", sym_struc, format='extxyz', append=True)
 
-            # case for var_prec = False
-            if (sg_group_F is None) or (sg_num_F is None) or (cs_F is None):
+            # Testing with var_prec = False, with tolerances reasonable for DFT-relaxed structures.
+            sg_group_F, sg_num_F, cs_F, sym_struc_F = get_space_group(struc, var_prec=False, symprec=1.0e-2,
+                                                                      angle_tolerance=-1.0)
+            if sg_group_F is None:
+                assert sg_num_F is None and cs_F is None
                 sg_fail_F += 1
-                continue
             else:
-                assert isinstance(sg_num_F, int)
                 assert 1 <= sg_num_F <= 230
-                assert isinstance(cs_F, str)
                 if sg_num_F not in sg_F:
                     sg_F[sg_num_F] = 0
                 sg_F[sg_num_F] += 1
                 if cs_F not in crystal_sys_F:
                     crystal_sys_F[cs_F] = 0
                 crystal_sys_F[cs_F] += 1
-
+                # Only write symmetric structures.
                 if sg_num_F >= 3:
+                    # Write original and symmetrized structures one after another for easier comparison.
                     write("symmetric_F.xyz", struc, format='extxyz', append=True)
                     write("symmetric_F.xyz", sym_struc_F, format='extxyz', append=True)
 
-        print("Number of times space group identification failed for prediction dataset: {}/{} total".format(ref_sg_fail, len(reference_atoms)))
-        print("Number of times space group identification failed for generated dataset (var_prec = True): {}/{} total".format(sg_fail, len(generated_atoms)))
-        print("Number of times space group identification failed for generated dataset (var_prec = False): {}/{} total".format(sg_fail_F, len(generated_atoms)))
+        print("Number of times space group identification failed for generated dataset (var_prec = True): "
+              "{}/{} total".format(sg_fail, len(generated_atoms)))
+        print("Number of times space group identification failed for generated dataset (var_prec = False): "
+              "{}/{} total".format(sg_fail_F, len(generated_atoms)))
 
         # Plot
         with PdfPages(plot_name) as pdf:
-            props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
             # Plot Element distribution
             total_number_atoms = sum(v for v in nums.values())
-            elements = [k for k in nums.keys()]
-            ref_elements = [k for k in ref_nums.keys()]
-            plt.bar(elements, [v / total_number_atoms for v in nums.values()], alpha=0.8,
+            plt.bar([k for k in nums.keys()], [v / total_number_atoms for v in nums.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             total_number_atoms_ref = sum(v for v in ref_nums.values())
-            plt.bar(ref_elements, [v / total_number_atoms_ref for v in ref_nums.values()], alpha=0.5,
-                    label="Test", color="darkslategrey")
+            plt.bar([k for k in ref_nums.keys()], [v / total_number_atoms_ref for v in ref_nums.values()], alpha=0.5,
+                    label="Training", color="darkslategrey")
             plt.title("Fractional element composition")
             plt.xlabel("Atomic Number")
             plt.ylabel("Density")
@@ -416,7 +403,6 @@ class OMGTrainer(Trainer):
 
             # Compute distributions for fractional coordinate movement.
             # Scott's rule for bandwidth.
-
             bandwidth = np.std(ref_root_mean_square_distances) * len(ref_root_mean_square_distances) ** (-1 / 5)
             ref_rmsds = np.array(ref_root_mean_square_distances)[:, np.newaxis]
             rmsds = np.array(root_mean_square_distances)[:, np.newaxis]
@@ -475,12 +461,8 @@ class OMGTrainer(Trainer):
             ref_avg_cn_species = {}
             avg_cn_species = {}
             for key, val in ref_cn_species.items():
-                assert isinstance(key, str)
-                assert isinstance(val, list)
                 ref_avg_cn_species[key] = np.mean(val)
             for key, val in cn_species.items():
-                assert isinstance(key, str)
-                assert isinstance(val, list)
                 avg_cn_species[key] = np.mean(val)
 
             species_order = Atoms(numbers=np.arange(1, MAX_ATOM_NUM + 1)).get_chemical_symbols()
