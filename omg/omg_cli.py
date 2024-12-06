@@ -579,8 +579,6 @@ class OMGTrainer(Trainer):
         ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset,
                                              datamodule.predict_dataset.convert_to_fractional)
 
-        # TODO: add MLIP/DFT relaxation step on generated atoms here
-
         # Tolerances from DiffCSP and FlowMM.
         mr, rmsd = match_rate_and_rmsd(gen_atoms, ref_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
         print(f"The match rate between the generated structures and dataset is {100 * mr}%.")
