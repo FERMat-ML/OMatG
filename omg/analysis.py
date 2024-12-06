@@ -1,5 +1,4 @@
 from collections import Counter
-import contextlib
 from functools import partial
 from multiprocessing import Pool
 import os
@@ -11,6 +10,8 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.io.ase import AseAtomsAdaptor
 import spglib
 from omg.globals import MAX_ATOM_NUM
+# Suppress spglib warnings.
+os.environ["SPGLIB_WARNING"] = "OFF"
 
 
 def get_bonds(atoms: Atoms, covalent_increase_factor: float = 1.25) -> List[List[int]]:
@@ -152,18 +153,14 @@ def get_space_group(atoms: Atoms, symprec: float = 1.0e-5, angle_tolerance: floa
     if var_prec:
         sym_data = _get_symmetry_dataset_var_prec(atoms, angle_tolerance=angle_tolerance)
     else:
-        # Suppress output of spglib.
-        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-            sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
+        sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
 
     # This is the order of operations in spglib's get_spacegroup function.
     if sym_data is None:
-        print("[WARNING] get_space_group: Space group could not be determined.")
-        print(spglib.get_error_message())
+        print(f"[WARNING] get_space_group: Space group could not be determined ({spglib.get_error_message()}).")
         return None, None, None, None
 
-    with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-        spg_type = spglib.get_spacegroup_type(sym_data.hall_number)
+    spg_type = spglib.get_spacegroup_type(sym_data.hall_number)
     if spg_type is None:
         print("[WARNING] get_space_group: Space group could not be determined.")
         return None, None, None, None
@@ -241,13 +238,11 @@ def _get_symmetry_dataset_var_prec(atoms: Atoms, angle_tolerance: float = -1.0,
         if iteration > max_iterations:
             break
 
-        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-            dataset = spglib.get_symmetry_dataset(spglib_cell, symprec=prec, angle_tolerance=angle_tolerance)
+        dataset = spglib.get_symmetry_dataset(spglib_cell, symprec=prec, angle_tolerance=angle_tolerance)
         prec /= 2.0
         if dataset is None:
             continue
-        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-            spg_type = spglib.get_spacegroup_type(dataset.hall_number)
+        spg_type = spglib.get_spacegroup_type(dataset.hall_number)
         if spg_type is None:
             continue
         current_group = "%s (%d)" % (spg_type.international_short, dataset.number)
