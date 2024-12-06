@@ -260,9 +260,12 @@ def _get_symmetry_dataset_var_prec(atoms: Atoms, angle_tolerance: float = -1.0,
 
 
 def _structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, stol: float = 0.3,
-                       angle_tol: float = 5.0) -> bool:
+                       angle_tol: float = 5.0) -> Optional[float]:
     """
-    Checks if the two structures are the same by using pymatgen's StructureMatcher.
+    Checks if the two structures are the same by using pymatgen's StructureMatcher and, if so, return the
+    root-mean-square displacement between the two structures. If the structures are different, return None.
+
+    The root-mean-square displacement is normalized by (volume / number_sites) ** (1/3).
 
     The documentation of pymatgen's StructureMatcher can be found here: https://pymatgen.org/pymatgen.analysis.html.
 
@@ -286,14 +289,22 @@ def _structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, st
     :type angle_tol: float
 
     :return:
-        True if the structures are the same, False otherwise.
-    :rtype: bool
+        Root-mean-square displacement between the two structures if they are the same, None otherwise.
+    :rtype: Optional[float]
     """
     sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
     # Conversion to pymatgen type.
     a1 = AseAtomsAdaptor.get_structure(atoms_one)
     a2 = AseAtomsAdaptor.get_structure(atoms_two)
-    return sm.fit(a1, a2)
+    res = sm.get_rms_dist(a1, a2)
+    assert res is None or res[0] <= stol
+
+    #if res is None:
+    #    assert not sm.fit(a1, a2)
+    #else:
+    #    assert sm.fit(a1, a2)
+
+    return res[0] if res is not None else None
 
 
 def _element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
@@ -325,37 +336,17 @@ def _element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
     return np.allclose(atoms_one_counts / atoms_one_min, atoms_two_counts / atoms_two_min)
 
 
-def _check_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
-    """
-    Helper function to check whether the two given structures match by using pymatgen's StructureMatcher.
-
-    This function is required for multiprocessing (see match_rate and unique_rate functions below).
-
-    :param atoms:
-        Tuple of two structures.
-    :type atoms: Tuple[Atoms, Atoms]
-    :param ltol:
-        Fractional length tolerance for pymatgen's StructureMatcher.
-    :type ltol: float
-    :param stol:
-        Site tolerance for pymatgen's StructureMatcher.
-    :type stol: float
-    :param angle_tol:
-        Angle tolerance in degrees for pymatgen's StructureMatcher.
-    :type angle_tol: float
-
-    :return:
-        True if the structures are the same, False otherwise.
-    :rtype: bool
-    """
-    return _element_check(atoms[0], atoms[1]) and _structure_matcher(atoms[0], atoms[1], ltol=ltol, stol=stol,
-                                                                     angle_tol=angle_tol)
-
-
-def _check(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
+def _get_match_and_rmsd(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: float,
+                        angle_tol: float) -> Tuple[bool, Optional[float]]:
     """
     Helper function to check whether the given first structure appears in the second list of structures by using
-    pymatgen's StructureMatcher.
+    pymatgen's StructureMatcher and, if so, to find the minimum root-mean-square displacement of the first structure to
+    the closest structure in the second list of structures.
+
+    If the first structure does not appear in the second list of structures, the minimum root-mean-square displacement
+    is None.
+
+    The root-mean-square displacement is normalized by (volume / number_sites) ** (1/3).
 
     This function is required for multiprocessing (see match_rate and unique_rate functions below).
 
@@ -367,18 +358,38 @@ def _check(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: flo
     :type list_atoms_two: List[Atoms]
     :param ltol:
         Fractional length tolerance for pymatgen's StructureMatcher.
-        Defaults to 0.2 (pymatgen's default).
+    :type ltol: float
+    :param stol:
+        Site tolerance for pymatgen's StructureMatcher.
+    :type stol: float
+    :param angle_tol:
+        Angle tolerance in degrees for pymatgen's StructureMatcher.
+    :type angle_tol: float
+
+    :return:
+        (Whether the first structure appears in the second list of structures, minimum root-mean-square displacement).
+    :rtype: Tuple[bool, Optional[float]]
     """
+    rms_dists = []
     for atoms_two in list_atoms_two:
-        if _check_pair((atoms_one, atoms_two), ltol=ltol, stol=stol, angle_tol=angle_tol):
-            return True
-    return False
+        if _element_check(atoms_one, atoms_two):
+            res = _structure_matcher(atoms_one, atoms_two, ltol=ltol, stol=stol, angle_tol=angle_tol)
+            if res is not None:
+                rms_dists.append(res)
+    if len(rms_dists) > 0:
+        if len(rms_dists) > 1:
+            print(f"[WARNING] _check: Found {len(rms_dists)} matches in the reference list.")
+        return True, min(rms_dists)
+    return False, None
 
 
-def match_rate(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.3,
-               angle_tol: float = 5.0) -> float:
+def match_rate_and_rmsd(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.3,
+                        angle_tol: float = 5.0) -> Tuple[float, float]:
     """
-    Compute the rate of structures in the first sequence of atoms appearing in the second sequence atoms.
+    Compute the rate of structures in the first sequence of atoms appearing in the second sequence atoms, and the
+    mean root-mean-square displacement between the appearing structures.
+
+    The averaged root-mean-square displacements are normalized by (volume / number_sites) ** (1/3).
 
     This method uses pymatgen's StructureMatcher to compare the structures (see
     https://pymatgen.org/pymatgen.analysis.html).
@@ -401,13 +412,47 @@ def match_rate(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], ltol: flo
         Angle tolerance in degrees for pymatgen's StructureMatcher.
         Defaults to 5.0 (pymatgen's default).
     :type angle_tol: float
+
+    :return:
+        (The match rate, the mean root-mean-square displacement between the appearing structures).
+    :rtype: Tuple[float, float]
     """
     with Pool() as p:
         # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
-        cfunc = partial(_check, list_atoms_two=ref_list, ltol=ltol, stol=stol, angle_tol=angle_tol)
-        match_count = sum(p.map(cfunc, atoms_list))
+        cfunc = partial(_get_match_and_rmsd, list_atoms_two=ref_list, ltol=ltol, stol=stol, angle_tol=angle_tol)
+        res = list(p.map(cfunc, atoms_list))
+        assert all(r[1] is None for r in res if not r[0])
+        match_count = sum(r[0] for r in res)
+        mean_rmsd = np.mean([r[1] for r in res if r[0]])
 
-    return match_count / len(atoms_list)
+    return match_count / len(atoms_list), mean_rmsd
+
+
+def _compare_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
+    """
+    Helper function to check whether the two given structures match by using pymatgen's StructureMatcher.
+
+    This function is required for multiprocessing (see unique_rate function below).
+
+    :param atoms:
+        Tuple of two structures.
+    :type atoms: Tuple[Atoms, Atoms]
+    :param ltol:
+        Fractional length tolerance for pymatgen's StructureMatcher.
+    :type ltol: float
+    :param stol:
+        Site tolerance for pymatgen's StructureMatcher.
+    :type stol: float
+    :param angle_tol:
+        Angle tolerance in degrees for pymatgen's StructureMatcher.
+    :type angle_tol: float
+
+    :return:
+        True if the structures are the same, False otherwise.
+    :rtype: bool
+    """
+    return (_element_check(atoms[0], atoms[1])
+            and (_structure_matcher(atoms[0], atoms[1], ltol=ltol, stol=stol, angle_tol=angle_tol) is not None))
 
 
 def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.3, angle_tol: float = 5.0) -> float:
@@ -435,7 +480,7 @@ def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.
     """
     with Pool() as p:
         # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
-        cfunc = partial(_check_pair, ltol=ltol, stol=stol, angle_tol=angle_tol)
+        cfunc = partial(_compare_pair, ltol=ltol, stol=stol, angle_tol=angle_tol)
         # (len(atoms_list) * (len(ref_list) - 1) / 2) // os.cpu_count() would be optimal value for chunksize because it
         # distributes the same amount of work to all processes. However, the memory usage can become quite large.
         # Therefore, we cap the chunksize at 100000.

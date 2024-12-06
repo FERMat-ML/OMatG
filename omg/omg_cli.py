@@ -19,8 +19,8 @@ from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader, DataField
-from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_space_group, match_rate,
-                          unique_rate)
+from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_space_group,
+                          match_rate_and_rmsd, unique_rate)
 
 
 class OMGTrainer(Trainer):
@@ -581,8 +581,11 @@ class OMGTrainer(Trainer):
 
         # TODO: add MLIP/DFT relaxation step on generated atoms here
 
-        mr = match_rate(gen_atoms, ref_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
+        # Tolerances from DiffCSP and FlowMM.
+        mr, rmsd = match_rate_and_rmsd(gen_atoms, ref_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
         print(f"The match rate between the generated structures and dataset is {100 * mr}%.")
+        print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between the generated structures "
+              f"and dataset is {rmsd}.")
 
         r = unique_rate(gen_atoms)
         print(f"The occurence of unique structures within the generated dataset is {100 * r}%.")
