@@ -49,6 +49,7 @@ class OMGTrainer(Trainer):
         """
         final_file = Path(xyz_file)
         initial_file = final_file.with_stem(final_file.stem + "_init")
+        symmetry_filename = final_file.with_stem(final_file.stem + "_symmetric")
 
         # Get atoms
         init_atoms = xyz_reader(initial_file)
@@ -57,7 +58,7 @@ class OMGTrainer(Trainer):
                                              datamodule.predict_dataset.convert_to_fractional)
 
         # Plot data
-        self._plot_to_pdf(ref_atoms, init_atoms, gen_atoms, plot_name, model.use_min_perm_dist)
+        self._plot_to_pdf(ref_atoms, init_atoms, gen_atoms, plot_name, model.use_min_perm_dist, symmetry_filename)
 
     @staticmethod
     def _load_dataset_atoms(dataset: OMGTorchDataset, fractional: bool = True) -> List[Atoms]:
@@ -80,7 +81,7 @@ class OMGTrainer(Trainer):
 
     @staticmethod
     def _plot_to_pdf(reference: List[Atoms], initial: List[Atoms], generated: List[Atoms], plot_name: str,
-                     use_min_perm_dist: bool) -> None:
+                     use_min_perm_dist: bool, symmetry_filename: Path) -> None:
         """
         Plot figures for data analysis/matching between test and generated data.
 
@@ -99,6 +100,9 @@ class OMGTrainer(Trainer):
         :param use_min_perm_dist:
             Whether to use the minimum permutation distance.
         :type use_min_perm_dist: bool
+        :param symmetry_filename:
+            Filename for the symmetric structures.
+        :type symmetry_filename: Path
         """
         fractional_coordinates_corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
 
@@ -294,8 +298,8 @@ class OMGTrainer(Trainer):
                 # Only write symmetric structures.
                 if sg_num >= 3:
                     # Write original and symmetrized structures one after another for easier comparison.
-                    write("symmetric.xyz", struc, format='extxyz', append=True)
-                    write("symmetric.xyz", sym_struc, format='extxyz', append=True)
+                    write(str(symmetry_filename), struc, format='extxyz', append=True)
+                    write(str(symmetry_filename), sym_struc, format='extxyz', append=True)
 
             # Testing with var_prec = False, with tolerances reasonable for DFT-relaxed structures.
             sg_group_F, sg_num_F, cs_F, sym_struc_F = get_space_group(struc, var_prec=False, symprec=1.0e-2,
@@ -314,8 +318,9 @@ class OMGTrainer(Trainer):
                 # Only write symmetric structures.
                 if sg_num_F >= 3:
                     # Write original and symmetrized structures one after another for easier comparison.
-                    write("symmetric_F.xyz", struc, format='extxyz', append=True)
-                    write("symmetric_F.xyz", sym_struc_F, format='extxyz', append=True)
+                    symmetry_filename_F = str(symmetry_filename.with_stem(symmetry_filename.stem + "_F"))
+                    write(symmetry_filename_F, struc, format='extxyz', append=True)
+                    write(symmetry_filename_F, sym_struc_F, format='extxyz', append=True)
 
         print("Number of times space group identification failed for generated dataset (var_prec = True): "
               "{}/{} total".format(sg_fail, len(generated_atoms)))
