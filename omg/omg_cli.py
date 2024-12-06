@@ -591,7 +591,7 @@ class OMGTrainer(Trainer):
         print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between the generated structures "
               f"and dataset is {rmsd}.")
 
-        r = unique_rate(gen_atoms)
+        r = unique_rate(gen_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
         print(f"The occurence of unique structures within the generated dataset is {100 * r}%.")
 
     def curriculum(self, model: OMGLightning, datamodule: OMGDataModule, lessons: List[str]) -> None:
