@@ -159,6 +159,7 @@ def get_space_group(atoms: Atoms, symprec: float = 1.0e-5, angle_tolerance: floa
     # This is the order of operations in spglib's get_spacegroup function.
     if sym_data is None:
         print("[WARNING] get_space_group: Space group could not be determined.")
+        print(spglib.get_error_message())
         return None, None, None, None
 
     with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
