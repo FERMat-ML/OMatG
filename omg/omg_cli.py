@@ -551,7 +551,7 @@ class OMGTrainer(Trainer):
             pdf.savefig()
             plt.close()
 
-    def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str) -> None:
+    def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str, full: bool = False) -> None:
         """
         Compute the match rate between the generated structures and the structures in the prediction dataset.
 
@@ -566,6 +566,12 @@ class OMGTrainer(Trainer):
             XYZ file containing the generated structures.
             This argument has to be set on the command line.
         :type xyz_file: str
+        :param full:
+            If True, try to match every generated structure to every structure in the prediction dataset.
+            If False,try to match every generated structure to the structure at the same index in the prediction dataset.
+            This argument can be optionally set on the command line.
+            Defaults to False.
+        :type full: bool
 
         :raises FileNotFoundError:
             If the file does not exist.
@@ -580,7 +586,7 @@ class OMGTrainer(Trainer):
                                              datamodule.predict_dataset.convert_to_fractional)
 
         # Tolerances from DiffCSP and FlowMM.
-        mr, rmsd = match_rate_and_rmsd(gen_atoms, ref_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
+        mr, rmsd = match_rate_and_rmsd(gen_atoms, ref_atoms, ltol=0.3, stol=0.5, angle_tol=10.0, full=full)
         print(f"The match rate between the generated structures and dataset is {100 * mr}%.")
         print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between the generated structures "
               f"and dataset is {rmsd}.")

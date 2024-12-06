@@ -378,7 +378,7 @@ def _get_match_and_rmsd(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: flo
 
 
 def match_rate_and_rmsd(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.3,
-                        angle_tol: float = 5.0) -> Tuple[float, float]:
+                        angle_tol: float = 5.0, full: bool = False) -> Tuple[float, float]:
     """
     Compute the rate of structures in the first sequence of atoms appearing in the second sequence atoms, and the
     mean root-mean-square displacement between the appearing structures.
@@ -406,20 +406,31 @@ def match_rate_and_rmsd(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], 
         Angle tolerance in degrees for pymatgen's StructureMatcher.
         Defaults to 5.0 (pymatgen's default).
     :type angle_tol: float
+    :param full:
+        If True, try to match every generated structure to every structure in the prediction dataset.
+        If False,try to match every generated structure to the structure at the same index in the prediction dataset.
+        Defaults to False.
+    :type full: bool
 
     :return:
         (The match rate, the mean root-mean-square displacement between the appearing structures).
     :rtype: Tuple[float, float]
     """
-    with Pool() as p:
-        # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
-        cfunc = partial(_get_match_and_rmsd, list_atoms_two=ref_list, ltol=ltol, stol=stol, angle_tol=angle_tol)
-        res = list(p.map(cfunc, atoms_list))
-        assert all(r[1] is None for r in res if not r[0])
-        match_count = sum(r[0] for r in res)
-        mean_rmsd = np.mean([r[1] for r in res if r[0]])
+    if full:
+        with Pool() as p:
+            # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
+            cfunc = partial(_get_match_and_rmsd, list_atoms_two=ref_list, ltol=ltol, stol=stol, angle_tol=angle_tol)
+            res = list(p.map(cfunc, atoms_list))
+    else:
+        if len(atoms_list) != len(ref_list):
+            raise ValueError("The number of structures in the two lists must be equal.")
+        res = [_get_match_and_rmsd(atoms_list[i], [ref_list[i]], ltol=ltol, stol=stol, angle_tol=angle_tol)
+               for i in range(len(atoms_list))]
+    assert all(r[1] is None for r in res if not r[0])
+    match_count = sum(r[0] for r in res)
+    mean_rmsd = np.mean([r[1] for r in res if r[0]])
 
-    return match_count / len(atoms_list), mean_rmsd
+    return match_count / len(atoms_list), float(mean_rmsd)
 
 
 def _compare_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
