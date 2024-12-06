@@ -298,12 +298,6 @@ def _structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, st
     a2 = AseAtomsAdaptor.get_structure(atoms_two)
     res = sm.get_rms_dist(a1, a2)
     assert res is None or res[0] <= stol
-
-    #if res is None:
-    #    assert not sm.fit(a1, a2)
-    #else:
-    #    assert sm.fit(a1, a2)
-
     return res[0] if res is not None else None
 
 
