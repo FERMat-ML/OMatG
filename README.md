@@ -57,9 +57,10 @@ training dataset:
 omg visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_name}
 ```
 
-## Structure Match (CSP)
+## Match Rate (CSP)
 
-Run the following command to compare generated structures to reference dataset:
+Run the following command to compute the match rate between the generated structures in an xyz file and the structures 
+in the prediction dataset:
 
 ```bash
 omg match --config {config_file} --xyz_file {xyz_file}
