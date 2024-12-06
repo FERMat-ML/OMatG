@@ -1,6 +1,6 @@
 from collections import Counter
+import contextlib
 from functools import partial
-from itertools import product
 from multiprocessing import Pool
 import os
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -152,14 +152,17 @@ def get_space_group(atoms: Atoms, symprec: float = 1.0e-5, angle_tolerance: floa
     if var_prec:
         sym_data = _get_symmetry_dataset_var_prec(atoms, angle_tolerance=angle_tolerance)
     else:
-        sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
+        # Suppress output of spglib.
+        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+            sym_data = spglib.get_symmetry_dataset(spglib_cell, symprec=symprec, angle_tolerance=angle_tolerance)
 
     # This is the order of operations in spglib's get_spacegroup function.
     if sym_data is None:
         print("[WARNING] get_space_group: Space group could not be determined.")
         return None, None, None, None
 
-    spg_type = spglib.get_spacegroup_type(sym_data.hall_number)
+    with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+        spg_type = spglib.get_spacegroup_type(sym_data.hall_number)
     if spg_type is None:
         print("[WARNING] get_space_group: Space group could not be determined.")
         return None, None, None, None
@@ -239,11 +242,13 @@ def _get_symmetry_dataset_var_prec(atoms: Atoms, angle_tolerance: float = -1.0,
         if iteration > max_iterations:
             break
 
-        dataset = spglib.get_symmetry_dataset(spglib_cell, symprec=prec, angle_tolerance=angle_tolerance)
+        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+            dataset = spglib.get_symmetry_dataset(spglib_cell, symprec=prec, angle_tolerance=angle_tolerance)
         prec /= 2.0
         if dataset is None:
             continue
-        spg_type = spglib.get_spacegroup_type(dataset.hall_number)
+        with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+            spg_type = spglib.get_spacegroup_type(dataset.hall_number)
         if spg_type is None:
             continue
         current_group = "%s (%d)" % (spg_type.international_short, dataset.number)
@@ -260,8 +265,8 @@ def _get_symmetry_dataset_var_prec(atoms: Atoms, angle_tolerance: float = -1.0,
     return symmetry_datasets[groups.index(most_common_group)]
 
 
-def structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, stol: float = 0.3,
-                      angle_tol: float = 5.0) -> bool:
+def _structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, stol: float = 0.3,
+                       angle_tol: float = 5.0) -> bool:
     """
     Checks if the two structures are the same by using pymatgen's StructureMatcher.
 
@@ -297,7 +302,7 @@ def structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, sto
     return sm.fit(a1, a2)
 
 
-def element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
+def _element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
     """
     Check whether the two structures are of the same composition.
 
@@ -326,9 +331,54 @@ def element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
     return np.allclose(atoms_one_counts / atoms_one_min, atoms_two_counts / atoms_two_min)
 
 
-def _check(x: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
-    """Helper function to check the composition and structure of two structures. Required for multiprocessing."""
-    return element_check(x[0], x[1]) and structure_matcher(x[0], x[1], ltol=ltol, stol=stol, angle_tol=angle_tol)
+def _check_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
+    """
+    Helper function to check whether the two given structures match by using pymatgen's StructureMatcher.
+
+    This function is required for multiprocessing (see match_rate and unique_rate functions below).
+
+    :param atoms:
+        Tuple of two structures.
+    :type atoms: Tuple[Atoms, Atoms]
+    :param ltol:
+        Fractional length tolerance for pymatgen's StructureMatcher.
+    :type ltol: float
+    :param stol:
+        Site tolerance for pymatgen's StructureMatcher.
+    :type stol: float
+    :param angle_tol:
+        Angle tolerance in degrees for pymatgen's StructureMatcher.
+    :type angle_tol: float
+
+    :return:
+        True if the structures are the same, False otherwise.
+    :rtype: bool
+    """
+    return _element_check(atoms[0], atoms[1]) and _structure_matcher(atoms[0], atoms[1], ltol=ltol, stol=stol,
+                                                                     angle_tol=angle_tol)
+
+
+def _check(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
+    """
+    Helper function to check whether the given first structure appears in the second list of structures by using
+    pymatgen's StructureMatcher.
+
+    This function is required for multiprocessing (see match_rate and unique_rate functions below).
+
+    :param atoms_one:
+        First structure.
+    :type atoms_one: Atoms
+    :param list_atoms_two:
+        List of second structures.
+    :type list_atoms_two: List[Atoms]
+    :param ltol:
+        Fractional length tolerance for pymatgen's StructureMatcher.
+        Defaults to 0.2 (pymatgen's default).
+    """
+    for atoms_two in list_atoms_two:
+        if _check_pair((atoms_one, atoms_two), ltol=ltol, stol=stol, angle_tol=angle_tol):
+            return True
+    return False
 
 
 def match_rate(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.3,
@@ -360,12 +410,8 @@ def match_rate(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], ltol: flo
     """
     with Pool() as p:
         # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
-        cfunc = partial(_check, ltol=ltol, stol=stol, angle_tol=angle_tol)
-        # len(atoms_list) * len(ref_list) // os.cpu_count() would be optimal value for chunksize because it distributes
-        # the same amount of work to all processes. However, the memory usage can become quite large. Therefore, we
-        # cap the chunksize at 100000.
-        match_count = sum(p.imap_unordered(cfunc, product(atoms_list, ref_list),
-                                           chunksize=min(len(atoms_list) * len(ref_list) // os.cpu_count(), 100000)))
+        cfunc = partial(_check, list_atoms_two=ref_list, ltol=ltol, stol=stol, angle_tol=angle_tol)
+        match_count = sum(p.map(cfunc, atoms_list))
 
     return match_count / len(atoms_list)
 
@@ -395,15 +441,29 @@ def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.
     """
     with Pool() as p:
         # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
-        cfunc = partial(_check, ltol=ltol, stol=stol, angle_tol=angle_tol)
-        # (len(atoms_list) * (len(ref_list) - 1) / 2) // os.cpu_count() would be optimal value for chunksize because it distributes
-        # the same amount of work to all processes. However, the memory usage can become quite large. Therefore, we
-        # cap the chunksize at 100000.
-        match_count = sum(
-            p.imap_unordered(cfunc,
-                             ((atoms_list[first_index], atoms_list[second_index])
-                              for first_index in range(len(atoms_list))
-                              for second_index in range(first_index + 1, len(atoms_list))),
-                             chunksize=min((len(atoms_list) * (len(atoms_list) - 1) / 2) // os.cpu_count(), 100000)))
+        cfunc = partial(_check_pair, ltol=ltol, stol=stol, angle_tol=angle_tol)
+        # (len(atoms_list) * (len(ref_list) - 1) / 2) // os.cpu_count() would be optimal value for chunksize because it
+        # distributes the same amount of work to all processes. However, the memory usage can become quite large.
+        # Therefore, we cap the chunksize at 100000.
+        matches = list(p.imap(
+            cfunc,
+            ((atoms_list[first_index], atoms_list[second_index])
+             for first_index in range(len(atoms_list))
+             for second_index in range(first_index + 1, len(atoms_list))),
+            chunksize=max(min((len(atoms_list) * (len(atoms_list) - 1) // 2) // os.cpu_count(), 100000), 1)))
 
-    return 1.0 - match_count / len(atoms_list)
+    assert len(matches) == len(atoms_list) * (len(atoms_list) - 1) // 2
+
+    # matches basically stores the upper triangle of the match matrix (without the diagonal).
+    # We now count the number of unique structures by returning the number of rows where all values are False.
+    # This should automatically consider cases where the same structure appears multiple times because only the last
+    # appearance is considered unique.
+    unique_count = 0
+    start_index = 0
+    for first_index in range(len(atoms_list)):
+        number_second_indices = len(atoms_list) - first_index - 1
+        if all(not matches[start_index + i] for i in range(number_second_indices)):
+            unique_count += 1
+        start_index += number_second_indices
+
+    return unique_count / len(atoms_list)
