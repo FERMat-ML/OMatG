@@ -324,7 +324,7 @@ class OMGTrainer(Trainer):
                     crystal_sys_F[cs_F] = 0
                 crystal_sys_F[cs_F] += 1
 
-                if sg_num >= 3:
+                if sg_num_F >= 3:
                     write("symmetric_F.xyz", struc, format='extxyz', append=True)
                     write("symmetric_F.xyz", sym_struc_F, format='extxyz', append=True)
 
