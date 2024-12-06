@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, List, Set
 from ase import Atoms
+from ase.io import write
 from lightning.pytorch import Trainer
 from lightning.pytorch.cli import LightningCLI
 import matplotlib.pyplot as plt
@@ -16,7 +17,7 @@ from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
-from omg.analysis import get_coordination_numbers, get_coordination_numbers_species, get_space_group, match_rate, reduce
+from omg.analysis import get_coordination_numbers, get_coordination_numbers_species, get_space_group, match_rate, unique_rate
 from collections import OrderedDict
 
 
@@ -180,15 +181,9 @@ class OMGTrainer(Trainer):
         for struc in reference_atoms:
             ref_avg_cn.append(np.mean(get_coordination_numbers(struc)))
 
-            naming = 'species'
-            cn_dict = get_coordination_numbers_species(struc, naming=naming)
+            cn_dict = get_coordination_numbers_species(struc)
             for key, val in cn_dict.items():
-                if naming == 'species':
-                    assert isinstance(key, str)
-                elif naming == 'number':
-                    assert isinstance(key, int)
-                else:
-                    raise ValueError("Invalid naming argument. Must be 'species' or 'number'.")
+                assert isinstance(key, str)
                 assert isinstance(val, list)
                 if key not in ref_cn_species:
                     ref_cn_species[key] = []
@@ -226,6 +221,12 @@ class OMGTrainer(Trainer):
         sg = {}
         # Dictionary mapping occurences of crystal systems in generated structures.
         crystal_sys = {}
+
+        # for varprec=False
+        # Dictionary mapping occurences of space groups in generated structures.
+        sg_F = {}
+        # Dictionary mapping occurences of crystal systems in generated structures.
+        crystal_sys_F = {}
 
         for i in range(1, MAX_ATOM_NUM + 1):
             nums[i] = 0
@@ -269,23 +270,23 @@ class OMGTrainer(Trainer):
             root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
 
         sg_fail = 0
+        sg_fail_F = 0
         for struc in generated_atoms:
             avg_cn.append(np.mean(get_coordination_numbers(struc)))
 
-            cn_dict = get_coordination_numbers_species(struc, naming=naming)
+            cn_dict = get_coordination_numbers_species(struc)
             for key, val in cn_dict.items():
-                if naming == 'species':
-                    assert isinstance(key, str)
-                elif naming == 'number':
-                    assert isinstance(key, int)
-                else:
-                    raise ValueError("Invalid naming argument. Must be 'species' or 'number'.")
+                assert isinstance(key, str)
                 assert isinstance(val, list)
                 if key not in cn_species:
                     cn_species[key] = []
                 cn_species[key].extend(val)
 
-            sg_group, sg_num, cs, sym_struc = get_space_group(struc)
+            sg_group, sg_num, cs, sym_struc = get_space_group(struc, var_prec=True, angle_tolerance=-1)
+            # testing with var_prec = False, with tolerances reasonable for DFT-relaxed structures
+            sg_group_F, sg_num_F, cs_F, sym_struc_F = get_space_group(struc, var_prec=False, symprec=1e-2, angle_tolerance=-1)
+            
+            # case for var_prec = True
             if (sg_group is None) or (sg_num is None) or (cs is None):
                 sg_fail += 1
                 continue
@@ -300,12 +301,32 @@ class OMGTrainer(Trainer):
                     crystal_sys[cs] = 0
                 crystal_sys[cs] += 1
 
-                from ase.io import write
                 if sg_num >= 3:
+                    write("symmetric.xyz", struc, format='extxyz', append=True)
                     write("symmetric.xyz", sym_struc, format='extxyz', append=True)
 
+            # case for var_prec = False
+            if (sg_group_F is None) or (sg_num_F is None) or (cs_F is None):
+                sg_fail_F += 1
+                continue
+            else:
+                assert isinstance(sg_num_F, int)
+                assert 1 <= sg_num_F <= 230
+                assert isinstance(cs_F, str)
+                if sg_num_F not in sg_F:
+                    sg_F[sg_num_F] = 0
+                sg_F[sg_num_F] += 1
+                if cs_F not in crystal_sys_F:
+                    crystal_sys_F[cs_F] = 0
+                crystal_sys_F[cs_F] += 1
+
+                if sg_num >= 3:
+                    write("symmetric_F.xyz", struc, format='extxyz', append=True)
+                    write("symmetric_F.xyz", sym_struc_F, format='extxyz', append=True)
+
         print("Number of times space group identification failed for prediction dataset: {}/{} total".format(ref_sg_fail, len(reference_atoms)))
-        print("Number of times space group identification failed for generated dataset: {}/{} total".format(sg_fail, len(generated_atoms)))
+        print("Number of times space group identification failed for generated dataset (var_prec = True): {}/{} total".format(sg_fail, len(generated_atoms)))
+        print("Number of times space group identification failed for generated dataset (var_prec = False): {}/{} total".format(sg_fail_F, len(generated_atoms)))
 
         # Plot
         with PdfPages(plot_name) as pdf:
@@ -450,28 +471,17 @@ class OMGTrainer(Trainer):
             ref_avg_cn_species = {}
             avg_cn_species = {}
             for key, val in ref_cn_species.items():
-                if naming == 'species':
-                    assert isinstance(key, str)
-                elif naming == 'number':
-                    assert isinstance(key, int)
-                else:
-                    raise ValueError("Invalid naming argument. Must be 'species' or 'number'.")
+                assert isinstance(key, str)
                 assert isinstance(val, list)
                 ref_avg_cn_species[key] = np.mean(val)
             for key, val in cn_species.items():
-                if naming == 'species':
-                    assert isinstance(key, str)
-                elif naming == 'number':
-                    assert isinstance(key, int)
-                else:
-                    raise ValueError("Invalid naming argument. Must be 'species' or 'number'.")
+                assert isinstance(key, str)
                 assert isinstance(val, list)
                 avg_cn_species[key] = np.mean(val)
 
-            if naming == 'species':
-                species_order = Atoms(numbers=np.arange(1, MAX_ATOM_NUM + 1)).get_chemical_symbols()
-                avg_cn_species = OrderedDict((key, avg_cn_species[key]) for key in species_order if key in avg_cn_species)
-                ref_avg_cn_species = OrderedDict((key, ref_avg_cn_species[key]) for key in species_order if key in ref_avg_cn_species)
+            species_order = Atoms(numbers=np.arange(1, MAX_ATOM_NUM + 1)).get_chemical_symbols()
+            avg_cn_species = OrderedDict((key, avg_cn_species[key]) for key in species_order if key in avg_cn_species)
+            ref_avg_cn_species = OrderedDict((key, ref_avg_cn_species[key]) for key in species_order if key in ref_avg_cn_species)
             plt.bar([k for k in avg_cn_species.keys()], [v for v in avg_cn_species.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             plt.bar([k for k in ref_avg_cn_species.keys()], [v for v in ref_avg_cn_species.values()], alpha=0.5,
@@ -492,7 +502,21 @@ class OMGTrainer(Trainer):
             total_sg_ref = sum(v for v in ref_sg.values())
             plt.bar([k for k in ref_sg.keys()], [v / total_sg_ref for v in ref_sg.values()], alpha=0.5,
                     label="Test", color="darkslategrey")
-            plt.title("Space group distribution")
+            plt.title("Space group distribution, varprec=True")
+            plt.xlabel("Space group number")
+            plt.ylabel("Density")
+            plt.legend()
+            pdf.savefig()
+            plt.close()
+
+            # Compute distributions of space groups
+            total_sg_F = sum(v for v in sg_F.values())
+            plt.bar([k for k in sg_F.keys()], [v / total_sg_F for v in sg_F.values()], alpha=0.8,
+                    label="Generated", color="blueviolet")
+            total_sg_ref = sum(v for v in ref_sg.values())
+            plt.bar([k for k in ref_sg.keys()], [v / total_sg_ref for v in ref_sg.values()], alpha=0.5,
+                    label="Test", color="darkslategrey")
+            plt.title("Space group distribution, varprec=False")
             plt.xlabel("Space group number")
             plt.ylabel("Density")
             plt.legend()
@@ -510,7 +534,22 @@ class OMGTrainer(Trainer):
             plt.bar([k for k in ref_crystal_sys_ord.keys()], [v / total_cs_ref for v in ref_crystal_sys_ord.values()], alpha=0.5,
                     label="Test", color="darkslategrey")
             plt.xticks(rotation=45, ha='right', fontsize=8)
-            plt.title("Crystal system distribution")
+            plt.title("Crystal system distribution, varprec=True")
+            plt.xlabel("Crystal system")
+            plt.ylabel("Density")
+            plt.tight_layout()
+            plt.legend()
+            pdf.savefig()
+            plt.close()
+
+            crystal_sys_ord_F = OrderedDict((key, crystal_sys_F[key]) for key in cs_order if key in crystal_sys_F)
+            total_cs_F = sum(v for v in crystal_sys_F.values())
+            plt.bar([k for k in crystal_sys_ord_F.keys()], [v / total_cs_F for v in crystal_sys_ord_F.values()], alpha=0.8,
+                    label="Generated", color="blueviolet")
+            plt.bar([k for k in ref_crystal_sys_ord.keys()], [v / total_cs_ref for v in ref_crystal_sys_ord.values()], alpha=0.5,
+                    label="Test", color="darkslategrey")
+            plt.xticks(rotation=45, ha='right', fontsize=8)
+            plt.title("Crystal system distribution, varprec=False")
             plt.xlabel("Crystal system")
             plt.ylabel("Density")
             plt.tight_layout()
@@ -545,7 +584,7 @@ class OMGTrainer(Trainer):
             print("The match rate between the xyz files is: {}%".format(100*x))
         else:
             # comparing within file
-            x = reduce(atoms_list)
+            x = unique_rate(atoms_list)
             print("The occurence of unique structures within the xyz file is: {}%".format(100*x))
 
 class OMGCLI(LightningCLI):
