@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, List, Set
@@ -11,12 +12,13 @@ import numpy as np
 from sklearn.neighbors import KernelDensity
 import torch
 from torch_geometric.data import Data
+import yaml
 from omg.omg_lightning import OMGLightning
 from omg.datamodule.dataloader import OMGDataModule, OMGTorchDataset
 from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
-from omg.utils import convert_ase_atoms_to_data, xyz_reader
+from omg.utils import convert_ase_atoms_to_data, xyz_reader, DataField
 from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_space_group, match_rate,
                           unique_rate)
 
@@ -585,6 +587,67 @@ class OMGTrainer(Trainer):
         r = unique_rate(gen_atoms)
         print(f"The occurence of unique structures within the generated dataset is {100 * r}%.")
 
+    def curriculum(self, model: OMGLightning, datamodule: OMGDataModule, lessons: List[str]) -> None:
+        """
+        Write a config file for a particular "lesson" in curriculum learning style whereby only the stochastic
+        interpolants for the given data fields are kept intact. All other stochastic interpolants will be replaced
+        with the identity interpolant.
+
+        The possible lessons are "pos", "cell", and "species" or any combination of them.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        :param lessons:
+            List of data fields for which the stochastic interpolants should be kept intact.
+        :type lessons: List[str]
+
+        :raises ValueError:
+            If an invalid lesson is given.
+        """
+        # Since LightningCLI already expects the config command-line argument, there is apparently no way to make
+        # it an argument of this function. Therefore, we just parse it from the given command-line arguments again.
+        parser = ArgumentParser()
+        parser.add_argument("--config", type=str)
+        args, _ = parser.parse_known_args()
+        config_file = args.config
+
+        try:
+            df_lessons = [DataField[lesson] for lesson in lessons]
+        except KeyError:
+            raise ValueError(f"Invalid lesson in {lessons}, allowed lessons are {[df.name for df in DataField]}")
+
+        with open(config_file, 'r') as file:
+            template = yaml.safe_load(file)
+
+        # Get interpolant and swap with identity
+        interpolants = template['model']['si']['init_args']['stochastic_interpolants']
+        distributions = template['model']['sampler']['init_args']
+        costs = template['model']['relative_si_costs']
+        data_fields = template['model']['si']['init_args']['data_fields']
+
+        for i, df in enumerate(data_fields):
+            # This should not fail because the config file was already parsed.
+            if DataField[df] not in df_lessons:
+                distributions[f'{df}_distribution'] = {'class_path': 'omg.sampler.distributions.MirrorData'}
+                interpolants[i] = {
+                    'class_path': 'omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity'}
+                costs[i] = 0.0
+
+        # Renormalize costs.
+        new_total_costs = sum(costs)
+        for i in range(len(costs)):
+            costs[i] = costs[i] / new_total_costs
+
+        # Save lesson.
+        old_path = Path(config_file)
+        new_filename = str(old_path.with_stem(old_path.stem + "_" + "_".join(lessons) + "_lesson"))
+        with open(new_filename, 'w') as file:
+            yaml.safe_dump(template, file)
+
 
 class OMGCLI(LightningCLI):
     def __init__(self, *args, **kwargs):
@@ -596,4 +659,5 @@ class OMGCLI(LightningCLI):
         d = LightningCLI.subcommands()
         d["visualize"] = {"model", "datamodule"}
         d["match"] = {"model", "datamodule"}
+        d["curriculum"] = {"model", "datamodule"}
         return d
