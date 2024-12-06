@@ -168,10 +168,8 @@ def get_space_group(atoms: Atoms, symprec: float = 1.0e-5, angle_tolerance: floa
         print("[WARNING] get_space_group: Space group could not be determined.")
         return None, None, None, None
 
-    sg = "%s (%d)" % (spg_type.international_short, sym_data.number)
-
-    sg_group = sg.split()[0]
-    sg_num = int(sg.split()[1].replace('(', '').replace(')', ''))
+    sg_group = str(spg_type.international_short)
+    sg_num = int(sym_data.number)
 
     if sg_num < 1 or sg_num > 230:
         print("[WARNING] get_space_group: Space group could not be determined.")
