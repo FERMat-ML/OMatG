@@ -7,7 +7,6 @@ from lightning.pytorch.cli import LightningCLI
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
-from scipy.stats import kstest
 from sklearn.neighbors import KernelDensity
 import torch
 from torch_geometric.data import Data
@@ -17,7 +16,8 @@ from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
-from omg.analysis import get_coordination_numbers, get_coordination_numbers_species, get_space_group, match_rate, unique_rate
+from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_space_group, match_rate,
+                          unique_rate)
 from collections import OrderedDict
 
 
@@ -25,7 +25,8 @@ class OMGTrainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def visualize(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str, plot_name: str = "viz.pdf") -> None:
+    def visualize(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
+                  plot_name: str = "viz.pdf") -> None:
         """
         Compare the distributions of the volume, the element composition, and the number of unique elements per
         structure in the test and generated dataset. Also, plot the root mean-square distance between the fractional
@@ -52,7 +53,8 @@ class OMGTrainer(Trainer):
         # Get atoms
         init_atoms = xyz_reader(initial_file)
         gen_atoms = xyz_reader(final_file)
-        ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset, datamodule.predict_dataset.convert_to_fractional)
+        ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset,
+                                             datamodule.predict_dataset.convert_to_fractional)
 
         # Plot data
         self._plot_to_pdf(ref_atoms, init_atoms, gen_atoms, plot_name, model.use_min_perm_dist)
@@ -60,7 +62,7 @@ class OMGTrainer(Trainer):
     @staticmethod
     def _load_dataset_atoms(dataset: OMGTorchDataset, fractional: bool = True) -> List[Atoms]:
         """
-        Load lmdb file atoms.
+        Load lmdb file atoms into a list of Atoms instances.
         """
         all_ref_atoms = []
         for struc in dataset:
@@ -77,7 +79,8 @@ class OMGTrainer(Trainer):
         return all_ref_atoms
 
     @staticmethod
-    def _plot_to_pdf(reference: List[Atoms], initial: List[Atoms], generated: List[Atoms], plot_name: str, use_min_perm_dist: bool) -> None:
+    def _plot_to_pdf(reference: List[Atoms], initial: List[Atoms], generated: List[Atoms], plot_name: str,
+                     use_min_perm_dist: bool) -> None:
         """
         Plot figures for data analysis/matching between test and generated data.
 
@@ -284,8 +287,9 @@ class OMGTrainer(Trainer):
 
             sg_group, sg_num, cs, sym_struc = get_space_group(struc, var_prec=True, angle_tolerance=-1)
             # testing with var_prec = False, with tolerances reasonable for DFT-relaxed structures
-            sg_group_F, sg_num_F, cs_F, sym_struc_F = get_space_group(struc, var_prec=False, symprec=1e-2, angle_tolerance=-1)
-            
+            sg_group_F, sg_num_F, cs_F, sym_struc_F = get_space_group(struc, var_prec=False, symprec=1e-2,
+                                                                      angle_tolerance=-1)
+
             # case for var_prec = True
             if (sg_group is None) or (sg_num is None) or (cs is None):
                 sg_fail += 1
@@ -362,13 +366,13 @@ class OMGTrainer(Trainer):
             log_density_gen = kde_gen.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
             plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Test")
-            #plt.text(
+            # plt.text(
             #    0.05, 0.95,
             #    f'KS Test for identical distributions: p-value={kstest(vol, ref_vol).pvalue}',
             #    verticalalignment='top',
             #    bbox=props,
             #    transform=plt.gca().transAxes
-            #)
+            # )
             plt.xlabel(r"Volume ($\AA^3$)")
             plt.ylabel("Density")
             plt.title("Volume")
@@ -434,13 +438,13 @@ class OMGTrainer(Trainer):
             plt.xlabel("Root Mean Square Distance of Fractional Coordinates")
             plt.ylabel("Density")
             plt.legend()
-            #plt.text(
+            # plt.text(
             #    0.05, 0.95,
             #    f'KS Test for identical distributions: p-value={kstest(trmsds, trmsds).pvalue}',
             #    verticalalignment='top',
             #    bbox=props,
             #    transform=plt.gca().transAxes
-            #)
+            # )
             pdf.savefig()
             plt.close()
 
@@ -481,7 +485,8 @@ class OMGTrainer(Trainer):
 
             species_order = Atoms(numbers=np.arange(1, MAX_ATOM_NUM + 1)).get_chemical_symbols()
             avg_cn_species = OrderedDict((key, avg_cn_species[key]) for key in species_order if key in avg_cn_species)
-            ref_avg_cn_species = OrderedDict((key, ref_avg_cn_species[key]) for key in species_order if key in ref_avg_cn_species)
+            ref_avg_cn_species = OrderedDict(
+                (key, ref_avg_cn_species[key]) for key in species_order if key in ref_avg_cn_species)
             plt.bar([k for k in avg_cn_species.keys()], [v for v in avg_cn_species.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             plt.bar([k for k in ref_avg_cn_species.keys()], [v for v in ref_avg_cn_species.values()], alpha=0.5,
@@ -531,8 +536,8 @@ class OMGTrainer(Trainer):
             plt.bar([k for k in crystal_sys_ord.keys()], [v / total_cs for v in crystal_sys_ord.values()], alpha=0.8,
                     label="Generated", color="blueviolet")
             total_cs_ref = sum(v for v in ref_crystal_sys.values())
-            plt.bar([k for k in ref_crystal_sys_ord.keys()], [v / total_cs_ref for v in ref_crystal_sys_ord.values()], alpha=0.5,
-                    label="Test", color="darkslategrey")
+            plt.bar([k for k in ref_crystal_sys_ord.keys()], [v / total_cs_ref for v in ref_crystal_sys_ord.values()],
+                    alpha=0.5, label="Test", color="darkslategrey")
             plt.xticks(rotation=45, ha='right', fontsize=8)
             plt.title("Crystal system distribution, varprec=True")
             plt.xlabel("Crystal system")
@@ -544,10 +549,10 @@ class OMGTrainer(Trainer):
 
             crystal_sys_ord_F = OrderedDict((key, crystal_sys_F[key]) for key in cs_order if key in crystal_sys_F)
             total_cs_F = sum(v for v in crystal_sys_F.values())
-            plt.bar([k for k in crystal_sys_ord_F.keys()], [v / total_cs_F for v in crystal_sys_ord_F.values()], alpha=0.8,
-                    label="Generated", color="blueviolet")
-            plt.bar([k for k in ref_crystal_sys_ord.keys()], [v / total_cs_ref for v in ref_crystal_sys_ord.values()], alpha=0.5,
-                    label="Test", color="darkslategrey")
+            plt.bar([k for k in crystal_sys_ord_F.keys()], [v / total_cs_F for v in crystal_sys_ord_F.values()],
+                    alpha=0.8, label="Generated", color="blueviolet")
+            plt.bar([k for k in ref_crystal_sys_ord.keys()], [v / total_cs_ref for v in ref_crystal_sys_ord.values()],
+                    alpha=0.5, label="Test", color="darkslategrey")
             plt.xticks(rotation=45, ha='right', fontsize=8)
             plt.title("Crystal system distribution, varprec=False")
             plt.xlabel("Crystal system")
@@ -558,34 +563,41 @@ class OMGTrainer(Trainer):
             plt.close()
 
     def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str) -> None:
-        """ Use to check match rate for crystal structure prediction task."""
+        """
+        Compute the match rate between the generated structures and the structures in the prediction dataset.
 
+        This is one of the benchmarks for the crystal-structure prediction task used by DiffCSP and FlowMM.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :param xyz_file:
+            XYZ file containing the generated structures.
+            This argument has to be set on the command line.
+        :type xyz_file: str
+
+        :raises FileNotFoundError:
+            If the file does not exist.
+        """
         final_file = Path(xyz_file)
+        if not final_file.exists():
+            raise FileNotFoundError(f"File {final_file} does not exist.")
 
         # Get atoms
         gen_atoms = xyz_reader(final_file)
-        ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset, datamodule.predict_dataset.convert_to_fractional)
+        ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset,
+                                             datamodule.predict_dataset.convert_to_fractional)
 
         # TODO: add MLIP/DFT relaxation step on generated atoms here
 
-        self._structure_match(gen_atoms, ref_atoms)
-        self._structure_match(gen_atoms)
+        mr = match_rate(gen_atoms, ref_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
+        print(f"The match rate between the generated structures and dataset is {100 * mr}%.")
 
-    @staticmethod
-    def _structure_match(atoms_list: List[Atoms], ref_list: List[Atoms] = None) -> float:
-        """ Check whether a structure in atoms_1_list exists in atoms_2_list.
-            OR
-            Check whether a structure in atoms_1_list is unique.
-        """
+        r = unique_rate(gen_atoms)
+        print(f"The occurence of unique structures within the generated dataset is {100 * r}%.")
 
-        if ref_list:
-            # comparing between files
-            x = match_rate(atoms_list, ref_list, ltol=0.3, stol=0.5, angle_tol=10.0)
-            print("The match rate between the xyz files is: {}%".format(100*x))
-        else:
-            # comparing within file
-            x = unique_rate(atoms_list)
-            print("The occurence of unique structures within the xyz file is: {}%".format(100*x))
 
 class OMGCLI(LightningCLI):
     def __init__(self, *args, **kwargs):

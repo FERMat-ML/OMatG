@@ -30,7 +30,8 @@ dependencies = [
     "scikit-learn ~= 1.5",
     "matplotlib ~= 3.9",
     "pymatgen ~= 2024.11",
-    "spglib ~= 2.5"
+    "spglib ~= 2.5",
+    "scikit-learn ~= 1.5"
 ]
 
 [project.scripts]
