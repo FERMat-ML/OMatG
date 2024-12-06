@@ -66,6 +66,19 @@ in the prediction dataset:
 omg match --config {config_file} --xyz_file {xyz_file}
 ```
 
+## Curriculum Learning
+
+Run the following command to use a given configuration file with stochastic interpolants for all datafields 'pos', 
+'species', and 'cell' to generate a new configuration file where only some of the stochastic interpolants are used, 
+while the others are replaced by identity interpolants:
+
+```bash
+omg curriculum --config {config_file} --lessons {lessons}
+```
+
+Here, lessons should be a list of strings so, e.g., [pos] or [pos,species] (spaces can be included when the brackets are
+surrounded by quotes).
+
 ## OMG Data Format
 
 For a batch size of batch_size, the `torch_geometric.data.Data` instances contain the following attributes:
