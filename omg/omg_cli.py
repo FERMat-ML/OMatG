@@ -585,12 +585,15 @@ class OMGTrainer(Trainer):
         ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset,
                                              datamodule.predict_dataset.convert_to_fractional)
 
+        gen_atoms = xyz_reader(Path("/Users/philipp/Documents/NYU/ProjectMartiniani/OMG/omg/data/mp_20/diffcsp_data/generated.xyz"))
+        ref_atoms = xyz_reader(Path("/Users/philipp/Documents/NYU/ProjectMartiniani/OMG/omg/data/mp_20/diffcsp_data/test_set.xyz"))
+
         # Tolerances from DiffCSP and FlowMM.
         mr, rmsd = match_rate_and_rmsd(gen_atoms, ref_atoms, ltol=0.3, stol=0.5, angle_tol=10.0, full=full)
         print(f"The match rate between the generated structures and dataset is {100 * mr}%.")
         print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between the generated structures "
               f"and dataset is {rmsd}.")
-
+        exit()
         r = unique_rate(gen_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
         print(f"The occurence of unique structures within the generated dataset is {100 * r}%.")
 

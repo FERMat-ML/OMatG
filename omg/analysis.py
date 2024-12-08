@@ -1,5 +1,6 @@
 from collections import Counter
 from functools import partial
+import itertools
 from multiprocessing import Pool
 import os
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -7,9 +8,13 @@ from ase import Atoms
 from ase.data import covalent_radii
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core import Composition, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
+import smact
+import smact.screening
 import spglib
 from omg.globals import MAX_ATOM_NUM
+
 # Suppress spglib warnings.
 os.environ["SPGLIB_WARNING"] = "OFF"
 
@@ -259,6 +264,133 @@ def _get_symmetry_dataset_var_prec(atoms: Atoms, angle_tolerance: float = -1.0,
     return symmetry_datasets[groups.index(most_common_group)]
 
 
+def _structure_check(structure: Structure, cutoff: float = 0.5) -> bool:
+    """
+    Copied from DiffCsp.
+    """
+    dist_mat = structure.distance_matrix
+    # Pad diagonal with a large number
+    dist_mat = dist_mat + np.diag(
+        np.ones(dist_mat.shape[0]) * (cutoff + 10.))
+    if dist_mat.min() < cutoff or structure.volume < 0.1:
+        return False
+    else:
+        return True
+
+
+def _smact_check(composition: Composition, use_pauling_test: bool = True, include_alloys: bool = True,
+                 use_diffcsp: bool = True) -> bool:
+    """
+    CDVAE paper:
+
+    We modified the charge neutrality checker from SMACT (Davies et al., 2019) because the original checker is not
+    suitable for alloys. The checker is based on a list of possible charges for each element and it checks if the
+    material can be charge neutral by enumerating all possible charge combinations. However, it does not consider that
+    metal alloys can be mixed with almost any combination. As a result, for materials composed of all metal elements, we
+    always assume the composition is valid in our validity checker.
+
+    For the ground truth materials in MP-20, the original checker gives a composition validity of ∼50%, which
+    significantly underestimates the validity of MP-20 materials (because most of them are experimentally synthesizable
+    and thus valid). Our checker gives a composition validity of ∼90%, which is far more reasonable. We note again that
+    these checkers are all empirical and the only high-fidelity evaluation of material stability requires QM
+    simulations.
+    """
+    if use_diffcsp:
+        #elem_counter = Counter(self.atom_types)
+        #composition = [(elem, elem_counter[elem])
+        #               for elem in sorted(elem_counter.keys())]
+        #elems, counts = list(zip(*composition))
+        #counts = np.array(counts)
+        #counts = counts / np.gcd.reduce(counts)
+        #self.elems = elems
+        #self.comps = tuple(counts.astype('int').tolist())
+
+        elem_symbols = tuple(composition.as_dict().keys())
+        space = smact.element_dictionary(elem_symbols)
+        smact_elems = [e[1] for e in space.items()]
+        electronegs = [e.pauling_eneg for e in smact_elems]
+        ox_combos = [e.oxidation_states for e in smact_elems]
+        if len(set(elem_symbols)) == 1:
+            return True
+        if include_alloys:
+            is_metal_list = [elem_s in smact.metals for elem_s in elem_symbols]
+            if all(is_metal_list):
+                return True
+
+        count = tuple(composition.as_dict().values())
+        count = [int(c) for c in count]
+        # Reduce stoichiometry to gcd
+        gcd = smact._gcd_recursive(*count)
+        assert gcd == np.gcd.reduce(count)
+        count = [int(c / gcd) for c in count]
+        threshold = np.max(count)
+        compositions = []
+        # if len(list(itertools.product(*ox_combos))) > 1e5:
+        #     return False
+        oxn = 1
+        for oxc in ox_combos:
+            oxn *= len(oxc)
+        if oxn > 1e7:
+            return False
+        for ox_states in itertools.product(*ox_combos):
+            stoichs = [(c,) for c in count]
+            # Test for charge balance
+            cn_e, cn_r = smact.neutral_ratios(
+                ox_states, stoichs=stoichs, threshold=threshold)
+            # Electronegativity test
+            if cn_e:
+                if use_pauling_test:
+                    try:
+                        electroneg_OK = smact.screening.pauling_test(ox_states, electronegs)
+                    except TypeError:
+                        # if no electronegativity data, assume it is okay
+                        electroneg_OK = True
+                else:
+                    electroneg_OK = True
+                if electroneg_OK:
+                    return True
+        return False
+    else:
+        return smact.screening.smact_validity(composition, use_pauling_test=use_pauling_test,
+                                              include_alloys=include_alloys)
+
+
+def _valid(atoms: Atoms, cutoff: float = 0.5, use_pauling_test: bool = True, include_alloys: bool = True) -> bool:
+    """
+    Check whether the given structure is valid.
+
+    A structure is considered valid if the following conditions are met:
+    - The structure is not empty.
+    - The minimum distance between any two atoms is larger than the given cutoff.
+    - The composition of the structure is valid according to the SMACT checker.
+
+    The cutoff is given in Angstrom.
+
+    :param atoms:
+        Structure to check.
+    :type atoms: Atoms
+    :param cutoff:
+        Minimum distance between any two atoms.
+        Defaults to 0.5 Angstrom.
+    :type cutoff: float
+    :param use_pauling_test:
+        Whether to use the Pauling test in the SMACT checker.
+        Defaults to True.
+    :type use_pauling_test: bool
+    :param include_alloys:
+        Whether to include alloys in the SMACT checker.
+        Defaults to True.
+    :type include_alloys: bool
+
+    :return:
+        True if the structure is valid, False otherwise.
+    :rtype: bool
+    """
+    return _structure_check(AseAtomsAdaptor.get_structure(atoms), cutoff=cutoff) and \
+           _smact_check(AseAtomsAdaptor.get_structure(atoms).composition, use_pauling_test=use_pauling_test,
+                        include_alloys=include_alloys)
+
+
 def _structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, stol: float = 0.3,
                        angle_tol: float = 5.0) -> Optional[float]:
     """
@@ -295,7 +427,27 @@ def _structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, st
     sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
     # Conversion to pymatgen type.
     a1 = AseAtomsAdaptor.get_structure(atoms_one)
+    if min(a1.lattice.abc) < 0.0:
+        print("What")
+        return None
+    if a1.lattice.volume < 0.1:
+        print("Hm")
+        return None
+
+    a1_valid = _structure_check(a1) and _smact_check(a1.composition)
     a2 = AseAtomsAdaptor.get_structure(atoms_two)
+    if min(a2.lattice.abc) < 0.0:
+        print("What")
+        return None
+    if a2.lattice.volume < 0.1:
+        print("Hm")
+        return None
+
+    a2_valid = _structure_check(a2) and _smact_check(a2.composition)
+    #print("Structure check: ", _structure_check(a2))
+    #print("Smact check: ", _smact_check(a2.composition))
+    if not (a1_valid and a2_valid):
+        return None
     res = sm.get_rms_dist(a1, a2)
     assert res is None or res[0] <= stol
     return res[0] if res is not None else None
