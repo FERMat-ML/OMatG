@@ -415,7 +415,7 @@ def match_rate_and_rmsd(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[Val
     # We cannot use lambda functions so we use (partial) global functions instead.
     match_func = partial(_get_match_and_rmsd, ltol=ltol, stol=stol, angle_tol=angle_tol)
     res = process_map(match_func, atoms_list, ref_list, desc="Computing match rate and RMSD",
-                      chunksize=max(min(len(atoms_list) // os.cpu_count(), 100), 1))
+                      chunksize=max(min(len(atoms_list) // os.cpu_count(), 100), 1), max_workers=os.cpu_count())
     assert len(res) == len(atoms_list) == len(ref_list)
 
     full_match_count = sum(r is not None for r in res)
@@ -487,8 +487,9 @@ def unique_rate(atoms_list: Sequence[ValidAtoms], ltol: float = 0.2, stol: float
         ((atoms_list[first_index], atoms_list[second_index])
          for first_index in range(len(atoms_list))
          for second_index in range(first_index + 1, len(atoms_list))),
-        chunksize=max(min((len(atoms_list) * (len(atoms_list) - 1) // 2) // os.cpu_count(), 100000), 1),
-        desc="Computing unique rate", total=len(atoms_list) * (len(atoms_list) - 1) // 2)
+        chunksize=max(min((len(atoms_list) * (len(atoms_list) - 1) // 2) // os.cpu_count(), 1000000), 1),
+        desc="Computing unique rate", total=len(atoms_list) * (len(atoms_list) - 1) // 2,
+        max_workers=os.cpu_count())
     assert len(matches) == len(atoms_list) * (len(atoms_list) - 1) // 2
 
     # matches basically stores the upper triangle of the match matrix (without the diagonal).

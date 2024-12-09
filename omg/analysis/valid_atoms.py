@@ -108,7 +108,8 @@ class ValidAtoms(object):
         constructor = partial(ValidAtoms, structure_check_cutoff=structure_check_cutoff,
                               use_pauling_test=use_pauling_test, include_alloys=include_alloys)
         valid_atoms = process_map(constructor, atoms, desc=desc,
-                                  chunksize=max(min(len(atoms) // os.cpu_count(), 100), 1))
+                                  chunksize=max(min(len(atoms) // os.cpu_count(), 100), 1),
+                                  max_workers=os.cpu_count())
         return valid_atoms
 
     @staticmethod
