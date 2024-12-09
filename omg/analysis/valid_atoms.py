@@ -1,5 +1,4 @@
 from functools import partial
-import itertools
 import os
 from typing import List, Optional, Sequence, Tuple
 import warnings
