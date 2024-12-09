@@ -141,8 +141,7 @@ class ValidAtoms(object):
             return True
 
     @staticmethod
-    def _smact_check(composition: Composition, use_pauling_test: bool = True, include_alloys: bool = True,
-                     use_diffcsp: bool = True) -> bool:
+    def _smact_check(composition: Composition, use_pauling_test: bool = True, include_alloys: bool = True) -> bool:
         """
         Check the validity of the composition according to the SMACT rules.
 
@@ -162,55 +161,8 @@ class ValidAtoms(object):
             Whether the composition is valid.
         :rtype: bool
         """
-        if use_diffcsp:
-            elem_symbols = tuple(composition.as_dict().keys())
-            space = smact.element_dictionary(elem_symbols)
-            smact_elems = [e[1] for e in space.items()]
-            electronegs = [e.pauling_eneg for e in smact_elems]
-            ox_combos = [e.oxidation_states for e in smact_elems]
-            if len(set(elem_symbols)) == 1:
-                return True
-            if include_alloys:
-                is_metal_list = [elem_s in smact.metals for elem_s in elem_symbols]
-                if all(is_metal_list):
-                    return True
-
-            count = tuple(composition.as_dict().values())
-            count = [int(c) for c in count]
-            # Reduce stoichiometry to gcd
-            gcd = smact._gcd_recursive(*count)
-            assert gcd == np.gcd.reduce(count)
-            count = [int(c / gcd) for c in count]
-            threshold = np.max(count)
-            compositions = []
-            # if len(list(itertools.product(*ox_combos))) > 1e5:
-            #     return False
-            oxn = 1
-            for oxc in ox_combos:
-                oxn *= len(oxc)
-            if oxn > 1e7:
-                return False
-            for ox_states in itertools.product(*ox_combos):
-                stoichs = [(c,) for c in count]
-                # Test for charge balance
-                cn_e, cn_r = smact.neutral_ratios(
-                    ox_states, stoichs=stoichs, threshold=threshold)
-                # Electronegativity test
-                if cn_e:
-                    if use_pauling_test:
-                        try:
-                            electroneg_OK = smact.screening.pauling_test(ox_states, electronegs)
-                        except TypeError:
-                            # if no electronegativity data, assume it is okay
-                            electroneg_OK = True
-                    else:
-                        electroneg_OK = True
-                    if electroneg_OK:
-                        return True
-            return False
-        else:
-            return smact.screening.smact_validity(composition, use_pauling_test=use_pauling_test,
-                                                  include_alloys=include_alloys)
+        return smact.screening.smact_validity(composition, use_pauling_test=use_pauling_test,
+                                              include_alloys=include_alloys)
 
     @staticmethod
     def _get_fingerprints(composition: Composition, structure: Structure) -> Tuple[List[float], List[float]]:
