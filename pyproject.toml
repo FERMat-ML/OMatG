@@ -25,7 +25,7 @@ dependencies = [
     "lightning[pytorch-extra]",
     "pytest ~= 8.3",
     "tqdm ~= 4.65",
-    "smact ~= 2.8",
+    "smact ~= 3.0",
     "wandb ~= 0.18",
     "scikit-learn ~= 1.5",
     "matplotlib ~= 3.9",

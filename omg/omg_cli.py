@@ -20,7 +20,7 @@ from omg.sampler.minimum_permutation_distance import correct_for_minimum_permuta
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader, DataField
 from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_space_group,
-                          match_rate_and_rmsd, unique_rate)
+                          match_rate_and_rmsd, unique_rate, ValidAtoms)
 
 
 class OMGTrainer(Trainer):
@@ -252,6 +252,7 @@ class OMGTrainer(Trainer):
 
         traveled_root_mean_square_distances = []
         assert initial.pos.shape == generated.pos.shape
+        # noinspection PyTypeChecker
         assert torch.all(initial.ptr == generated.ptr)
         generated_pos_prime = fractional_coordinates_corrector.unwrap(initial.pos, generated.pos)
         distances_squared = torch.sum((generated_pos_prime - initial.pos) ** 2, dim=-1)
@@ -551,7 +552,7 @@ class OMGTrainer(Trainer):
             pdf.savefig()
             plt.close()
 
-    def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str, full: bool = False) -> None:
+    def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str) -> None:
         """
         Compute the match rate between the generated structures and the structures in the prediction dataset.
 
@@ -566,12 +567,6 @@ class OMGTrainer(Trainer):
             XYZ file containing the generated structures.
             This argument has to be set on the command line.
         :type xyz_file: str
-        :param full:
-            If True, try to match every generated structure to every structure in the prediction dataset.
-            If False,try to match every generated structure to the structure at the same index in the prediction dataset.
-            This argument can be optionally set on the command line.
-            Defaults to False.
-        :type full: bool
 
         :raises FileNotFoundError:
             If the file does not exist.
@@ -585,16 +580,26 @@ class OMGTrainer(Trainer):
         ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset,
                                              datamodule.predict_dataset.convert_to_fractional)
 
-        gen_atoms = xyz_reader(Path("/Users/philipp/Documents/NYU/ProjectMartiniani/OMG/omg/data/mp_20/diffcsp_data/generated.xyz"))
-        ref_atoms = xyz_reader(Path("/Users/philipp/Documents/NYU/ProjectMartiniani/OMG/omg/data/mp_20/diffcsp_data/test_set.xyz"))
+        # TODO: Do we want to filter atoms everywhere?
+        gen_valid_atoms = ValidAtoms.get_valid_atoms(gen_atoms, desc="Validating generated structures")
+        ref_valid_atoms = ValidAtoms.get_valid_atoms(ref_atoms, desc="Validating reference structures")
+
+        print(f"Rate of valid structures in reference dataset: "
+              f"{100 * sum(va.valid for va in ref_valid_atoms) / len(ref_atoms)}%.")
+        print(f"Rate of valid structures in generated dataset: "
+              f"{100 * sum(va.valid for va in gen_valid_atoms) / len(gen_atoms)}%.")
 
         # Tolerances from DiffCSP and FlowMM.
-        mr, rmsd = match_rate_and_rmsd(gen_atoms, ref_atoms, ltol=0.3, stol=0.5, angle_tol=10.0, full=full)
-        print(f"The match rate between the generated structures and dataset is {100 * mr}%.")
-        print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between the generated structures "
-              f"and dataset is {rmsd}.")
-        exit()
-        r = unique_rate(gen_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
+        fmr, frmsd, vmr, vrmsd = match_rate_and_rmsd(gen_valid_atoms, ref_valid_atoms, ltol=0.3, stol=0.5,
+                                                     angle_tol=10.0)
+        print(f"The match rate between all generated structures and the full dataset is {100 * fmr}%.")
+        print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between all generated structures "
+              f"and the full dataset is {frmsd}.")
+        print(f"The match rate between valid generated structures and the valid dataset is {100 * vmr}%.")
+        print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between valid generated structures "
+              f"and the valid dataset is {vrmsd}.")
+
+        r = unique_rate(gen_valid_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
         print(f"The occurence of unique structures within the generated dataset is {100 * r}%.")
 
     def curriculum(self, model: OMGLightning, datamodule: OMGDataModule, lessons: List[str]) -> None:

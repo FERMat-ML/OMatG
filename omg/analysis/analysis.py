@@ -1,19 +1,16 @@
 from collections import Counter
 from functools import partial
-import itertools
-from multiprocessing import Pool
 import os
 from typing import Dict, List, Optional, Sequence, Tuple
 from ase import Atoms
 from ase.data import covalent_radii
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.core import Composition, Structure
-from pymatgen.io.ase import AseAtomsAdaptor
-import smact
-import smact.screening
+from pymatgen.core import Structure
 import spglib
+from tqdm.contrib.concurrent import process_map
 from omg.globals import MAX_ATOM_NUM
+from .valid_atoms import ValidAtoms
 
 # Suppress spglib warnings.
 os.environ["SPGLIB_WARNING"] = "OFF"
@@ -104,6 +101,72 @@ def get_coordination_numbers_species(atoms: Atoms, covalent_increase_factor: flo
     unique_species = [str(i) for i in np.unique(symbols)]
     return {species: [cn for cn, symb in zip(coordination_numbers, symbols) if symb == species]
             for species in unique_species}
+
+
+def _get_symmetry_dataset_var_prec(atoms: Atoms, angle_tolerance: float = -1.0,
+                                   max_iterations: int = 200) -> Optional[spglib.SpglibDataset]:
+    """
+    Calculate the symmetry dataset of a given structure using spglib with a variable precision.
+
+    Spglib's get_symmetry_dataset function possibly returns None when the space group could not be determined, which
+    mostly happens if symprec was chosen too large (or if there are overlaps between atoms). At the same time, if we
+    choose symprec too small, one only gets triclinic space groups except for perfect crystals. In order to find a
+    symprec value that gives something non-trivial, we start at a very large symprec value which either returns None or
+    a non-triclinic space group. We then iteratively decrease symprec until the spacegroup becomes triclinic. We then
+    return symmetry dataset corresponding to the most commonly occuring space group during this iteration.
+
+    :param atoms:
+        Structure to calculate the symmetry dataset for.
+    :type atoms: Atoms
+    :param angle_tolerance:
+        Symmetry search tolerance in the unit of angle deg. Normally, spglib does not recommend to use this argument. If
+        the value is negative, spglib uses an internally optimized routine to judge symmetry.
+        Defaults to -1.0 (spglib's default).
+    :type angle_tolerance: float
+    :param max_iterations:
+        Maximum number of iterations to try to find a space group.
+        Defaults to 200.
+    :type max_iterations: int
+
+    :return:
+        The most commonly occurring symmetry dataset.
+    :rtype: Optional[spglib.SpglibDataset]
+    """
+    # Cell arguments for spglib, see
+    # https://spglib.readthedocs.io/en/stable/api/python-api/spglib/spglib.html#spglib.get_symmetry.
+    spglib_cell = (atoms.get_cell(), atoms.get_scaled_positions(), atoms.get_atomic_numbers())
+    # Precision to spglib is in cartesian distance.
+    prec = 5.0
+    symmetry_datasets = []
+    groups = []
+    current_group = None
+    iteration = 0
+
+    # Space groups ending with (1) and (2) are triclinic. We decrease the precision until we get something triclinic.
+    while current_group is None or current_group.split()[-1] not in ['(1)', '(2)']:
+        iteration += 1
+        if iteration > max_iterations:
+            break
+
+        dataset = spglib.get_symmetry_dataset(spglib_cell, symprec=prec, angle_tolerance=angle_tolerance)
+        prec /= 2.0
+        if dataset is None:
+            continue
+        spg_type = spglib.get_spacegroup_type(dataset.hall_number)
+        if spg_type is None:
+            continue
+        current_group = "%s (%d)" % (spg_type.international_short, dataset.number)
+        symmetry_datasets.append(dataset)
+        groups.append(current_group)
+
+    # All space groups were None.
+    if len(groups) == 0:
+        return None
+
+    # Counting the number of occurrences should be done on the groups which are simple strings.
+    counts = Counter(groups)
+    most_common_group = counts.most_common(1)[0][0]
+    return symmetry_datasets[groups.index(most_common_group)]
 
 
 def get_space_group(atoms: Atoms, symprec: float = 1.0e-5, angle_tolerance: float = -1.0,
@@ -198,200 +261,7 @@ def get_space_group(atoms: Atoms, symprec: float = 1.0e-5, angle_tolerance: floa
     return sg_group, sg_num, crystal_system, sym_struc
 
 
-def _get_symmetry_dataset_var_prec(atoms: Atoms, angle_tolerance: float = -1.0,
-                                   max_iterations: int = 200) -> Optional[spglib.SpglibDataset]:
-    """
-    Calculate the symmetry dataset of a given structure using spglib with a variable precision.
-
-    Spglib's get_symmetry_dataset function possibly returns None when the space group could not be determined, which
-    mostly happens if symprec was chosen too large (or if there are overlaps between atoms). At the same time, if we
-    choose symprec too small, one only gets triclinic space groups except for perfect crystals. In order to find a
-    symprec value that gives something non-trivial, we start at a very large symprec value which either returns None or
-    a non-triclinic space group. We then iteratively decrease symprec until the spacegroup becomes triclinic. We then
-    return symmetry dataset corresponding to the most commonly occuring space group during this iteration.
-
-    :param atoms:
-        Structure to calculate the symmetry dataset for.
-    :type atoms: Atoms
-    :param angle_tolerance:
-        Symmetry search tolerance in the unit of angle deg. Normally, spglib does not recommend to use this argument. If
-        the value is negative, spglib uses an internally optimized routine to judge symmetry.
-        Defaults to -1.0 (spglib's default).
-    :type angle_tolerance: float
-    :param max_iterations:
-        Maximum number of iterations to try to find a space group.
-        Defaults to 200.
-    :type max_iterations: int
-
-    :return:
-        The most commonly occurring symmetry dataset.
-    :rtype: Optional[spglib.SpglibDataset]
-    """
-    # Cell arguments for spglib, see
-    # https://spglib.readthedocs.io/en/stable/api/python-api/spglib/spglib.html#spglib.get_symmetry.
-    spglib_cell = (atoms.get_cell(), atoms.get_scaled_positions(), atoms.get_atomic_numbers())
-    # Precision to spglib is in cartesian distance.
-    prec = 5.0
-    symmetry_datasets = []
-    groups = []
-    current_group = None
-    iteration = 0
-
-    # Space groups ending with (1) and (2) are triclinic. We decrease the precision until we get something triclinic.
-    while current_group is None or current_group.split()[-1] not in ['(1)', '(2)']:
-        iteration += 1
-        if iteration > max_iterations:
-            break
-
-        dataset = spglib.get_symmetry_dataset(spglib_cell, symprec=prec, angle_tolerance=angle_tolerance)
-        prec /= 2.0
-        if dataset is None:
-            continue
-        spg_type = spglib.get_spacegroup_type(dataset.hall_number)
-        if spg_type is None:
-            continue
-        current_group = "%s (%d)" % (spg_type.international_short, dataset.number)
-        symmetry_datasets.append(dataset)
-        groups.append(current_group)
-
-    # All space groups were None.
-    if len(groups) == 0:
-        return None
-
-    # Counting the number of occurrences should be done on the groups which are simple strings.
-    counts = Counter(groups)
-    most_common_group = counts.most_common(1)[0][0]
-    return symmetry_datasets[groups.index(most_common_group)]
-
-
-def _structure_check(structure: Structure, cutoff: float = 0.5) -> bool:
-    """
-    Copied from DiffCsp.
-    """
-    dist_mat = structure.distance_matrix
-    # Pad diagonal with a large number
-    dist_mat = dist_mat + np.diag(
-        np.ones(dist_mat.shape[0]) * (cutoff + 10.))
-    if dist_mat.min() < cutoff or structure.volume < 0.1:
-        return False
-    else:
-        return True
-
-
-def _smact_check(composition: Composition, use_pauling_test: bool = True, include_alloys: bool = True,
-                 use_diffcsp: bool = True) -> bool:
-    """
-    CDVAE paper:
-
-    We modified the charge neutrality checker from SMACT (Davies et al., 2019) because the original checker is not
-    suitable for alloys. The checker is based on a list of possible charges for each element and it checks if the
-    material can be charge neutral by enumerating all possible charge combinations. However, it does not consider that
-    metal alloys can be mixed with almost any combination. As a result, for materials composed of all metal elements, we
-    always assume the composition is valid in our validity checker.
-
-    For the ground truth materials in MP-20, the original checker gives a composition validity of ∼50%, which
-    significantly underestimates the validity of MP-20 materials (because most of them are experimentally synthesizable
-    and thus valid). Our checker gives a composition validity of ∼90%, which is far more reasonable. We note again that
-    these checkers are all empirical and the only high-fidelity evaluation of material stability requires QM
-    simulations.
-    """
-    if use_diffcsp:
-        #elem_counter = Counter(self.atom_types)
-        #composition = [(elem, elem_counter[elem])
-        #               for elem in sorted(elem_counter.keys())]
-        #elems, counts = list(zip(*composition))
-        #counts = np.array(counts)
-        #counts = counts / np.gcd.reduce(counts)
-        #self.elems = elems
-        #self.comps = tuple(counts.astype('int').tolist())
-
-        elem_symbols = tuple(composition.as_dict().keys())
-        space = smact.element_dictionary(elem_symbols)
-        smact_elems = [e[1] for e in space.items()]
-        electronegs = [e.pauling_eneg for e in smact_elems]
-        ox_combos = [e.oxidation_states for e in smact_elems]
-        if len(set(elem_symbols)) == 1:
-            return True
-        if include_alloys:
-            is_metal_list = [elem_s in smact.metals for elem_s in elem_symbols]
-            if all(is_metal_list):
-                return True
-
-        count = tuple(composition.as_dict().values())
-        count = [int(c) for c in count]
-        # Reduce stoichiometry to gcd
-        gcd = smact._gcd_recursive(*count)
-        assert gcd == np.gcd.reduce(count)
-        count = [int(c / gcd) for c in count]
-        threshold = np.max(count)
-        compositions = []
-        # if len(list(itertools.product(*ox_combos))) > 1e5:
-        #     return False
-        oxn = 1
-        for oxc in ox_combos:
-            oxn *= len(oxc)
-        if oxn > 1e7:
-            return False
-        for ox_states in itertools.product(*ox_combos):
-            stoichs = [(c,) for c in count]
-            # Test for charge balance
-            cn_e, cn_r = smact.neutral_ratios(
-                ox_states, stoichs=stoichs, threshold=threshold)
-            # Electronegativity test
-            if cn_e:
-                if use_pauling_test:
-                    try:
-                        electroneg_OK = smact.screening.pauling_test(ox_states, electronegs)
-                    except TypeError:
-                        # if no electronegativity data, assume it is okay
-                        electroneg_OK = True
-                else:
-                    electroneg_OK = True
-                if electroneg_OK:
-                    return True
-        return False
-    else:
-        return smact.screening.smact_validity(composition, use_pauling_test=use_pauling_test,
-                                              include_alloys=include_alloys)
-
-
-def _valid(atoms: Atoms, cutoff: float = 0.5, use_pauling_test: bool = True, include_alloys: bool = True) -> bool:
-    """
-    Check whether the given structure is valid.
-
-    A structure is considered valid if the following conditions are met:
-    - The structure is not empty.
-    - The minimum distance between any two atoms is larger than the given cutoff.
-    - The composition of the structure is valid according to the SMACT checker.
-
-    The cutoff is given in Angstrom.
-
-    :param atoms:
-        Structure to check.
-    :type atoms: Atoms
-    :param cutoff:
-        Minimum distance between any two atoms.
-        Defaults to 0.5 Angstrom.
-    :type cutoff: float
-    :param use_pauling_test:
-        Whether to use the Pauling test in the SMACT checker.
-        Defaults to True.
-    :type use_pauling_test: bool
-    :param include_alloys:
-        Whether to include alloys in the SMACT checker.
-        Defaults to True.
-    :type include_alloys: bool
-
-    :return:
-        True if the structure is valid, False otherwise.
-    :rtype: bool
-    """
-    return _structure_check(AseAtomsAdaptor.get_structure(atoms), cutoff=cutoff) and \
-           _smact_check(AseAtomsAdaptor.get_structure(atoms).composition, use_pauling_test=use_pauling_test,
-                        include_alloys=include_alloys)
-
-
-def _structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, stol: float = 0.3,
+def _structure_matcher(structure_one: Structure, structure_two: Structure, ltol: float = 0.2, stol: float = 0.3,
                        angle_tol: float = 5.0) -> Optional[float]:
     """
     Checks if the two structures are the same by using pymatgen's StructureMatcher and, if so, return the
@@ -401,12 +271,12 @@ def _structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, st
 
     The documentation of pymatgen's StructureMatcher can be found here: https://pymatgen.org/pymatgen.analysis.html.
 
-    :param atoms_one:
+    :param structure_one:
         First structure.
-    :type atoms_one: Atoms
-    :param atoms_two:
+    :type structure_one: Structure
+    :param structure_two:
         Second structure.
-    :type atoms_two: Atoms
+    :type structure_two: Structure
     :param ltol:
         Fractional length tolerance for pymatgen's StructureMatcher.
         Defaults to 0.2 (pymatgen's default).
@@ -425,30 +295,7 @@ def _structure_matcher(atoms_one: Atoms, atoms_two: Atoms, ltol: float = 0.2, st
     :rtype: Optional[float]
     """
     sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
-    # Conversion to pymatgen type.
-    a1 = AseAtomsAdaptor.get_structure(atoms_one)
-    if min(a1.lattice.abc) < 0.0:
-        print("What")
-        return None
-    if a1.lattice.volume < 0.1:
-        print("Hm")
-        return None
-
-    a1_valid = _structure_check(a1) and _smact_check(a1.composition)
-    a2 = AseAtomsAdaptor.get_structure(atoms_two)
-    if min(a2.lattice.abc) < 0.0:
-        print("What")
-        return None
-    if a2.lattice.volume < 0.1:
-        print("Hm")
-        return None
-
-    a2_valid = _structure_check(a2) and _smact_check(a2.composition)
-    #print("Structure check: ", _structure_check(a2))
-    #print("Smact check: ", _smact_check(a2.composition))
-    if not (a1_valid and a2_valid):
-        return None
-    res = sm.get_rms_dist(a1, a2)
+    res = sm.get_rms_dist(structure_one, structure_two)
     assert res is None or res[0] <= stol
     return res[0] if res is not None else None
 
@@ -482,26 +329,24 @@ def _element_check(atoms_one: Atoms, atoms_two: Atoms) -> bool:
     return np.allclose(atoms_one_counts / atoms_one_min, atoms_two_counts / atoms_two_min)
 
 
-def _get_match_and_rmsd(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: float, stol: float,
-                        angle_tol: float) -> Tuple[bool, Optional[float]]:
+def _get_match_and_rmsd(atoms_one: ValidAtoms, atoms_two: ValidAtoms, ltol: float, stol: float,
+                        angle_tol: float) -> Optional[float]:
     """
-    Helper function to check whether the given first structure appears in the second list of structures by using
-    pymatgen's StructureMatcher and, if so, to find the minimum root-mean-square displacement of the first structure to
-    the closest structure in the second list of structures.
+    Helper function to check whether the given first structure matches the given second structure by using pymatgen's
+    StructureMatcher and, if so, to find the minimum root-mean-square displacement between them.
 
-    If the first structure does not appear in the second list of structures, the minimum root-mean-square displacement
-    is None.
+    If the two structures do not match, the minimum root-mean-square displacement is None.
 
     The root-mean-square displacement is normalized by (volume / number_sites) ** (1/3).
 
-    This function is required for multiprocessing (see match_rate and unique_rate functions below).
+    This function is required for multiprocessing (see match_rate function below).
 
     :param atoms_one:
         First structure.
-    :type atoms_one: Atoms
-    :param list_atoms_two:
-        List of second structures.
-    :type list_atoms_two: List[Atoms]
+    :type atoms_one: ValidAtoms
+    :param atoms_two:
+        Second structure.
+    :type atoms_two: ValidAtoms
     :param ltol:
         Fractional length tolerance for pymatgen's StructureMatcher.
     :type ltol: float
@@ -513,39 +358,36 @@ def _get_match_and_rmsd(atoms_one: Atoms, list_atoms_two: List[Atoms], ltol: flo
     :type angle_tol: float
 
     :return:
-        (Whether the first structure appears in the second list of structures, minimum root-mean-square displacement).
-    :rtype: Tuple[bool, Optional[float]]
+        Minimum root-mean-square displacement.
+    :rtype: Optional[float]
     """
-    rms_dists = []
-    for atoms_two in list_atoms_two:
-        if _element_check(atoms_one, atoms_two):
-            res = _structure_matcher(atoms_one, atoms_two, ltol=ltol, stol=stol, angle_tol=angle_tol)
-            if res is not None:
-                rms_dists.append(res)
-    if len(rms_dists) > 0:
-        if len(rms_dists) > 1:
-            print(f"[WARNING] _check: Found {len(rms_dists)} matches in the reference list.")
-        return True, min(rms_dists)
-    return False, None
+    if _element_check(atoms_one.atoms, atoms_two.atoms):
+        return _structure_matcher(atoms_one.structure, atoms_two.structure, ltol=ltol, stol=stol, angle_tol=angle_tol)
+    return None
 
 
-def match_rate_and_rmsd(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.3,
-                        angle_tol: float = 5.0, full: bool = False) -> Tuple[float, float]:
+def match_rate_and_rmsd(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[ValidAtoms], ltol: float = 0.2,
+                        stol: float = 0.3, angle_tol: float = 5.0) -> Tuple[float, float, float, float]:
     """
-    Compute the rate of structures in the first sequence of atoms appearing in the second sequence atoms, and the
-    mean root-mean-square displacement between the appearing structures.
+    Compute the rate of structures in the first sequence of atoms matching the structure at the same index in the second
+    sequence of atoms, and the mean root-mean-square displacement between the appearing structures.
 
     The averaged root-mean-square displacements are normalized by (volume / number_sites) ** (1/3).
 
     This method uses pymatgen's StructureMatcher to compare the structures (see
     https://pymatgen.org/pymatgen.analysis.html).
 
+    This function returns two types of match rates and mean root-mean-square displacements. One for all structures
+    (first two return values) and one only considering valid structures (last two return values). The validity of
+    structures is determined by the ValidAtoms class. The second way is chosen by DiffCSP and FlowMM although even
+    structures in the mp_20 dataset are not always valid.
+
     :param atoms_list:
         First sequence of ase.Atoms instances.
-    :type atoms_list: Sequence[Atoms]
+    :type atoms_list: Sequence[ValidAtoms]
     :param ref_list:
         Second sequence of ase.Atoms instances.
-    :type ref_list: Sequence[Atoms]
+    :type ref_list: Sequence[ValidAtoms]
     :param ltol:
         Fractional length tolerance for pymatgen's StructureMatcher.
         Defaults to 0.2 (pymatgen's default).
@@ -558,34 +400,37 @@ def match_rate_and_rmsd(atoms_list: Sequence[Atoms], ref_list: Sequence[Atoms], 
         Angle tolerance in degrees for pymatgen's StructureMatcher.
         Defaults to 5.0 (pymatgen's default).
     :type angle_tol: float
-    :param full:
-        If True, try to match every generated structure to every structure in the prediction dataset.
-        If False,try to match every generated structure to the structure at the same index in the prediction dataset.
-        Defaults to False.
-    :type full: bool
 
     :return:
-        (The match rate, the mean root-mean-square displacement between the appearing structures).
-    :rtype: Tuple[float, float]
+        (The match rate considering all structures, the mean root-mean-square displacement considering all structures,
+         the match rate considering valid structures, the mean root-mean-square displacement considering valid structures).
+    :rtype: Tuple[float, float, float, float]
+
+    :raises ValueError:
+        If the number of structures in the two lists is not equal.
     """
-    if full:
-        with Pool() as p:
-            # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
-            cfunc = partial(_get_match_and_rmsd, list_atoms_two=ref_list, ltol=ltol, stol=stol, angle_tol=angle_tol)
-            res = list(p.map(cfunc, atoms_list))
-    else:
-        if len(atoms_list) != len(ref_list):
-            raise ValueError("The number of structures in the two lists must be equal.")
-        res = [_get_match_and_rmsd(atoms_list[i], [ref_list[i]], ltol=ltol, stol=stol, angle_tol=angle_tol)
-               for i in range(len(atoms_list))]
-    assert all(r[1] is None for r in res if not r[0])
-    match_count = sum(r[0] for r in res)
-    mean_rmsd = np.mean([r[1] for r in res if r[0]])
+    if len(atoms_list) != len(ref_list):
+        raise ValueError("The number of structures in the two lists must be equal.")
 
-    return match_count / len(atoms_list), float(mean_rmsd)
+    # We cannot use lambda functions so we use (partial) global functions instead.
+    match_func = partial(_get_match_and_rmsd, ltol=ltol, stol=stol, angle_tol=angle_tol)
+    res = process_map(match_func, atoms_list, ref_list, desc="Computing match rate and RMSD",
+                      chunksize=max(min(len(atoms_list) // os.cpu_count(), 100), 1))
+    assert len(res) == len(atoms_list) == len(ref_list)
+
+    full_match_count = sum(r is not None for r in res)
+    full_mean_rmsd = np.mean([r for r in res if r is not None])
+
+    valid_match_count = sum(r is not None and atoms.valid and ref.valid
+                            for r, atoms, ref in zip(res, atoms_list, ref_list))
+    valid_mean_rmsd = np.mean([r for r, atoms, ref in zip(res, atoms_list, ref_list)
+                               if r is not None and atoms.valid and ref.valid])
+
+    return (full_match_count / len(atoms_list), float(full_mean_rmsd),
+            valid_match_count / len(atoms_list), float(valid_mean_rmsd))
 
 
-def _compare_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_tol: float) -> bool:
+def _compare_pair(atoms: Tuple[ValidAtoms, ValidAtoms], ltol: float, stol: float, angle_tol: float) -> bool:
     """
     Helper function to check whether the two given structures match by using pymatgen's StructureMatcher.
 
@@ -608,11 +453,11 @@ def _compare_pair(atoms: Tuple[Atoms, Atoms], ltol: float, stol: float, angle_to
         True if the structures are the same, False otherwise.
     :rtype: bool
     """
-    return (_element_check(atoms[0], atoms[1])
-            and (_structure_matcher(atoms[0], atoms[1], ltol=ltol, stol=stol, angle_tol=angle_tol) is not None))
+    return _get_match_and_rmsd(atoms[0], atoms[1], ltol=ltol, stol=stol, angle_tol=angle_tol) is not None
 
 
-def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.3, angle_tol: float = 5.0) -> float:
+def unique_rate(atoms_list: Sequence[ValidAtoms], ltol: float = 0.2, stol: float = 0.3,
+                angle_tol: float = 5.0) -> float:
     """
     Compute the rate of unique structures in the given sequence of atoms.
 
@@ -621,7 +466,7 @@ def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.
 
     :param atoms_list:
         Sequence of ase.Atoms instances.
-    :type atoms_list: Sequence[Atoms]
+    :type atoms_list: Sequence[ValidAtoms]
     :param ltol:
         Fractional length tolerance for pymatgen's StructureMatcher.
         Defaults to 0.2 (pymatgen's default).
@@ -635,19 +480,15 @@ def unique_rate(atoms_list: Sequence[Atoms], ltol: float = 0.2, stol: float = 0.
         Defaults to 5.0 (pymatgen's default).
     :type angle_tol: float
     """
-    with Pool() as p:
-        # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
-        cfunc = partial(_compare_pair, ltol=ltol, stol=stol, angle_tol=angle_tol)
-        # (len(atoms_list) * (len(ref_list) - 1) / 2) // os.cpu_count() would be optimal value for chunksize because it
-        # distributes the same amount of work to all processes. However, the memory usage can become quite large.
-        # Therefore, we cap the chunksize at 100000.
-        matches = list(p.imap(
-            cfunc,
-            ((atoms_list[first_index], atoms_list[second_index])
-             for first_index in range(len(atoms_list))
-             for second_index in range(first_index + 1, len(atoms_list))),
-            chunksize=max(min((len(atoms_list) * (len(atoms_list) - 1) // 2) // os.cpu_count(), 100000), 1)))
-
+    # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
+    cfunc = partial(_compare_pair, ltol=ltol, stol=stol, angle_tol=angle_tol)
+    matches = process_map(
+        cfunc,
+        ((atoms_list[first_index], atoms_list[second_index])
+         for first_index in range(len(atoms_list))
+         for second_index in range(first_index + 1, len(atoms_list))),
+        chunksize=max(min((len(atoms_list) * (len(atoms_list) - 1) // 2) // os.cpu_count(), 100000), 1),
+        desc="Computing unique rate", total=len(atoms_list) * (len(atoms_list) - 1) // 2)
     assert len(matches) == len(atoms_list) * (len(atoms_list) - 1) // 2
 
     # matches basically stores the upper triangle of the match matrix (without the diagonal).
