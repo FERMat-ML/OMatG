@@ -178,56 +178,61 @@ class PeriodicLinearInterpolant(Interpolant):
         """
         super().__init__()
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def alpha(self, t:torch.Tensor):
         """
-        Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
+        Alpha term in stochastic interpolant
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.Tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.Tensor
 
         :return:
-            Interpolated value.
+            Value of alpha.
         :rtype: torch.Tensor
         """
-        assert self._check_t(t)
-        omega = 2.0 * torch.pi * (x_1 - x_0)
-        out = t * torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
-        return out + x_0 - torch.floor(out + x_0)
+        return (1.0 - t)
 
-    def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
+    def alpha_dot(self, t: torch.Tensor):
         """
-        Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
-        t with respect to time.
-
-        This function implements -(log_(x_1)(x_0) - 1 / n sum_{i = 1}^n log_(x_1^i)(x_0^i)) where n is the number of
-        atoms. The subtraction of the mean is necessary for translational invariance (compare Eq. (15) in
-        https://arxiv.org/pdf/2302.03660, the first minus sign will be negated once the output of this function is used
-        in a mse loss).
+        Derivative of alpha term in stochastic interpolant
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.Tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.Tensor
 
         :return:
-            Derivative of the interpolant.
+            Value of alpha derivative.
         :rtype: torch.Tensor
         """
-        assert self._check_t(t)
-        omega = 2.0 * torch.pi * (x_1 - x_0)
-        return torch.atan2(torch.sin(omega), torch.cos(omega)) / (2.0 * torch.pi)
+        return - 1.0
+
+    def beta(self, t:torch.Tensor):
+        """
+        Alpha term in stochastic interpolant
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+
+        :return:
+            Value of beta.
+        :rtype: torch.Tensor
+        """
+        return t
+
+    def beta_dot(self, t:torch.Tensor):
+        """
+        Derivative of beta term in stochastic interpolant
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+
+        :return:
+            Value of beta derivative.
+        :rtype: torch.Tensor
+        """
+        return 1.0
 
     def get_corrector(self) -> Corrector:
         """
