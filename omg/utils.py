@@ -69,18 +69,18 @@ def xyz_saver(data: Union[Data, List[Data]], filename: Path) -> None:
             lower, upper = d.ptr[i * 1], d.ptr[(i * 1) + 1]
             atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :],
                                cell=d.cell[i, :, :], pbc=(1, 1, 1)))
-    write(filename, atoms)
+    write(filename, atoms, append=True)
 
 
-def xyz_reader(filename: Path) -> Data:
+def xyz_reader(filename: Path) -> List[Atoms]:
     """
-    Reads an xyz file and returns a Data object.
+    Reads an xyz file and returns a list of Atoms instances.
     """
     if not filename.suffix == ".xyz":
         raise ValueError("The filename must have the suffix '.xyz'.")
     # Read all atoms from the file by using index=":".
-    all_configs = read(filename, index=":")
-    return convert_ase_atoms_to_data(all_configs)
+    all_configs = read(filename, index=":", format='extxyz')
+    return all_configs
 
 
 def convert_ase_atoms_to_data(all_configs: List[Atoms]) -> Data:
@@ -118,7 +118,7 @@ class OMGLearningRateFinder(LearningRateFinder):
 
     def on_fit_start(self, trainer, pl_module):
         self.lr_find(trainer, pl_module)
-        fig = self.optimal_lr.plot(suggest=True)
+        self.optimal_lr.plot(suggest=True)
         if isinstance(trainer.logger, WandbLogger):
             # See https://github.com/Lightning-AI/pytorch-lightning/issues/2725
             directory = trainer.logger.experiment.dir

@@ -41,7 +41,7 @@ exemplary configuration files).
 For generating new structures in an xyz file, run the following command:
 
 ```bash
-omg predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt> --model.generation_xyz_filename=<xyz_file>
+omg predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt> --model.generation_xyz_filename=<xyz_file> --data.batch_size=1024 --seed_everything=42 --trainer.max_epochs=1
 ```
 
 For an xyz filename `filename.xyz`, this command will also create a file `filename_init.xyz` that contains the initial
@@ -56,6 +56,28 @@ training dataset:
 ```bash
 omg visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_name}
 ```
+
+## Match Rate (CSP)
+
+Run the following command to compute the match rate between the generated structures in an xyz file and the structures 
+in the prediction dataset:
+
+```bash
+omg match --config {config_file} --xyz_file {xyz_file}
+```
+
+## Curriculum Learning
+
+Run the following command to use a given configuration file with stochastic interpolants for all datafields 'pos', 
+'species', and 'cell' to generate a new configuration file where only some of the stochastic interpolants are used, 
+while the others are replaced by identity interpolants:
+
+```bash
+omg curriculum --config {config_file} --lessons {lessons}
+```
+
+Here, lessons should be a list of strings so, e.g., [pos] or [pos,species] (spaces can be included when the brackets are
+surrounded by quotes).
 
 ## OMG Data Format
 
