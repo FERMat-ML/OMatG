@@ -170,6 +170,7 @@ class PeriodicBoundaryConditionsCorrector(Corrector):
         y_mean = scatter_mean(y_coordinates, batch_indices, dim=0)
         zero_condition = torch.logical_and(torch.abs(x_mean) < 1e-6, torch.abs(y_mean) < 1e-6)
         if len(torch.nonzero(zero_condition, as_tuple=False)) > 0:
+            # TODO: Do we want to fix this?
             print("[WARNING] Ambiguous center-of-mass detected.")
         mean_theta = torch.atan2(-y_mean, -x_mean) + torch.pi  # Get angle with respect to (1, 0) in [0, 2pi).
         x_com = mean_theta / (2.0 * torch.pi) * (self._max_value - self._min_value) + self._min_value
