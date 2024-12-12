@@ -43,16 +43,11 @@ class OMGLightning(L.LightningModule):
         if not all(cost >= 0.0 for cost in relative_si_costs):
             raise ValueError("All cost factors must be non-negative.")
         if not abs(sum(relative_si_costs) - 1.0) < 1e-10:
-            raise ValueError("The sum of all cost factors must be approximately equal to 1.")
+            raise ValueError("The sum of all cost factors should be equal to 1.")
         self._relative_si_costs = relative_si_costs
         if load_checkpoint:
             checkpoint = torch.load(load_checkpoint, map_location=self.device)
             self.load_state_dict(checkpoint['state_dict'])
-        # TODO: hardcoded normalization for losses
-        self.loss_norm = {}
-        self.loss_norm['loss_species'] = 0.43
-        self.loss_norm['loss_pos'] = 0.020
-        self.loss_norm['loss_cell'] = 0.022
         self.lr_scheduler = lr_scheduler
         self.generation_xyz_filename = generation_xyz_filename
 
@@ -106,8 +101,8 @@ class OMGLightning(L.LightningModule):
         total_loss = torch.tensor(0.0, device=self.device)
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
-            losses[loss_key] = cost * losses[loss_key]  # Don't normalize here so we can inspect the losses
-            total_loss += losses[loss_key] / self.loss_norm[loss_key]  # normalize weights
+            losses[loss_key] = cost * losses[loss_key]
+            total_loss += losses[loss_key]
         # TODO: Look at how SDE losses are combined
 
         assert "loss_total" not in losses
@@ -139,7 +134,7 @@ class OMGLightning(L.LightningModule):
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
             losses[f"val_{loss_key}"] = cost * losses[loss_key]
-            total_loss += losses[f"val_{loss_key}"] / self.loss_norm[loss_key]
+            total_loss += losses[f"val_{loss_key}"]
             losses.pop(loss_key)
 
         assert "loss_total" not in losses
