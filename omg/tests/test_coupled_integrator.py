@@ -1,5 +1,4 @@
 import pytest
-import torch
 from omg.si.single_stochastic_interpolant import SingleStochasticInterpolant
 from omg.si.stochastic_interpolants import StochasticInterpolants
 from omg.si.interpolants import *
