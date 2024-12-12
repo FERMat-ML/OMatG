@@ -20,7 +20,8 @@ class OMGLightning(L.LightningModule):
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
                  learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False,
-                 use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None, sobol_time:bool = False) -> None:
+                 use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None,
+                 sobol_time: bool = False) -> None:
         super().__init__()
         self.si = si
         self.sampler = sampler
@@ -43,7 +44,7 @@ class OMGLightning(L.LightningModule):
         if not all(cost >= 0.0 for cost in relative_si_costs):
             raise ValueError("All cost factors must be non-negative.")
         if not abs(sum(relative_si_costs) - 1.0) < 1e-10:
-            raise ValueError("The sum of all cost factors must be approximately equal to 1.")
+            raise ValueError("The sum of all cost factors should be equal to 1.")
         self._relative_si_costs = relative_si_costs
         if load_checkpoint:
             checkpoint = torch.load(load_checkpoint, map_location=self.device)
@@ -51,13 +52,7 @@ class OMGLightning(L.LightningModule):
         if not sobol_time:
             self.time_sampler = torch.rand
         else:
-            self.time_sampler = torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw
-
-        # TODO: hardcoded normalization for losses
-        self.loss_norm = {}
-        self.loss_norm['loss_species'] = 0.43
-        self.loss_norm['loss_pos'] = 0.020
-        self.loss_norm['loss_cell'] = 0.022
+            self.time_sampler = lambda n: torch.reshape(torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
         self.lr_scheduler = lr_scheduler
         self.generation_xyz_filename = generation_xyz_filename
 
@@ -103,16 +98,16 @@ class OMGLightning(L.LightningModule):
             # Don't switch species to allow for crystal-structure prediction.
             correct_for_minimum_permutation_distance(x_0, x_1, self._pos_corrector, switch_species=False)
 
-        # sample t uniformly for each structure
-        t = self.time_sampler(len(x_1.n_atoms)).reshape((-1,)).to(self.device)
+        # Sample t for each structure.
+        t = self.time_sampler(len(x_1.n_atoms)).to(self.device)
 
         losses = self.si.losses(self.model, t, x_0, x_1)
 
         total_loss = torch.tensor(0.0, device=self.device)
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
-            losses[loss_key] = cost * losses[loss_key]  # Don't normalize here so we can inspect the losses
-            total_loss += losses[loss_key] / self.loss_norm[loss_key]  # normalize weights
+            losses[loss_key] = cost * losses[loss_key]
+            total_loss += losses[loss_key]
         # TODO: Look at how SDE losses are combined
 
         assert "loss_total" not in losses
@@ -135,8 +130,8 @@ class OMGLightning(L.LightningModule):
 
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
-        # sample t uniformly for each structure
-        t = self.time_sampler(len(x_1.n_atoms)).reshape((-1,)).to(self.device)
+        # Sample t for each structure.
+        t = self.time_sampler(len(x_1.n_atoms)).to(self.device)
 
         losses = self.si.losses(self.model, t, x_0, x_1)
 
@@ -144,7 +139,7 @@ class OMGLightning(L.LightningModule):
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
             losses[f"val_{loss_key}"] = cost * losses[loss_key]
-            total_loss += losses[f"val_{loss_key}"] / self.loss_norm[loss_key]
+            total_loss += losses[f"val_{loss_key}"]
             losses.pop(loss_key)
 
         assert "loss_total" not in losses
