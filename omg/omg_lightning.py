@@ -24,7 +24,7 @@ class OMGLightning(L.LightningModule):
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
                  learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False,
                  use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None,
-                 overfitting_test: bool = False) -> None:
+                 sobol_time: bool = False, overfitting_test: bool = False) -> None:
         super().__init__()
         self.si = si
         self.sampler = sampler
@@ -52,6 +52,11 @@ class OMGLightning(L.LightningModule):
         if load_checkpoint:
             checkpoint = torch.load(load_checkpoint, map_location=self.device)
             self.load_state_dict(checkpoint['state_dict'])
+        if not sobol_time:
+            self.time_sampler = torch.rand
+        else:
+            self.time_sampler = lambda n: torch.reshape(
+                torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
         self.lr_scheduler = lr_scheduler
         self.generation_xyz_filename = generation_xyz_filename
         self.overfitting_test = overfitting_test
@@ -98,8 +103,8 @@ class OMGLightning(L.LightningModule):
             # Don't switch species to allow for crystal-structure prediction.
             correct_for_minimum_permutation_distance(x_0, x_1, self._pos_corrector, switch_species=False)
 
-        # sample t uniformly for each structure
-        t = torch.rand(len(x_1.n_atoms)).to(self.device)
+        # Sample t for each structure.
+        t = self.time_sampler(len(x_1.n_atoms)).to(self.device)
 
         losses = self.si.losses(self.model, t, x_0, x_1)
 
@@ -130,8 +135,8 @@ class OMGLightning(L.LightningModule):
 
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
-        # sample t uniformly for each structure
-        t = torch.rand(len(x_1.n_atoms)).to(self.device)
+        # Sample t for each structure.
+        t = self.time_sampler(len(x_1.n_atoms)).to(self.device)
 
         losses = self.si.losses(self.model, t, x_0, x_1)
 
