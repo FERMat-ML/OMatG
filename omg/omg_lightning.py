@@ -52,7 +52,8 @@ class OMGLightning(L.LightningModule):
         if not sobol_time:
             self.time_sampler = torch.rand
         else:
-            self.time_sampler = lambda n: torch.reshape(torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
+            self.time_sampler = lambda n: torch.reshape(
+                torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
         self.lr_scheduler = lr_scheduler
         self.generation_xyz_filename = generation_xyz_filename
 
