@@ -1,10 +1,7 @@
 from pathlib import Path
 import time
 from typing import Optional, Sequence
-from ase.io import read
 import lightning as L
-from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.io.ase import AseAtomsAdaptor
 import torch
 from torch import optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -24,7 +21,7 @@ class OMGLightning(L.LightningModule):
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
                  learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False,
                  use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None,
-                 sobol_time: bool = False, overfitting_test: bool = False) -> None:
+                 sobol_time: bool = False) -> None:
         super().__init__()
         self.si = si
         self.sampler = sampler
@@ -59,7 +56,6 @@ class OMGLightning(L.LightningModule):
                 torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
         self.lr_scheduler = lr_scheduler
         self.generation_xyz_filename = generation_xyz_filename
-        self.overfitting_test = overfitting_test
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
@@ -160,15 +156,6 @@ class OMGLightning(L.LightningModule):
 
         return total_loss
 
-    @staticmethod
-    def _structure_matcher(s1, s2, ltol=0.2, stol=0.3, angle_tol=5.0):
-        """ Checks if structures s1 and s2 of ase type Atoms are the same."""
-        sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
-        # conversion to pymatgen type
-        a1 = AseAtomsAdaptor.get_structure(s1)
-        a2 = AseAtomsAdaptor.get_structure(s2)
-        return sm.fit(a1, a2)
-
     # TODO: what do we want to return
     def predict_step(self, x):
         """
@@ -182,21 +169,6 @@ class OMGLightning(L.LightningModule):
         init_filename = filename.with_stem(filename.stem + "_init")
         xyz_saver(x_0.to("cpu"), init_filename)
         xyz_saver(gen.to("cpu"), filename)
-
-        if self.overfitting_test:
-            base_filename = filename.with_stem(filename.stem + "_base")
-            xyz_saver(x.to("cpu"), base_filename)
-            atoms_one = read(base_filename, index=":")
-            atoms_two = read(filename, index=":")
-            assert len(atoms_one) == len(atoms_two)
-            successes = 0
-            for a_one, a_two in zip(atoms_one, atoms_two):
-                assert len(a_one) == len(a_two)
-                if self._structure_matcher(a_one, a_two):
-                    successes += 1
-            print(f"Overfitting test: {successes}/{len(atoms_one)} structures are the same "
-                  f"({successes / len(atoms_one) * 100.0} percent success rate).")
-
         return gen
 
     # TODO allow for YAML config
