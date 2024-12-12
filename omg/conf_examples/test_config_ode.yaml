@@ -1,4 +1,5 @@
 model:
+  sobol_time: True
   si:
     class_path: omg.si.stochastic_interpolants.StochasticInterpolants
     init_args:

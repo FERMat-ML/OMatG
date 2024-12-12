@@ -20,7 +20,7 @@ class OMGLightning(L.LightningModule):
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
                  learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False,
-                 use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None) -> None:
+                 use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None, sobol_time:bool = False) -> None:
         super().__init__()
         self.si = si
         self.sampler = sampler
@@ -48,6 +48,11 @@ class OMGLightning(L.LightningModule):
         if load_checkpoint:
             checkpoint = torch.load(load_checkpoint, map_location=self.device)
             self.load_state_dict(checkpoint['state_dict'])
+        if not sobol_time:
+            self.time_sampler = torch.rand
+        else:
+            self.time_sampler = torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw
+
         # TODO: hardcoded normalization for losses
         self.loss_norm = {}
         self.loss_norm['loss_species'] = 0.43
@@ -99,7 +104,7 @@ class OMGLightning(L.LightningModule):
             correct_for_minimum_permutation_distance(x_0, x_1, self._pos_corrector, switch_species=False)
 
         # sample t uniformly for each structure
-        t = torch.rand(len(x_1.n_atoms)).to(self.device)
+        t = self.time_sampler(len(x_1.n_atoms)).reshape((-1,)).to(self.device)
 
         losses = self.si.losses(self.model, t, x_0, x_1)
 
@@ -131,7 +136,7 @@ class OMGLightning(L.LightningModule):
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
         # sample t uniformly for each structure
-        t = torch.rand(len(x_1.n_atoms)).to(self.device)
+        t = self.time_sampler(len(x_1.n_atoms)).reshape((-1,)).to(self.device)
 
         losses = self.si.losses(self.model, t, x_0, x_1)
 
