@@ -1,5 +1,6 @@
 from enum import Enum, auto
 import torch
+from torch_scatter import scatter_mean
 from torchdiffeq import odeint
 from torchsde import sdeint
 from typing import Any, Optional, Callable
@@ -50,13 +51,20 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         https://github.com/rtqichen/torchdiffeq/blob/master/README.md) or the sdeint function of torchsde (see
         https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md#keyword-arguments-of-sdeint).
     :type integrator_kwargs: Optional[dict]
-
+    :param correct_center_of_mass_motion:
+        TODO: Do we also want to do that during integration?
+        Whether to correct the center-of-mass motion to zero before computing the loss.
+        This might be useful because the translational invariant model cannot predict the center-of-mass motion.
+        This is the approach chosen by FlowMM.
+        Defaults to False.
+    :type correct_center_of_mass_motion: bool
     :raises ValueError:
         If epsilon is provided for ODEs or not provided for SDEs.
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: str, integrator_kwargs: Optional[dict[str, Any]] = None) -> None:
+                 differential_equation_type: str, integrator_kwargs: Optional[dict[str, Any]] = None,
+                 correct_center_of_mass_motion: bool = False) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -88,9 +96,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             if self._gamma is None:
                 raise ValueError("Gamma function should be provided for SDEs.")
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
+        self._correct_center_of_mass_motion = correct_center_of_mass_motion
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+                    batch_indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Stochastically interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -103,10 +112,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Stochastically interpolated points x_t, random variables z used for interpolation.
@@ -114,7 +122,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         assert x_0.shape == x_1.shape
         # Output is already corrected.
-        interpolate = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
+        interpolate = self._interpolant.interpolate(t, x_0, x_1)
         if self._gamma is not None:
             z = torch.randn_like(x_0)
             interpolate = self._corrector.correct(interpolate + self._gamma.gamma(t) * z)
@@ -122,11 +130,13 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             z = torch.zeros_like(x_0)
         return interpolate, z
 
-    def _interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, z: torch.Tensor,
-                                batch_pointer: torch.Tensor) -> torch.Tensor:
+    def _interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
+                                z: torch.Tensor) -> torch.Tensor:
         """
         Derivative with respect to time of the stochastic interpolant between points x_0 and x_1 from two distributions
         p_0 and p_1 at times t.
+
+        TODO: Remove this unused method.
 
         :param t:
             Times in [0,1].
@@ -140,10 +150,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
 
         :return:
             Stochastically interpolated value.
@@ -151,14 +157,14 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         """
         assert x_0.shape == x_1.shape
         self._check_t(t)
-        interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
+        interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1)
         if self._gamma is not None:
             interpolate_derivative += self._gamma.gamma_derivative(t) * z
         return interpolate_derivative
 
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
-             batch_pointer: torch.Tensor) -> torch.Tensor:
+             batch_indices: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -184,10 +190,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Loss.
@@ -197,7 +202,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     def _ode_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
-                  batch_pointer: torch.Tensor) -> torch.Tensor:
+                  batch_indices: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the ODE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -220,39 +225,60 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Loss.
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
-        expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
+        expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
         if self._use_antithetic:
             assert self._gamma is not None
-            x_t_p = self._corrector.correct(x_t_without_gamma + self._gamma.gamma(t) * z)
+            x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
+            gamma = self._gamma.gamma(t)
+            x_t_p = self._corrector.correct(x_t_without_gamma + gamma * z)
             assert torch.equal(x_t, x_t_p)
-            x_t_m = self._corrector.correct(x_t_without_gamma - self._gamma.gamma(t) * z)
-            expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
-            expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
+            x_t_m = self._corrector.correct(x_t_without_gamma - gamma * z)
+            gamma_derivative = self._gamma.gamma_derivative(t)
+            expected_velocity_p = expected_velocity_without_gamma + gamma_derivative * z
+            expected_velocity_m = expected_velocity_without_gamma - gamma_derivative * z
+            if self._correct_center_of_mass_motion:
+                # scatter_mean is used to compute the mean velocity for every configuration.
+                # index_select is used to replicate the mean velocity for every atom in the configuration.
+                # We don't need to worry about periodic boundary conditions in the corrector here, since the tangent
+                # space is Euclidean.
+                # After this correction, it is true that
+                # expected_velocity_p = corr(expected_velocity_without_gamma) + corr(gamma_derivative * z),
+                # expected_velocity_m = corr(expected_velocity_without_gamma) - corr(gamma_derivative * z),
+                # where corr is the correction to the center of mass motion.
+                mean_velocity_p = torch.index_select(scatter_mean(expected_velocity_p, batch_indices, dim=0),
+                                                     0, batch_indices)
+                expected_velocity_p = expected_velocity_p - mean_velocity_p
+                mean_velocity_m = torch.index_select(scatter_mean(expected_velocity_m, batch_indices, dim=0),
+                                                     0, batch_indices)
+                expected_velocity_m = expected_velocity_m - mean_velocity_m
             pred_b_p = model_function(x_t_p)[0]
             pred_b_m = model_function(x_t_m)[0]
             loss = (0.5 * torch.mean(pred_b_p ** 2) + 0.5 * torch.mean(pred_b_m ** 2)
                     - torch.mean(pred_b_p * expected_velocity_p) - torch.mean(pred_b_m * expected_velocity_m))
         else:
             assert self._gamma is None
-            assert torch.equal(x_t, x_t_without_gamma)
-            pred_b = model_function(x_t_without_gamma)[0]
+            pred_b = model_function(x_t)[0]
+            if self._correct_center_of_mass_motion:
+                # scatter_mean is used to compute the mean velocity for every configuration.
+                # index_select is used to replicate the mean velocity for every atom in the configuration.
+                mean_velocity = torch.index_select(scatter_mean(expected_velocity_without_gamma, batch_indices, dim=0),
+                                                   0, batch_indices)
+                expected_velocity_without_gamma = expected_velocity_without_gamma - mean_velocity
             loss = (torch.mean(pred_b ** 2) - 2.0 * torch.mean(pred_b * expected_velocity_without_gamma))
         return loss
 
     def _sde_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
-                  batch_pointer: torch.Tensor) -> torch.Tensor:
+                  batch_indices: torch.Tensor) -> torch.Tensor:
         """
         Compute the loss for the SDE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
@@ -275,25 +301,41 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Loss.
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1, batch_pointer)
-        expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1, batch_pointer)
+        x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
+        expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
         assert self._use_antithetic  # SDE cannot be used without gamma or without antithetic sampling.
         assert self._gamma is not None
-        x_t_p = self._corrector.correct(x_t_without_gamma + self._gamma.gamma(t) * z)
+        gamma = self._gamma.gamma(t)
+        x_t_p = self._corrector.correct(x_t_without_gamma + gamma * z)
         assert torch.equal(x_t, x_t_p)
-        x_t_m = self._corrector.correct(x_t_without_gamma - self._gamma.gamma(t) * z)
-        expected_velocity_p = expected_velocity_without_gamma + self._gamma.gamma_derivative(t) * z
-        expected_velocity_m = expected_velocity_without_gamma - self._gamma.gamma_derivative(t) * z
+        x_t_m = self._corrector.correct(x_t_without_gamma - gamma * z)
+        gamma_derivative = self._gamma.gamma_derivative(t)
+        expected_velocity_p = expected_velocity_without_gamma + gamma_derivative * z
+        expected_velocity_m = expected_velocity_without_gamma - gamma_derivative * z
+        if self._correct_center_of_mass_motion:
+            # scatter_mean is used to compute the mean velocity for every configuration.
+            # index_select is used to replicate the mean velocity for every atom in the configuration.
+            # We don't need to worry about periodic boundary conditions in the corrector here, since the tangent
+            # space is Euclidean.
+            # After this correction, it is true that
+            # expected_velocity_p = corr(expected_velocity_without_gamma) + corr(gamma_derivative * z),
+            # expected_velocity_m = corr(expected_velocity_without_gamma) - corr(gamma_derivative * z),
+            # where corr is the correction to the center of mass motion.
+            mean_velocity_p = torch.index_select(scatter_mean(expected_velocity_p, batch_indices, dim=0),
+                                                 0, batch_indices)
+            expected_velocity_p = expected_velocity_p - mean_velocity_p
+            mean_velocity_m = torch.index_select(scatter_mean(expected_velocity_m, batch_indices, dim=0),
+                                                 0, batch_indices)
+            expected_velocity_m = expected_velocity_m - mean_velocity_m
         pred_b_p, pred_z = model_function(x_t_p)
         pred_b_m, _ = model_function(x_t_m)
 
@@ -306,13 +348,14 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
-                  batch_pointer: torch.Tensor) -> torch.Tensor:
+                  batch_indices: torch.Tensor) -> torch.Tensor:
         """
         Integrate the current positions x_t at the given time for the given time step based on the velocity fields b and
         the denoisers eta returned by the model function.
 
         This method is only defined here to define all methods of the abstract base class. The actual loss method is
-        either _ode_integrate or _sde_integrate, which are chosen based on the type of differential equation (self._de_type).
+        either _ode_integrate or _sde_integrate, which are chosen based on the type of differential equation
+        (self._de_type).
 
         :param model_function:
             Model function returning the velocity fields b and the denoisers eta given the current times t and positions
@@ -327,10 +370,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Integrated position.
@@ -340,7 +382,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     def _ode_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                        x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
-                       batch_pointer: torch.Tensor) -> torch.Tensor:
+                       batch_indices: torch.Tensor) -> torch.Tensor:
         """
         Integrate the ODE for the current positions x_t at the given time for the given time step based on the velocity
         fields b and the denoisers eta returned by the model function.
@@ -358,10 +400,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Integrated position.
@@ -399,7 +440,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                        x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
-                       batch_pointer: torch.Tensor) -> torch.Tensor:
+                       batch_indices: torch.Tensor) -> torch.Tensor:
         """
         Integrate the SDE for the current positions x_t at the given time for the given time step based on the velocity
         fields b and the denoisers eta returned by the model function.
@@ -417,10 +458,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Integrated position.

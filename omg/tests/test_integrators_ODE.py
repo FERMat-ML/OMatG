@@ -1,5 +1,4 @@
 import pytest
-import torch
 from omg.si.single_stochastic_interpolant import SingleStochasticInterpolant
 from omg.si.interpolants import *
 from omg.si.gamma import *
@@ -57,8 +56,6 @@ def test_ode_integrator(interpolant, gamma):
     if isinstance(interpolant, (PeriodicLinearInterpolant, PeriodicScoreBasedDiffusionModelInterpolant,
                                 PeriodicTrigonometricInterpolant, PeriodicEncoderDecoderInterpolant)):
         pbc_flag = True
-        pytest.xfail("Shift of velocities in periodic interpolants to account for translational invariance "
-                     "currently makes this test fail.")
         interpolant_geodesic = SingleStochasticInterpolant(
             interpolant=interpolant, gamma=None,epsilon=None,
             differential_equation_type='ODE',

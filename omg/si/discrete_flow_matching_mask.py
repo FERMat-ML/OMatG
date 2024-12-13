@@ -3,7 +3,7 @@ import torch
 from torch.distributions import Categorical
 import torch.nn.functional as functional
 from omg.globals import MAX_ATOM_NUM, BIG_TIME
-from .abstracts import Corrector, StochasticInterpolantSpecies
+from .abstracts import StochasticInterpolantSpecies
 
 
 class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
@@ -31,7 +31,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
         self._noise = noise
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+                    batch_indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t using discrete flow
         matching.
@@ -47,10 +47,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
         :param x_1:
             Points from p_1.
         :type x_1: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Interpolated points x_t, random variables z used for interpolation.
@@ -67,7 +66,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
 
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
-             batch_pointer: torch.Tensor) -> torch.Tensor:
+             batch_indices: torch.Tensor) -> torch.Tensor:
         """
         Compute the cross-entropy loss for the discrete flow matching between points x_0 and x_1 from two distributions
         p_0 and p_1 at times t based on the model prediction for the probability distributions over the species.
@@ -98,10 +97,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
         :param z:
             Random variable z that was used for the stochastic interpolation to get the model prediction.
         :type z: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Cross-entropy loss.
@@ -118,7 +116,7 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
-                  batch_pointer: torch.Tensor) -> torch.Tensor:
+                  batch_indices: torch.Tensor) -> torch.Tensor:
         """
         Integrate the current positions x_t at the given time for the given time step based on the probability
         distributions over the species.
@@ -157,10 +155,9 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
         :param time_step:
             Time step (0-dimensional torch tensor).
         :type time_step: torch.Tensor
-        :param batch_pointer:
-            Tensor of length batch_size + 1 containing the indices to the first atom in every batch plus the total
-            number of atoms in the batch.
-        :type batch_pointer: torch.Tensor
+        :param batch_indices:
+            Tensor containing the configuration index for every atom in the batch.
+        :type batch_indices: torch.Tensor
 
         :return:
             Integrated position.
@@ -184,17 +181,6 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
         if abs(time + time_step) < BIG_TIME - 5e-3:  # Don't re-mask on the final step.
             x_t[will_mask] = self._mask_index
         return x_t
-
-    def get_corrector(self) -> Corrector:
-        """
-        Get the corrector implied by the stochastic interpolant (for instance, a corrector that considers periodic
-        boundary conditions).
-
-        :return:
-            Corrector.
-        :rtype: Corrector
-        """
-        raise RuntimeError("Corrector not defined for DiscreteFlowMatchingMask.")
 
     def uses_masked_species(self) -> bool:
         """
