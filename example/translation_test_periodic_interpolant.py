@@ -1,6 +1,5 @@
 import torch
 from torch_scatter import scatter_mean
-from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.si.interpolants import PeriodicLinearInterpolant
 torch.manual_seed(1)
 
