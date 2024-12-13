@@ -1,4 +1,5 @@
 import pytest
+import torch
 from omg.si.single_stochastic_interpolant import SingleStochasticInterpolant
 from omg.si.stochastic_interpolants import StochasticInterpolants
 from omg.si.interpolants import *
@@ -16,7 +17,7 @@ tol = 1e-2
 eps = 1e-6
 times = torch.linspace(SMALL_TIME, BIG_TIME, 100)
 nrep = 1000
-ptr = torch.arange(nrep+1) * 3
+indices = torch.repeat_interleave(torch.arange(nrep), 3)
 n_atoms = torch.ones(size=(nrep,)) * 3
 
 def test_coupled_integrator():
@@ -48,8 +49,8 @@ def test_coupled_integrator():
     x_1_cell = torch.zeros(size=(1, 3, 3)).repeat(nrep, 1, 1)
     x_0_spec = torch.zeros(size=(3 * nrep,)).long()
     x_1_spec = torch.randint(size=(3 * nrep,), low=1, high=MAX_ATOM_NUM + 1).long()
-    x_0 = Data(pos=x_0_pos, cell=x_0_cell, species=x_0_spec, ptr=ptr, n_atoms=n_atoms)
-    x_1 = Data(pos=x_1_pos, cell=x_1_cell, species=x_1_spec, ptr=ptr, n_atoms=n_atoms)
+    x_0 = Data(pos=x_0_pos, cell=x_0_cell, species=x_0_spec, batch=indices, n_atoms=n_atoms)
+    x_1 = Data(pos=x_1_pos, cell=x_1_cell, species=x_1_spec, batch=indices, n_atoms=n_atoms)
 
     # ODE function
     def velo(x, t):
@@ -59,8 +60,8 @@ def test_coupled_integrator():
         z_cell = torch.randn_like(x.cell)
         t_pos = reshape_t(t, n_atoms.long(), DataField.pos)
         t_cell = reshape_t(t, n_atoms.long(), DataField.cell)
-        pos_b = pos_interp._interpolate_derivative(t_pos, x_0.pos, x_1.pos, z=z_x, batch_pointer=ptr)
-        cell_b = cell_interp._interpolate_derivative(t_cell, x_0.cell, x_1.cell, z=z_cell, batch_pointer=ptr)
+        pos_b = pos_interp._interpolate_derivative(t_pos, x_0.pos, x_1.pos, z=z_x)
+        cell_b = cell_interp._interpolate_derivative(t_cell, x_0.cell, x_1.cell, z=z_cell)
         x1_spec = functional.one_hot(x_1.species - 1, num_classes=MAX_ATOM_NUM).float()
         x1_spec[x1_spec == 0] = -float("INF")
         species_b = x1_spec
@@ -69,7 +70,7 @@ def test_coupled_integrator():
         cell_eta = z_cell
 
         # Return
-        return Data(pos_b=pos_b, pos_eta=pos_b, cell_b=cell_b, cell_eta=cell_eta, species_b=species_b, species_eta=species_b, ptr=ptr)
+        return Data(pos_b=pos_b, pos_eta=pos_b, cell_b=cell_b, cell_eta=cell_eta, species_b=species_b, species_eta=species_b, batch=indices)
     
     # Integrate
     x, inter = coupled_interp.integrate(x_0, velo, save_intermediate=True)
@@ -81,8 +82,8 @@ def test_coupled_integrator():
         cell_avg = inter[i].cell.mean(dim=0)
 
         # True value
-        cell_true = cell_interp.interpolate(times[i], x_0.cell, x_1.cell, batch_pointer=ptr)[0].mean(dim=0)
-        pos_true = pos_interp.interpolate(times[i], x_0.pos, x_1.pos, batch_pointer=ptr)[0]
+        cell_true = cell_interp.interpolate(times[i], x_0.cell, x_1.cell, batch_indices=indices)[0].mean(dim=0)
+        pos_true = pos_interp.interpolate(times[i], x_0.pos, x_1.pos, batch_indices=indices)[0]
 
         # Check approximation
         pos_diff = torch.abs(pos_true - inter[i].pos)
