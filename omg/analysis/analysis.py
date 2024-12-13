@@ -410,13 +410,17 @@ def match_rate_and_rmsd(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[Val
         If the number of structures in the two lists is not equal.
     """
     if len(atoms_list) != len(ref_list):
-        raise ValueError("The number of structures in the two lists must be equal.")
+        print("[WARNING] The number of structures in the generated atoms list differs from the number of atoms in the "
+              "reference list.")
+    if len(atoms_list) > len(ref_list):
+        raise ValueError("The number of structures in the generated atoms list is greater than the number of atoms in "
+                         "the reference list.")
 
     # We cannot use lambda functions so we use (partial) global functions instead.
     match_func = partial(_get_match_and_rmsd, ltol=ltol, stol=stol, angle_tol=angle_tol)
     res = process_map(match_func, atoms_list, ref_list, desc="Computing match rate and RMSD",
                       chunksize=max(min(len(atoms_list) // os.cpu_count(), 100), 1), max_workers=os.cpu_count())
-    assert len(res) == len(atoms_list) == len(ref_list)
+    assert len(res) == len(atoms_list)
 
     full_match_count = sum(r is not None for r in res)
     full_mean_rmsd = np.mean([r for r in res if r is not None])
