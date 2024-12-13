@@ -165,6 +165,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         Derivative with respect to time of the stochastic interpolant between points x_0 and x_1 from two distributions
         p_0 and p_1 at times t.
 
+        TODO: Remove this unused method.
+
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
