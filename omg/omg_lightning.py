@@ -20,40 +20,40 @@ class OMGLightning(L.LightningModule):
                  load_checkpoint: Optional[str] = None, use_min_perm_dist: bool = False,
                  generation_xyz_filename: Optional[str] = None, sobol_time: bool = False) -> None:
         super().__init__()
-        if load_checkpoint:
+        self.si = si
+        self.sampler = sampler
+        self.lr = learning_rate  # Learning rate must be stored in this class for learning rate finder.
+        self.use_min_perm_dist = use_min_perm_dist
+        if self.use_min_perm_dist:
+            self._pos_corrector = self.si.get_stochastic_interpolant("pos").get_corrector()
+        else:
+            self._pos_corrector = None
+        species_stochastic_interpolant = self.si.get_stochastic_interpolant("species")
+        if not isinstance(species_stochastic_interpolant, StochasticInterpolantSpecies):
+            raise ValueError("Species stochastic interpolant must be of type StochasticInterpolantSpecies.")
+        if species_stochastic_interpolant.uses_masked_species():
+            model.enable_masked_species()
+        model = model.double()  # TODO: Should this be an option?
+        self.model = model
+
+        if not len(relative_si_costs) == len(self.si):
+            raise ValueError("The number of stochastic interpolants and costs must be equal.")
+        if not all(cost >= 0.0 for cost in relative_si_costs):
+            raise ValueError("All cost factors must be non-negative.")
+        if not abs(sum(relative_si_costs) - 1.0) < 1e-10:
+            raise ValueError("The sum of all cost factors should be equal to 1.")
+        self._relative_si_costs = relative_si_costs
+
+        if not sobol_time:
+            self.time_sampler = torch.rand
+        else:
+            self.time_sampler = lambda n: torch.reshape(
+                torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
+        self.generation_xyz_filename = generation_xyz_filename
+
+        if load_checkpoint is not None:
             checkpoint = torch.load(load_checkpoint, map_location=self.device)
             self.load_state_dict(checkpoint['state_dict'])
-        else:
-            self.si = si
-            self.sampler = sampler
-            self.lr = learning_rate  # Learning rate must be stored in this class for learning rate finder.
-            self.use_min_perm_dist = use_min_perm_dist
-            if self.use_min_perm_dist:
-                self._pos_corrector = self.si.get_stochastic_interpolant("pos").get_corrector()
-            else:
-                self._pos_corrector = None
-            species_stochastic_interpolant = self.si.get_stochastic_interpolant("species")
-            if not isinstance(species_stochastic_interpolant, StochasticInterpolantSpecies):
-                raise ValueError("Species stochastic interpolant must be of type StochasticInterpolantSpecies.")
-            if species_stochastic_interpolant.uses_masked_species():
-                model.enable_masked_species()
-            model = model.double()  # TODO: Should this be an option?
-            self.model = model
-
-            if not len(relative_si_costs) == len(self.si):
-                raise ValueError("The number of stochastic interpolants and costs must be equal.")
-            if not all(cost >= 0.0 for cost in relative_si_costs):
-                raise ValueError("All cost factors must be non-negative.")
-            if not abs(sum(relative_si_costs) - 1.0) < 1e-10:
-                raise ValueError("The sum of all cost factors should be equal to 1.")
-            self._relative_si_costs = relative_si_costs
-
-            if not sobol_time:
-                self.time_sampler = torch.rand
-            else:
-                self.time_sampler = lambda n: torch.reshape(
-                    torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
-            self.generation_xyz_filename = generation_xyz_filename
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
