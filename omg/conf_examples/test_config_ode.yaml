@@ -49,13 +49,11 @@ model:
         class_path: omg.sampler.distributions.MaskDistribution
       n_particle_sampler: 6
       convert_to_fractional: true
-      batch_size: 2000
     # Code for sampling from dataset
     # class_path: omg.sampler.sample_from_dataset.SampleFromDataset
     # init_args:
     #   dataset:
-    #   convert_to_fractional: 
-    #   batch_size: 
+    #   convert_to_fractional:
   model:
     class_path: omg.model.model.Model
     init_args:
@@ -130,3 +128,9 @@ trainer:
   gradient_clip_val: 0.5
   num_sanity_val_steps: 0
   strategy: "ddp_find_unused_parameters_true"
+optimizer: torch.optim.Adam
+lr_scheduler:
+  class_path: lightning.pytorch.cli.ReduceLROnPlateau
+  init_args:
+    patience: 40
+    monitor: "val_loss_total"
