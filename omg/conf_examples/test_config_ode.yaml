@@ -17,6 +17,7 @@ model:
             integrator_kwargs:
               method: "euler"
             correct_center_of_mass_motion: true
+            velocity_annealing_factor: 10.0
         # lattice vectors
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
           init_args:

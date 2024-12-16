@@ -15,6 +15,7 @@ model:
             epsilon: null
             differential_equation_type: "ODE"
             correct_center_of_mass_motion: true
+            velocity_annealing_factor: 0.0
         # lattice vectors
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
           init_args:

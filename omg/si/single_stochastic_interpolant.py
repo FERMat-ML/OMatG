@@ -58,13 +58,19 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         This is the approach chosen by FlowMM.
         Defaults to False.
     :type correct_center_of_mass_motion: bool
+    :param velocity_annealing_factor:
+        During inference, the predicted velocity fields b at time are multiplied by (1 + velocity_annealing_factor * t).
+        A velocity annealing factor of 0.0 corresponds to no annealing.
+        Defaults to 0.0.
+    :type velocity_annealing_factor: float
+
     :raises ValueError:
         If epsilon is provided for ODEs or not provided for SDEs.
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
                  differential_equation_type: str, integrator_kwargs: Optional[dict[str, Any]] = None,
-                 correct_center_of_mass_motion: bool = False) -> None:
+                 correct_center_of_mass_motion: bool = False, velocity_annealing_factor: float = 0.0) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -97,6 +103,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
                 raise ValueError("Gamma function should be provided for SDEs.")
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
         self._correct_center_of_mass_motion = correct_center_of_mass_motion
+        self._velocity_annealing_factor = velocity_annealing_factor
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -409,7 +416,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         # Set up ODE function
-        odefunc = lambda t, x: model_function(t, self._corrector.correct(x))[0]
+        odefunc = lambda t, x: ((1.0 + self._velocity_annealing_factor * t)
+                                * model_function(t, self._corrector.correct(x))[0])
         t_span = torch.tensor([time, time + time_step], device=x_t.device)
         with torch.no_grad():
             x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)[-1]
@@ -417,13 +425,14 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
     # Modify wrapper for use in SDE integrator
     class SDE(torch.nn.Module):
-        def __init__(self, model_func, corrector, gamma, epsilon, original_x_shape):
+        def __init__(self, model_func, corrector, gamma, epsilon, original_x_shape, velocity_annealing_factor):
             super().__init__()
             self._model_func = model_func
             self._corrector = corrector
             self._gamma = gamma
             self._epsilon = epsilon
             self._original_x_shape = original_x_shape
+            self._velocity_annealing_factor = velocity_annealing_factor
             # Required for torchsde.
             self.sde_type = "ito"
             self.noise_type = "diagonal"
@@ -432,7 +441,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             # Because of the noise, the x should be corrected when it is passed to the model.
             new_x_shape = x.shape
             preds = self._model_func(t, self._corrector.correct(x.reshape(self._original_x_shape)))
-            out = preds[0] - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1]
+            out = ((1.0 + self._velocity_annealing_factor * t) * preds[0]
+                   - (self._epsilon.epsilon(t) / self._gamma.gamma(t)) * preds[1])
             return out.reshape(new_x_shape)
 
         def g(self, t, x):
