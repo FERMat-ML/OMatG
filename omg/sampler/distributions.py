@@ -1,3 +1,4 @@
+from typing import Tuple
 from ase.geometry.cell import cellpar_to_cell
 import numpy as np
 import scipy
@@ -108,8 +109,16 @@ class MirrorData(object):
         # I think all classes should just get the entire pos, species, cell data.
         return data.detach().clone().cpu().numpy()
 
-class SobolUniform(object):
-    def __init__(self, dim:int=3, scramble:bool=True):
-        self._sampler = torch.quasirandom.SobolEngine(dimension=dim, scramble=scramble)
-    def __call__(self, n_draws:int):
-        return self.sampler.draw(n_draws)
+
+class SobolSequence(object):
+    """
+    Distribution that samples from a scrambled Sobol sequence.
+    """
+
+    def __init__(self, dimension: int = 3) -> None:
+        self._sampler = torch.quasirandom.SobolEngine(dimension=dimension, scramble=True)
+
+    def __call__(self, size: Tuple[int, int]) -> np.ndarray:
+        assert len(size) == 2
+        assert size[1] == 3
+        return self._sampler.draw(size[0]).detach().cpu().numpy()
