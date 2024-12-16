@@ -119,3 +119,10 @@ trainer:
   gradient_clip_val: 0.5
   num_sanity_val_steps: 0
   strategy: "ddp_find_unused_parameters_true"
+  precision: "64-true"
+optimizer: torch.optim.Adam
+lr_scheduler:
+  class_path: lightning.pytorch.cli.ReduceLROnPlateau
+  init_args:
+    patience: 40
+    monitor: "val_loss_total"
