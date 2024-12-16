@@ -66,7 +66,6 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         self._interpolant = interpolant
         self._gamma = gamma
         assert self._gamma is None
-        self._use_antithetic = False
         self._epsilon = epsilon
         self._differential_equation_type = differential_equation_type
         # Corrector that needs to be applied to the points x_t during integration.
