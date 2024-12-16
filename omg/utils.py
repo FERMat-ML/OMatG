@@ -8,7 +8,6 @@ from lightning.pytorch.loggers.wandb import WandbLogger
 import matplotlib.pyplot as plt
 import torch
 from torch_geometric.data import Data
-from scipy.spatial import KDTree as kdtree
 
 
 class DataField(Enum):
@@ -75,7 +74,7 @@ def xyz_saver(data: Union[Data, List[Data]], filename: Path) -> None:
 
 def xyz_reader(filename: Path) -> List[Atoms]:
     """
-    Reads an xyz file and returns a Data object.
+    Reads an xyz file and returns a list of Atoms instances.
     """
     if not filename.suffix == ".xyz":
         raise ValueError("The filename must have the suffix '.xyz'.")
@@ -119,7 +118,7 @@ class OMGLearningRateFinder(LearningRateFinder):
 
     def on_fit_start(self, trainer, pl_module):
         self.lr_find(trainer, pl_module)
-        fig = self.optimal_lr.plot(suggest=True)
+        self.optimal_lr.plot(suggest=True)
         if isinstance(trainer.logger, WandbLogger):
             # See https://github.com/Lightning-AI/pytorch-lightning/issues/2725
             directory = trainer.logger.experiment.dir

@@ -5,7 +5,7 @@ from omg.si.discrete_flow_matching_uniform import DiscreteFlowMatchingUniform
 from omg.globals import SMALL_TIME, BIG_TIME, MAX_ATOM_NUM
 
 # Testing parameters/objects
-ptr = torch.tensor([0, 10])
+indices = torch.tensor([0 for _ in range(10)])
 
 
 # Interpolants
@@ -30,7 +30,7 @@ def test_discrete_mask_integrator():
     for t_index in range(1, len(times)):
         t = times[t_index - 1]
         dt = times[t_index] - times[t_index - 1]
-        x = interp.integrate(velo, x, t, dt, batch_pointer=ptr)
+        x = interp.integrate(velo, x, t, dt, batch_indices=indices)
 
     # Assertion test
     assert torch.all(x == x_final)
@@ -57,7 +57,7 @@ def test_discrete_uniform_integrator():
     for t_index in range(1, len(times)):
         t = times[t_index - 1]
         dt = times[t_index] - times[t_index - 1]
-        x = interp.integrate(velo, x, t, dt, batch_pointer=ptr)
+        x = interp.integrate(velo, x, t, dt, batch_indices=indices)
 
     # Assertion test
     assert torch.all(x == x_final)

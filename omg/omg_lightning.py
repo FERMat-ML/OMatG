@@ -1,10 +1,7 @@
 from pathlib import Path
 import time
 from typing import Optional, Sequence
-from ase.io import read
 import lightning as L
-from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.io.ase import AseAtomsAdaptor
 import torch
 from torch import optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -24,7 +21,7 @@ class OMGLightning(L.LightningModule):
                  relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
                  learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False,
                  use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None,
-                 overfitting_test: bool = False) -> None:
+                 sobol_time: bool = False) -> None:
         super().__init__()
         self.si = si
         self.sampler = sampler
@@ -47,19 +44,18 @@ class OMGLightning(L.LightningModule):
         if not all(cost >= 0.0 for cost in relative_si_costs):
             raise ValueError("All cost factors must be non-negative.")
         if not abs(sum(relative_si_costs) - 1.0) < 1e-10:
-            raise ValueError("The sum of all cost factors must be approximately equal to 1.")
+            raise ValueError("The sum of all cost factors should be equal to 1.")
         self._relative_si_costs = relative_si_costs
         if load_checkpoint:
             checkpoint = torch.load(load_checkpoint, map_location=self.device)
             self.load_state_dict(checkpoint['state_dict'])
-        # TODO: hardcoded normalization for losses
-        self.loss_norm = {}
-        self.loss_norm['loss_species'] = 0.43
-        self.loss_norm['loss_pos'] = 0.020
-        self.loss_norm['loss_cell'] = 0.022
+        if not sobol_time:
+            self.time_sampler = torch.rand
+        else:
+            self.time_sampler = lambda n: torch.reshape(
+                torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
         self.lr_scheduler = lr_scheduler
         self.generation_xyz_filename = generation_xyz_filename
-        self.overfitting_test = overfitting_test
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
@@ -103,16 +99,16 @@ class OMGLightning(L.LightningModule):
             # Don't switch species to allow for crystal-structure prediction.
             correct_for_minimum_permutation_distance(x_0, x_1, self._pos_corrector, switch_species=False)
 
-        # sample t uniformly for each structure
-        t = torch.rand(len(x_1.n_atoms)).to(self.device)
+        # Sample t for each structure.
+        t = self.time_sampler(len(x_1.n_atoms)).to(self.device)
 
         losses = self.si.losses(self.model, t, x_0, x_1)
 
         total_loss = torch.tensor(0.0, device=self.device)
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
-            losses[loss_key] = cost * losses[loss_key]  # Don't normalize here so we can inspect the losses
-            total_loss += losses[loss_key] / self.loss_norm[loss_key]  # normalize weights
+            losses[loss_key] = cost * losses[loss_key]
+            total_loss += losses[loss_key]
         # TODO: Look at how SDE losses are combined
 
         assert "loss_total" not in losses
@@ -135,8 +131,8 @@ class OMGLightning(L.LightningModule):
 
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
-        # sample t uniformly for each structure
-        t = torch.rand(len(x_1.n_atoms)).to(self.device)
+        # Sample t for each structure.
+        t = self.time_sampler(len(x_1.n_atoms)).to(self.device)
 
         losses = self.si.losses(self.model, t, x_0, x_1)
 
@@ -144,7 +140,7 @@ class OMGLightning(L.LightningModule):
 
         for cost, loss_key in zip(self._relative_si_costs, losses):
             losses[f"val_{loss_key}"] = cost * losses[loss_key]
-            total_loss += losses[f"val_{loss_key}"] / self.loss_norm[loss_key]
+            total_loss += losses[f"val_{loss_key}"]
             losses.pop(loss_key)
 
         assert "loss_total" not in losses
@@ -160,15 +156,6 @@ class OMGLightning(L.LightningModule):
 
         return total_loss
 
-    @staticmethod
-    def _structure_matcher(s1, s2, ltol=0.2, stol=0.3, angle_tol=5.0):
-        """ Checks if structures s1 and s2 of ase type Atoms are the same."""
-        sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
-        # conversion to pymatgen type
-        a1 = AseAtomsAdaptor.get_structure(s1)
-        a2 = AseAtomsAdaptor.get_structure(s2)
-        return sm.fit(a1, a2)
-
     # TODO: what do we want to return
     def predict_step(self, x):
         """
@@ -182,21 +169,6 @@ class OMGLightning(L.LightningModule):
         init_filename = filename.with_stem(filename.stem + "_init")
         xyz_saver(x_0.to("cpu"), init_filename)
         xyz_saver(gen.to("cpu"), filename)
-
-        if self.overfitting_test:
-            base_filename = filename.with_stem(filename.stem + "_base")
-            xyz_saver(x.to("cpu"), base_filename)
-            atoms_one = read(base_filename, index=":")
-            atoms_two = read(filename, index=":")
-            assert len(atoms_one) == len(atoms_two)
-            successes = 0
-            for a_one, a_two in zip(atoms_one, atoms_two):
-                assert len(a_one) == len(a_two)
-                if self._structure_matcher(a_one, a_two):
-                    successes += 1
-            print(f"Overfitting test: {successes}/{len(atoms_one)} structures are the same "
-                  f"({successes / len(atoms_one) * 100.0} percent success rate).")
-
         return gen
 
     # TODO allow for YAML config

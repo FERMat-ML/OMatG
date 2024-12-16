@@ -1,5 +1,4 @@
 import pytest
-import torch
 from omg.si.single_stochastic_interpolant import SingleStochasticInterpolant
 from omg.si.interpolants import *
 from omg.si.gamma import *
@@ -11,7 +10,7 @@ stol = 6.5e-2
 eps = 1e-3
 times = torch.linspace(SMALL_TIME+eps, BIG_TIME-eps, 100)
 nrep = 10000
-ptr = torch.arange(nrep+1) * 10
+indices = torch.repeat_interleave(torch.arange(nrep), 10)
 
 # Interpolants
 interpolants = [
@@ -80,7 +79,7 @@ def test_sde_integrator(interpolant, gamma, epsilon):
     # ODE function
     def velo(t, x):
         z = torch.randn(x_init.shape)
-        return interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=z, batch_pointer=ptr), z
+        return interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=z), z
     
     def pbc_mean(x, x_ref):
         # assuming pbcs from 0 to 1
@@ -98,12 +97,12 @@ def test_sde_integrator(interpolant, gamma, epsilon):
         t_i = times[i-1]
         dt = times[i] - t_i
 
-        x_new = interpolant._sde_integrate(velo, x, t_i, dt, ptr)
+        x_new = interpolant._sde_integrate(velo, x, t_i, dt, indices)
 
         # Assertion test
         if pbc_flag:
-            x_interp = interpolant.interpolate(times[i], x_init, x_final, ptr)[0]
-            x_new_geodesic = interpolant_geodesic.interpolate(times[i], x_init, x_final, ptr)[0]
+            x_interp = interpolant.interpolate(times[i], x_init, x_final, indices)[0]
+            x_new_geodesic = interpolant_geodesic.interpolate(times[i], x_init, x_final, indices)[0]
             
             # assume pbc is from 0 - 1
             x_ref = x_new_geodesic
@@ -117,6 +116,6 @@ def test_sde_integrator(interpolant, gamma, epsilon):
             assert x_new_mean == pytest.approx(x_interp_mean_prime, abs=stol)
 
         else:
-            x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, ptr)[0].mean(dim=-1)
+            x_interp_mean = interpolant.interpolate(times[i], x_init, x_final, indices)[0].mean(dim=-1)
             x = x_new
             assert x_new.mean(dim=-1) == pytest.approx(x_interp_mean, abs=stol)

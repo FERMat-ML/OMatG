@@ -1,6 +1,5 @@
 import torch
 from torch_scatter import scatter_mean
-from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.si.interpolants import PeriodicLinearInterpolant
 torch.manual_seed(1)
 
@@ -37,30 +36,6 @@ def main():
     print(torch.count_nonzero(torch.logical_not(torch.isclose(reference, shifted_zero, atol=1e-7))))
     print(torch.count_nonzero(torch.logical_not(torch.isclose(reference, shifted_one, atol=1e-7))))
     print(torch.count_nonzero(torch.logical_not(torch.isclose(reference, shifted_two, atol=1e-7))))
-
-    corrector = PeriodicBoundaryConditionsCorrector(0.0, 1.0)
-    x_0_com = corrector.compute_center_of_mass(x_0, batch_indices)
-    print(x_0)
-    print(x_0_com)
-    shifted_x_0_com = corrector.compute_center_of_mass(shifted_x_0, batch_indices)
-    x_1_com = corrector.compute_center_of_mass(x_1, batch_indices)
-    print(x_1)
-    print(x_1_com)
-    shifted_x_1_com = corrector.compute_center_of_mass(shifted_x_1, batch_indices)
-    corrected_x_0 = corrector.correct(x_0 - x_0_com)
-    corrected_shifted_x_0 = corrector.correct(shifted_x_0 - shifted_x_0_com)
-    corrected_x_1 = corrector.correct(x_1 - x_1_com)
-    corrected_shifted_x_1 = corrector.correct(shifted_x_1 - shifted_x_1_com)
-
-    print(torch.count_nonzero(torch.logical_not(torch.isclose(corrected_x_0, corrected_shifted_x_0, atol=1e-7))))
-    print(torch.count_nonzero(torch.logical_not(torch.isclose(corrected_x_1, corrected_shifted_x_1, atol=1e-7))))
-
-    print(reference)
-    print(interpolant.interpolate_derivative(times, corrected_x_0, corrected_x_1))
-
-    # Most often, we probably don't get the same as FlowMM because the COM correction can yield different geodesics.
-    print(torch.count_nonzero(torch.logical_not(torch.isclose(
-        reference, interpolant.interpolate_derivative(times, corrected_x_0, corrected_x_1), atol=1e-7))))
 
 
 if __name__ == '__main__':

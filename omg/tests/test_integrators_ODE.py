@@ -1,5 +1,4 @@
 import pytest
-import torch
 from omg.si.single_stochastic_interpolant import SingleStochasticInterpolant
 from omg.si.interpolants import *
 from omg.si.gamma import *
@@ -49,7 +48,7 @@ def test_ode_integrator(interpolant, gamma):
     '''
     # Initialize
     x_init = torch.ones(size=(10,)) * 0.1
-    batch_pointer = torch.tensor([0, 10])
+    batch_indices = torch.tensor([0 for _ in range(10)])
     x_final = torch.rand(size=(10,))
     if isinstance(interpolant, MirrorInterpolant):
         x_init = x_final.clone()
@@ -80,8 +79,8 @@ def test_ode_integrator(interpolant, gamma):
 
     # ODE function
     def velo(t, x):
-        return (interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=torch.randn(x_init.shape),
-                                                    batch_pointer=batch_pointer), torch.tensor(torch.nan))
+        return (interpolant._interpolate_derivative(torch.tensor(t), x_init, x_final, z=torch.randn(x_init.shape)),
+                torch.tensor(torch.nan))
     
     def pbc_mean(x, x_ref):
         # assuming pbcs from 0 to 1
@@ -99,11 +98,11 @@ def test_ode_integrator(interpolant, gamma):
 
         # If stochastic element
         if lat_flag:
-            x_interp = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)[0]
-            x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
+            x_interp = interpolant.interpolate(times[i], x_init, x_final, batch_indices)[0]
+            x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_indices)
 
             if pbc_flag:
-                x_new_geodesic = interpolant_geodesic.interpolate(times[i], x_init, x_final, batch_pointer)[0]
+                x_new_geodesic = interpolant_geodesic.interpolate(times[i], x_init, x_final, batch_indices)[0]
                 # Use COM and PBCs to find average x_new
                 x_ref = x_new_geodesic
                 x_new_mean = pbc_mean(x_new, x_ref)
@@ -125,8 +124,8 @@ def test_ode_integrator(interpolant, gamma):
         # If all deterministic
         else:
             # Interpolate
-            x_interp = interpolant.interpolate(times[i], x_init, x_final, batch_pointer)[0]
-            x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_pointer)
+            x_interp = interpolant.interpolate(times[i], x_init, x_final, batch_indices)[0]
+            x_new = interpolant._ode_integrate(velo, x, t_i, dt, batch_indices)
 
             # Test for equality
             if pbc_flag:

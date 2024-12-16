@@ -4,7 +4,7 @@ model:
     init_args:
       stochastic_interpolants:
         # chemical species
-        - class_path: omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform
+        - class_path: omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask
           init_args:
             noise: 0.
         # fractional coordinates
@@ -16,8 +16,8 @@ model:
             differential_equation_type: "ODE"
             integrator_kwargs:
               method: "euler"
-            correct_center_of_mass: false
             correct_center_of_mass_motion: true
+            velocity_annealing_factor: 10.0
         # lattice vectors
         - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
           init_args:
@@ -33,20 +33,20 @@ model:
         - "species"
         - "pos"
         - "cell"
-      integration_time_steps: 100
+      integration_time_steps: 1000
   relative_si_costs:
-    - 0.333333333333
-    - 0.333333333333
-    - 0.333333333333
+    - 0.3329633740288568  # Relative species loss 300.
+    - 0.6659267480577137  # Relative fractional coordinates loss 600.
+    - 0.001109877913429523  # Relative lattice loss 1.
   sampler:
     class_path: omg.sampler.sample_from_rng.SampleFromRNG
     init_args:
       cell_distribution:
-        class_path: omg.sampler.distributions.NDependentGamma
+        class_path: omg.sampler.distributions.InformedLatticeDistribution
         init_args:
-          a: 6.950090673417738 
-          loc: 0.0011311460889336065
-          scale: 0.008141385751601667
+          dataset_name: "mp_20"
+      species_distribution:
+        class_path: omg.sampler.distributions.MaskDistribution
       n_particle_sampler: 6
       convert_to_fractional: true
       batch_size: 2000
@@ -84,7 +84,7 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/train.lmdb"
-      niggli: True
+      niggli: False
           # property_keys: # specify only when you wanna do guided training
           #  - "band_gap"
   val_dataset:
@@ -95,7 +95,7 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/val.lmdb"
-      niggli: True
+      niggli: False
   predict_dataset:
     class_path: omg.datamodule.dataloader.OMGTorchDataset
     init_args:
@@ -104,7 +104,7 @@ data:
         init_args:
           lmdb_paths:
            - "data/mp_20/test.lmdb"
-      niggli: True
+      niggli: False
   batch_size: 256
 trainer:
   callbacks:

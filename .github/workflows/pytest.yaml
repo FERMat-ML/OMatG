@@ -43,7 +43,7 @@ jobs:
           python -m pip --cache-dir ./pip_pkgs install torch==2.4.0;
           python -m pip --cache-dir ./pip_pkgs install --no-use-pep517 torch_scatter==2.1.2;
           python -m pip --cache-dir ./pip_pkgs install .;
-          pytest tests;
+          pytest omg/tests;
           conda deactivate;
           rm -rf conda_pkgs;
           rm -rf pip_pkgs;

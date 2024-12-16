@@ -66,33 +66,6 @@ class Corrector(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
-    def compute_center_of_mass(self, x: torch.Tensor, batch_indices: torch.Tensor) -> torch.Tensor:
-        """
-        Compute the center of masses of the configurations in the batch with respect to the correction applied by this
-        corrector (as, for instance, periodic boundary conditions).
-
-        The first dimension of the input tensor x is the batch dimension. Here, different elements in the batch can
-        belong to different configurations. The one-dimensional tensor batch_indices contains the indices of the
-        configurations for the first dimension of the input tensor x. The center of mass for every configuration should
-        be computed separately.
-
-        The dimensions of the returned tensor should be the same as the dimensions of the input tensor x. This means
-        that the center of mass for every configuration should be replicated for every element in the configuration.
-
-        :param x:
-            Input whose center of masses will be returned.
-        :type x: torch.Tensor
-        :param batch_indices:
-            The batch indices for the input tensor x.
-        :type batch_indices: torch.Tensor
-
-        :return:
-            Center of masses.
-        :rtype: torch.Tensor
-        """
-        raise NotImplementedError
-
 
 class Epsilon(ABC, TimeChecker):
     """
