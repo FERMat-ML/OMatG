@@ -107,3 +107,9 @@ class MirrorData(object):
         # TODO: Introduce an abstract base class for all of these distributions.
         # I think all classes should just get the entire pos, species, cell data.
         return data.detach().clone().cpu().numpy()
+
+class SobolUniform(object):
+    def __init__(self, dim:int=3, scramble:bool=True):
+        self._sampler = torch.quasirandom.SobolEngine(dimension=dim, scramble=scramble)
+    def __call__(self, n_draws:int):
+        return self.sampler.draw(n_draws)
