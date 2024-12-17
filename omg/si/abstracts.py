@@ -94,8 +94,7 @@ class Interpolant(ABC, TimeChecker):
     from two distributions p_0 and p_1 at times t.
     """
 
-    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                    batch_pointer: torch.Tensor) -> torch.Tensor:
+    def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
         """
         Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
 
@@ -113,6 +112,7 @@ class Interpolant(ABC, TimeChecker):
             Interpolated value.
         :rtype: torch.Tensor
         """
+        print(f"FFFFFFF {self._corrector}")
         x_1prime = self.get_corrector.unwrap(x_0, x_1)
         x_t = self.alpha(t) * x_0 + self.beta(t) * x_1prime 
         return self.get_corrector.correct(x_t)

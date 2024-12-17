@@ -124,15 +124,9 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         :rtype: tuple[torch.Tensor, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
-        if self._correct_center_of_mass:
-            x_0 = self._corrector.correct(x_0 - self._corrector.compute_center_of_mass(x_0, batch_indices))
-            x_1 = self._corrector.correct(x_1 - self._corrector.compute_center_of_mass(x_1, batch_indices))
-        if self._correct_first_atom:
-            x_0 = self._corrector.correct(self._shift_first_atom(x_0, batch_indices))
-            x_1 = self._corrector.correct(self._shift_first_atom(x_1, batch_indices))
-        # Output is already corrected.
         interpolate = self._interpolant.interpolate(t, x_0, x_1)
-        z = torch.zeros_like(x_0)
+        z = torch.randn_like(x_0)
+        interpolate = self._corrector.correct(interpolate + self._gamma.gamma(t) * z)
         return interpolate, z
 
     def _interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,

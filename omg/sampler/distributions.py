@@ -107,3 +107,9 @@ class MirrorData(object):
         # TODO: Introduce an abstract base class for all of these distributions.
         # I think all classes should just get the entire pos, species, cell data.
         return data.detach().clone().cpu().numpy()
+
+class NormalDistribution(object):
+    def __init__(self) -> None:
+        pass
+    def __call__(self, size):
+        return np.random.normal(loc=0.0, scale=1.0, size=size)

@@ -601,6 +601,7 @@ class PeriodicTrigonometricInterpolant(Interpolant):
         :rtype: torch.Tensor
         """
         assert self._check_t(t)
+        print(f"FFFFFFF {self._corrector}")
         x_1prime = self._corrector.unwrap(x_0, x_1)
         x_t = torch.cos(torch.pi * t / 2.0) * x_0 + torch.sin(torch.pi * t / 2.0) * x_1prime
         return self._corrector.correct(x_t)
