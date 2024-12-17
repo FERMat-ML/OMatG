@@ -551,7 +551,8 @@ class OMGTrainer(Trainer):
             pdf.savefig()
             plt.close()
 
-    def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str) -> None:
+    def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
+              skip_validation: bool = False, skip_unique: bool = False) -> None:
         """
         Compute the match rate between the generated structures and the structures in the prediction dataset.
 
@@ -566,6 +567,16 @@ class OMGTrainer(Trainer):
             XYZ file containing the generated structures.
             This argument has to be set on the command line.
         :type xyz_file: str
+        :param skip_validation:
+            Whether to consider all structures in the generated and prediction dataset as valid.
+            Defaults to False.
+            This argument can be optionally set on the command line.
+        :type skip_validation: bool
+        :param skip_unique:
+            Whether to skip the calculation of the unique rate.
+            Defaults to False.
+            This argument can be optionally set on the command line.
+        :type skip_unique: bool
 
         :raises FileNotFoundError:
             If the file does not exist.
@@ -580,8 +591,10 @@ class OMGTrainer(Trainer):
                                              datamodule.predict_dataset.convert_to_fractional)
 
         # TODO: Do we want to filter atoms everywhere?
-        gen_valid_atoms = ValidAtoms.get_valid_atoms(gen_atoms, desc="Validating generated structures")
-        ref_valid_atoms = ValidAtoms.get_valid_atoms(ref_atoms, desc="Validating reference structures")
+        gen_valid_atoms = ValidAtoms.get_valid_atoms(gen_atoms, desc="Validating generated structures",
+                                                     skip_validation=skip_validation)
+        ref_valid_atoms = ValidAtoms.get_valid_atoms(ref_atoms, desc="Validating reference structures",
+                                                     skip_validation=skip_validation)
 
         print(f"Rate of valid structures in reference dataset: "
               f"{100 * sum(va.valid for va in ref_valid_atoms) / len(ref_atoms)}%.")
@@ -598,8 +611,9 @@ class OMGTrainer(Trainer):
         print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between valid generated structures "
               f"and the valid dataset is {vrmsd}.")
 
-        r = unique_rate(gen_valid_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
-        print(f"The occurence of unique structures within the generated dataset is {100 * r}%.")
+        if not skip_unique:
+            r = unique_rate(gen_valid_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
+            print(f"The occurence of unique structures within the generated dataset is {100 * r}%.")
 
     def curriculum(self, model: OMGLightning, datamodule: OMGDataModule, lessons: List[str]) -> None:
         """
