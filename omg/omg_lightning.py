@@ -16,8 +16,7 @@ class OMGLightning(L.LightningModule):
     Main module which is fit and used to generate structures using Lightning CLI.
     """
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
-                 relative_si_costs: Sequence[float], learning_rate: float = 0.001,
-                 load_checkpoint: Optional[str] = None, use_min_perm_dist: bool = False,
+                 relative_si_costs: Sequence[float], learning_rate: float = 0.001, use_min_perm_dist: bool = False,
                  generation_xyz_filename: Optional[str] = None, sobol_time: bool = False) -> None:
         super().__init__()
         self.si = si
@@ -49,10 +48,6 @@ class OMGLightning(L.LightningModule):
             self.time_sampler = lambda n: torch.reshape(
                 torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
         self.generation_xyz_filename = generation_xyz_filename
-
-        if load_checkpoint is not None:
-            checkpoint = torch.load(load_checkpoint, map_location=self.device)
-            self.load_state_dict(checkpoint['state_dict'])
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
