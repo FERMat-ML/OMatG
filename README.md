@@ -60,11 +60,19 @@ omg visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_nam
 ## Match Rate (CSP)
 
 Run the following command to compute the match rate between the generated structures in an xyz file and the structures 
-in the prediction dataset:
+in the prediction dataset, as well as the rate of unique structures in the generated structures:
 
 ```bash
 omg match --config {config_file} --xyz_file {xyz_file}
 ```
+
+Computing the match rate as in DiffCSP or FlowMM requires to validate every structure which is quite slow. Also, 
+computing the unique rate is slow. One can use the `--skip_validation=true` and `--skip_unique=true` arguments to skip
+these computations. 
+
+The validations, and the computations of the match rate and unique rate are parallelized. The number of processes is 
+determined by `os.cpu_count()`. This can be changed by setting the `--number_cpus` argument (which is probably most 
+useful in cluster environments).
 
 ## Curriculum Learning
 
