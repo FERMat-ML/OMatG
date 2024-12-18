@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from collections import OrderedDict
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from ase import Atoms
 from ase.io import write
 from lightning.pytorch import Trainer
@@ -552,7 +552,7 @@ class OMGTrainer(Trainer):
             plt.close()
 
     def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
-              skip_validation: bool = False, skip_unique: bool = False) -> None:
+              skip_validation: bool = False, skip_unique: bool = False, number_cpus: Optional[int] = None) -> None:
         """
         Compute the match rate between the generated structures and the structures in the prediction dataset.
 
@@ -577,6 +577,11 @@ class OMGTrainer(Trainer):
             Defaults to False.
             This argument can be optionally set on the command line.
         :type skip_unique: bool
+        :param number_cpus:
+            Number of CPUs to use for multiprocessing. If None, use os.cpu_count().
+            Defaults to None.
+            This argument can be optionally set on the command line.
+        :type number_cpus: Optional[int]
 
         :raises FileNotFoundError:
             If the file does not exist.
@@ -592,9 +597,9 @@ class OMGTrainer(Trainer):
 
         # TODO: Do we want to filter atoms everywhere?
         gen_valid_atoms = ValidAtoms.get_valid_atoms(gen_atoms, desc="Validating generated structures",
-                                                     skip_validation=skip_validation)
+                                                     skip_validation=skip_validation, number_cpus=number_cpus)
         ref_valid_atoms = ValidAtoms.get_valid_atoms(ref_atoms, desc="Validating reference structures",
-                                                     skip_validation=skip_validation)
+                                                     skip_validation=skip_validation, number_cpus=number_cpus)
 
         print(f"Rate of valid structures in reference dataset: "
               f"{100 * sum(va.valid for va in ref_valid_atoms) / len(ref_atoms)}%.")
@@ -603,7 +608,7 @@ class OMGTrainer(Trainer):
 
         # Tolerances from DiffCSP and FlowMM.
         fmr, frmsd, vmr, vrmsd = match_rate_and_rmsd(gen_valid_atoms, ref_valid_atoms, ltol=0.3, stol=0.5,
-                                                     angle_tol=10.0)
+                                                     angle_tol=10.0, number_cpus=number_cpus)
         print(f"The match rate between all generated structures and the full dataset is {100 * fmr}%.")
         print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between all generated structures "
               f"and the full dataset is {frmsd}.")
@@ -612,7 +617,7 @@ class OMGTrainer(Trainer):
               f"and the valid dataset is {vrmsd}.")
 
         if not skip_unique:
-            r = unique_rate(gen_valid_atoms, ltol=0.3, stol=0.5, angle_tol=10.0)
+            r = unique_rate(gen_valid_atoms, ltol=0.3, stol=0.5, angle_tol=10.0, number_cpus=number_cpus)
             print(f"The occurence of unique structures within the generated dataset is {100 * r}%.")
 
     def curriculum(self, model: OMGLightning, datamodule: OMGDataModule, lessons: List[str]) -> None:

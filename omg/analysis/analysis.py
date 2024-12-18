@@ -367,7 +367,8 @@ def _get_match_and_rmsd(atoms_one: ValidAtoms, atoms_two: ValidAtoms, ltol: floa
 
 
 def match_rate_and_rmsd(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[ValidAtoms], ltol: float = 0.2,
-                        stol: float = 0.3, angle_tol: float = 5.0) -> Tuple[float, float, float, float]:
+                        stol: float = 0.3, angle_tol: float = 5.0,
+                        number_cpus: Optional[int] = None) -> Tuple[float, float, float, float]:
     """
     Compute the rate of structures in the first sequence of atoms matching the structure at the same index in the second
     sequence of atoms, and the mean root-mean-square displacement between the appearing structures.
@@ -400,6 +401,10 @@ def match_rate_and_rmsd(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[Val
         Angle tolerance in degrees for pymatgen's StructureMatcher.
         Defaults to 5.0 (pymatgen's default).
     :type angle_tol: float
+    :param number_cpus:
+        Number of CPUs to use for multiprocessing. If None, use os.cpu_count().
+        Defaults to None.
+    :type number_cpus: Optional[int]
 
     :return:
         (The match rate considering all structures, the mean root-mean-square displacement considering all structures,
@@ -408,6 +413,7 @@ def match_rate_and_rmsd(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[Val
 
     :raises ValueError:
         If the number of structures in the two lists is not equal.
+        If the number of CPUs is not None and smaller than 1.
     """
     if len(atoms_list) != len(ref_list):
         print("[WARNING] The number of structures in the generated atoms list differs from the number of atoms in the "
@@ -415,11 +421,14 @@ def match_rate_and_rmsd(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[Val
     if len(atoms_list) > len(ref_list):
         raise ValueError("The number of structures in the generated atoms list is greater than the number of atoms in "
                          "the reference list.")
+    if number_cpus is not None and number_cpus < 1:
+        raise ValueError("The number of CPUs must be at least 1.")
 
     # We cannot use lambda functions so we use (partial) global functions instead.
     match_func = partial(_get_match_and_rmsd, ltol=ltol, stol=stol, angle_tol=angle_tol)
+    cpu_count = number_cpus if number_cpus is not None else os.cpu_count()
     res = process_map(match_func, atoms_list, ref_list, desc="Computing match rate and RMSD",
-                      chunksize=max(min(len(atoms_list) // os.cpu_count(), 100), 1), max_workers=os.cpu_count())
+                      chunksize=max(min(len(atoms_list) // cpu_count, 100), 1), max_workers=cpu_count)
     assert len(res) == len(atoms_list)
 
     full_match_count = sum(r is not None for r in res)
@@ -461,7 +470,7 @@ def _compare_pair(atoms: Tuple[ValidAtoms, ValidAtoms], ltol: float, stol: float
 
 
 def unique_rate(atoms_list: Sequence[ValidAtoms], ltol: float = 0.2, stol: float = 0.3,
-                angle_tol: float = 5.0) -> float:
+                angle_tol: float = 5.0, number_cpus: Optional[int] = None) -> float:
     """
     Compute the rate of unique structures in the given sequence of atoms.
 
@@ -483,17 +492,31 @@ def unique_rate(atoms_list: Sequence[ValidAtoms], ltol: float = 0.2, stol: float
         Angle tolerance in degrees for pymatgen's StructureMatcher.
         Defaults to 5.0 (pymatgen's default).
     :type angle_tol: float
+    :param number_cpus:
+        Number of CPUs to use for multiprocessing. If None, use os.cpu_count().
+        Defaults to None.
+    :type number_cpus: Optional[int]
+
+    :return:
+        Rate of unique structures in the given sequence of atoms.
+    :rtype: float
+
+    :raises ValueError:
+        If the number of CPUs is not None and smaller than 1.
     """
+    if number_cpus is not None and number_cpus < 1:
+        raise ValueError("The number of CPUs must be at least 1.")
     # We cannot use lambda functions with Pool.map so we use (partial) global functions instead.
     cfunc = partial(_compare_pair, ltol=ltol, stol=stol, angle_tol=angle_tol)
+    cpu_count = number_cpus if number_cpus is not None else os.cpu_count()
     matches = process_map(
         cfunc,
         ((atoms_list[first_index], atoms_list[second_index])
          for first_index in range(len(atoms_list))
          for second_index in range(first_index + 1, len(atoms_list))),
-        chunksize=max(min((len(atoms_list) * (len(atoms_list) - 1) // 2) // os.cpu_count(), 1000000), 1),
+        chunksize=max(min((len(atoms_list) * (len(atoms_list) - 1) // 2) // cpu_count, 1000000), 1),
         desc="Computing unique rate", total=len(atoms_list) * (len(atoms_list) - 1) // 2,
-        max_workers=os.cpu_count())
+        max_workers=cpu_count)
     assert len(matches) == len(atoms_list) * (len(atoms_list) - 1) // 2
 
     # matches basically stores the upper triangle of the match matrix (without the diagonal).

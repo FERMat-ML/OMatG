@@ -88,7 +88,7 @@ class ValidAtoms(object):
     @staticmethod
     def get_valid_atoms(atoms: Sequence[Atoms], volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
                         use_pauling_test: bool = True, include_alloys: bool = True, desc: Optional[str] = None,
-                        skip_validation: bool = False) -> List["ValidAtoms"]:
+                        skip_validation: bool = False, number_cpus: Optional[int] = None) -> List["ValidAtoms"]:
         """
         Generate a list of ValidAtoms instances from a list of Atoms instances in parallel.
 
@@ -119,11 +119,17 @@ class ValidAtoms(object):
             Whether to skip the validation and return a list of ValidAtoms instances with all properties set to True.
             Defaults to False.
         :type skip_validation: bool
+        :param number_cpus:
+            The number of CPUs to use for parallelization. If None, use os.cpu_count().
+            Defaults to None.
+        :type number_cpus: Optional[int]
 
         :return:
             The list of ValidAtoms instances.
         :rtype: List[ValidAtoms]
         """
+        if number_cpus is not None and number_cpus < 1:
+            raise ValueError("The number of CPUs must be at least 1.")
         if skip_validation:
             # No parallelization necessary because this will be fast.
             valid_atoms = [ValidAtoms(atoms=a, volume_check_cutoff=volume_check_cutoff,
@@ -133,9 +139,10 @@ class ValidAtoms(object):
             constructor = partial(ValidAtoms, volume_check_cutoff=volume_check_cutoff,
                                   structure_check_cutoff=structure_check_cutoff, use_pauling_test=use_pauling_test,
                                   include_alloys=include_alloys, skip_validation=skip_validation)
+            cpu_count = number_cpus if number_cpus is not None else os.cpu_count()
             valid_atoms = process_map(constructor, atoms, desc=desc,
-                                      chunksize=max(min(len(atoms) // os.cpu_count(), 100), 1),
-                                      max_workers=os.cpu_count())
+                                      chunksize=max(min(len(atoms) // cpu_count, 100), 1),
+                                      max_workers=cpu_count)
         return valid_atoms
 
     @staticmethod
