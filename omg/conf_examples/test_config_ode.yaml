@@ -117,10 +117,10 @@ trainer:
         monitor: "val_loss_total"
         every_n_epochs: 100
         save_weights_only: false
-    - class_path: omg.utils.OMGLearningRateFinder
-      init_args:
-        min_lr: 0.00001
-        num_training_steps: 200
+    # - class_path: omg.utils.OMGLearningRateFinder
+    #   init_args:
+    #     min_lr: 0.00001
+    #     num_training_steps: 200
     - class_path: lightning.pytorch.callbacks.EarlyStopping
       init_args:
         patience: 100
@@ -130,8 +130,8 @@ trainer:
   strategy: "ddp_find_unused_parameters_true"
   precision: "64-true"
 optimizer: torch.optim.Adam
-lr_scheduler:
-  class_path: lightning.pytorch.cli.ReduceLROnPlateau
-  init_args:
-    patience: 40
-    monitor: "val_loss_total"
+# lr_scheduler:
+#   class_path: lightning.pytorch.cli.ReduceLROnPlateau
+#   init_args:
+#     patience: 40
+#     monitor: "val_loss_total"

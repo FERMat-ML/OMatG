@@ -77,8 +77,8 @@ data:
            - "band_gap"
   batch_size: 2
 optimizer: torch.optim.Adam
-lr_scheduler:
-  class_path: lightning.pytorch.cli.ReduceLROnPlateau
-  init_args:
-    patience: 40
-    monitor: "val_loss_total"
+# lr_scheduler:
+#   class_path: lightning.pytorch.cli.ReduceLROnPlateau
+#   init_args:
+#     patience: 40
+#     monitor: "val_loss_total"
