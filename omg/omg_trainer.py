@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 from sklearn.neighbors import KernelDensity
+import tqdm
 import torch
 from torch_geometric.data import Data
 import yaml
@@ -67,7 +68,7 @@ class OMGTrainer(Trainer):
         Load lmdb file atoms into a list of Atoms instances.
         """
         all_ref_atoms = []
-        for struc in dataset:
+        for struc in tqdm.tqdm(dataset, desc="Loading test dataset"):
             assert len(struc.species) == struc.pos.shape[0]
             assert struc.pos.shape[1] == 3
             assert struc.cell[0].shape == (3, 3)
