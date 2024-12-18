@@ -551,12 +551,13 @@ class OMGTrainer(Trainer):
             pdf.savefig()
             plt.close()
 
-    def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
-              skip_validation: bool = False, skip_unique: bool = False, number_cpus: Optional[int] = None) -> None:
+    def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str, skip_validation: bool = False,
+              skip_match: bool = False, skip_unique: bool = False, number_cpus: Optional[int] = None) -> None:
         """
-        Compute the match rate between the generated structures and the structures in the prediction dataset.
+        Compute the match rate between the generated structures and the structures in the prediction dataset, as well as
+        the unique rate of the generated structures.
 
-        This is one of the benchmarks for the crystal-structure prediction task used by DiffCSP and FlowMM.
+        The match rate is one of the benchmarks for the crystal-structure prediction task used by DiffCSP and FlowMM.
 
         :param model:
             OMG model (argument required and automatically passed by lightning CLI).
@@ -572,6 +573,11 @@ class OMGTrainer(Trainer):
             Defaults to False.
             This argument can be optionally set on the command line.
         :type skip_validation: bool
+        :param skip_match:
+            Whether to skip the calculation of the match rate.
+            Defaults to False.
+            This argument can be optionally set on the command line.
+        :type skip_match: bool
         :param skip_unique:
             Whether to skip the calculation of the unique rate.
             Defaults to False.
@@ -586,6 +592,9 @@ class OMGTrainer(Trainer):
         :raises FileNotFoundError:
             If the file does not exist.
         """
+        if skip_validation and skip_match and skip_unique:
+            raise ValueError("Everything is skipped, nothing to do.")
+
         final_file = Path(xyz_file)
         if not final_file.exists():
             raise FileNotFoundError(f"File {final_file} does not exist.")
@@ -601,20 +610,22 @@ class OMGTrainer(Trainer):
         ref_valid_atoms = ValidAtoms.get_valid_atoms(ref_atoms, desc="Validating reference structures",
                                                      skip_validation=skip_validation, number_cpus=number_cpus)
 
-        print(f"Rate of valid structures in reference dataset: "
-              f"{100 * sum(va.valid for va in ref_valid_atoms) / len(ref_atoms)}%.")
-        print(f"Rate of valid structures in generated dataset: "
-              f"{100 * sum(va.valid for va in gen_valid_atoms) / len(gen_atoms)}%.")
+        if not skip_validation:
+            print(f"Rate of valid structures in reference dataset: "
+                  f"{100 * sum(va.valid for va in ref_valid_atoms) / len(ref_atoms)}%.")
+            print(f"Rate of valid structures in generated dataset: "
+                  f"{100 * sum(va.valid for va in gen_valid_atoms) / len(gen_atoms)}%.")
 
-        # Tolerances from DiffCSP and FlowMM.
-        fmr, frmsd, vmr, vrmsd = match_rate_and_rmsd(gen_valid_atoms, ref_valid_atoms, ltol=0.3, stol=0.5,
-                                                     angle_tol=10.0, number_cpus=number_cpus)
-        print(f"The match rate between all generated structures and the full dataset is {100 * fmr}%.")
-        print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between all generated structures "
-              f"and the full dataset is {frmsd}.")
-        print(f"The match rate between valid generated structures and the valid dataset is {100 * vmr}%.")
-        print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between valid generated structures "
-              f"and the valid dataset is {vrmsd}.")
+        if not skip_match:
+            # Tolerances from DiffCSP and FlowMM.
+            fmr, frmsd, vmr, vrmsd = match_rate_and_rmsd(gen_valid_atoms, ref_valid_atoms, ltol=0.3, stol=0.5,
+                                                         angle_tol=10.0, number_cpus=number_cpus)
+            print(f"The match rate between all generated structures and the full dataset is {100 * fmr}%.")
+            print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between all generated structures "
+                  f"and the full dataset is {frmsd}.")
+            print(f"The match rate between valid generated structures and the valid dataset is {100 * vmr}%.")
+            print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between valid generated structures "
+                  f"and the valid dataset is {vrmsd}.")
 
         if not skip_unique:
             r = unique_rate(gen_valid_atoms, ltol=0.3, stol=0.5, angle_tol=10.0, number_cpus=number_cpus)
