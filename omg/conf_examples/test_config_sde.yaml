@@ -110,6 +110,7 @@ trainer:
         save_top_k: 1
         monitor: "val_loss_total"
         save_weights_only: false
+        save_last: "link"
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
         save_top_k: -1  # Store every checkpoint after 100 epochs.
