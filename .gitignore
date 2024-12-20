@@ -235,3 +235,25 @@ fabric.properties
 # Logging files.
 wandb/
 lightning_logs/
+csp_train.out
+train.s
+sample.s
+csp_sample.out
+symmetric.xyz
+match.s
+csp.xyz
+csp_init.xyz
+csp_diff_train.out
+cache/dataset_0c73edeb2e3672bdbcba3d6b608465ee.lmdb
+cache/dataset_6a51a4c955b7cb51dfa31f8a759f45fc.lmdb
+cache/dataset_59c848811974952f05acb4f14d068fde.lmdb
+cache/dataset_84d8d36df9423ef3a9c5a375ca934a95.lmdb
+cache/dataset_879879a65c2ab2ac8764a98364d78e2e.lmdb
+cache/dataset_ffdcff51f1d8b5534cf779d6f62b2b1c.lmdb
+.lr_find_fafdb792-6b83-4dcf-ae2c-11d80aa617e8.ckpt
+.lr_find_cf99afea-7de8-4dbe-a32e-4b1511fd3ce8.ckpt
+.lr_find_bf95d80b-1e8b-4fe8-960d-231317212441.ckpt
+.lr_find_946db338-a765-4533-b1cd-547538e1618b.ckpt
+.lr_find_7cad6f33-c6a9-46ee-89ee-1b36426ae29e.ckpt
+.lr_find_6ce4fbbe-3675-4bb7-9194-e7501e96eef6.ckpt
+visualize.s

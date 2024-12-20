@@ -112,10 +112,9 @@ class Interpolant(ABC, TimeChecker):
             Interpolated value.
         :rtype: torch.Tensor
         """
-        print(f"FFFFFFF {self._corrector}")
-        x_1prime = self.get_corrector.unwrap(x_0, x_1)
+        x_1prime = self.get_corrector().unwrap(x_0, x_1)
         x_t = self.alpha(t) * x_0 + self.beta(t) * x_1prime 
-        return self.get_corrector.correct(x_t)
+        return self.get_corrector().correct(x_t)
 
     def interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                                batch_pointer: torch.Tensor) -> torch.Tensor:
@@ -137,7 +136,7 @@ class Interpolant(ABC, TimeChecker):
             Derivative of the interpolant.
         :rtype: torch.Tensor
         """
-        x_1prime = self.get_corrector.unwrap(x_0, x_1)
+        x_1prime = self.get_corrector().unwrap(x_0, x_1)
         return self.alpha_dot(t) * x_0 + self.beta_dot(t) * x_1prime
 
     @abstractmethod
