@@ -18,7 +18,8 @@ class OMGLightning(L.LightningModule):
     """
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
                  relative_si_costs: Sequence[float], learning_rate: float = 0.001, use_min_perm_dist: bool = False,
-                 generation_xyz_filename: Optional[str] = None, sobol_time: bool = False) -> None:
+                 generation_xyz_filename: Optional[str] = None, sobol_time: bool = False,
+                 float_32_matmul_precision: str = "medium") -> None:
         super().__init__()
         self.si = si
         self.sampler = sampler
@@ -50,9 +51,8 @@ class OMGLightning(L.LightningModule):
                 torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
         self.generation_xyz_filename = generation_xyz_filename
 
-        if self.dtype == torch.float32:
-            # Allow to use Tensor cores.
-            torch.set_float32_matmul_precision("medium")
+        # Possible values are "medium", "high", and "highest".
+        torch.set_float32_matmul_precision(float_32_matmul_precision)
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
