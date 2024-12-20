@@ -40,13 +40,11 @@ model:
       distributions: null
       n_particle_sampler: 1
       convert_to_fractional: true
-      batch_size: 2
     # Code for sampling from dataset
     # class_path: omg.sampler.sample_from_dataset.SampleFromDataset
     # init_args:
     #   dataset:
-    #   convert_to_fractional: 
-    #   batch_size: 
+    #   convert_to_fractional:
   model:
     class_path: omg.model.model.Model
     init_args:
@@ -78,3 +76,9 @@ data:
           property_keys: # specify only when you wanna do guided training
            - "band_gap"
   batch_size: 2
+optimizer: torch.optim.Adam
+# lr_scheduler:
+#   class_path: lightning.pytorch.cli.ReduceLROnPlateau
+#   init_args:
+#     patience: 40
+#     monitor: "val_loss_total"

@@ -47,6 +47,10 @@ class ValidAtoms(object):
         Whether to include alloys in the composition check.
         Defaults to True.
     :type include_alloys: bool
+    :param skip_validation:
+        Whether to skip the validation and return a list of ValidAtoms instances with all properties set to True.
+        Defaults to False.
+    :type skip_validation: bool
     """
 
     _CrystalNNFP = CrystalNNFingerprint.from_preset("ops")
@@ -54,7 +58,7 @@ class ValidAtoms(object):
         _CompFP = ElementProperty.from_preset("magpie")
 
     def __init__(self, atoms: Atoms, volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
-                 use_pauling_test: bool = True, include_alloys: bool = True) -> None:
+                 use_pauling_test: bool = True, include_alloys: bool = True, skip_validation: bool = False) -> None:
         """Constructor of the ValidAtoms class."""
         self._atoms = atoms
         self._structure = AseAtomsAdaptor.get_structure(atoms)
@@ -62,27 +66,38 @@ class ValidAtoms(object):
         self._structure_check_cutoff = structure_check_cutoff
         self._use_pauling_test = use_pauling_test
         self._include_alloys = include_alloys
-        self._volume_valid = self._structure.volume > volume_check_cutoff
-        self._structure_valid = self._structure_check(self._structure, self._structure_check_cutoff)
-        self._composition_valid = self._smact_check(self._composition, self._use_pauling_test, self._include_alloys)
-        with warnings.catch_warnings(action="ignore"):
-            try:
-                self._composition_fingerprint, self._structure_fingerprint = self._get_fingerprints(self._composition,
-                                                                                                    self._structure)
-                self._fingerprint_valid = True
-            except ValueError:
-                self._composition_fingerprint, self._structure_fingerprint = None, None
-                self._fingerprint_valid = False
+        if skip_validation:
+            self._volume_valid = True
+            self._structure_valid = True
+            self._composition_valid = True
+            self._fingerprint_valid = True
+            self._composition_fingerprint, self._structure_fingerprint = None, None
+        else:
+            self._volume_valid = self._structure.volume > volume_check_cutoff
+            self._structure_valid = self._structure_check(self._structure, self._structure_check_cutoff)
+            self._composition_valid = self._smact_check(self._composition, self._use_pauling_test, self._include_alloys)
+            with warnings.catch_warnings(action="ignore"):
+                try:
+                    self._composition_fingerprint, self._structure_fingerprint = self._get_fingerprints(
+                        self._composition, self._structure)
+                    self._fingerprint_valid = True
+                except ValueError:
+                    self._composition_fingerprint, self._structure_fingerprint = None, None
+                    self._fingerprint_valid = False
 
     @staticmethod
-    def get_valid_atoms(atoms: Sequence[Atoms], structure_check_cutoff: float = 0.5, use_pauling_test: bool = True,
-                        include_alloys: bool = True, desc: Optional[str] = None) -> List["ValidAtoms"]:
+    def get_valid_atoms(atoms: Sequence[Atoms], volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
+                        use_pauling_test: bool = True, include_alloys: bool = True, desc: Optional[str] = None,
+                        skip_validation: bool = False, number_cpus: Optional[int] = None) -> List["ValidAtoms"]:
         """
         Generate a list of ValidAtoms instances from a list of Atoms instances in parallel.
 
         :param atoms:
             The list of Atoms instances to validate.
         :type atoms: Iterable[Atoms]
+        :param volume_check_cutoff:
+            The cutoff for the volume check (in Å^3).
+            Defaults to 0.1.
         :param structure_check_cutoff:
             The cutoff for the structure check (in angstroms).
             Defaults to 0.5.
@@ -100,16 +115,34 @@ class ValidAtoms(object):
             If None, no description is shown.
             Defaults to None.
         :type desc: str
+        :param skip_validation:
+            Whether to skip the validation and return a list of ValidAtoms instances with all properties set to True.
+            Defaults to False.
+        :type skip_validation: bool
+        :param number_cpus:
+            The number of CPUs to use for parallelization. If None, use os.cpu_count().
+            Defaults to None.
+        :type number_cpus: Optional[int]
 
         :return:
             The list of ValidAtoms instances.
         :rtype: List[ValidAtoms]
         """
-        constructor = partial(ValidAtoms, structure_check_cutoff=structure_check_cutoff,
-                              use_pauling_test=use_pauling_test, include_alloys=include_alloys)
-        valid_atoms = process_map(constructor, atoms, desc=desc,
-                                  chunksize=max(min(len(atoms) // os.cpu_count(), 100), 1),
-                                  max_workers=os.cpu_count())
+        if number_cpus is not None and number_cpus < 1:
+            raise ValueError("The number of CPUs must be at least 1.")
+        if skip_validation:
+            # No parallelization necessary because this will be fast.
+            valid_atoms = [ValidAtoms(atoms=a, volume_check_cutoff=volume_check_cutoff,
+                                      structure_check_cutoff=structure_check_cutoff, use_pauling_test=use_pauling_test,
+                                      include_alloys=include_alloys, skip_validation=skip_validation) for a in atoms]
+        else:
+            constructor = partial(ValidAtoms, volume_check_cutoff=volume_check_cutoff,
+                                  structure_check_cutoff=structure_check_cutoff, use_pauling_test=use_pauling_test,
+                                  include_alloys=include_alloys, skip_validation=skip_validation)
+            cpu_count = number_cpus if number_cpus is not None else os.cpu_count()
+            valid_atoms = process_map(constructor, atoms, desc=desc,
+                                      chunksize=max(min(len(atoms) // cpu_count, 100), 1),
+                                      max_workers=cpu_count)
         return valid_atoms
 
     @staticmethod

@@ -25,7 +25,7 @@ This command will create checkpoints, log files, and cache files in the working 
 If you want to include a Wandb logger with a name, add the `--trainer.logger=WandbLogger --trainer.logger.name=<name>` 
 argument. Other loggers can be found [here](https://lightning.ai/docs/pytorch/stable/extensions/logging.html).
 
-In order to restart training from a checkpoint, add the `--model.load_checkpoint=<checkpoint_file.ckpt>` argument. 
+In order to restart training from a checkpoint, add the `--ckpt_path=<checkpoint_file.ckpt>` argument. 
 
 In order to seed the random number generators before training, use `--seed_everything=<seed>`.
 
@@ -41,7 +41,7 @@ exemplary configuration files).
 For generating new structures in an xyz file, run the following command:
 
 ```bash
-omg predict --config {config_file} --model.load_checkpoint=<checkpoint_file.ckpt> --model.generation_xyz_filename=<xyz_file> --data.batch_size=1024 --seed_everything=42 --trainer.max_epochs=1
+omg predict --config {config_file} --ckpt_path=<checkpoint_file.ckpt> --model.generation_xyz_filename=<xyz_file> --data.batch_size=1024 --seed_everything=42 --trainer.max_epochs=1
 ```
 
 For an xyz filename `filename.xyz`, this command will also create a file `filename_init.xyz` that contains the initial
@@ -60,11 +60,19 @@ omg visualize --config {config_file} --xyz_file {xyz_file} --plot_name {plot_nam
 ## Match Rate (CSP)
 
 Run the following command to compute the match rate between the generated structures in an xyz file and the structures 
-in the prediction dataset:
+in the prediction dataset, as well as the rate of unique structures in the generated structures:
 
 ```bash
 omg match --config {config_file} --xyz_file {xyz_file}
 ```
+
+Computing the match rate as in DiffCSP or FlowMM requires to validate every structure which is quite slow. Also, 
+computing the unique rate is slow. One can use the `--skip_validation=true` and `--skip_unique=true` arguments to skip
+these computations. 
+
+The validations, and the computations of the match rate and unique rate are parallelized. The number of processes is 
+determined by `os.cpu_count()`. This can be changed by setting the `--number_cpus` argument (which is probably most 
+useful in cluster environments).
 
 ## Curriculum Learning
 

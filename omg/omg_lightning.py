@@ -3,8 +3,6 @@ import time
 from typing import Optional, Sequence
 import lightning as L
 import torch
-from torch import optim
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from omg.model.model import Model
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.sampler.sampler import Sampler
@@ -18,14 +16,12 @@ class OMGLightning(L.LightningModule):
     Main module which is fit and used to generate structures using Lightning CLI.
     """
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
-                 relative_si_costs: Sequence[float], load_checkpoint: Optional[str] = None,
-                 learning_rate: Optional[float] = 1.e-3, lr_scheduler: Optional[bool] = False,
-                 use_min_perm_dist: bool = False, generation_xyz_filename: Optional[str] = None,
-                 sobol_time: bool = False) -> None:
+                 relative_si_costs: Sequence[float], learning_rate: float = 0.001, use_min_perm_dist: bool = False,
+                 generation_xyz_filename: Optional[str] = None, sobol_time: bool = False) -> None:
         super().__init__()
         self.si = si
         self.sampler = sampler
-        self.learning_rate = learning_rate
+        self.lr = learning_rate  # Learning rate must be stored in this class for learning rate finder.
         self.use_min_perm_dist = use_min_perm_dist
         if self.use_min_perm_dist:
             self._pos_corrector = self.si.get_stochastic_interpolant("pos").get_corrector()
@@ -36,7 +32,6 @@ class OMGLightning(L.LightningModule):
             raise ValueError("Species stochastic interpolant must be of type StochasticInterpolantSpecies.")
         if species_stochastic_interpolant.uses_masked_species():
             model.enable_masked_species()
-        model = model.double()  # TODO: Should this be an option?
         self.model = model
 
         if not len(relative_si_costs) == len(self.si):
@@ -46,15 +41,12 @@ class OMGLightning(L.LightningModule):
         if not abs(sum(relative_si_costs) - 1.0) < 1e-10:
             raise ValueError("The sum of all cost factors should be equal to 1.")
         self._relative_si_costs = relative_si_costs
-        if load_checkpoint:
-            checkpoint = torch.load(load_checkpoint, map_location=self.device)
-            self.load_state_dict(checkpoint['state_dict'])
+
         if not sobol_time:
             self.time_sampler = torch.rand
         else:
             self.time_sampler = lambda n: torch.reshape(
                 torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
-        self.lr_scheduler = lr_scheduler
         self.generation_xyz_filename = generation_xyz_filename
 
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
@@ -76,12 +68,13 @@ class OMGLightning(L.LightningModule):
         x = self.model(x_t, t)
         return x
 
-    def on_fit_start(self):
-        if self.learning_rate:
-            # Overwrite learning rate after running LearningRateFinder
-            for optimizer in self.trainer.optimizers:
-                for param_group in optimizer.param_groups:
-                    param_group["learning_rate"] = self.learning_rate
+    def on_fit_start(self) -> None:
+        """
+        Set the learning rate of the optimizers to the learning rate of this class.
+        """
+        for optimizer in self.trainer.optimizers:
+            for param_group in optimizer.param_groups:
+                param_group["lr"] = self.lr
 
     # TODO: specify argument types
     def training_step(self, x_1) -> torch.Tensor:
@@ -170,24 +163,3 @@ class OMGLightning(L.LightningModule):
         xyz_saver(x_0.to("cpu"), init_filename)
         xyz_saver(gen.to("cpu"), filename)
         return gen
-
-    # TODO allow for YAML config
-    def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
-        if self.lr_scheduler:
-            lr_scheduler = ReduceLROnPlateau(optimizer, patience=40)
-            lr_scheduler_config = {
-                "scheduler": lr_scheduler,
-                "interval": "epoch",
-                "frequency": 1,
-                "monitor": "val_loss_total",
-                # If set to `True`, will enforce that the value specified 'monitor'
-                # is available when the scheduler is updated, thus stopping
-                # training if not found. If set to `False`, it will only produce a warning
-                "strict": True,
-            }
-            return {"optimizer": optimizer,
-                    "lr_scheduler": lr_scheduler_config
-                    }
-        else:
-            return optimizer
