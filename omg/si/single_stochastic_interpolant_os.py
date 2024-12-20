@@ -60,7 +60,7 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
                  differential_equation_type: str, integrator_kwargs: Optional[dict[str, Any]] = None,
                  correct_center_of_mass: bool = False, correct_center_of_mass_motion: bool = False,
-                 correct_first_atom: bool = False) -> None:
+                 correct_first_atom: bool = False, velocity_annealing_factor: float = 0.0) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -92,6 +92,7 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         self._correct_first_atom = correct_first_atom
         if self._correct_center_of_mass and self._correct_first_atom:
             raise ValueError("Correcting the center of mass and the first atom at the same time is not possible.")
+        self._velocity_annealing_factor = velocity_annealing_factor
 
     @staticmethod
     def _shift_first_atom(x: torch.Tensor, batch_indices: torch.Tensor) -> torch.Tensor:
@@ -126,7 +127,7 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         assert x_0.shape == x_1.shape
         interpolate = self._interpolant.interpolate(t, x_0, x_1)
         z = torch.randn_like(x_0)
-        interpolate = self._corrector.correct(interpolate + self._gamma.gamma(t) * z)
+        interpolate = self._corrector.correct(interpolate)
         return interpolate, z
 
     def _interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
@@ -346,7 +347,7 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
             z = model_function(t, x_corr)[1]
             t1 = (self._interpolant.alpha_dot(t) * z)
             t2 = (self._interpolant.beta(t) / self._interpolant.beta_dot(t)) * (x_corr - self._interpolant.alpha(t) * z)
-            return t1 + t2
+            return (1.0 + self._velocity_annealing_factor * t) * (t1 + t2)
         t_span = torch.tensor([time, time + time_step], device=x_t.device)
         with torch.no_grad():
             x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)[-1]
