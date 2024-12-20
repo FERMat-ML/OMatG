@@ -3,6 +3,7 @@ import time
 from typing import Optional, Sequence
 import lightning as L
 import torch
+from omg.datamodule import OMGData
 from omg.model.model import Model
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.sampler.sampler import Sampler
@@ -77,7 +78,7 @@ class OMGLightning(L.LightningModule):
                 param_group["lr"] = self.lr
 
     # TODO: specify argument types
-    def training_step(self, x_1) -> torch.Tensor:
+    def training_step(self, x_1: OMGData) -> torch.Tensor:
         """
         Performs one training step given a batch of x_1
 
@@ -86,6 +87,10 @@ class OMGLightning(L.LightningModule):
         :rtype: torch.Tensor
         """
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
+
+        # x_0 and x_1 are by default in double precision. Change to desired dtype.
+        x_0.change_floating_point_dtype_to(self.dtype)
+        x_1.change_floating_point_dtype_to(self.dtype)
 
         # Minimize permutational distance between clusters.
         if self.use_min_perm_dist:
@@ -117,12 +122,16 @@ class OMGLightning(L.LightningModule):
 
         return total_loss
 
-    def validation_step(self, x_1) -> torch.Tensor:
+    def validation_step(self, x_1: OMGData) -> torch.Tensor:
         """
         Performs one validation step given a batch of x_1
         """
 
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
+
+        # x_0 and x_1 are by default in double precision. Change to desired dtype.
+        x_0.change_floating_point_dtype_to(self.dtype)
+        x_1.change_floating_point_dtype_to(self.dtype)
 
         # Sample t for each structure.
         t = self.time_sampler(len(x_1.n_atoms)).to(self.device)
@@ -150,11 +159,13 @@ class OMGLightning(L.LightningModule):
         return total_loss
 
     # TODO: what do we want to return
-    def predict_step(self, x):
+    def predict_step(self, x: OMGData) -> OMGData:
         """
         Performs generation
         """
         x_0 = self.sampler.sample_p_0(x).to(self.device)
+        # x_0 and x_1 are by default in double precision. Change to desired dtype.
+        x_0.change_floating_point_dtype_to(self.dtype)
         gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
         filename = (Path(self.generation_xyz_filename) if self.generation_xyz_filename is not None

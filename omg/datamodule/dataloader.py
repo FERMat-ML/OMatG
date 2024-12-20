@@ -143,6 +143,21 @@ class OMGData(Data):
         graph.cell = graph.cell.unsqueeze(0)
         return graph
 
+    def change_floating_point_dtype_to(self, dtype: torch.dtype) -> None:
+        """
+        Change the floating point data type of the atomic positions, cell vectors and properties.
+
+        :param dtype:
+            New floating point data type.
+        :type dtype: torch.dtype
+        """
+        self.cell = self.cell.to(dtype)
+        self.pos = self.pos.to(dtype)
+        if self.property is not None:
+            for k, v in self.property.items():
+                if torch.is_tensor(v) and v.is_floating_point():
+                    self.property[k] = v.to(dtype)
+
 
 class OMGTorchDataset(Dataset):
     """
