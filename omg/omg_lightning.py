@@ -50,6 +50,10 @@ class OMGLightning(L.LightningModule):
                 torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
         self.generation_xyz_filename = generation_xyz_filename
 
+        if self.dtype == torch.float32:
+            # Allow to use Tensor cores.
+            torch.set_float32_matmul_precision("medium")
+
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
         Calls encoder + head stack
@@ -89,6 +93,7 @@ class OMGLightning(L.LightningModule):
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
         # x_0 and x_1 are by default in double precision. Change to desired dtype.
+        # TODO: At some point we should allow for the dtype to be set in the sampler and datamodule.
         x_0.change_floating_point_dtype_to(self.dtype)
         x_1.change_floating_point_dtype_to(self.dtype)
 
