@@ -181,7 +181,8 @@ class Configuration:
         env: lmdb.Environment,
         key: str,
         dynamic: bool = False,
-        property_keys: Tuple[str] = None
+        property_keys: Tuple[str] = None,
+        floating_point_precision: torch.dtype = torch.float64
     ):
         """
         Read configuration from lmdb.
@@ -191,14 +192,18 @@ class Configuration:
             key: key to read the configuration from the lmdb.
         """
         if not dynamic:
-            with env.begin() as txn:
+            with (env.begin() as txn):
                 data = txn.get(key.encode())
                 if data is None:
                     raise ConfigurationError(f"Key {key} not found in the lmdb.")
                 lmdb_config = pkl.loads(data)
                 cell = lmdb_config.get("cell", None)
+                if cell is not None:
+                    cell = cell.to(floating_point_precision)
                 species = lmdb_config.get("atomic_numbers", None)
                 coords = lmdb_config.get("pos", None)
+                if coords is not None:
+                    coords = coords.to(floating_point_precision)
                 PBC = lmdb_config.get("pbc", None)
                 ds_idx = lmdb_config.get("ds_idx", 0)
                 identifier = key
@@ -209,6 +214,9 @@ class Configuration:
                         property_keys = (property_keys,)
                     for prop in property_keys:
                         property_dict[prop] = lmdb_config.get(prop, None)
+                        if (property_dict[prop] is not None and torch.is_tensor(property_dict[prop])
+                                and property_dict[prop].is_floating_point()):
+                            property_dict[prop] = property_dict[prop].to(floating_point_precision)
                 else:
                     property_dict = {}
 
@@ -454,7 +462,7 @@ class DataModule:
         configurations: A list of :class:`~kliff.dataset.Configuration` objects.
     """
 
-    def __init__(self, lmdb_paths=None, property_keys=None):
+    def __init__(self, lmdb_paths=None, property_keys=None, trainer_precision: Union[int, str, None] = "64-true"):
         # if configurations is None:
         #     self._configs = []
         # elif isinstance(configurations, Iterable) and not isinstance(
@@ -465,6 +473,19 @@ class DataModule:
         #     raise DataModuleError(
         #         "configurations must be a iterable of Configuration objects."
         #     )
+        if trainer_precision == "64-true" or trainer_precision == "64" or trainer_precision == 64:
+            self._floating_point_precision = torch.float64
+        elif (trainer_precision is None or trainer_precision == "32-true" or trainer_precision == "32" or
+              trainer_precision == 32 or trainer_precision == "16-mixed" or trainer_precision == "bf16-mixed"):
+            self._floating_point_precision = torch.float32
+        elif (trainer_precision == "16-true" or trainer_precision == "16" or trainer_precision == 16
+              or trainer_precision == "transformer-engine-float16"):
+            self._floating_point_precision = torch.float16
+        elif (trainer_precision == "bf16-true" or trainer_precision == "bf16"
+              or trainer_precision == "transformer-engine"):
+            self._floating_point_precision = torch.bfloat16
+        else:
+            raise ValueError(f"Unknown trainer precision: {trainer_precision}")
 
         self._metadata: dict = {}
         self._return_config_on_getitem = True
@@ -859,7 +880,7 @@ class DataModule:
 
         for lmdb_idx, lmdb_path in enumerate(path):
             env = lmdb.open(str(lmdb_path), readonly=True, lock=False, subdir=subdir)
-            configs = self._read_from_lmdb(env,  dynamic_loading, subdir, property_keys)
+            configs = self._read_from_lmdb(env,  dynamic_loading, subdir, property_keys, self._floating_point_precision)
 
             if dynamic_loading:
                 self.metadata.setdefault("lmdb_envs", []).append(env)
@@ -887,6 +908,7 @@ class DataModule:
         dynamic_loading: bool,
         subdir: bool,
         property_keys: Tuple[str] = None,
+        floating_point_precision: torch.dtype = torch.float64
     ) -> Union[List[Configuration], List[str]]:
         """
         Read configurations from LMDB file.
@@ -908,7 +930,8 @@ class DataModule:
 
         if not dynamic_loading:
             configs = [
-                Configuration.from_lmdb(env, key, dynamic=False, property_keys=property_keys) for key in keys
+                Configuration.from_lmdb(env, key, dynamic=False, property_keys=property_keys,
+                                        floating_point_precision=floating_point_precision) for key in keys
             ]
         else:
             configs = keys
@@ -964,7 +987,8 @@ class DataModule:
                 key = lmdb_idx["config_key"]
                 idx = int(lmdb_idx["lmdb_env"])
                 env = self.metadata["lmdb_envs"][idx]
-                return Configuration.from_lmdb(env, key, property_keys=self._property_keys)
+                return Configuration.from_lmdb(env, key, property_keys=self._property_keys,
+                                               floating_point_precision=self._floating_point_precision)
 
             else:
                 if not self._return_config_on_getitem:
@@ -981,7 +1005,8 @@ class DataModule:
                         key = lmdb_idx["config_key"]
                         idx = int(lmdb_idx["lmdb_env"])
                         env = self.metadata["lmdb_envs"][idx]
-                        configs.append(Configuration.from_lmdb(env, key, property_keys=self._property_keys))
+                        configs.append(Configuration.from_lmdb(env, key, property_keys=self._property_keys,
+                                                               floating_point_precision=self._floating_point_precision))
                     return DataModule(configs)
         else:
             if isinstance(idx, int):
