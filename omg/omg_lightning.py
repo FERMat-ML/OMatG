@@ -92,11 +92,6 @@ class OMGLightning(L.LightningModule):
         """
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
-        # x_0 and x_1 are by default in double precision. Change to desired dtype.
-        # TODO: At some point we should allow for the dtype to be set in the sampler and datamodule.
-        x_0.change_floating_point_dtype_to(self.dtype)
-        x_1.change_floating_point_dtype_to(self.dtype)
-
         # Minimize permutational distance between clusters.
         if self.use_min_perm_dist:
             # Don't switch species to allow for crystal-structure prediction.
@@ -123,6 +118,7 @@ class OMGLightning(L.LightningModule):
             on_epoch=True,
             prog_bar=True,
             sync_dist=True,
+            batch_size=self.trainer.datamodule.batch_size
         )
 
         return total_loss
@@ -133,10 +129,6 @@ class OMGLightning(L.LightningModule):
         """
 
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
-
-        # x_0 and x_1 are by default in double precision. Change to desired dtype.
-        x_0.change_floating_point_dtype_to(self.dtype)
-        x_1.change_floating_point_dtype_to(self.dtype)
 
         # Sample t for each structure.
         t = self.time_sampler(len(x_1.n_atoms)).to(self.device)
@@ -159,6 +151,7 @@ class OMGLightning(L.LightningModule):
             on_epoch=True,
             prog_bar=True,
             sync_dist=True,
+            batch_size=self.trainer.datamodule.batch_size
         )
 
         return total_loss
@@ -169,8 +162,6 @@ class OMGLightning(L.LightningModule):
         Performs generation
         """
         x_0 = self.sampler.sample_p_0(x).to(self.device)
-        # x_0 and x_1 are by default in double precision. Change to desired dtype.
-        x_0.change_floating_point_dtype_to(self.dtype)
         gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
         # probably want to turn structure back into some other object that's easier to work with
         filename = (Path(self.generation_xyz_filename) if self.generation_xyz_filename is not None

@@ -115,7 +115,8 @@ class SampleFromRNG(Sampler):
             if not self._frac and not isinstance(self.distribution[1], MirrorData):
                 pos = np.dot(pos, cell)
 
-            configs.append(OMGData.from_data(species, pos, cell, convert_to_fractional=False))
+            configs.append(OMGData.from_data(species, torch.from_numpy(pos).to(x1.pos.dtype),
+                                             torch.from_numpy(cell).to(x1.cell.dtype), convert_to_fractional=False))
 
         return Batch.from_data_list(configs)
 

@@ -1,8 +1,7 @@
 import copy
 import os
-from typing import Dict, Any
+from typing import Any, Optional
 
-# import numpy as np
 from torch_geometric.data import Data, Dataset
 from torch_geometric.loader import DataLoader
 import torch
@@ -76,15 +75,11 @@ class OMGData(Data):
         graph.batch = torch.zeros(n_atoms, dtype=torch.int64)
         graph.species = torch.tensor([atomic_numbers[z] for z in config.species], dtype=torch.int64)
 
-        if not isinstance(config.cell, torch.Tensor):
-            graph.cell = torch.from_numpy(config.cell)
-        else:
-            graph.cell = config.cell
+        assert isinstance(config.cell, torch.Tensor)
+        graph.cell = config.cell
 
-        if not isinstance(config.coords, torch.Tensor):
-            graph.pos = torch.from_numpy(config.coords)
-        else:
-            graph.pos = config.coords
+        assert isinstance(config.coords, torch.Tensor)
+        graph.pos = config.coords
 
         if config.property_dict is not None:
             graph.property = config.property_dict
@@ -124,15 +119,12 @@ class OMGData(Data):
         else:
             graph.species = torch.asarray(species, dtype=torch.int64)
 
-        if not isinstance(cell, torch.Tensor):
-            graph.cell = torch.from_numpy(cell)
-        else:
-            graph.cell = cell
+        assert isinstance(cell, torch.Tensor)
+        graph.cell = cell
 
-        if not isinstance(pos, torch.Tensor):
-            graph.pos = torch.from_numpy(pos)
-        else:
-            graph.pos = pos
+        assert isinstance(pos, torch.Tensor)
+        graph.pos = pos
+
         graph.property = {}
         if convert_to_fractional:
             with torch.no_grad():
@@ -142,21 +134,6 @@ class OMGData(Data):
 
         graph.cell = graph.cell.unsqueeze(0)
         return graph
-
-    def change_floating_point_dtype_to(self, dtype: torch.dtype) -> None:
-        """
-        Change the floating point data type of the atomic positions, cell vectors and properties.
-
-        :param dtype:
-            New floating point data type.
-        :type dtype: torch.dtype
-        """
-        self.cell = self.cell.to(dtype)
-        self.pos = self.pos.to(dtype)
-        if self.property is not None:
-            for k, v in self.property.items():
-                if torch.is_tensor(v) and v.is_floating_point():
-                    self.property[k] = v.to(dtype)
 
 
 class OMGTorchDataset(Dataset):
@@ -178,7 +155,8 @@ class OMGTorchDataset(Dataset):
         return len(self.dataset)
 
     def get(self, idx):
-        return OMGData.from_omg_configuration(self.dataset[idx], convert_to_fractional=self.convert_to_fractional, niggli=self.niggli)
+        return OMGData.from_omg_configuration(self.dataset[idx], convert_to_fractional=self.convert_to_fractional,
+                                              niggli=self.niggli)
 
 
 def get_lightning_datamodule(train_dataset: Dataset, val_dataset: Dataset, batch_size: int):
@@ -212,13 +190,15 @@ class OMGDataModule(L.LightningDataModule):
     """
     Need to do this because LightningDataset doesn't directly subclass LightningDataModule
     """
-    def __init__(self, train_dataset, val_dataset = None, predict_dataset = None, **kwargs):
+    def __init__(self, train_dataset: OMGTorchDataset, val_dataset: OMGTorchDataset,
+                 predict_dataset: Optional[OMGTorchDataset] = None, **kwargs) -> None:
         super().__init__()
         self.train_dataset = train_dataset
         self.val_dataset = val_dataset
         self.predict_dataset = predict_dataset
         if self.val_dataset is None:
             self.val_dataloader = None
+        self.batch_size = kwargs.get('batch_size', 1)
         self.kwargs = kwargs
 
     def dataloader(self, dataset: Dataset, **kwargs: Any) -> DataLoader:
