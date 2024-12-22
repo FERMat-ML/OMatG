@@ -129,6 +129,7 @@ trainer:
   num_sanity_val_steps: 0
   strategy: "ddp_find_unused_parameters_true"
   precision: "64-true"
+  max_epochs: 1000
 optimizer: torch.optim.Adam
 # lr_scheduler:
 #   class_path: lightning.pytorch.cli.ReduceLROnPlateau
