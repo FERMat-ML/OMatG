@@ -15,61 +15,61 @@ class LinearInterpolant(Interpolant):
         """
         super().__init__()
 
-    def alpha(self, t:torch.Tensor):
+    def alpha(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Alpha term in stochastic interpolant
+        Alpha function alpha(t) in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of alpha.
+            Values of the alpha function at the given times.
         :rtype: torch.Tensor
         """
-        return (1.0 - t)
+        return 1.0 - t
 
-    def alpha_dot(self, t: torch.Tensor):
+    def alpha_dot(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Derivative of alpha term in stochastic interpolant
+        Time derivative of the alpha function in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of alpha derivative.
+            Derivatives of the alpha function at the given times.
         :rtype: torch.Tensor
         """
-        return - 1.0
+        return -torch.ones_like(t)
 
-    def beta(self, t:torch.Tensor):
+    def beta(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Alpha term in stochastic interpolant
+        Beta function beta(t) in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of beta.
+            Values of the beta function at the given times.
         :rtype: torch.Tensor
         """
-        return t
+        return t.clone()
 
-    def beta_dot(self, t:torch.Tensor):
+    def beta_dot(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Derivative of beta term in stochastic interpolant
+        Time derivative of the beta function in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of beta derivative.
+            Derivatives of the beta function at the given times.
         :rtype: torch.Tensor
         """
-        return 1.0
+        return torch.ones_like(t)
 
     def get_corrector(self) -> Corrector:
         """
@@ -94,61 +94,61 @@ class TrigonometricInterpolant(Interpolant):
         """
         super().__init__()
 
-    def alpha(self, t:torch.Tensor):
+    def alpha(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Alpha term in stochastic interpolant
+        Alpha function alpha(t) in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of alpha.
+            Values of the alpha function at the given times.
         :rtype: torch.Tensor
         """
-        return torch.cos((torch.pi * t) / 2)
+        return torch.cos(torch.pi * t / 2.0)
 
-    def alpha_dot(self, t: torch.Tensor):
+    def alpha_dot(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Derivative of alpha term in stochastic interpolant
+        Time derivative of the alpha function in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of alpha derivative.
+            Derivatives of the alpha function at the given times.
         :rtype: torch.Tensor
         """
-        return - (torch.pi / 2) * torch.sin((torch.pi * t) / 2)
+        return -(torch.pi / 2.0) * torch.sin(torch.pi * t / 2.0)
 
-    def beta(self, t:torch.Tensor):
+    def beta(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Alpha term in stochastic interpolant
+        Beta function beta(t) in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of beta.
+            Values of the beta function at the given times.
         :rtype: torch.Tensor
         """
-        return torch.sin((torch.pi * t) / 2)
+        return torch.sin(torch.pi * t / 2.0)
 
-    def beta_dot(self, t:torch.Tensor):
+    def beta_dot(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Derivative of beta term in stochastic interpolant
+        Time derivative of the beta function in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of beta derivative.
+            Derivatives of the beta function at the given times.
         :rtype: torch.Tensor
         """
-        return (torch.pi / 2) * torch.cos((torch.pi * t) / 2)
+        return (torch.pi / 2.0) * torch.cos(torch.pi * t / 2.0)
 
     def get_corrector(self) -> Corrector:
         """
@@ -247,9 +247,8 @@ class PeriodicLinearInterpolant(Interpolant):
 
 class EncoderDecoderInterpolant(Interpolant):
     """
-    Encoder-decoder interpolant
-    I(t, x_0, x_1) = cos^2(pi * t) * 1_[0, 0.5) * x_0 + cos^2(pi * t) * 1_(0.5, 1] * x_1 between points x_0 and x_1 from
-    two distributions p_0 and p_1 at times t.
+    Encoder-decoder interpolant I(t, x_0, x_1) = cos^2(pi * t) * 1_[0, 0.5) * x_0 + cos^2(pi * t) * 1_(0.5, 1] * x_1
+    between points x_0 and x_1 from two distributions p_0 and p_1 at times t.
     """
 
     def __init__(self) -> None:
@@ -258,63 +257,61 @@ class EncoderDecoderInterpolant(Interpolant):
         """
         super().__init__()
 
-    def alpha(self, t:torch.Tensor):
+    def alpha(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Alpha term in stochastic interpolant
+        Alpha function alpha(t) in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of alpha.
+            Values of the alpha function at the given times.
         :rtype: torch.Tensor
-        """ 
-        return torch.where(t < 0.5, 1, 0) * torch.cos(torch.pi * t) ** 2
-
-    def alpha_dot(self, t: torch.Tensor):
         """
-        Derivative of alpha term in stochastic interpolant
+        return torch.where(t <= 0.5, torch.cos(torch.pi * t) ** 2, 0.0)
+
+    def alpha_dot(self, t: torch.Tensor) -> torch.Tensor:
+        """
+        Time derivative of the alpha function in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of alpha derivative.
+            Derivatives of the alpha function at the given times.
         :rtype: torch.Tensor
         """
-        return (-2.0 * torch.cos(torch.pi * t) * torch.pi * torch.sin(torch.pi * t)
-                * torch.where(t < 0.5, 1, 0)) 
+        return torch.where(t <= 0.5, -2.0 * torch.cos(torch.pi * t) * torch.pi * torch.sin(torch.pi * t), 0.0)
 
-    def beta(self, t:torch.Tensor):
+    def beta(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Alpha term in stochastic interpolant
+        Beta function beta(t) in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of beta.
+            Values of the beta function at the given times.
         :rtype: torch.Tensor
         """
-        return torch.where(t > 0.5, 1, 0) * torch.cos(torch.pi * t) ** 2
+        return torch.where(t > 0.5, torch.cos(torch.pi * t) ** 2, 0)
 
-    def beta_dot(self, t:torch.Tensor):
+    def beta_dot(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Derivative of beta term in stochastic interpolant
+        Time derivative of the beta function in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of beta derivative.
+            Derivatives of the beta function at the given times.
         :rtype: torch.Tensor
         """
-        return (-2.0 * torch.cos(torch.pi * t) * torch.pi * torch.sin(torch.pi * t)
-                * torch.where(t > 0.5, 1, 0)) 
+        return torch.where(t > 0.5, -2.0 * torch.cos(torch.pi * t) * torch.pi * torch.sin(torch.pi * t), 0.0)
 
     def get_corrector(self) -> Corrector:
         """
@@ -338,58 +335,58 @@ class MirrorInterpolant(Interpolant):
         """
         super().__init__()
 
-    def alpha(self, t:torch.Tensor):
+    def alpha(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Alpha term in stochastic interpolant
+        Alpha function alpha(t) in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of alpha.
-        :rtype: torch.Tensor
-        """ 
-        return torch.zeros_like(t)
-
-    def alpha_dot(self, t: torch.Tensor):
-        """
-        Derivative of alpha term in stochastic interpolant
-
-        :param t:
-            Times in [0,1].
-        :type t: torch.Tensor
-
-        :return:
-            Value of alpha derivative.
+            Values of the alpha function at the given times.
         :rtype: torch.Tensor
         """
         return torch.zeros_like(t)
 
-    def beta(self, t:torch.Tensor):
+    def alpha_dot(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Alpha term in stochastic interpolant
+        Time derivative of the alpha function in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of beta.
+            Derivatives of the alpha function at the given times.
+        :rtype: torch.Tensor
+        """
+        return torch.zeros_like(t)
+
+    def beta(self, t: torch.Tensor) -> torch.Tensor:
+        """
+        Beta function beta(t) in the linear interpolant.
+
+        :param t:
+            Times in [0,1].
+        :type t: torch.Tensor
+
+        :return:
+            Values of the beta function at the given times.
         :rtype: torch.Tensor
         """
         return torch.ones_like(t)
 
-    def beta_dot(self, t:torch.Tensor):
+    def beta_dot(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Derivative of beta term in stochastic interpolant
+        Time derivative of the beta function in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of beta derivative.
+            Derivatives of the beta function at the given times.
         :rtype: torch.Tensor
         """
         return torch.zeros_like(t)
@@ -414,62 +411,62 @@ class ScoreBasedDiffusionModelInterpolant(Interpolant):
 
     def __init__(self) -> None:
         """
-        Construct VP interpolant
+        Construct VP interpolant.
         """
         super().__init__()
 
-    def alpha(self, t:torch.Tensor):
+    def alpha(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Alpha term in stochastic interpolant
+        Alpha function alpha(t) in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of alpha.
+            Values of the alpha function at the given times.
         :rtype: torch.Tensor
-        """ 
+        """
         return torch.sqrt(1.0 - (t ** 2))
 
-    def alpha_dot(self, t: torch.Tensor):
+    def alpha_dot(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Derivative of alpha term in stochastic interpolant
+        Time derivative of the alpha function in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of alpha derivative.
+            Derivatives of the alpha function at the given times.
         :rtype: torch.Tensor
         """
         return -t / torch.sqrt(1.0 - (t ** 2))
 
-    def beta(self, t:torch.Tensor):
+    def beta(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Alpha term in stochastic interpolant
+        Beta function beta(t) in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of beta.
+            Values of the beta function at the given times.
         :rtype: torch.Tensor
         """
-        return t
+        return t.clone()
 
-    def beta_dot(self, t:torch.Tensor):
+    def beta_dot(self, t: torch.Tensor) -> torch.Tensor:
         """
-        Derivative of beta term in stochastic interpolant
+        Time derivative of the beta function in the linear interpolant.
 
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
 
         :return:
-            Value of beta derivative.
+            Derivatives of the beta function at the given times.
         :rtype: torch.Tensor
         """
         return torch.ones_like(t)
