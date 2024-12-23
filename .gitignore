@@ -235,4 +235,9 @@ fabric.properties
 # Logging files.
 wandb/
 lightning_logs/
-overfit_again_init.xyz
+
+# Generated files.
+cache/
+.lr_find*
+*.xyz
+*.out
