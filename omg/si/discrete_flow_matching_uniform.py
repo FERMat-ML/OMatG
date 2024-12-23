@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Dict, Iterable
 import torch
 from torch.distributions import Categorical
 import torch.nn.functional as functional
@@ -64,9 +64,19 @@ class DiscreteFlowMatchingUniform(StochasticInterpolantSpecies):
         x_t[mask] = x_1[mask]
         return x_t, torch.zeros_like(x_t)
 
+    def loss_keys(self) -> Iterable[str]:
+        """
+        Get the keys of the losses returned by the loss function.
+
+        :return:
+            Keys of the losses.
+        :rtype: Iterable[str]
+        """
+        yield "loss"
+
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.tensor,
-             batch_indices: torch.Tensor) -> torch.Tensor:
+             batch_indices: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
         Compute the cross-entropy loss for the discrete flow matching between points x_0 and x_1 from two distributions
         p_0 and p_1 at times t based on the model prediction for the probability distributions over the species.
@@ -74,6 +84,8 @@ class DiscreteFlowMatchingUniform(StochasticInterpolantSpecies):
         In contrast to the other stochastic interpolants in this module, the model prediction is not the velocity fields
         b and denoisers eta. Instead, only one model prediction is required. The second model prediction is ignored
         in this class.
+
+        This class returns a single loss with the key 'loss'.
 
         Given that x_0 is of shape (sum(n_atoms),) containing the species of every atom in the batch, the model
         prediction returns a tensor of shape (sum(n_atoms), MAX_ATOM_NUM) containing the probability distribution
@@ -103,7 +115,7 @@ class DiscreteFlowMatchingUniform(StochasticInterpolantSpecies):
 
         :return:
             Cross-entropy loss.
-        :rtype: torch.Tensor
+        :rtype: Dict[str, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
         assert torch.all(x_0 != 0)  # No atom should be masked in the initial state.
@@ -112,7 +124,7 @@ class DiscreteFlowMatchingUniform(StochasticInterpolantSpecies):
         # In order to compute the cross-entropy loss, we need to correct for the shift of the species in x_1.
         pred = model_function(x_t)[0]
         assert pred.shape == (x_0.shape[0], MAX_ATOM_NUM)
-        return functional.cross_entropy(pred, x_1 - 1)
+        return {"loss": functional.cross_entropy(pred, x_1 - 1)}
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, Dict, Iterable
 import torch
 
 
@@ -298,12 +298,26 @@ class StochasticInterpolant(ABC, TimeChecker):
         raise NotImplementedError
 
     @abstractmethod
+    def loss_keys(self) -> Iterable[str]:
+        """
+        Get the keys of the losses returned by the loss function.
+
+        :return:
+            Keys of the losses.
+        :rtype: List[str]
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
-             batch_indices: torch.Tensor) -> torch.Tensor:
+             batch_indices: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
-        Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
+        Compute the losses for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
+
+        Since there can be several losses (say, one for the velocity fields b and one for the denoisers eta), this
+        function returns a dictionary mapping from a loss label to the loss value.
 
         :param model_function:
             Model function returning the velocity fields b and the denoisers eta given the current positions x_t.
@@ -328,8 +342,8 @@ class StochasticInterpolant(ABC, TimeChecker):
         :type batch_indices: torch.Tensor
 
         :return:
-            Loss.
-        :rtype: torch.Tensor
+            Losses.
+        :rtype: Dict[str, torch.Tensor]
         """
         raise NotImplementedError
 

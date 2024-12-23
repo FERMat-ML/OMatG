@@ -59,6 +59,26 @@ class StochasticInterpolants(object):
         """
         return len(self._stochastic_interpolants)
 
+    def loss_keys(self) -> List[str]:
+        """
+        Return the keys of the losses returned by this class.
+
+        The keys of the losses are constructed by concatenating the data field name and the loss key of the
+        corresponding stochastic interpolant.
+
+        :return:
+            Keys of the losses.
+        :rtype: List[str]
+        """
+        loss_keys = []
+        for df, si in zip(self._data_fields, self._stochastic_interpolants):
+            for key in si.loss_keys():
+                full_key = f"{df.name}_{key}"
+                if full_key in loss_keys:
+                    raise ValueError(f"Key {full_key} is already used as a loss key.")
+                loss_keys.append(key)
+        return loss_keys
+
     def _interpolate(self, t: torch.Tensor, x_0: Data, x_1: Data) -> tuple[Data, Data]:
         """
         Stochastically interpolate between the collection of points x_0 and x_1 from the collection of two distributions
@@ -171,10 +191,13 @@ class StochasticInterpolants(object):
             assert data_field.name in z_dict
             assert "loss_" + data_field.name not in losses
             # Cell data requires different batch indices.
-            losses["loss_" + data_field.name] = stochastic_interpolant.loss(
+            l = stochastic_interpolant.loss(
                 model_prediction_fn, reshaped_t, x_0_dict[data_field.name], x_1_dict[data_field.name],
                 x_t_dict[data_field.name], z[data_field.name],
                 x_0.batch if data_field != DataField.cell else torch.arange(len(x_0.n_atoms)))
+            for l_key, l_value in l.items():
+                assert l_key not in losses
+                losses[f"{data_field.name}_{l_key}"] = l_value
         return losses
 
     def integrate(self, x_0: Data, model_function: Callable[[Data, torch.Tensor], Data],
