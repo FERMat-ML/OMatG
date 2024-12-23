@@ -126,7 +126,7 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         """
         assert x_0.shape == x_1.shape
         interpolate = self._interpolant.interpolate(t, x_0, x_1)
-        z = torch.randn_like(x_0)
+        z = x_0
         interpolate = self._corrector.correct(interpolate)
         return interpolate, z
 
@@ -331,27 +331,17 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
-        # Set up ODE function
-        if self._correct_center_of_mass:
-            x_t = self._corrector.correct(x_t - self._corrector.compute_center_of_mass(self._corrector.correct(x_t), batch_indices))
-            correct_func = lambda x: self._corrector.correct(x - self._corrector.compute_center_of_mass(self._corrector.correct(x), batch_indices))
-        elif self._correct_first_atom:
-            x_t = self._corrector.correct(self._shift_first_atom(self._corrector.correct(x_t), batch_indices))
-            correct_func = lambda x: self._corrector.correct(self._shift_first_atom(self._corrector.correct(x), batch_indices))
-        else:
-            correct_func = self._corrector.correct
-
         # OS ODE function
         def odefunc(t, x):
-            x_corr = correct_func(x)
+            x_corr = self._corrector.correct(x)
             z = model_function(t, x_corr)[1]
             t1 = (self._interpolant.alpha_dot(t) * z)
-            t2 = (self._interpolant.beta(t) / self._interpolant.beta_dot(t)) * (x_corr - self._interpolant.alpha(t) * z)
+            t2 = (self._interpolant.beta_dot(t) / self._interpolant.beta(t)) * (x_corr - self._interpolant.alpha(t) * z)
             return (1.0 + self._velocity_annealing_factor * t) * (t1 + t2)
         t_span = torch.tensor([time, time + time_step], device=x_t.device)
         with torch.no_grad():
             x_t_new = odeint(odefunc, x_t, t_span, **self._integrator_kwargs)[-1]
-        return correct_func(x_t_new)
+        return self._corrector.correct(x_t_new)
 
     # Modify wrapper for use in SDE integrator
     class SDE(torch.nn.Module):
