@@ -76,7 +76,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         self._interpolant = interpolant
         self._gamma = gamma
         if self._gamma is not None:
-            self._use_antithetic = True
+            self._use_antithetic = self._gamma.requires_antithetic()
         else:
             self._use_antithetic = False
         self._epsilon = epsilon
@@ -241,9 +241,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
         if self._use_antithetic:
             assert self._gamma is not None
+            expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
             x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
             gamma = self._gamma.gamma(t)
             x_t_p = self._corrector.correct(x_t_without_gamma + gamma * z)
@@ -272,15 +272,17 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             loss = (0.5 * torch.mean(pred_b_p ** 2) + 0.5 * torch.mean(pred_b_m ** 2)
                     - torch.mean(pred_b_p * expected_velocity_p) - torch.mean(pred_b_m * expected_velocity_m))
         else:
-            assert self._gamma is None
+            expected_velocity = self._interpolant.interpolate_derivative(t, x_0, x_1)
+            if self._gamma is not None:
+                expected_velocity += self._gamma.gamma_derivative(t) * z
             pred_b = model_function(x_t)[0]
             if self._correct_center_of_mass_motion:
                 # scatter_mean is used to compute the mean velocity for every configuration.
                 # index_select is used to replicate the mean velocity for every atom in the configuration.
-                mean_velocity = torch.index_select(scatter_mean(expected_velocity_without_gamma, batch_indices, dim=0),
+                mean_velocity = torch.index_select(scatter_mean(expected_velocity, batch_indices, dim=0),
                                                    0, batch_indices)
-                expected_velocity_without_gamma = expected_velocity_without_gamma - mean_velocity
-            loss = (torch.mean(pred_b ** 2) - 2.0 * torch.mean(pred_b * expected_velocity_without_gamma))
+                expected_velocity = expected_velocity - mean_velocity
+            loss = (torch.mean(pred_b ** 2) - 2.0 * torch.mean(pred_b * expected_velocity))
         return loss
 
     def _sde_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
@@ -317,37 +319,48 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
-        expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
-        assert self._use_antithetic  # SDE cannot be used without gamma or without antithetic sampling.
         assert self._gamma is not None
-        gamma = self._gamma.gamma(t)
-        x_t_p = self._corrector.correct(x_t_without_gamma + gamma * z)
-        assert torch.equal(x_t, x_t_p)
-        x_t_m = self._corrector.correct(x_t_without_gamma - gamma * z)
-        gamma_derivative = self._gamma.gamma_derivative(t)
-        expected_velocity_p = expected_velocity_without_gamma + gamma_derivative * z
-        expected_velocity_m = expected_velocity_without_gamma - gamma_derivative * z
-        if self._correct_center_of_mass_motion:
-            # scatter_mean is used to compute the mean velocity for every configuration.
-            # index_select is used to replicate the mean velocity for every atom in the configuration.
-            # We don't need to worry about periodic boundary conditions in the corrector here, since the tangent
-            # space is Euclidean.
-            # After this correction, it is true that
-            # expected_velocity_p = corr(expected_velocity_without_gamma) + corr(gamma_derivative * z),
-            # expected_velocity_m = corr(expected_velocity_without_gamma) - corr(gamma_derivative * z),
-            # where corr is the correction to the center of mass motion.
-            mean_velocity_p = torch.index_select(scatter_mean(expected_velocity_p, batch_indices, dim=0),
-                                                 0, batch_indices)
-            expected_velocity_p = expected_velocity_p - mean_velocity_p
-            mean_velocity_m = torch.index_select(scatter_mean(expected_velocity_m, batch_indices, dim=0),
-                                                 0, batch_indices)
-            expected_velocity_m = expected_velocity_m - mean_velocity_m
-        pred_b_p, pred_z = model_function(x_t_p)
-        pred_b_m, _ = model_function(x_t_m)
+        if self._use_antithetic:
+            x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
+            expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
+            gamma = self._gamma.gamma(t)
+            x_t_p = self._corrector.correct(x_t_without_gamma + gamma * z)
+            assert torch.equal(x_t, x_t_p)
+            x_t_m = self._corrector.correct(x_t_without_gamma - gamma * z)
+            gamma_derivative = self._gamma.gamma_derivative(t)
+            expected_velocity_p = expected_velocity_without_gamma + gamma_derivative * z
+            expected_velocity_m = expected_velocity_without_gamma - gamma_derivative * z
+            if self._correct_center_of_mass_motion:
+                # scatter_mean is used to compute the mean velocity for every configuration.
+                # index_select is used to replicate the mean velocity for every atom in the configuration.
+                # We don't need to worry about periodic boundary conditions in the corrector here, since the tangent
+                # space is Euclidean.
+                # After this correction, it is true that
+                # expected_velocity_p = corr(expected_velocity_without_gamma) + corr(gamma_derivative * z),
+                # expected_velocity_m = corr(expected_velocity_without_gamma) - corr(gamma_derivative * z),
+                # where corr is the correction to the center of mass motion.
+                mean_velocity_p = torch.index_select(scatter_mean(expected_velocity_p, batch_indices, dim=0),
+                                                     0, batch_indices)
+                expected_velocity_p = expected_velocity_p - mean_velocity_p
+                mean_velocity_m = torch.index_select(scatter_mean(expected_velocity_m, batch_indices, dim=0),
+                                                     0, batch_indices)
+                expected_velocity_m = expected_velocity_m - mean_velocity_m
+            pred_b_p, pred_z = model_function(x_t_p)
+            pred_b_m, _ = model_function(x_t_m)
 
-        loss_b = (0.5 * torch.mean(pred_b_p ** 2) + 0.5 * torch.mean(pred_b_m ** 2)
-                  - torch.mean(pred_b_p * expected_velocity_p) - torch.mean(pred_b_m * expected_velocity_m))
+            loss_b = (0.5 * torch.mean(pred_b_p ** 2) + 0.5 * torch.mean(pred_b_m ** 2)
+                      - torch.mean(pred_b_p * expected_velocity_p) - torch.mean(pred_b_m * expected_velocity_m))
+        else:
+            expected_velocity = (self._interpolant.interpolate_derivative(t, x_0, x_1)
+                                 + self._gamma.gamma_derivative(t) * z)
+            pred_b, pred_z = model_function(x_t)
+            if self._correct_center_of_mass_motion:
+                # scatter_mean is used to compute the mean velocity for every configuration.
+                # index_select is used to replicate the mean velocity for every atom in the configuration.
+                mean_velocity = torch.index_select(scatter_mean(expected_velocity, batch_indices, dim=0),
+                                                   0, batch_indices)
+                expected_velocity = expected_velocity - mean_velocity
+            loss_b = torch.mean(pred_b ** 2) - torch.mean(pred_b * expected_velocity)
 
         loss_z = torch.mean(pred_z ** 2) - 2.0 * torch.mean(pred_z * z)
 

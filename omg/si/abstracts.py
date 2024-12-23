@@ -247,6 +247,17 @@ class LatentGamma(ABC, TimeChecker):
         """
         raise NotImplementedError
 
+    @abstractmethod
+    def requires_antithetic(self) -> bool:
+        """
+        Whether the gamma function requires antithetic sampling because its derivative diverges as t -> 0  or t -> 1.
+
+        :return:
+            Whether the gamma function requires antithetic sampling.
+        :rtype: bool
+        """
+        raise NotImplementedError
+
 
 class StochasticInterpolant(ABC, TimeChecker):
     """

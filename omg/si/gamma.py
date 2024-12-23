@@ -48,6 +48,16 @@ class LatentGammaSqrt(LatentGamma):
         self._check_t(t)
         return self._a * (1.0 - 2.0 * t) / (2.0 * torch.sqrt(self._a * t * (1.0 - t)))
 
+    def requires_antithetic(self) -> bool:
+        """
+        Whether the gamma function requires antithetic sampling because its derivative diverges as t -> 0  or t -> 1.
+
+        :return:
+            Whether the gamma function requires antithetic sampling.
+        :rtype: bool
+        """
+        return True
+
 
 class LatentGammaEncoderDecoder(LatentGamma):
     """
@@ -87,3 +97,13 @@ class LatentGammaEncoderDecoder(LatentGamma):
         """
         self._check_t(t)
         return 2.0 * torch.sin(torch.pi * t) * torch.pi * torch.cos(torch.pi * t)
+
+    def requires_antithetic(self) -> bool:
+        """
+        Whether the gamma function requires antithetic sampling because its derivative diverges as t -> 0  or t -> 1.
+
+        :return:
+            Whether the gamma function requires antithetic sampling.
+        :rtype: bool
+        """
+        return False
