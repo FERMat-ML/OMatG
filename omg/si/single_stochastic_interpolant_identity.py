@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Dict, Iterable
 import torch
 from .abstracts import Corrector, StochasticInterpolantSpecies
 from .corrector import IdentityCorrector
@@ -42,12 +42,24 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolantSpecies):
         # Always return new object.
         return x_0.clone(), torch.zeros_like(x_0)
 
+    def loss_keys(self) -> Iterable[str]:
+        """
+        Get the keys of the losses returned by the loss function.
+
+        :return:
+            Keys of the losses.
+        :rtype: Iterable[str]
+        """
+        yield "loss"
+
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
-             batch_indices: torch.Tensor) -> torch.Tensor:
+             batch_indices: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
-        Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
+        Compute the losses for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
+
+        This class always returns a zero loss with the key 'loss'.
 
         :param model_function:
             Model function returning the velocity fields b and the denoisers eta given the current positions x_t.
@@ -72,11 +84,11 @@ class SingleStochasticInterpolantIdentity(StochasticInterpolantSpecies):
         :type batch_indices: torch.Tensor
 
         :return:
-            Loss.
-        :rtype: torch.Tensor
+            Losses.
+        :rtype: Dict[str, torch.Tensor]
         """
         assert torch.equal(x_0, x_1)
-        return torch.tensor(0.0, device=x_0.device)
+        return {"loss": torch.tensor(0.0, device=x_0.device)}
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,

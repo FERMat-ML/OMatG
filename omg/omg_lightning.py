@@ -1,6 +1,6 @@
 from pathlib import Path
 import time
-from typing import Optional, Sequence
+from typing import Dict, Optional, Sequence
 import lightning as L
 import torch
 from omg.datamodule import OMGData
@@ -17,7 +17,7 @@ class OMGLightning(L.LightningModule):
     Main module which is fit and used to generate structures using Lightning CLI.
     """
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
-                 relative_si_costs: Sequence[float], learning_rate: float = 0.001, use_min_perm_dist: bool = False,
+                 relative_si_costs: Dict[str, float], learning_rate: float = 0.001, use_min_perm_dist: bool = False,
                  generation_xyz_filename: Optional[str] = None, sobol_time: bool = False,
                  float_32_matmul_precision: str = "medium") -> None:
         super().__init__()
@@ -36,12 +36,17 @@ class OMGLightning(L.LightningModule):
             model.enable_masked_species()
         self.model = model
 
-        if not len(relative_si_costs) == len(self.si):
-            raise ValueError("The number of stochastic interpolants and costs must be equal.")
-        if not all(cost >= 0.0 for cost in relative_si_costs):
+        if not all(cost >= 0.0 for cost in relative_si_costs.values()):
             raise ValueError("All cost factors must be non-negative.")
-        if not abs(sum(relative_si_costs) - 1.0) < 1e-10:
+        if not abs(sum(cost for cost in relative_si_costs.values()) - 1.0) < 1e-10:
             raise ValueError("The sum of all cost factors should be equal to 1.")
+        si_loss_keys = self.si.loss_keys()
+        for key in relative_si_costs.keys():
+            if key not in si_loss_keys:
+                raise ValueError(f"Loss key {key} not found in the stochastic interpolants.")
+        for key in si_loss_keys:
+            if key not in relative_si_costs.keys():
+                raise ValueError(f"Loss key {key} not found in the costs.")
         self._relative_si_costs = relative_si_costs
 
         if not sobol_time:
@@ -104,10 +109,9 @@ class OMGLightning(L.LightningModule):
 
         total_loss = torch.tensor(0.0, device=self.device)
 
-        for cost, loss_key in zip(self._relative_si_costs, losses):
-            losses[loss_key] = cost * losses[loss_key]
+        for loss_key in losses:
+            losses[loss_key] = self._relative_si_costs[loss_key] * losses[loss_key]
             total_loss += losses[loss_key]
-        # TODO: Look at how SDE losses are combined
 
         assert "loss_total" not in losses
         losses["loss_total"] = total_loss

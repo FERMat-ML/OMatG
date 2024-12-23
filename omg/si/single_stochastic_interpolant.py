@@ -1,9 +1,9 @@
 from enum import Enum, auto
+from typing import Any, Dict, Iterable, Optional, Callable
 import torch
 from torch_scatter import scatter_mean
 from torchdiffeq import odeint
 from torchsde import sdeint
-from typing import Any, Optional, Callable
 from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
 
 
@@ -47,12 +47,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     :param differential_equation_type:
         Type of differential equation to use for inference.
     :type differential_equation_type: DifferentialEquationType
-    :param relative_cost_denoiser:
-        Relative cost of the denoiser in the loss compared to the loss of the velocity field b.
-        Should be a value between 0.0 and 1.0. The relative cost of the velocity field b is set so that they add to 1.0.
-        Should only be provided if the differential equation type is SDE, and None otherwise.
-        Defaults to None.
-    :type relative_cost_denoiser: Optional[float]
     :param integrator_kwargs: Optional keyword arguments for the odeint function of torchdiffeq (see
         https://github.com/rtqichen/torchdiffeq/blob/master/README.md) or the sdeint function of torchsde (see
         https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md#keyword-arguments-of-sdeint).
@@ -75,9 +69,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: str, relative_cost_denoiser: Optional[float] = None,
-                 integrator_kwargs: Optional[dict[str, Any]] = None, correct_center_of_mass_motion: bool = False,
-                 velocity_annealing_factor: float = 0.0) -> None:
+                 differential_equation_type: str, integrator_kwargs: Optional[dict[str, Any]] = None,
+                 correct_center_of_mass_motion: bool = False, velocity_annealing_factor: float = 0.0) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -88,7 +81,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             self._use_antithetic = False
         self._epsilon = epsilon
         self._differential_equation_type = differential_equation_type
-        self._relative_cost_denoiser = relative_cost_denoiser
         # Corrector that needs to be applied to the points x_t during integration.
         self._corrector = self._interpolant.get_corrector()
         try:
@@ -100,8 +92,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             self.integrate = self._ode_integrate
             if self._epsilon is not None:
                 raise ValueError("Epsilon function should not be provided for ODEs.")
-            if self._relative_cost_denoiser is not None:
-                raise ValueError("Relative cost of the denoiser should not be provided for ODEs.")
         else:
             assert self._differential_equation_type == DifferentialEquationType.SDE
             self.loss = self._sde_loss
@@ -110,10 +100,6 @@ class SingleStochasticInterpolant(StochasticInterpolant):
                 raise ValueError("Epsilon function should be provided for SDEs.")
             if self._gamma is None:
                 raise ValueError("Gamma function should be provided for SDEs.")
-            if self._relative_cost_denoiser is None:
-                raise ValueError("Relative cost of the denoiser should be provided for SDEs.")
-            if not 0.0 < self._relative_cost_denoiser < 1.0:
-                raise ValueError("Relative cost of the denoiser should be between 0.0 and 1.0.")
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
         self._correct_center_of_mass_motion = correct_center_of_mass_motion
         self._velocity_annealing_factor = velocity_annealing_factor
@@ -182,12 +168,30 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             interpolate_derivative += self._gamma.gamma_derivative(t) * z
         return interpolate_derivative
 
+    def loss_keys(self) -> Iterable[str]:
+        """
+        Get the keys of the losses returned by the loss function.
+
+        :return:
+            Keys of the losses.
+        :rtype: Iterable[str]
+        """
+        if self._differential_equation_type == DifferentialEquationType.ODE:
+            yield "loss_b"
+        else:
+            assert self._differential_equation_type == DifferentialEquationType.SDE
+            yield "loss_b"
+            yield "loss_z"
+
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
-             batch_indices: torch.Tensor) -> torch.Tensor:
+             batch_indices: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
-        Compute the loss for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
+        Compute the losses for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
+
+        The loss of the velocity fields is returned with the key 'loss_b'. For the SDE case, an additional loss for the
+        denoisers is returned with the keys 'loss_z'.
 
         This method is only defined here to define all methods of the abstract base class. The actual loss method is
         either _ode_loss or _sde_loss, which are chosen based on the type of differential equation (self._de_type).
@@ -215,17 +219,19 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :type batch_indices: torch.Tensor
 
         :return:
-            Loss.
-        :rtype: torch.Tensor
+            Losses.
+        :rtype: Dict[str, torch.Tensor]
         """
         raise NotImplementedError
 
     def _ode_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
-                  batch_indices: torch.Tensor) -> torch.Tensor:
+                  batch_indices: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
-        Compute the loss for the ODE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
+        Compute the losses for the ODE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
+
+        The loss of the velocity fields is returned with the key 'loss_b'.
 
         :param model_function:
             Model function returning the velocity fields b and the denoisers eta given the current positions x_t.
@@ -250,8 +256,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :type batch_indices: torch.Tensor
 
         :return:
-            Loss.
-        :rtype: torch.Tensor
+            Losses.
+        :rtype: Dict[str, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
         if self._use_antithetic:
@@ -296,14 +302,17 @@ class SingleStochasticInterpolant(StochasticInterpolant):
                                                    0, batch_indices)
                 expected_velocity = expected_velocity - mean_velocity
             loss = (torch.mean(pred_b ** 2) - 2.0 * torch.mean(pred_b * expected_velocity))
-        return loss
+        return {"loss_b": loss}
 
     def _sde_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
-                  batch_indices: torch.Tensor) -> torch.Tensor:
+                  batch_indices: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
-        Compute the loss for the SDE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
+        Compute the losses for the SDE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
+
+       The loss of the velocity fields is returned with the key 'loss_b'. The loss of the denoisers eta is returned with
+       the key 'loss_z'.
 
         :param model_function:
             Model function returning the velocity fields b and the denoisers eta given the current positions x_t.
@@ -328,8 +337,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :type batch_indices: torch.Tensor
 
         :return:
-            Loss.
-        :rtype: torch.Tensor
+            Losses.
+        :rtype: Dict[str, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
         assert self._gamma is not None
@@ -377,7 +386,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
 
         loss_z = torch.mean(pred_z ** 2) - 2.0 * torch.mean(pred_z * z)
 
-        return (1.0  - self._relative_cost_denoiser) * loss_b + self._relative_cost_denoiser * loss_z
+        return {"loss_b": loss_b, "loss_z": loss_z}
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
@@ -505,7 +514,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         # SDE Integrator
         original_shape = x_t.shape
         sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon,
-                       original_x_shape=original_shape)
+                       original_x_shape=original_shape, velocity_annealing_factor=self._velocity_annealing_factor)
         t_span = torch.tensor([time, time + time_step])
 
         with torch.no_grad():
