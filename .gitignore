@@ -257,3 +257,6 @@ cache/dataset_ffdcff51f1d8b5534cf779d6f62b2b1c.lmdb
 .lr_find_7cad6f33-c6a9-46ee-89ee-1b36426ae29e.ckpt
 .lr_find_6ce4fbbe-3675-4bb7-9194-e7501e96eef6.ckpt
 visualize.s
+omg/conf_examples/sbdm_overfitting.yaml
+overfit_diff_train.out
+config.yaml
