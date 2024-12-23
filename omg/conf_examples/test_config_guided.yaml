@@ -31,9 +31,9 @@ model:
         - "cell"
       integration_time_steps: 100
   relative_si_costs:
-    - 0.333333333333
-    - 0.333333333333
-    - 0.333333333333
+    species_loss: 0.333333333333
+    pos_loss_b: 0.333333333333
+    cell_loss_b: 0.333333333333
   sampler:
     class_path: omg.sampler.sample_from_rng.SampleFromRNG
     init_args:

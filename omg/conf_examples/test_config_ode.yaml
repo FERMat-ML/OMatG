@@ -35,9 +35,9 @@ model:
         - "cell"
       integration_time_steps: 1000
   relative_si_costs:
-    - 0.3329633740288568  # Relative species loss 300.
-    - 0.6659267480577137  # Relative fractional coordinates loss 600.
-    - 0.001109877913429523  # Relative lattice loss 1.
+    species_loss: 0.3329633740288568  # Relative species loss 300.
+    pos_loss_b: 0.6659267480577137  # Relative fractional coordinates loss 600.
+    cell_loss_b: 0.001109877913429523  # Relative lattice loss 1.
   sampler:
     class_path: omg.sampler.sample_from_rng.SampleFromRNG
     init_args:
@@ -129,7 +129,7 @@ trainer:
   gradient_clip_val: 0.5
   num_sanity_val_steps: 0
   strategy: "ddp_find_unused_parameters_true"
-  precision: "64-true"
+  precision: "32-true"
   max_epochs: 1000
 optimizer: torch.optim.Adam
 # lr_scheduler:
