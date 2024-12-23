@@ -36,8 +36,6 @@ class OMGLightning(L.LightningModule):
             model.enable_masked_species()
         self.model = model
 
-        if not len(relative_si_costs) == len(self.si):
-            raise ValueError("The number of stochastic interpolants and costs must be equal.")
         if not all(cost >= 0.0 for cost in relative_si_costs.values()):
             raise ValueError("All cost factors must be non-negative.")
         if not abs(sum(cost for cost in relative_si_costs.values()) - 1.0) < 1e-10:
