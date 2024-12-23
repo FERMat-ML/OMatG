@@ -123,8 +123,11 @@ class SobolSequence(object):
         assert size[1] == 3
         return self._sampler.draw(size[0]).detach().cpu().numpy()
 
+
 class NormalDistribution(object):
-    def __init__(self) -> None:
-        pass
+    def __init__(self, loc: float = 0.0, scale: float = 1.0) -> None:
+        self._loc = loc
+        self._scale = scale
+
     def __call__(self, size):
-        return np.random.normal(loc=0.0, scale=1.0, size=size)
+        return np.random.normal(loc=self._loc, scale=self._scale, size=size)

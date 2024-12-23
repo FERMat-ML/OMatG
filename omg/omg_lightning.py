@@ -3,6 +3,7 @@ import time
 from typing import Optional, Sequence
 import lightning as L
 import torch
+from omg.datamodule import OMGData
 from omg.model.model import Model
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.sampler.sampler import Sampler
@@ -17,7 +18,8 @@ class OMGLightning(L.LightningModule):
     """
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
                  relative_si_costs: Sequence[float], learning_rate: float = 0.001, use_min_perm_dist: bool = False,
-                 generation_xyz_filename: Optional[str] = None, sobol_time: bool = False) -> None:
+                 generation_xyz_filename: Optional[str] = None, sobol_time: bool = False,
+                 float_32_matmul_precision: str = "medium") -> None:
         super().__init__()
         self.si = si
         self.sampler = sampler
@@ -49,6 +51,9 @@ class OMGLightning(L.LightningModule):
                 torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
         self.generation_xyz_filename = generation_xyz_filename
 
+        # Possible values are "medium", "high", and "highest".
+        torch.set_float32_matmul_precision(float_32_matmul_precision)
+
     def forward(self, x_t: Sequence[torch.Tensor], t: torch.Tensor) -> Sequence[Sequence[torch.Tensor]]:
         """
         Calls encoder + head stack
@@ -77,7 +82,7 @@ class OMGLightning(L.LightningModule):
                 param_group["lr"] = self.lr
 
     # TODO: specify argument types
-    def training_step(self, x_1) -> torch.Tensor:
+    def training_step(self, x_1: OMGData) -> torch.Tensor:
         """
         Performs one training step given a batch of x_1
 
@@ -113,11 +118,12 @@ class OMGLightning(L.LightningModule):
             on_epoch=True,
             prog_bar=True,
             sync_dist=True,
+            batch_size=self.trainer.datamodule.batch_size
         )
 
         return total_loss
 
-    def validation_step(self, x_1) -> torch.Tensor:
+    def validation_step(self, x_1: OMGData) -> torch.Tensor:
         """
         Performs one validation step given a batch of x_1
         """
@@ -145,12 +151,13 @@ class OMGLightning(L.LightningModule):
             on_epoch=True,
             prog_bar=True,
             sync_dist=True,
+            batch_size=self.trainer.datamodule.batch_size
         )
 
         return total_loss
 
     # TODO: what do we want to return
-    def predict_step(self, x):
+    def predict_step(self, x: OMGData) -> OMGData:
         """
         Performs generation
         """

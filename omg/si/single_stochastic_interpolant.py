@@ -47,6 +47,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     :param differential_equation_type:
         Type of differential equation to use for inference.
     :type differential_equation_type: DifferentialEquationType
+    :param relative_cost_denoiser:
+        Relative cost of the denoiser in the loss compared to the loss of the velocity field b.
+        Should be a value between 0.0 and 1.0. The relative cost of the velocity field b is set so that they add to 1.0.
+        Should only be provided if the differential equation type is SDE, and None otherwise.
+        Defaults to None.
+    :type relative_cost_denoiser: Optional[float]
     :param integrator_kwargs: Optional keyword arguments for the odeint function of torchdiffeq (see
         https://github.com/rtqichen/torchdiffeq/blob/master/README.md) or the sdeint function of torchsde (see
         https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md#keyword-arguments-of-sdeint).
@@ -69,18 +75,20 @@ class SingleStochasticInterpolant(StochasticInterpolant):
     """
 
     def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: str, integrator_kwargs: Optional[dict[str, Any]] = None,
-                 correct_center_of_mass_motion: bool = False, velocity_annealing_factor: float = 0.0) -> None:
+                 differential_equation_type: str, relative_cost_denoiser: Optional[float] = None,
+                 integrator_kwargs: Optional[dict[str, Any]] = None, correct_center_of_mass_motion: bool = False,
+                 velocity_annealing_factor: float = 0.0) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
         self._gamma = gamma
         if self._gamma is not None:
-            self._use_antithetic = True
+            self._use_antithetic = self._gamma.requires_antithetic()
         else:
             self._use_antithetic = False
         self._epsilon = epsilon
         self._differential_equation_type = differential_equation_type
+        self._relative_cost_denoiser = relative_cost_denoiser
         # Corrector that needs to be applied to the points x_t during integration.
         self._corrector = self._interpolant.get_corrector()
         try:
@@ -92,7 +100,8 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             self.integrate = self._ode_integrate
             if self._epsilon is not None:
                 raise ValueError("Epsilon function should not be provided for ODEs.")
-
+            if self._relative_cost_denoiser is not None:
+                raise ValueError("Relative cost of the denoiser should not be provided for ODEs.")
         else:
             assert self._differential_equation_type == DifferentialEquationType.SDE
             self.loss = self._sde_loss
@@ -101,6 +110,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
                 raise ValueError("Epsilon function should be provided for SDEs.")
             if self._gamma is None:
                 raise ValueError("Gamma function should be provided for SDEs.")
+            if self._relative_cost_denoiser is None:
+                raise ValueError("Relative cost of the denoiser should be provided for SDEs.")
+            if not 0.0 < self._relative_cost_denoiser < 1.0:
+                raise ValueError("Relative cost of the denoiser should be between 0.0 and 1.0.")
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
         self._correct_center_of_mass_motion = correct_center_of_mass_motion
         self._velocity_annealing_factor = velocity_annealing_factor
@@ -241,9 +254,9 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
         if self._use_antithetic:
             assert self._gamma is not None
+            expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
             x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
             gamma = self._gamma.gamma(t)
             x_t_p = self._corrector.correct(x_t_without_gamma + gamma * z)
@@ -272,15 +285,17 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             loss = (0.5 * torch.mean(pred_b_p ** 2) + 0.5 * torch.mean(pred_b_m ** 2)
                     - torch.mean(pred_b_p * expected_velocity_p) - torch.mean(pred_b_m * expected_velocity_m))
         else:
-            assert self._gamma is None
+            expected_velocity = self._interpolant.interpolate_derivative(t, x_0, x_1)
+            if self._gamma is not None:
+                expected_velocity += self._gamma.gamma_derivative(t) * z
             pred_b = model_function(x_t)[0]
             if self._correct_center_of_mass_motion:
                 # scatter_mean is used to compute the mean velocity for every configuration.
                 # index_select is used to replicate the mean velocity for every atom in the configuration.
-                mean_velocity = torch.index_select(scatter_mean(expected_velocity_without_gamma, batch_indices, dim=0),
+                mean_velocity = torch.index_select(scatter_mean(expected_velocity, batch_indices, dim=0),
                                                    0, batch_indices)
-                expected_velocity_without_gamma = expected_velocity_without_gamma - mean_velocity
-            loss = (torch.mean(pred_b ** 2) - 2.0 * torch.mean(pred_b * expected_velocity_without_gamma))
+                expected_velocity = expected_velocity - mean_velocity
+            loss = (torch.mean(pred_b ** 2) - 2.0 * torch.mean(pred_b * expected_velocity))
         return loss
 
     def _sde_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
@@ -317,41 +332,52 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
-        expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
-        assert self._use_antithetic  # SDE cannot be used without gamma or without antithetic sampling.
         assert self._gamma is not None
-        gamma = self._gamma.gamma(t)
-        x_t_p = self._corrector.correct(x_t_without_gamma + gamma * z)
-        assert torch.equal(x_t, x_t_p)
-        x_t_m = self._corrector.correct(x_t_without_gamma - gamma * z)
-        gamma_derivative = self._gamma.gamma_derivative(t)
-        expected_velocity_p = expected_velocity_without_gamma + gamma_derivative * z
-        expected_velocity_m = expected_velocity_without_gamma - gamma_derivative * z
-        if self._correct_center_of_mass_motion:
-            # scatter_mean is used to compute the mean velocity for every configuration.
-            # index_select is used to replicate the mean velocity for every atom in the configuration.
-            # We don't need to worry about periodic boundary conditions in the corrector here, since the tangent
-            # space is Euclidean.
-            # After this correction, it is true that
-            # expected_velocity_p = corr(expected_velocity_without_gamma) + corr(gamma_derivative * z),
-            # expected_velocity_m = corr(expected_velocity_without_gamma) - corr(gamma_derivative * z),
-            # where corr is the correction to the center of mass motion.
-            mean_velocity_p = torch.index_select(scatter_mean(expected_velocity_p, batch_indices, dim=0),
-                                                 0, batch_indices)
-            expected_velocity_p = expected_velocity_p - mean_velocity_p
-            mean_velocity_m = torch.index_select(scatter_mean(expected_velocity_m, batch_indices, dim=0),
-                                                 0, batch_indices)
-            expected_velocity_m = expected_velocity_m - mean_velocity_m
-        pred_b_p, pred_z = model_function(x_t_p)
-        pred_b_m, _ = model_function(x_t_m)
+        if self._use_antithetic:
+            x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
+            expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
+            gamma = self._gamma.gamma(t)
+            x_t_p = self._corrector.correct(x_t_without_gamma + gamma * z)
+            assert torch.equal(x_t, x_t_p)
+            x_t_m = self._corrector.correct(x_t_without_gamma - gamma * z)
+            gamma_derivative = self._gamma.gamma_derivative(t)
+            expected_velocity_p = expected_velocity_without_gamma + gamma_derivative * z
+            expected_velocity_m = expected_velocity_without_gamma - gamma_derivative * z
+            if self._correct_center_of_mass_motion:
+                # scatter_mean is used to compute the mean velocity for every configuration.
+                # index_select is used to replicate the mean velocity for every atom in the configuration.
+                # We don't need to worry about periodic boundary conditions in the corrector here, since the tangent
+                # space is Euclidean.
+                # After this correction, it is true that
+                # expected_velocity_p = corr(expected_velocity_without_gamma) + corr(gamma_derivative * z),
+                # expected_velocity_m = corr(expected_velocity_without_gamma) - corr(gamma_derivative * z),
+                # where corr is the correction to the center of mass motion.
+                mean_velocity_p = torch.index_select(scatter_mean(expected_velocity_p, batch_indices, dim=0),
+                                                     0, batch_indices)
+                expected_velocity_p = expected_velocity_p - mean_velocity_p
+                mean_velocity_m = torch.index_select(scatter_mean(expected_velocity_m, batch_indices, dim=0),
+                                                     0, batch_indices)
+                expected_velocity_m = expected_velocity_m - mean_velocity_m
+            pred_b_p, pred_z = model_function(x_t_p)
+            pred_b_m, _ = model_function(x_t_m)
 
-        loss_b = (0.5 * torch.mean(pred_b_p ** 2) + 0.5 * torch.mean(pred_b_m ** 2)
-                  - torch.mean(pred_b_p * expected_velocity_p) - torch.mean(pred_b_m * expected_velocity_m))
+            loss_b = (0.5 * torch.mean(pred_b_p ** 2) + 0.5 * torch.mean(pred_b_m ** 2)
+                      - torch.mean(pred_b_p * expected_velocity_p) - torch.mean(pred_b_m * expected_velocity_m))
+        else:
+            expected_velocity = (self._interpolant.interpolate_derivative(t, x_0, x_1)
+                                 + self._gamma.gamma_derivative(t) * z)
+            pred_b, pred_z = model_function(x_t)
+            if self._correct_center_of_mass_motion:
+                # scatter_mean is used to compute the mean velocity for every configuration.
+                # index_select is used to replicate the mean velocity for every atom in the configuration.
+                mean_velocity = torch.index_select(scatter_mean(expected_velocity, batch_indices, dim=0),
+                                                   0, batch_indices)
+                expected_velocity = expected_velocity - mean_velocity
+            loss_b = torch.mean(pred_b ** 2) - torch.mean(pred_b * expected_velocity)
 
         loss_z = torch.mean(pred_z ** 2) - 2.0 * torch.mean(pred_z * z)
 
-        return loss_b + loss_z
+        return (1.0  - self._relative_cost_denoiser) * loss_b + self._relative_cost_denoiser * loss_z
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
