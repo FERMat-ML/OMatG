@@ -1,30 +1,31 @@
-from enum import Enum, auto
 import torch
 from torch_scatter import scatter_mean
 from torchdiffeq import odeint
 from torchsde import sdeint
 from typing import Any, Optional, Callable
-from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
+from .abstracts import Corrector, Epsilon, Interpolant, StochasticInterpolant
 from .single_stochastic_interpolant import DifferentialEquationType
 
 class SingleStochasticInterpolantOS(StochasticInterpolant):
     """
-    Stochastic interpolant (One sided) x_t = I(t, x_0, x_1) + gamma(t) * z between points x_0 and x_1 from two distributions p_0 and
-    p_1 at times t based on an interpolant I(t, x_0, x_1), a gamma function gamma(t), and a Gaussian random variable z.
-
-    No Gamma function accepted for this particular type of interpolant
+    One-sided stochastic interpolant x_t = alpha(t) * x_0 + beta(t) * x_1 between points x_0 and x_1 from two
+    distributions p_0 and p_1 at times t based on interpolating functions alpha(t) and beta(t) with
+    alpha(0) = beta(1) = 1 and alpha(1) = beta(0) = 0. In this class, x_0 is assumed to be a Gaussian random variable in
+    which case the effect of the latent variable z in the SingleStochasticInterpolant class can be merged with x_0.
 
     The stochastic interpolant can either use an ordinary differential equation (ODE) or a stochastic differential
     equation during inference. If an SDE is used, one should additionally provide an epsilon function epsilon(t).
 
     The ODE is integrated using the torchdiffeq library and the SDE is integrated using the torchsde library.
 
+    In principle, one only needs to learn the denoiser for one-sided interpolants because the velocity field can derived
+    from it (see Eq. (6.7) in the SI paper). However, the resulting velocity field is singular (though with a finite
+    mean) which is why it might still be useful to learn the velocity field.
+
     :param interpolant:
-        Interpolant I(t, x_0, x_1) between points from two distributions p_0 and p_1 at times t.
+        Interpolant I(t, x_0, x_1) = alpha(t) * x_0 + beta(t) * x_1 between points from two distributions p_0 and p_1 at
+        times t.
     :type interpolant: Interpolant
-    :param gamma:
-        Optional gamma function gamma(t) in the latent variable gamma(t) * z of a stochastic interpolant.
-    :type gamma: Optional[LatentGamma]
     :param epsilon:
         Optional epsilon function epsilon(t) for the stochastic differential equation.
         Should only be provided if the differential equation type is SDE.
@@ -36,11 +37,6 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         https://github.com/rtqichen/torchdiffeq/blob/master/README.md) or the sdeint function of torchsde (see
         https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md#keyword-arguments-of-sdeint).
     :type integrator_kwargs: Optional[dict]
-    :param correct_center_of_mass:
-        TODO: Do we also want to do that during integration?
-        Whether to correct the center of mass of the points x_0 and x_1 to zero before computing the loss.
-        Defaults to False.
-    :type correct_center_of_mass: bool
     :param correct_center_of_mass_motion:
         TODO: Do we also want to do that during integration?
         Whether to correct the center-of-mass motion to zero before computing the loss.
@@ -48,24 +44,26 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         This is the approach chosen by FlowMM.
         Defaults to False.
     :type correct_center_of_mass_motion: bool
-    :param correct_first_atom:
-        TODO: Do we want to correct x_t_p and x_t_m in the antithetic case?
-        TODO: Do we also want to do that during integration?
-        Whether to correct the positions of the first atoms of the points x_0 and x_1 to zero before computing the loss.
-        Defaults to False.
+    :param velocity_annealing_factor:
+        During inference, the predicted velocity fields b at time are multiplied by (1 + velocity_annealing_factor * t).
+        A velocity annealing factor of 0.0 corresponds to no annealing.
+        Defaults to 0.0.
+    :type velocity_annealing_factor: float
+    :param predict_velocity:
+        Whether to include a loss for the velocity field.
+        Defaults to True.
+    :type predict_velocity: bool
+
     :raises ValueError:
         If epsilon is provided for ODEs or not provided for SDEs.
     """
 
-    def __init__(self, interpolant: Interpolant, gamma: Optional[LatentGamma], epsilon: Optional[Epsilon],
-                 differential_equation_type: str, integrator_kwargs: Optional[dict[str, Any]] = None,
-                 correct_center_of_mass: bool = False, correct_center_of_mass_motion: bool = False,
-                 correct_first_atom: bool = False, velocity_annealing_factor: float = 0.0) -> None:
+    def __init__(self, interpolant: Interpolant, epsilon: Optional[Epsilon], differential_equation_type: str,
+                 integrator_kwargs: Optional[dict[str, Any]] = None, correct_center_of_mass_motion: bool = False,
+                 velocity_annealing_factor: float = 0.0, predict_velocity: bool = True) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
-        self._gamma = gamma
-        assert self._gamma is None
         self._epsilon = epsilon
         self._differential_equation_type = differential_equation_type
         # Corrector that needs to be applied to the points x_t during integration.
@@ -87,20 +85,9 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
             if self._epsilon is None:
                 raise ValueError("Epsilon function should be provided for SDEs.")
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
-        self._correct_center_of_mass = correct_center_of_mass
         self._correct_center_of_mass_motion = correct_center_of_mass_motion
-        self._correct_first_atom = correct_first_atom
-        if self._correct_center_of_mass and self._correct_first_atom:
-            raise ValueError("Correcting the center of mass and the first atom at the same time is not possible.")
         self._velocity_annealing_factor = velocity_annealing_factor
-
-    @staticmethod
-    def _shift_first_atom(x: torch.Tensor, batch_indices: torch.Tensor) -> torch.Tensor:
-        unique_indices = torch.unique(batch_indices)
-        first_occurrences = torch.tensor([torch.nonzero(batch_indices == i, as_tuple=True)[0][0]
-                                          for i in unique_indices], device=x.device)
-        first_atoms = torch.index_select(x[first_occurrences], 0, batch_indices)
-        return x - first_atoms
+        self._predict_velocity = predict_velocity
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -125,38 +112,10 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         :rtype: tuple[torch.Tensor, torch.Tensor]
         """
         assert x_0.shape == x_1.shape
+        # Output is already corrected.
         interpolate = self._interpolant.interpolate(t, x_0, x_1)
-        z = torch.randn_like(x_0)
-        interpolate = self._corrector.correct(interpolate)
-        return interpolate, z
-
-    def _interpolate_derivative(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
-                                z: torch.Tensor) -> torch.Tensor:
-        """
-        Derivative with respect to time of the stochastic interpolant between points x_0 and x_1 from two distributions
-        p_0 and p_1 at times t.
-
-        :param t:
-            Times in [0,1].
-        :type t: torch.Tensor
-        :param x_0:
-            Points from p_0.
-        :type x_0: torch.Tensor
-        :param x_1:
-            Points from p_1.
-        :type x_1: torch.Tensor
-        :param z:
-            Random variable z that was used for the stochastic interpolation to get the model prediction.
-        :type z: torch.Tensor
-
-        :return:
-            Stochastically interpolated value.
-        :rtype: torch.Tensor
-        """
-        assert x_0.shape == x_1.shape
-        self._check_t(t)
-        interpolate_derivative = self._interpolant.interpolate_derivative(t, x_0, x_1)
-        return interpolate_derivative
+        # x_0 takes the role of the random variable z.
+        return interpolate, x_0
 
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
@@ -230,8 +189,21 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         assert x_0.shape == x_1.shape
-        pred_z = model_function(x_t)[1]
-        loss = (torch.mean(pred_z ** 2) - 2.0 * torch.mean(pred_z * z))
+        if self._predict_velocity:
+            #
+            expected_velocity = self._interpolant.interpolate_derivative(t, x_0, x_1)
+            pred_b = model_function(x_t)[0]
+            if self._correct_center_of_mass_motion:
+                # scatter_mean is used to compute the mean velocity for every configuration.
+                # index_select is used to replicate the mean velocity for every atom in the configuration.
+                mean_velocity = torch.index_select(scatter_mean(expected_velocity, batch_indices, dim=0),
+                                                   0, batch_indices)
+                expected_velocity_without_gamma = expected_velocity - mean_velocity
+            loss = (torch.mean(pred_b ** 2) - 2.0 * torch.mean(pred_b * expected_velocity_without_gamma))
+        else:
+            assert torch.equal(x_0, z)
+            pred_z = model_function(x_t)[1]
+            loss = (torch.mean(pred_z ** 2) - 2.0 * torch.mean(pred_z * z))
         return loss
 
     def _sde_loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
@@ -267,7 +239,13 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
             Loss.
         :rtype: torch.Tensor
         """
-        return self._ode_loss(model_function=model_function, t=t, x_0=x_0, x_1=x_1, x_t=x_t, z=z, batch_indices=batch_indices)
+        if self._predict_velocity:
+
+        else:
+            assert torch.equal(x_0, z)
+            pred_z = model_function(x_t)[1]
+            loss = (torch.mean(pred_z ** 2) - 2.0 * torch.mean(pred_z * z))
+        return loss
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                   x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
