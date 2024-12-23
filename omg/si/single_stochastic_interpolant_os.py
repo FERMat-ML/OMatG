@@ -2,7 +2,7 @@ import torch
 from torch_scatter import scatter_mean
 from torchdiffeq import odeint
 from torchsde import sdeint
-from typing import Any, Optional, Callable
+from typing import Any, Dict, Optional, Callable, Iterable
 from .abstracts import Corrector, Epsilon, Interpolant, StochasticInterpolant
 from .single_stochastic_interpolant import DifferentialEquationType
 
@@ -116,6 +116,17 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         interpolate = self._interpolant.interpolate(t, x_0, x_1)
         # x_0 takes the role of the random variable z.
         return interpolate, x_0
+
+    def loss_keys(self) -> Iterable[str]:
+        """
+        Get the keys of the losses returned by the loss function.
+
+        :return:
+            Keys of the losses.
+        :rtype: Iterable[str]
+        """
+
+        yield "loss_z"
 
     def loss(self, model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
              t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor, x_t: torch.Tensor, z: torch.Tensor,
@@ -240,7 +251,7 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         if self._predict_velocity:
-
+            pass
         else:
             assert torch.equal(x_0, z)
             pred_z = model_function(x_t)[1]

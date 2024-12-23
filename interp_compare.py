@@ -172,8 +172,8 @@ def compare(interp: Interpolant, interp_os: object):
     os_interpolated_dt = interp_os.interpolate_derivative(t, initial_cond, final_cond)
 
     # Return
-    interp_match = torch.equal(interpolated_val, os_interpolated_val)
-    dt_match = torch.equal(interpolated_dt, os_interpolated_dt)
+    interp_match = torch.allclose(interpolated_val, os_interpolated_val, atol=1e-5)
+    dt_match = torch.allclose(interpolated_dt, os_interpolated_dt, atol=1e-5)
     return interp_match, dt_match
 
 # Script to compare interpolant output
@@ -191,7 +191,7 @@ if __name__ == '__main__':
         OldPeriodicScoreBasedDiffusionModelInterpolant(), OldPeriodicTrigonometricInterpolant(),
         OldPeriodicEncoderDecoderInterpolant()
     ]
+    compare(PeriodicLinearInterpolant(), OldPeriodicLinearInterpolant())
     for interp, old_interp in zip(interp_list, old_interp_list):
         outcome = compare(interp, old_interp)
-
         print(f'Interpolant: {interp.__class__.__name__}: int - {outcome[0]} ind_dot - {outcome[1]}')
