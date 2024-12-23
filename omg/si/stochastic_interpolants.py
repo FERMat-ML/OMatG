@@ -76,7 +76,7 @@ class StochasticInterpolants(object):
                 full_key = f"{df.name}_{key}"
                 if full_key in loss_keys:
                     raise ValueError(f"Key {full_key} is already used as a loss key.")
-                loss_keys.append(key)
+                loss_keys.append(full_key)
         return loss_keys
 
     def _interpolate(self, t: torch.Tensor, x_0: Data, x_1: Data) -> tuple[Data, Data]:
