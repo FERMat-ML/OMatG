@@ -5,6 +5,7 @@ from torch_scatter import scatter_mean
 from torchdiffeq import odeint
 from torchsde import sdeint
 from .abstracts import Corrector, Epsilon, Interpolant, LatentGamma, StochasticInterpolant
+from .interpolants import ScoreBasedDiffusionModelInterpolant
 
 
 class DifferentialEquationType(Enum):
@@ -103,6 +104,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
         self._correct_center_of_mass_motion = correct_center_of_mass_motion
         self._velocity_annealing_factor = velocity_annealing_factor
+        # This also disables PeriodicScoreBasedDiffusionModelInterpolant.
+        if isinstance(self._interpolant, ScoreBasedDiffusionModelInterpolant):
+            raise ValueError("The interpolant should not be a ScoreBasedDiffusionModelInterpolant because it requires "
+                             "antithetic sampling on the level of alpha(t).")
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -262,12 +267,12 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         assert x_0.shape == x_1.shape
         if self._use_antithetic:
             assert self._gamma is not None
-            expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
             x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
             gamma = self._gamma.gamma(t)
             x_t_p = self._corrector.correct(x_t_without_gamma + gamma * z)
             assert torch.equal(x_t, x_t_p)
             x_t_m = self._corrector.correct(x_t_without_gamma - gamma * z)
+            expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
             gamma_derivative = self._gamma.gamma_derivative(t)
             expected_velocity_p = expected_velocity_without_gamma + gamma_derivative * z
             expected_velocity_m = expected_velocity_without_gamma - gamma_derivative * z
@@ -344,11 +349,11 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         assert self._gamma is not None
         if self._use_antithetic:
             x_t_without_gamma = self._interpolant.interpolate(t, x_0, x_1)
-            expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
             gamma = self._gamma.gamma(t)
             x_t_p = self._corrector.correct(x_t_without_gamma + gamma * z)
             assert torch.equal(x_t, x_t_p)
             x_t_m = self._corrector.correct(x_t_without_gamma - gamma * z)
+            expected_velocity_without_gamma = self._interpolant.interpolate_derivative(t, x_0, x_1)
             gamma_derivative = self._gamma.gamma_derivative(t)
             expected_velocity_p = expected_velocity_without_gamma + gamma_derivative * z
             expected_velocity_m = expected_velocity_without_gamma - gamma_derivative * z
