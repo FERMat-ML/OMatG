@@ -46,11 +46,6 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         This is the approach chosen by FlowMM.
         Defaults to False.
     :type correct_center_of_mass_motion: bool
-    :param velocity_annealing_factor:
-        During inference, the predicted velocity fields b at time are multiplied by (1 + velocity_annealing_factor * t).
-        A velocity annealing factor of 0.0 corresponds to no annealing.
-        Defaults to 0.0.
-    :type velocity_annealing_factor: float
     :param predict_velocity:
         Whether to compute the loss for the velocity field.
         Defaults to True.
@@ -62,7 +57,7 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
 
     def __init__(self, interpolant: Interpolant, epsilon: Optional[Epsilon], differential_equation_type: str,
                  integrator_kwargs: Optional[dict[str, Any]] = None, correct_center_of_mass_motion: bool = False,
-                 velocity_annealing_factor: float = 0.0, predict_velocity: bool = True) -> None:
+                 predict_velocity: bool = True) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -87,7 +82,6 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
                 raise ValueError("Epsilon function should be provided for SDEs.")
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
         self._correct_center_of_mass_motion = correct_center_of_mass_motion
-        self._velocity_annealing_factor = velocity_annealing_factor
         self._predict_velocity = predict_velocity
         # This is also true for the PeriodicScoreBasedDiffusionModelInterpolant.
         self._use_antithetic = isinstance(self._interpolant, ScoreBasedDiffusionModelInterpolant)
@@ -404,14 +398,16 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
-
-        # OS ODE function
-        def odefunc(t, x):
-            x_corr = self._corrector.correct(x)
-            z = model_function(t, x_corr)[1]
-            t1 = (self._interpolant.alpha_dot(t) * z)
-            t2 = (self._interpolant.beta_dot(t) / self._interpolant.beta(t)) * (x_corr - self._interpolant.alpha(t) * z)
-            return (1.0 + self._velocity_annealing_factor * t) * (t1 + t2)
+        if self._predict_velocity:
+            odefunc = lambda t, x: model_function(t, self._corrector.correct(x))[0]
+        else:
+            def odefunc(t, x):
+                x_corr = self._corrector.correct(x)
+                z = model_function(t, x_corr)[1]
+                t1 = (self._interpolant.alpha_dot(t) * z)
+                t2 = (self._interpolant.beta_dot(t) / self._interpolant.beta(t)
+                      * (x_corr - self._interpolant.alpha(t) * z))
+                return t1 + t2
 
         t_span = torch.tensor([time, time + time_step], device=x_t.device)
         with torch.no_grad():
@@ -434,16 +430,28 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         def f(self, t, x):
             # Because of the noise, the x should be corrected when it is passed to the model.
             new_x_shape = x.shape
-            x_corr = self._corrector(x)
-            z = self._model_func(t, x_corr.reshape(self._original_x_shape))[1]
-            t1 = (self._interpolant.alpha_dot(t) * z)
-            t2 = (self._interpolant.beta(t) / self._interpolant.beta_dot(t)) * (x_corr - self._interpolant.alpha(t) * z)
-            t3 = (self._epsilon(t) / self._interpolant.alpha(t)) * z
+            x_corr = self._corrector.correct(x.reshape(self._original_x_shape))
+            z = self._model_func(t, x_corr)[1]
+            t1 = self._interpolant.alpha_dot(t) * z
+            t2 = self._interpolant.beta_dot(t) / self._interpolant.beta(t) * (x_corr - self._interpolant.alpha(t) * z)
+            t3 = self._epsilon(t) / self._interpolant.alpha(t) * z
             out = t1 + t2 - t3
             return out.reshape(new_x_shape)
 
         def g(self, t, x):
             return torch.sqrt(2.0 * self._epsilon.epsilon(t)) * torch.ones_like(x)
+
+    class SDEPredictVelocity(SDE):
+        def __init__(self, model_func, corrector, interpolant, epsilon, original_x_shape):
+            super().__init__(model_func=model_func, corrector=corrector, interpolant=interpolant, epsilon=epsilon,
+                             original_x_shape=original_x_shape)
+
+        def f(self, t, x):
+            # Because of the noise, the x should be corrected when it is passed to the model.
+            new_x_shape = x.shape
+            preds = self._model_func(t, self._corrector.correct(x.reshape(self._original_x_shape)))
+            out = preds[0] - (self._epsilon.epsilon(t) / self._interpolant.alpha(t)) * preds[1]
+            return out.reshape(new_x_shape)
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
                        x_t: torch.Tensor, time: torch.Tensor, time_step: torch.Tensor,
@@ -473,12 +481,15 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
             Integrated position.
         :rtype: torch.Tensor
         """
-        # TODO: Introduce corrections here.
-        raise NotImplementedError
         # SDE Integrator
         original_shape = x_t.shape
-        sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon,
-                       original_x_shape=original_shape)
+        if self._predict_velocity:
+            sde = self.SDEPredictVelocity(model_func=model_function, corrector=self._corrector,
+                                          interpolant=self._interpolant, epsilon=self._epsilon,
+                                          original_x_shape=original_shape)
+        else:
+            sde = self.SDE(model_func=model_function, corrector=self._corrector, interpolant=self._interpolant,
+                           epsilon=self._epsilon, original_x_shape=original_shape)
         t_span = torch.tensor([time, time + time_step])
 
         with torch.no_grad():
