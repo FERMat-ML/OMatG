@@ -434,7 +434,7 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
             z = self._model_func(t, x_corr)[1]
             t1 = self._interpolant.alpha_dot(t) * z
             t2 = self._interpolant.beta_dot(t) / self._interpolant.beta(t) * (x_corr - self._interpolant.alpha(t) * z)
-            t3 = self._epsilon(t) / self._interpolant.alpha(t) * z
+            t3 = self._epsilon.epsilon(t) / self._interpolant.alpha(t) * z
             out = t1 + t2 - t3
             return out.reshape(new_x_shape)
 
