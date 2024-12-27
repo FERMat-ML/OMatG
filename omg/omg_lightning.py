@@ -140,8 +140,9 @@ class OMGLightning(L.LightningModule):
         losses = self.si.losses(self.model, t, x_0, x_1)
 
         total_loss = torch.tensor(0.0, device=self.device)
-        for cost, loss_key in zip(self._relative_si_costs.values(), losses):
-            losses[f"val_{loss_key}"] = cost * losses[loss_key]
+
+        for loss_key in losses:
+            losses[f"val_{loss_key}"] = self._relative_si_costs[loss_key] * losses[loss_key]
             total_loss += losses[f"val_{loss_key}"]
             losses.pop(loss_key)
 
