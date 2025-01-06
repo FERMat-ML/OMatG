@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "omg"
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<3.13"
 version = "0.0.1"
 dependencies = [
     "numpy ~= 1.26",
