@@ -127,6 +127,11 @@ class Interpolant(ABC, TimeChecker):
         Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times
         t with respect to time.
 
+        In order to possibly allow for periodic boundary conditions, x_1 is first unwrapped based on the corrector of
+        this interpolant. For the identity corrector, this unwrapping does nothing. For periodic boundary conditions,
+        this unwrapping returns the closest image of x_1 to x_0. The interpolant derivative is then computed based on
+        the unwrapped x_1 and the alpha and beta functions.
+
         :param t:
             Times in [0,1].
         :type t: torch.Tensor
@@ -316,7 +321,7 @@ class StochasticInterpolant(ABC, TimeChecker):
         Compute the losses for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and
         p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.
 
-        Since there can be several losses (say, one for the velocity fields b and one for the denoisers eta), this
+        Since there can be several losses (say, one for the velocity field b and one for the denoiser eta), this
         function returns a dictionary mapping from a loss label to the loss value.
 
         :param model_function:
