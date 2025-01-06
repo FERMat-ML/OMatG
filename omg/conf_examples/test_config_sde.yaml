@@ -14,6 +14,8 @@ model:
             gamma: null
             epsilon: null
             differential_equation_type: "ODE"
+            integrator_kwargs:
+              method: "euler"
             correct_center_of_mass_motion: true
             velocity_annealing_factor: 0.0
         # lattice vectors
@@ -26,6 +28,8 @@ model:
               init_args:
                 c: 0.1
             differential_equation_type: "SDE"
+            integrator_kwargs:
+              method: "euler"
       data_fields: 
         # if the order of the data_fields changes,
         # the order of the above StochasticInterpolant inputs must also change
