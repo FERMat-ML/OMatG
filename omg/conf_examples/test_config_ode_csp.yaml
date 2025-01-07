@@ -95,6 +95,9 @@ data:
            - "data/mp_20/test.lmdb"
       niggli: False
   batch_size: 256
+  num_workers: 4
+  pin_memory: True
+  persistent_workers: True
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint

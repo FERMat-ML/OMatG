@@ -76,6 +76,9 @@ data:
           property_keys: # specify only when you wanna do guided training
            - "band_gap"
   batch_size: 2
+  num_workers: 4
+  pin_memory: True
+  persistent_workers: True
 optimizer: torch.optim.Adam
 # lr_scheduler:
 #   class_path: lightning.pytorch.cli.ReduceLROnPlateau
