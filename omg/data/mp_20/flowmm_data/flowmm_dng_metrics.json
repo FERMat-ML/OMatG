@@ -1,0 +1,1 @@
+{"comp_valid": 0.8282, "struct_valid": 0.9679, "valid": 0.8006, "wdist_density": 0.15621951296897596, "wdist_num_elems": 0.09682069422949383, "cov_recall": 0.99557815609109, "cov_precision": 0.9971, "amsd_recall": 0.12596803967441733, "amsd_precision": 0.15507046844525063, "amcd_recall": 2.6200121669465664, "amcd_precision": 2.811439990057914, "wdist_nary": 0.08953654653990703}
