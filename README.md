@@ -1,4 +1,6 @@
-# OMFG
+# OMG: Open Materials Generation
+
+A generative model for crystal structure prediction and de novo generation of atomic crystals.
 
 ## Dependencies
 
