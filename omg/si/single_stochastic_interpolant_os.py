@@ -490,7 +490,7 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         else:
             sde = self.SDE(model_func=model_function, corrector=self._corrector, interpolant=self._interpolant,
                            epsilon=self._epsilon, original_x_shape=original_shape)
-        t_span = torch.tensor([time, time + time_step])
+        t_span = torch.tensor([time, time + time_step], device=x_t.device)
 
         with torch.no_grad():
             # Diagonal noise in torchsde expects a tensor of shape (batch_size, state_size).
