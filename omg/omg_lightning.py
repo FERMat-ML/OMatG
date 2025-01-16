@@ -4,6 +4,7 @@ from typing import Dict, Optional, Sequence
 import lightning as L
 import torch
 from omg.datamodule import OMGData
+from omg.globals import SMALL_TIME, BIG_TIME
 from omg.model.model import Model
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.sampler.sampler import Sampler
@@ -16,6 +17,7 @@ class OMGLightning(L.LightningModule):
     """
     Main module which is fit and used to generate structures using Lightning CLI.
     """
+
     def __init__(self, si: StochasticInterpolants, sampler: Sampler, model: Model,
                  relative_si_costs: Dict[str, float], learning_rate: float = 0.001, use_min_perm_dist: bool = False,
                  generation_xyz_filename: Optional[str] = None, sobol_time: bool = False,
@@ -50,10 +52,15 @@ class OMGLightning(L.LightningModule):
         self._relative_si_costs = relative_si_costs
 
         if not sobol_time:
-            self.time_sampler = torch.rand
+            # Don't sample between 0 and 1 because the gamma function may diverge as t -> 0 or t -> 1, which
+            # may result in NaN losses during training if t was to close to 0 or 1 (especially at 32-true precision).
+            self.time_sampler = lambda n: torch.rand(n) * (BIG_TIME - SMALL_TIME) + SMALL_TIME
         else:
-            self.time_sampler = lambda n: torch.reshape(
-                torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1, ))
+            # Don't sample between 0 and 1 because the gamma function may diverge as t -> 0 or t -> 1, which
+            # may result in NaN losses during training if t was to close to 0 or 1 (especially at 32-true precision).
+            self.time_sampler = (
+                lambda n: torch.reshape(torch.quasirandom.SobolEngine(dimension=1, scramble=True).draw(n), (-1,))
+                          * (BIG_TIME - SMALL_TIME) + SMALL_TIME)
         self.generation_xyz_filename = generation_xyz_filename
 
         # Possible values are "medium", "high", and "highest".
