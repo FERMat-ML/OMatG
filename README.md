@@ -2,6 +2,16 @@
 
 A generative model for crystal structure prediction and de novo generation of atomic crystals.
 
+## Cloning
+
+The datasets in this repository are stored using [Git LFS](https://git-lfs.com). Make sure that you have Git LFS 
+installed and set up before cloning this repository. If you cloned this repository before installing Git LFS, you can
+fetch the large files by running:
+
+```bash
+git lfs pull
+```
+
 ## Dependencies
 
 You can use any Python version between 3.10 and 3.12.
