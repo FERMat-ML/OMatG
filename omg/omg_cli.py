@@ -13,6 +13,7 @@ class OMGCLI(LightningCLI):
         d["visualize"] = {"model", "datamodule"}
         d["match"] = {"model", "datamodule"}
         d["curriculum"] = {"model", "datamodule"}
+        d["fit_lattice"] = {"model", "datamodule"}
         return d
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:

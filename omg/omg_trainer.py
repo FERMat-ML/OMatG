@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from collections import OrderedDict
+from math import log
 from pathlib import Path
 from typing import List, Optional
 from ase import Atoms
@@ -8,6 +9,7 @@ from lightning.pytorch import Trainer
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
+from scipy.stats import lognorm
 from sklearn.neighbors import KernelDensity
 import tqdm
 import torch
@@ -692,3 +694,34 @@ class OMGTrainer(Trainer):
         new_filename = str(old_path.with_stem(old_path.stem + "_" + "_".join(lessons) + "_lesson"))
         with open(new_filename, 'w') as file:
             yaml.safe_dump(template, file)
+
+    def fit_lattice(self, model: OMGLightning, datamodule: OMGDataModule) -> None:
+        """
+        Fit a log-normal distribution to the lattice lengths of the training dataset.
+
+        This yields the parameters for the informed lattice base distribution introduced by FlowMM.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        """
+        dataset = datamodule.train_dataset
+        atoms_list = self._load_dataset_atoms(dataset, dataset.convert_to_fractional)
+        a = []
+        b = []
+        c = []
+        for structure in atoms_list:
+            cellpar = structure.cell.cellpar()
+            assert len(cellpar) == 6  # a, b, c, alpha, beta, gamma
+            a.append(cellpar[0])
+            b.append(cellpar[1])
+            c.append(cellpar[2])
+        shape_a, loc_a, scale_a = lognorm.fit(a, floc=0.0)
+        shape_b, loc_b, scale_b = lognorm.fit(b, floc=0.0)
+        shape_c, loc_c, scale_c = lognorm.fit(c, floc=0.0)
+        assert loc_a == loc_b == loc_c == 0.0
+        print("Standard deviations of the log of the distributions: ", shape_a, shape_b, shape_c)
+        print("Means of the log of the distributions: ", log(scale_a), log(scale_b), log(scale_c))
