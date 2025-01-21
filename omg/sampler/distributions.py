@@ -58,6 +58,9 @@ class InformedLatticeDistribution(object):
         elif dataset_name == "perov":
             self._length_log_means = [1.419227957725525, 1.419227957725525, 1.419227957725525]
             self._length_log_stds = [0.07268335670232773, 0.07268335670232773, 0.07268335670232773]
+        elif dataset_name == "alex_mp_20":
+            self._length_log_means = [1.5808929163076058, 1.74672046352959, 2.065243388307474]
+            self._length_log_stds = [0.27284015410437057, 0.2944785731740152, 0.30899526911753017]
         else:
             raise ValueError(f"Unknown dataset name: {dataset_name}")
         # Use CPU device to align with other distributions.
