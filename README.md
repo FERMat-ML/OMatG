@@ -2,15 +2,11 @@
 
 A generative model for crystal structure prediction and de novo generation of atomic crystals.
 
-## Cloning
+## Alex-MP20 dataset
 
-The datasets in this repository are stored using [Git LFS](https://git-lfs.com). Make sure that you have Git LFS 
-installed and set up before cloning this repository. If you cloned this repository before installing Git LFS, you can
-fetch the large files by running:
-
-```bash
-git lfs pull
-```
+The Alex-MP20 dataset is too large to be stored in this repository. You can download it at
+https://drive.google.com/drive/folders/1UU8nO_7qrDxirxSkzPDxzbHTLpO1DMuv?usp=share_link and put it alongside the other 
+datasets in the [omg/data](omg/data) directory.
 
 ## Dependencies
 
