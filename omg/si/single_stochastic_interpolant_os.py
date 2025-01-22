@@ -50,6 +50,12 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         Whether to compute the loss for the velocity field.
         Defaults to True.
     :type predict_velocity: bool
+    :param velocity_annealing_factor:
+        During inference, the predicted velocity fields b at time are multiplied by (1 + velocity_annealing_factor * t).
+        A velocity annealing factor of 0.0 corresponds to no annealing.
+        Should only be set if predict_velocity is True.
+        Defaults to None.
+    :type velocity_annealing_factor: Optional[float]
 
     :raises ValueError:
         If epsilon is provided for ODEs or not provided for SDEs.
@@ -57,7 +63,7 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
 
     def __init__(self, interpolant: Interpolant, epsilon: Optional[Epsilon], differential_equation_type: str,
                  integrator_kwargs: Optional[dict[str, Any]] = None, correct_center_of_mass_motion: bool = False,
-                 predict_velocity: bool = True) -> None:
+                 predict_velocity: bool = True, velocity_annealing_factor: Optional[float] = None) -> None:
         """Construct stochastic interpolant."""
         super().__init__()
         self._interpolant = interpolant
@@ -85,6 +91,11 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         self._predict_velocity = predict_velocity
         # This is also true for the PeriodicScoreBasedDiffusionModelInterpolant.
         self._use_antithetic = isinstance(self._interpolant, ScoreBasedDiffusionModelInterpolant)
+        self._velocity_annealing_factor = velocity_annealing_factor
+        if not self._predict_velocity and self._velocity_annealing_factor is not None:
+            raise ValueError("Velocity annealing factor should only be set if predict_velocity is True.")
+        if self._predict_velocity and self._velocity_annealing_factor is None:
+            self._velocity_annealing_factor = 0.0
 
     def interpolate(self, t: torch.Tensor, x_0: torch.Tensor, x_1: torch.Tensor,
                     batch_indices: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
@@ -399,8 +410,11 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         if self._predict_velocity:
-            odefunc = lambda t, x: model_function(t, self._corrector.correct(x))[0]
+            assert self._velocity_annealing_factor is not None
+            odefunc = lambda t, x: ((1.0 + self._velocity_annealing_factor * t)
+                                    * model_function(t, self._corrector.correct(x))[0])
         else:
+            assert self._velocity_annealing_factor is None
             def odefunc(t, x):
                 x_corr = self._corrector.correct(x)
                 z = model_function(t, x_corr)[1]
@@ -442,15 +456,17 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
             return torch.sqrt(2.0 * self._epsilon.epsilon(t)) * torch.ones_like(x)
 
     class SDEPredictVelocity(SDE):
-        def __init__(self, model_func, corrector, interpolant, epsilon, original_x_shape):
+        def __init__(self, model_func, corrector, interpolant, epsilon, original_x_shape, velocity_annealing_factor):
             super().__init__(model_func=model_func, corrector=corrector, interpolant=interpolant, epsilon=epsilon,
                              original_x_shape=original_x_shape)
+            self._velocity_annealing_factor = velocity_annealing_factor
 
         def f(self, t, x):
             # Because of the noise, the x should be corrected when it is passed to the model.
             new_x_shape = x.shape
             preds = self._model_func(t, self._corrector.correct(x.reshape(self._original_x_shape)))
-            out = preds[0] - (self._epsilon.epsilon(t) / self._interpolant.alpha(t)) * preds[1]
+            out = ((1.0 + self._velocity_annealing_factor * t) * preds[0]
+                   - (self._epsilon.epsilon(t) / self._interpolant.alpha(t)) * preds[1])
             return out.reshape(new_x_shape)
 
     def _sde_integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
@@ -484,10 +500,13 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         # SDE Integrator
         original_shape = x_t.shape
         if self._predict_velocity:
+            assert self._velocity_annealing_factor is not None
             sde = self.SDEPredictVelocity(model_func=model_function, corrector=self._corrector,
                                           interpolant=self._interpolant, epsilon=self._epsilon,
-                                          original_x_shape=original_shape)
+                                          original_x_shape=original_shape,
+                                          velocity_annealing_factor=self._velocity_annealing_factor)
         else:
+            assert self._velocity_annealing_factor is None
             sde = self.SDE(model_func=model_function, corrector=self._corrector, interpolant=self._interpolant,
                            epsilon=self._epsilon, original_x_shape=original_shape)
         t_span = torch.tensor([time, time + time_step], device=x_t.device)
