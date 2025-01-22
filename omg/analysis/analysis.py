@@ -333,9 +333,9 @@ def _get_match_and_rmsd(atoms_one: ValidAtoms, atoms_two: ValidAtoms, ltol: floa
                         angle_tol: float) -> Optional[float]:
     """
     Helper function to check whether the given first structure matches the given second structure by using pymatgen's
-    StructureMatcher and, if so, to find the minimum root-mean-square displacement between them.
+    StructureMatcher and, if so, to find the root-mean-square displacement between them.
 
-    If the two structures do not match, the minimum root-mean-square displacement is None.
+    If the two structures do not match, the root-mean-square displacement is None.
 
     The root-mean-square displacement is normalized by (volume / number_sites) ** (1/3).
 
@@ -358,7 +358,7 @@ def _get_match_and_rmsd(atoms_one: ValidAtoms, atoms_two: ValidAtoms, ltol: floa
     :type angle_tol: float
 
     :return:
-        Minimum root-mean-square displacement.
+        Root-mean-square displacement.
     :rtype: Optional[float]
     """
     if _element_check(atoms_one.atoms, atoms_two.atoms):
@@ -366,12 +366,62 @@ def _get_match_and_rmsd(atoms_one: ValidAtoms, atoms_two: ValidAtoms, ltol: floa
     return None
 
 
+def _get_match_and_rmsd_sequence(atoms_one: ValidAtoms, sequence_atoms_two: Sequence[ValidAtoms], ltol: float,
+                                 stol: float, angle_tol: float) -> Optional[List[Tuple[float, int]]]:
+    """
+    Helper function to check whether the given first structure matches any of the structures in the given sequence of
+    structures by using pymatgen's StructureMatcher and, if so, to find the root-mean-square displacements between them.
+
+    This function returns a list of tuples each containing the root-mean-square displacement and the relevant index of
+    the matching structure.
+
+    If the first structure does not match any of the structures in the sequence, this function returns None.
+
+    The root-mean-square displacements are normalized by (volume / number_sites) ** (1/3).
+
+    This function is required for multiprocessing (see match_rate function below).
+
+    :param atoms_one:
+        First structure.
+    :type atoms_one: ValidAtoms
+    :param sequence_atoms_two:
+        Sequence of structures.
+    :type sequence_atoms_two: Sequence[ValidAtoms]
+    :param ltol:
+        Fractional length tolerance for pymatgen's StructureMatcher.
+    :type ltol: float
+    :param stol:
+        Site tolerance for pymatgen's StructureMatcher.
+    :type stol: float
+    :param angle_tol:
+        Angle tolerance in degrees for pymatgen's StructureMatcher.
+    :type angle_tol: float
+
+    :return:
+        List of tuples each containing the root-mean-square displacement and the relevant index of the matching
+        structure.
+    :rtype: Optional[List[Tuple[float, int]]]
+    """
+    rmsds = []
+    for index, atoms_two in enumerate(sequence_atoms_two):
+        res = _get_match_and_rmsd(atoms_one, atoms_two, ltol, stol, angle_tol)
+        if res is not None:
+            rmsds.append((res, index))
+    if len(rmsds) > 0:
+        return rmsds
+    else:
+        return None
+
+
 def match_rate_and_rmsd(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[ValidAtoms], ltol: float = 0.2,
-                        stol: float = 0.3, angle_tol: float = 5.0,
-                        number_cpus: Optional[int] = None) -> Tuple[float, float, float, float]:
+                        stol: float = 0.3, angle_tol: float = 5.0, number_cpus: Optional[int] = None,
+                        match_everyone: bool = False) -> Tuple[float, float, float, float]:
     """
     Compute the rate of structures in the first sequence of atoms matching the structure at the same index in the second
     sequence of atoms, and the mean root-mean-square displacement between the appearing structures.
+
+    Optionally, one can instead compute the rate of structures in the first sequence of atoms matching any structure in
+    the second sequence of atoms, and the mean root-mean-square displacement between the best-matching structures.
 
     The averaged root-mean-square displacements are normalized by (volume / number_sites) ** (1/3).
 
@@ -405,6 +455,13 @@ def match_rate_and_rmsd(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[Val
         Number of CPUs to use for multiprocessing. If None, use os.cpu_count().
         Defaults to None.
     :type number_cpus: Optional[int]
+    :param match_everyone:
+        If True, compute the rate of structures in the first sequence of atoms matching any structure in the second
+        sequence of atoms, and the mean root-mean-square displacement between the best-matching structures.
+        If False, compute the rate of structures in the first sequence of atoms matching the structure at the same index
+        in the second sequence of atoms, and the mean root-mean-square displacement between the appearing structures.
+        Defaults to False.
+    :type match_everyone: bool
 
     :return:
         (The match rate considering all structures, the mean root-mean-square displacement considering all structures,
@@ -424,23 +481,63 @@ def match_rate_and_rmsd(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[Val
     if number_cpus is not None and number_cpus < 1:
         raise ValueError("The number of CPUs must be at least 1.")
 
-    # We cannot use lambda functions so we use (partial) global functions instead.
-    match_func = partial(_get_match_and_rmsd, ltol=ltol, stol=stol, angle_tol=angle_tol)
     cpu_count = number_cpus if number_cpus is not None else os.cpu_count()
-    res = process_map(match_func, atoms_list, ref_list, desc="Computing match rate and RMSD",
-                      chunksize=max(min(len(atoms_list) // cpu_count, 100), 1), max_workers=cpu_count)
-    assert len(res) == len(atoms_list)
 
-    full_match_count = sum(r is not None for r in res)
-    full_mean_rmsd = np.mean([r for r in res if r is not None])
+    if not match_everyone:
+        # We cannot use lambda functions so we use (partial) global functions instead.
+        match_func = partial(_get_match_and_rmsd, ltol=ltol, stol=stol, angle_tol=angle_tol)
+        res = process_map(match_func, atoms_list, ref_list, desc="Computing match rate and RMSD",
+                          chunksize=max(min(len(atoms_list) // cpu_count, 100), 1), max_workers=cpu_count)
+        assert len(res) == len(atoms_list)
 
-    valid_match_count = sum(r is not None and atoms.valid and ref.valid
-                            for r, atoms, ref in zip(res, atoms_list, ref_list))
-    valid_mean_rmsd = np.mean([r for r, atoms, ref in zip(res, atoms_list, ref_list)
-                               if r is not None and atoms.valid and ref.valid])
+        match_count = sum(r is not None for r in res)
+        mean_rmsd = np.mean([r for r in res if r is not None])
 
-    return (full_match_count / len(atoms_list), float(full_mean_rmsd),
-            valid_match_count / len(atoms_list), float(valid_mean_rmsd))
+        valid_match_count = sum(r is not None and atoms.valid and ref.valid
+                                for r, atoms, ref in zip(res, atoms_list, ref_list))
+        valid_mean_rmsd = np.mean([r for r, atoms, ref in zip(res, atoms_list, ref_list)
+                                   if r is not None and atoms.valid and ref.valid])
+
+        return (match_count / len(atoms_list), float(mean_rmsd),
+                valid_match_count / len(atoms_list), float(valid_mean_rmsd))
+    else:
+        # We cannot use lambda functions so we use (partial) global functions instead.
+        match_func = partial(_get_match_and_rmsd_sequence, sequence_atoms_two=ref_list, ltol=ltol, stol=stol,
+                             angle_tol=angle_tol)
+        res = process_map(match_func, atoms_list, desc="Computing match rate and RMSD",
+                          chunksize=max(min(len(atoms_list) // cpu_count, 100), 1), max_workers=cpu_count)
+        assert len(res) == len(atoms_list)
+
+        min_rmsds = []
+        min_valid_rmsds = []
+        for r, atoms in zip(res, atoms_list):
+            if r is not None:
+                min_rmsd = None
+                min_valid_rmsd = None
+                for rmsd, index in r:
+                    if min_rmsd is None or rmsd < min_rmsd:
+                        min_rmsd = rmsd
+                    if atoms.valid and ref_list[index].valid:
+                        if min_valid_rmsd is None or rmsd < min_valid_rmsd:
+                            min_valid_rmsd = rmsd
+                if min_rmsd is not None:
+                    min_rmsds.append(min_rmsd)
+                if min_valid_rmsd is not None:
+                    min_valid_rmsds.append(min_valid_rmsd)
+
+        assert len(min_rmsds) == sum(r is not None for r in res)
+        assert np.mean(min_rmsds) == np.mean([min(r)[0] for r in res if r is not None])
+        assert all(r is not None for r in min_rmsds)
+        assert all(r is not None for r in min_valid_rmsds)
+
+        match_count = len(min_rmsds)
+        mean_rmsd = np.mean(min_rmsds)
+
+        valid_match_count = len(min_valid_rmsds)
+        valid_mean_rmsd = np.mean(min_valid_rmsds)
+
+        return (match_count / len(atoms_list), float(mean_rmsd),
+                valid_match_count / len(atoms_list), float(valid_mean_rmsd))
 
 
 def _compare_pair(atoms: Tuple[ValidAtoms, ValidAtoms], ltol: float, stol: float, angle_tol: float) -> bool:
