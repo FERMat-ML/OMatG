@@ -43,7 +43,7 @@ class VanishingEpsilon(Epsilon):
     :type c: float
     """
 
-    def __init__(self, c: float = 1.0, sigma: float = 0.01, mu: float = 0.05) -> None:
+    def __init__(self, c: float = 1.0, sigma: float = 0.01, mu: float = 0.075) -> None:
         """
         Construct epsilon. Some product of Fermi functions that 
         vanishes at endpoints
