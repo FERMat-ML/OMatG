@@ -1,0 +1,158 @@
+model:
+  si:
+    class_path: omg.si.stochastic_interpolants.StochasticInterpolants
+    init_args:
+      stochastic_interpolants:
+        # chemical species
+        - class_path: omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity
+        # fractional coordinates
+        - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
+          init_args:
+            interpolant: omg.si.interpolants.PeriodicLinearInterpolant
+            gamma: null
+            epsilon: null
+            differential_equation_type: "ODE"
+            integrator_kwargs:
+              method: "euler"
+            correct_center_of_mass_motion: true
+            velocity_annealing_factor: 10.0
+        # lattice vectors
+        - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
+          init_args:
+            interpolant: omg.si.interpolants.LinearInterpolant
+            gamma: null
+            epsilon: null
+            differential_equation_type: "ODE"
+            integrator_kwargs:
+              method: "euler"
+      data_fields: 
+        # if the order of the data_fields changes,
+        # the order of the above StochasticInterpolant inputs must also change
+        - "species"
+        - "pos"
+        - "cell"
+      integration_time_steps: 1000
+  relative_si_costs:
+    species_loss: 0.0  # Irrelevant.
+    pos_loss_b: 0.9966777408637874  # Relative fractional coordinates loss 300.
+    cell_loss_b: 0.003322259136212625  # Relative lattice loss 1.
+  sampler:
+    class_path: omg.sampler.sample_from_rng.SampleFromRNG
+    init_args:
+      cell_distribution:
+        class_path: omg.sampler.distributions.InformedLatticeDistribution
+        init_args:
+          dataset_name: "mp_20"
+      species_distribution:
+        class_path: omg.sampler.distributions.MirrorData
+  model:
+    class_path: omg.model.model.Model
+    init_args:
+      encoder:
+        class_path: omg.model.encoders.cspnet_full.CSPNetFull
+        # assume all defaults are good
+        # prop: True
+      head:
+        class_path: omg.model.heads.pass_through.PassThrough
+      time_embedder:
+        class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+        init_args:
+          dim: 256 # has to be same as latent_dim in cspnet
+      # prop_embedder:
+      #       class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+      #       init_args:
+      #           dim: 32 # has to be sam eas prop_emb_dim of adapter module
+      # property_keys: "band_gap"
+  use_min_perm_dist: false
+data:
+  train_dataset:
+    class_path: omg.datamodule.dataloader.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+           - "data/mp_20/train.lmdb"
+      niggli: false
+          # property_keys: # specify only when you wanna do guided training
+          #  - "band_gap"
+  val_dataset:
+    class_path: omg.datamodule.dataloader.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+           - "data/mp_20/val.lmdb"
+      niggli: false
+  predict_dataset:
+    class_path: omg.datamodule.dataloader.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+           - "data/mp_20/test.lmdb"
+      niggli: false
+  batch_size: 256
+  pin_memory: true
+  num_workers: 4
+  persistent_workers: true
+trainer:
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: "best_val_loss_total"
+        save_top_k: 1
+        monitor: "val_loss_total"
+        save_weights_only: true
+        save_last: "link"
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: "best_val_loss_cell"
+        save_top_k: 1
+        monitor: "val_loss_cell"
+        save_weights_only: true
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: "best_val_loss_pos"
+        save_top_k: 1
+        monitor: "val_loss_pos"
+        save_weights_only: true
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: "best_val_match_rate"
+        save_top_k: 1
+        monitor: "match_rate_end"
+        save_weights_only: true
+        mode: 'max'
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: "best_val_rmsd"
+        save_top_k: 1
+        monitor: "rmsd_end"
+        save_weights_only: true
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        save_top_k: -1  # Store every checkpoint after 100 epochs.
+        monitor: "val_loss_total"
+        every_n_epochs: 100
+        save_weights_only: false
+  gradient_clip_val: 0.5
+  gradient_clip_algorithm: "value"
+  num_sanity_val_steps: 0
+  strategy: "ddp_find_unused_parameters_true"
+  precision: "32-true"
+  max_epochs: 2000
+  enable_progress_bar: false
+  check_val_every_n_epoch: 100
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1e-4
+    weight_decay: 1e-3
+lr_scheduler:
+  class_path: torch.optim.lr_scheduler.CosineAnnealingLR
+  init_args:
+    T_max: 2000
+    eta_min: 1e-5

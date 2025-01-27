@@ -12,6 +12,9 @@ from omg.si.abstracts import StochasticInterpolantSpecies
 from omg.si.stochastic_interpolants import StochasticInterpolants
 from omg.utils import xyz_saver
 
+from ase import Atoms
+from omg.analysis import match_rate_and_rmsd, ValidAtoms
+
 
 class OMGLightning(L.LightningModule):
     """
@@ -135,20 +138,15 @@ class OMGLightning(L.LightningModule):
         return total_loss
 
     def validation_step(self, x_1: OMGData) -> torch.Tensor:
-        """
-        Performs one validation step given a batch of x_1
-        """
-
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
-
+        gen = self.si.integrate(x_0, self.model, save_intermediate=False)
+        
         # Sample t for each structure.
         t = self.time_sampler(len(x_1.n_atoms)).to(self.device)
-
         losses = self.si.losses(self.model, t, x_0, x_1)
 
         total_loss = torch.tensor(0.0, device=self.device)
 
-        # Force creation of copy of keys because dictionary will be changed in iteration.
         for loss_key in list(losses):
             losses[f"val_{loss_key}"] = self._relative_si_costs[loss_key] * losses[loss_key]
             total_loss += losses[f"val_{loss_key}"]
@@ -157,16 +155,51 @@ class OMGLightning(L.LightningModule):
         assert "loss_total" not in losses
         losses["val_loss_total"] = total_loss
 
+        # convert gen, x_0 to atoms
+        gen.to('cpu')
+        x_1.to('cpu')
+        x_1_atoms = []
+        gen_atoms = []
+        batch_size = len(x_1.n_atoms)
+        for i in range(batch_size):
+            lower, upper = x_1.ptr[i], x_1.ptr[i + 1]
+            x_1_atoms.append(Atoms(numbers=x_1.species[lower:upper], scaled_positions=x_1.pos[lower:upper, :],
+                                    cell=x_1.cell[i, :, :], pbc=(1, 1, 1)))
+            gen_atoms.append(Atoms(numbers=gen.species[lower:upper], scaled_positions=gen.pos[lower:upper, :],
+                                    cell=gen.cell[i, :, :], pbc=(1, 1, 1)))
+        gen_valid_atoms = ValidAtoms.get_valid_atoms(gen_atoms, desc="Validating generated structures",
+                                                        skip_validation=True, number_cpus=1)
+        ref_valid_atoms = ValidAtoms.get_valid_atoms(x_1_atoms, desc="Validating reference structures",
+                                                        skip_validation=True, number_cpus=1)
+
+        match1, rmsd1, vmatch1, vrmsd1 = match_rate_and_rmsd(gen_valid_atoms, ref_valid_atoms, ltol=0.3, stol=0.5,
+                                                    angle_tol=10.0, number_cpus=1)
+        self.matches += vmatch1 * batch_size
+        self.rmsd += vrmsd1 * batch_size
+        self.counts += batch_size
+        
+        losses['matches'] = vmatch1 * batch_size
+        losses['rmsd'] = vrmsd1
+
         self.log_dict(
             losses,
             on_step=False,
             on_epoch=True,
             prog_bar=True,
             sync_dist=True,
-            batch_size=self.trainer.datamodule.batch_size
+            batch_size=batch_size
         )
 
         return total_loss
+
+    def on_validation_epoch_start(self):
+        self.matches = 0
+        self.rmsd = 0
+        self.counts = 0
+
+    def on_validation_epoch_end(self):
+        self.log("match_rate_end", self.matches / self.counts, sync_dist=True)
+        self.log("rmsd_end", self.rmsd / self.counts, sync_dist=True)
 
     # TODO: what do we want to return
     def predict_step(self, x: OMGData) -> OMGData:
