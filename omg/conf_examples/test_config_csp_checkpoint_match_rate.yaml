@@ -123,14 +123,14 @@ trainer:
       init_args:
         filename: "best_val_match_rate"
         save_top_k: 1
-        monitor: "match_rate_end"
+        monitor: "match_rate"
         save_weights_only: true
         mode: 'max'
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
         filename: "best_val_rmsd"
         save_top_k: 1
-        monitor: "rmsd_end"
+        monitor: "mean_rmsd"
         save_weights_only: true
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
