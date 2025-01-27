@@ -155,7 +155,7 @@ class OMGLightning(L.LightningModule):
             on_epoch=True,
             prog_bar=True,
             sync_dist=True,
-            batch_size=self.trainer.datamodule.batch_size
+            batch_size=len(x_1.n_atoms)
         )
 
         return total_loss
