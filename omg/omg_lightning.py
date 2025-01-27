@@ -167,16 +167,18 @@ class OMGLightning(L.LightningModule):
         if self._validation_metric == self.ValidationMetric.MATCH_RATE:
             gen = self.si.integrate(x_0, self.model, save_intermediate=False)
             gen.to('cpu')
-            x_1.to('cpu')
+            # Prevent moving x_1 to cpu because it's needed below.
+            x_1_cpu = x_1.clone().to('cpu')
             x_1_atoms = []
             gen_atoms = []
-            assert torch.equal(gen.n_atoms, x_1.n_atoms)
-            assert torch.equal(gen.ptr, x_1.ptr)
-            assert torch.equal(gen.species, x_1.species)
+            assert torch.equal(gen.n_atoms, x_1_cpu.n_atoms)
+            assert torch.equal(gen.ptr, x_1_cpu.ptr)
+            assert torch.equal(gen.species, x_1_cpu.species)
             for i in range(batch_size):
-                lower, upper = x_1.ptr[i], x_1.ptr[i + 1]
-                x_1_atoms.append(Atoms(numbers=x_1.species[lower:upper], scaled_positions=x_1.pos[lower:upper, :],
-                                       cell=x_1.cell[i, :, :], pbc=(1, 1, 1)))
+                lower, upper = x_1_cpu.ptr[i], x_1_cpu.ptr[i + 1]
+                x_1_atoms.append(Atoms(numbers=x_1_cpu.species[lower:upper],
+                                       scaled_positions=x_1_cpu.pos[lower:upper, :],
+                                       cell=x_1_cpu.cell[i, :, :], pbc=(1, 1, 1)))
                 gen_atoms.append(Atoms(numbers=gen.species[lower:upper], scaled_positions=gen.pos[lower:upper, :],
                                        cell=gen.cell[i, :, :], pbc=(1, 1, 1)))
             gen_valid_atoms = ValidAtoms.get_valid_atoms(gen_atoms, desc="Validating generated structures",
