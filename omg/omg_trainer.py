@@ -556,7 +556,7 @@ class OMGTrainer(Trainer):
 
     def match(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str, skip_validation: bool = False,
               skip_match: bool = False, skip_unique: bool = False, number_cpus: Optional[int] = None,
-              match_everyone: bool = False) -> None:
+              match_everyone: bool = False, xyz_file_test_data: Optional[str] = None) -> None:
         """
         Compute the match rate between the generated structures and the structures in the prediction dataset, as well as
         the unique rate of the generated structures.
@@ -598,6 +598,12 @@ class OMGTrainer(Trainer):
             Defaults to False.
             This argument can be optionally set on the command line.
         :type match_everyone: bool
+        :param xyz_file_test_data:
+            XYZ file containing the test data structures.
+            If None, the test data structures are loaded from the datamodule.
+            Defaults to None.
+            This argument can be optionally set on the command line.
+        :type xyz_file_test_data: Optional[str]
 
         :raises FileNotFoundError:
             If the file does not exist.
@@ -611,8 +617,14 @@ class OMGTrainer(Trainer):
 
         # Get atoms
         gen_atoms = xyz_reader(final_file)
-        ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset,
-                                             datamodule.predict_dataset.convert_to_fractional)
+        if xyz_file_test_data is not None:
+            test_file = Path(xyz_file_test_data)
+            if not test_file.exists():
+                raise FileNotFoundError(f"File {test_file} does not exist.")
+            ref_atoms = xyz_reader(test_file)
+        else:
+            ref_atoms = self._load_dataset_atoms(datamodule.predict_dataset,
+                                                 datamodule.predict_dataset.convert_to_fractional)
 
         # TODO: Do we want to filter atoms everywhere?
         gen_valid_atoms = ValidAtoms.get_valid_atoms(gen_atoms, desc="Validating generated structures",
