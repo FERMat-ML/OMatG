@@ -1,12 +1,11 @@
-# OMG: Open Materials Generation
+# OMatG: Open Materials Generation
 
-A generative model for crystal structure prediction and de novo generation of atomic crystals.
+A generative model for crystal structure prediction and de novo generation of inorganic crystals. 
 
-## Alex-MP20 dataset
+This open-source framework accompanies the paper available at [OpenReview](https://openreview.net/forum?id=ka2jxtCrkK#discussion,
+which should be cited when using it.
 
-The Alex-MP20 dataset is too large to be stored in this repository. You can download it at
-https://drive.google.com/drive/folders/1UU8nO_7qrDxirxSkzPDxzbHTLpO1DMuv?usp=share_link and put it alongside the other 
-datasets in the [omg/data](omg/data) directory.
+**Note:** This repository is currently work in progress. 
 
 ## Dependencies
 
@@ -82,6 +81,10 @@ The validations, and the computations of the match rate and unique rate are para
 determined by `os.cpu_count()`. This can be changed by setting the `--number_cpus` argument (which is probably most 
 useful in cluster environments).
 
+## Alex-MP20 dataset
+
+The Alex-MP20 dataset is too large to be stored in this repository. It will be released later.
+
 ## Curriculum Learning
 
 Run the following command to use a given configuration file with stochastic interpolants for all datafields 'pos', 
@@ -95,7 +98,7 @@ omg curriculum --config {config_file} --lessons {lessons}
 Here, lessons should be a list of strings so, e.g., [pos] or [pos,species] (spaces can be included when the brackets are
 surrounded by quotes).
 
-## OMG Data Format
+## OMatG Data Format
 
 For a batch size of batch_size, the `torch_geometric.data.Data` instances contain the following attributes:
 - `n_atoms`: `torch.Tensor` of shape `(batch_size, )` containing the number of atoms in each configuration.
