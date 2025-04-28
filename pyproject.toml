@@ -37,3 +37,6 @@ dependencies = [
 
 [project.scripts]
 omg = "omg.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
