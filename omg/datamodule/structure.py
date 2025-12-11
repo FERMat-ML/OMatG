@@ -65,8 +65,9 @@ class Structure(object):
         Create a Structure object from the given data dictionary and metadata.
 
         The data dictionary is expected to contain at least the following keys:
+
         - "cell": A 3x3 torch.Tensor of the lattice vectors.
-                  The [i, j]-th element is the jth Cartesian coordinate of the ith unit vector.
+           The [i, j]-th element is the jth Cartesian coordinate of the ith unit vector.
         - "pos": A Nx3 torch.Tensor of fractional or Cartesian atomic positions.
         - "atomic_numbers": A torch tensor of N integers giving the atomic numbers of the atoms.
 
@@ -90,6 +91,7 @@ class Structure(object):
         :return:
             A Structure object created from the data dictionary and metadata.
         :rtype: Structure
+
         """
         return cls(
             cell=data["cell"],

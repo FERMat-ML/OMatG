@@ -287,28 +287,28 @@ class StructureDataset(Dataset):
                     raise KeyError(f"Key {key} in the lmdb file does not contain 'cell'.")
                 if not isinstance(lmdb_structure["cell"], torch.Tensor):
                     raise TypeError(f"Key {key} in the lmdb file has 'cell' of type "
-                                    f"{type(lmdb_structure["cell"])}, expected torch.Tensor.")
+                                    f"{type(lmdb_structure['cell'])}, expected torch.Tensor.")
                 if not torch.is_floating_point(lmdb_structure["cell"]):
                     raise TypeError(f"Key {key} in the lmdb file has 'cell' of "
-                                    f"dtype {lmdb_structure["cell"].dtype}, expected floating point dtype.")
+                                    f"dtype {lmdb_structure['cell'].dtype}, expected floating point dtype.")
 
                 if "atomic_numbers" not in lmdb_structure:
                     raise KeyError(f"Key {key} in the lmdb file does not contain 'atomic_numbers'.")
                 if not isinstance(lmdb_structure["atomic_numbers"], torch.Tensor):
                     raise TypeError(f"Key {key} in the lmdb file has 'atomic_numbers' of type "
-                                    f"{type(lmdb_structure["atomic_numbers"])}, expected torch.Tensor.")
+                                    f"{type(lmdb_structure['atomic_numbers'])}, expected torch.Tensor.")
                 if not lmdb_structure["atomic_numbers"].dtype in (torch.int64, torch.int32):
                     raise TypeError(f"Key {key} in the lmdb file has 'atomic_numbers' of dtype "
-                                    f"{lmdb_structure["atomic_numbers"].dtype}, expected torch.int64 or torch.int32.")
+                                    f"{lmdb_structure['atomic_numbers'].dtype}, expected torch.int64 or torch.int32.")
 
                 if "pos" not in lmdb_structure:
                     raise KeyError(f"Key {key} in the lmdb file does not contain 'pos'.")
                 if not isinstance(lmdb_structure["pos"], torch.Tensor):
                     raise TypeError(f"Key {key} in the lmdb file has 'pos' of type "
-                                    f"{type(lmdb_structure["pos"])}, expected torch.Tensor.")
+                                    f"{type(lmdb_structure['pos'])}, expected torch.Tensor.")
                 if not torch.is_floating_point(lmdb_structure["pos"]):
                     raise TypeError(f"Key {key} in the lmdb file has 'pos' of dtype "
-                                    f"{lmdb_structure["pos"].dtype}, expected floating point dtype.")
+                                    f"{lmdb_structure['pos'].dtype}, expected floating point dtype.")
 
                 metadata = {"file_path": str(existing_lmdb_path), "file_key": key}
                 if "ids" in lmdb_structure and "identifier" in lmdb_structure:
