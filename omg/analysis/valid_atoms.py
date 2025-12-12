@@ -11,6 +11,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from smact.screening import smact_validity
 from tqdm.contrib.concurrent import process_map
 from tqdm import tqdm
+from omg.globals import MAX_ATOM_NUM
 
 
 class ValidAtoms(object):
