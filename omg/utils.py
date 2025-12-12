@@ -14,6 +14,7 @@ class DataField(Enum):
     Enum for the different data fields in the omg.datamodule.dataloader.OMGData class relevant for stochastic
     interpolants.
     """
+
     pos = auto()
     """Atomic positions."""
     cell = auto()
@@ -22,9 +23,11 @@ class DataField(Enum):
     """Atomic numbers."""
 
 
-def reshape_t(t: torch.Tensor, n_atoms: torch.Tensor, data_field: DataField) -> torch.Tensor:
+def reshape_t(
+    t: torch.Tensor, n_atoms: torch.Tensor, data_field: DataField
+) -> torch.Tensor:
     """
-    Reshape the given tensor of times for every configuration of the batch so that it can be used for the given data field.  
+    Reshape the given tensor of times for every configuration of the batch so that it can be used for the given data field.
     For a batch size of batch_size, the data format for the different data fields is as follows:
     - species: torch.Tensor of shape (sum(n_atoms), ) containing the atomic numbers of the atoms in the configurations
     - cell: torch.Tensor of shape (batch_size, 3, 3) containing the cell vectors of the configurations
@@ -32,7 +35,7 @@ def reshape_t(t: torch.Tensor, n_atoms: torch.Tensor, data_field: DataField) -> 
 
     The returned tensor will have the same shape as the tensor of the given data field, and the correct time for every
     element of the data field tensor.
- 
+
     :param t:
         Tensor of times for the configurations in the batch.
     :type t: torch.Tensor
@@ -42,7 +45,7 @@ def reshape_t(t: torch.Tensor, n_atoms: torch.Tensor, data_field: DataField) -> 
     :param data_field:
         Data field for which the tensor of times should be reshaped.
     :type data_field: DataField
-   
+
     :return:
         Tensor of times for the given data field.
         :rtype: torch.Tensor
@@ -76,16 +79,40 @@ def xyz_saver(data: Union[OMGData, list[OMGData]], filename: Path) -> None:
     if not isinstance(data, list):
         data = [data]
     atoms = []
+    MAX_Z = 118  # highest element ASE knows about
     for d in data:
         batch_size = len(d.n_atoms)
         for i in range(batch_size):
             lower, upper = d.ptr[i * 1], d.ptr[(i * 1) + 1]
+            species_slice = d.species[lower:upper].detach().cpu().numpy().astype(int)
+            positions = d.pos[lower:upper, :].detach().cpu().numpy()
+            cell = d.cell[i, :, :].detach().cpu().numpy()
+
+            ghost_mask = species_slice <= 0
+            ghost_mask |= species_slice > MAX_Z
+
+            safe_species = species_slice.copy()
+            safe_species[ghost_mask] = 0  # map ghosts to dummy element 'X'
+
             if d.pos_is_fractional[i]:
-                atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :],
-                                   cell=d.cell[i, :, :], pbc=True))
+                atom = Atoms(
+                    numbers=safe_species,
+                    scaled_positions=positions,
+                    cell=cell,
+                    pbc=True,
+                )
             else:
-                atoms.append(Atoms(numbers=d.species[lower:upper], positions=d.pos[lower:upper, :],
-                                   cell=d.cell[i, :, :], pbc=True))
+                atom = Atoms(
+                    numbers=safe_species, positions=positions, cell=cell, pbc=True
+                )
+
+            if ghost_mask.any():
+                atom.new_array("is_ghost", ghost_mask.astype(np.int8))
+                ghost_numbers = np.full_like(safe_species, -1)
+                ghost_numbers[ghost_mask] = species_slice[ghost_mask]
+                atom.new_array("ghost_atomic_number", ghost_numbers)
+
+            atoms.append(atom)
     write(filename, atoms, append=True)
 
 
@@ -104,7 +131,7 @@ def xyz_reader(filename: Path) -> list[Atoms]:
     if not filename.suffix == ".xyz":
         raise ValueError("The filename must have the suffix '.xyz'.")
     # Read all atoms from the file by using index=":".
-    all_configs = read(filename, index=":", format='extxyz')
+    all_configs = read(filename, index=":", format="extxyz")
     return all_configs
 
 
@@ -138,18 +165,24 @@ def convert_ase_atoms_to_data(all_configs: Sequence[Atoms]) -> Data:
         cell = config.get_cell()
         assert len(species) == len(pos)
         assert ptr[config_index + 1] - ptr[config_index] == len(species)
-        all_pos[ptr[config_index]:ptr[config_index + 1]] = torch.tensor(pos)
-        all_species[ptr[config_index]:ptr[config_index + 1]] = torch.tensor(species)
+        all_pos[ptr[config_index] : ptr[config_index + 1]] = torch.tensor(pos)
+        all_species[ptr[config_index] : ptr[config_index + 1]] = torch.tensor(species)
         # cell[:] converts the ase.cell.Cell object to a numpy array.
         all_cell[config_index] = torch.tensor(cell[:])
 
-    return Data(pos=all_pos, cell=all_cell, species=all_species, ptr=ptr, n_atoms=n_atoms, batch=batch,
-                pos_is_fractional=all_pos_is_fractional)
+    return Data(
+        pos=all_pos,
+        cell=all_cell,
+        species=all_species,
+        ptr=ptr,
+        n_atoms=n_atoms,
+        batch=batch,
+        pos_is_fractional=all_pos_is_fractional,
+    )
 
 
 # Copied from https://github.com/jiaor17/DiffCSP/blob/7121d159826efa2ba9500bf299250d96da37f146/diffcsp/common/data_utils.py
 class StandardScaler:
-
     """A :class:`StandardScaler` normalizes the features of a dataset.
     When it is fit on a dataset, the :class:`StandardScaler` learns the
         mean and standard deviation across the 0th axis.
@@ -176,12 +209,11 @@ class StandardScaler:
         X = np.array(X).astype(float)
         self.means = np.nanmean(X, axis=0)
         self.stds = np.nanstd(X, axis=0)
-        self.means = np.where(np.isnan(self.means),
-                              np.zeros(self.means.shape), self.means)
-        self.stds = np.where(np.isnan(self.stds),
-                             np.ones(self.stds.shape), self.stds)
-        self.stds = np.where(self.stds == 0, np.ones(
-            self.stds.shape), self.stds)
+        self.means = np.where(
+            np.isnan(self.means), np.zeros(self.means.shape), self.means
+        )
+        self.stds = np.where(np.isnan(self.stds), np.ones(self.stds.shape), self.stds)
+        self.stds = np.where(self.stds == 0, np.ones(self.stds.shape), self.stds)
 
         return self
 
@@ -194,7 +226,8 @@ class StandardScaler:
         X = np.array(X).astype(float)
         transformed_with_nan = (X - self.means) / self.stds
         transformed_with_none = np.where(
-            np.isnan(transformed_with_nan), self.replace_nan_token, transformed_with_nan)
+            np.isnan(transformed_with_nan), self.replace_nan_token, transformed_with_nan
+        )
 
         return transformed_with_none
 
@@ -207,6 +240,7 @@ class StandardScaler:
         X = np.array(X).astype(float)
         transformed_with_nan = X * self.stds + self.means
         transformed_with_none = np.where(
-            np.isnan(transformed_with_nan), self.replace_nan_token, transformed_with_nan)
+            np.isnan(transformed_with_nan), self.replace_nan_token, transformed_with_nan
+        )
 
         return transformed_with_none

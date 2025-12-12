@@ -69,13 +69,46 @@ class ValidAtoms(object):
         warnings.simplefilter("ignore")
         _CompFP = ElementProperty.from_preset("magpie")
 
-    def __init__(self, atoms: Atoms, volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
-                 use_pauling_test: bool = True, include_alloys: bool = True, skip_validation: bool = False,
-                 upper_narity_limit: Optional[int] = None) -> None:
+    def __init__(
+        self,
+        atoms: Atoms,
+        volume_check_cutoff: float = 0.1,
+        structure_check_cutoff: float = 0.5,
+        use_pauling_test: bool = True,
+        include_alloys: bool = True,
+        skip_validation: bool = False,
+        upper_narity_limit: Optional[int] = None,
+    ) -> None:
         """Constructor of the ValidAtoms class."""
         if upper_narity_limit is not None and upper_narity_limit < 1:
             raise ValueError("The upper n-arity limit must be at least 1.")
         self._upper_narity_limit = upper_narity_limit
+
+        # Filter out ghost atoms before validation
+        # Ghost atoms are non-physical and should not be included in metrics
+        if "is_ghost" in atoms.arrays:
+            is_ghost = atoms.arrays["is_ghost"].astype(bool)
+            # Keep only non-ghost atoms
+            atoms = atoms[~is_ghost]
+        else:
+            # Fallback: filter by atomic number (ghost atoms have number <= 0 or > MAX_ATOM_NUM)
+            valid_mask = (atoms.numbers > 0) & (
+                atoms.numbers <= 118
+            )  # Assuming 118 is the max real atomic number
+            atoms = atoms[valid_mask]
+
+        # If all atoms were ghost atoms, mark as invalid
+        if len(atoms) == 0:
+            self._atoms = atoms
+            self._structure = None
+            self._composition = None
+            self._volume_valid = False
+            self._structure_valid = False
+            self._composition_valid = False
+            self._fingerprint_valid = False
+            self._composition_fingerprint, self._structure_fingerprint = None, None
+            return
+
         self._atoms = atoms
         self._structure = AseAtomsAdaptor.get_structure(atoms)
         self._composition = self._structure.composition
@@ -90,21 +123,31 @@ class ValidAtoms(object):
             self._composition_fingerprint, self._structure_fingerprint = None, None
         else:
             self._volume_valid = self._structure.volume > volume_check_cutoff
-            self._structure_valid = self._structure_check(self._structure, self._structure_check_cutoff)
+            self._structure_valid = self._structure_check(
+                self._structure, self._structure_check_cutoff
+            )
             if self._volume_valid and self._structure_valid:
                 try:
-                    self._composition_valid = self._smact_check(self._composition, self._use_pauling_test,
-                                                                self._include_alloys, self._upper_narity_limit)
+                    self._composition_valid = self._smact_check(
+                        self._composition,
+                        self._use_pauling_test,
+                        self._include_alloys,
+                        self._upper_narity_limit,
+                    )
                 except TypeError:
                     self._composition_valid = False
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     try:
-                        self._composition_fingerprint, self._structure_fingerprint = self._get_fingerprints(
-                            self._composition, self._structure)
+                        self._composition_fingerprint, self._structure_fingerprint = (
+                            self._get_fingerprints(self._composition, self._structure)
+                        )
                         self._fingerprint_valid = True
                     except (ValueError, TypeError):
-                        self._composition_fingerprint, self._structure_fingerprint = None, None
+                        self._composition_fingerprint, self._structure_fingerprint = (
+                            None,
+                            None,
+                        )
                         self._fingerprint_valid = False
             else:
                 self._composition_valid = False
@@ -112,11 +155,18 @@ class ValidAtoms(object):
                 self._composition_fingerprint, self._structure_fingerprint = None, None
 
     @staticmethod
-    def get_valid_atoms(atoms: Sequence[Atoms], volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
-                        use_pauling_test: bool = True, include_alloys: bool = True, desc: Optional[str] = None,
-                        skip_validation: bool = False, number_cpus: Optional[int] = None,
-                        enable_progress_bar: bool = True,
-                        upper_narity_limit: Optional[None] = None) -> List["ValidAtoms"]:
+    def get_valid_atoms(
+        atoms: Sequence[Atoms],
+        volume_check_cutoff: float = 0.1,
+        structure_check_cutoff: float = 0.5,
+        use_pauling_test: bool = True,
+        include_alloys: bool = True,
+        desc: Optional[str] = None,
+        skip_validation: bool = False,
+        number_cpus: Optional[int] = None,
+        enable_progress_bar: bool = True,
+        upper_narity_limit: Optional[None] = None,
+    ) -> List["ValidAtoms"]:
         """
         Generate a list of ValidAtoms instances from a list of Atoms instances in parallel.
 
@@ -169,22 +219,45 @@ class ValidAtoms(object):
             raise ValueError("The number of CPUs must be at least 1.")
         if skip_validation:
             # No parallelization necessary because this will be fast.
-            valid_atoms = [ValidAtoms(atoms=a, volume_check_cutoff=volume_check_cutoff,
-                                      structure_check_cutoff=structure_check_cutoff, use_pauling_test=use_pauling_test,
-                                      include_alloys=include_alloys, skip_validation=skip_validation,
-                                      upper_narity_limit=upper_narity_limit) for a in atoms]
+            valid_atoms = [
+                ValidAtoms(
+                    atoms=a,
+                    volume_check_cutoff=volume_check_cutoff,
+                    structure_check_cutoff=structure_check_cutoff,
+                    use_pauling_test=use_pauling_test,
+                    include_alloys=include_alloys,
+                    skip_validation=skip_validation,
+                    upper_narity_limit=upper_narity_limit,
+                )
+                for a in atoms
+            ]
         else:
-            constructor = partial(ValidAtoms, volume_check_cutoff=volume_check_cutoff,
-                                  structure_check_cutoff=structure_check_cutoff, use_pauling_test=use_pauling_test,
-                                  include_alloys=include_alloys, skip_validation=skip_validation,
-                                  upper_narity_limit=upper_narity_limit)
+            constructor = partial(
+                ValidAtoms,
+                volume_check_cutoff=volume_check_cutoff,
+                structure_check_cutoff=structure_check_cutoff,
+                use_pauling_test=use_pauling_test,
+                include_alloys=include_alloys,
+                skip_validation=skip_validation,
+                upper_narity_limit=upper_narity_limit,
+            )
             cpu_count = number_cpus if number_cpus is not None else os.cpu_count()
             if cpu_count > 1:
-                valid_atoms = process_map(constructor, atoms, desc=desc,
-                                          chunksize=max(min(len(atoms) // cpu_count, 100), 1),
-                                          max_workers=cpu_count, disable=not enable_progress_bar)
+                valid_atoms = process_map(
+                    constructor,
+                    atoms,
+                    desc=desc,
+                    chunksize=max(min(len(atoms) // cpu_count, 100), 1),
+                    max_workers=cpu_count,
+                    disable=not enable_progress_bar,
+                )
             else:
-                valid_atoms = list(map(constructor, tqdm(atoms, desc=desc, disable=not enable_progress_bar)))
+                valid_atoms = list(
+                    map(
+                        constructor,
+                        tqdm(atoms, desc=desc, disable=not enable_progress_bar),
+                    )
+                )
         return valid_atoms
 
     @staticmethod
@@ -208,16 +281,19 @@ class ValidAtoms(object):
         """
         dist_mat = structure.distance_matrix
         # Pad diagonal with a large number
-        dist_mat = dist_mat + np.diag(
-            np.ones(dist_mat.shape[0]) * (cutoff + 10.))
+        dist_mat = dist_mat + np.diag(np.ones(dist_mat.shape[0]) * (cutoff + 10.0))
         if dist_mat.min() < cutoff or structure.volume < 0.1:
             return False
         else:
             return True
 
     @staticmethod
-    def _smact_check(composition: Composition, use_pauling_test: bool = True, include_alloys: bool = True,
-                     upper_narity_limit: Optional[int] = None) -> bool:
+    def _smact_check(
+        composition: Composition,
+        use_pauling_test: bool = True,
+        include_alloys: bool = True,
+        upper_narity_limit: Optional[int] = None,
+    ) -> bool:
         """
         Check the validity of the composition according to the SMACT rules.
 
@@ -249,11 +325,17 @@ class ValidAtoms(object):
         """
         if upper_narity_limit is not None and len(composition) > upper_narity_limit:
             return False
-        return smact_validity(composition, use_pauling_test=use_pauling_test, include_alloys=include_alloys,
-                              oxidation_states_set="icsd24")
+        return smact_validity(
+            composition,
+            use_pauling_test=use_pauling_test,
+            include_alloys=include_alloys,
+            oxidation_states_set="icsd24",
+        )
 
     @staticmethod
-    def _get_fingerprints(composition: Composition, structure: Structure) -> Tuple[List[float], List[float]]:
+    def _get_fingerprints(
+        composition: Composition, structure: Structure
+    ) -> Tuple[List[float], List[float]]:
         """
         Compute the normalized Magpie compositional and CrystalNN structural fingerprints.
 
@@ -268,7 +350,10 @@ class ValidAtoms(object):
             (The compositional fingerprint, the structural fingerprint).
         """
         comp_fp = ValidAtoms._CompFP.featurize(composition)
-        site_fps = [ValidAtoms._CrystalNNFP.featurize(structure, i) for i in range(len(structure))]
+        site_fps = [
+            ValidAtoms._CrystalNNFP.featurize(structure, i)
+            for i in range(len(structure))
+        ]
         struct_fp = list(np.array(site_fps).mean(axis=0))
         return comp_fp, struct_fp
 
@@ -347,7 +432,12 @@ class ValidAtoms(object):
             The validity.
         :rtype: bool
         """
-        return self._volume_valid and self._structure_valid and self._composition_valid and self._fingerprint_valid
+        return (
+            self._volume_valid
+            and self._structure_valid
+            and self._composition_valid
+            and self._fingerprint_valid
+        )
 
     @property
     def composition_fingerprint(self) -> Optional[List[float]]:

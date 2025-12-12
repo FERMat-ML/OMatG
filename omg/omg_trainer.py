@@ -21,11 +21,21 @@ from torch_geometric.data import Data
 from omg.omg_lightning import OMGLightning
 from omg.datamodule import OMGDataset, OMGDataModule
 from omg.globals import MAX_ATOM_NUM
-from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
+from omg.sampler.minimum_permutation_distance import (
+    correct_for_minimum_permutation_distance,
+)
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
-from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_cov, get_space_group,
-                          get_volume_frac, match_rmsds, metre_rmsds, ValidAtoms)
+from omg.analysis import (
+    get_coordination_numbers,
+    get_coordination_numbers_species,
+    get_cov,
+    get_space_group,
+    get_volume_frac,
+    match_rmsds,
+    metre_rmsds,
+    ValidAtoms,
+)
 
 
 class OMGTrainer(Trainer):
@@ -41,12 +51,19 @@ class OMGTrainer(Trainer):
     :param kwargs:
         Keyword arguments to pass to the PyTorch Lightning Trainer constructor.
     """
+
     def __init__(self, *args, **kwargs) -> None:
         """Constructor of the OMGTrainer class."""
         super().__init__(*args, **kwargs)
 
-    def visualize(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
-                  plot_name: str = "viz.pdf", skip_init: bool = False) -> None:
+    def visualize(
+        self,
+        model: OMGLightning,
+        datamodule: OMGDataModule,
+        xyz_file: str,
+        plot_name: str = "viz.pdf",
+        skip_init: bool = False,
+    ) -> None:
         """
         Plot and compare distributions over the prediction and generated dataset.
 
@@ -115,7 +132,14 @@ class OMGTrainer(Trainer):
         ref_atoms = self._load_dataset_atoms(datamodule.pred_dataset)
 
         # Plot data
-        self._plot_to_pdf(ref_atoms, init_atoms, gen_atoms, plot_name, model.use_min_perm_dist, symmetry_filename)
+        self._plot_to_pdf(
+            ref_atoms,
+            init_atoms,
+            gen_atoms,
+            plot_name,
+            model.use_min_perm_dist,
+            symmetry_filename,
+        )
 
     @staticmethod
     def _load_dataset_atoms(dataset: OMGDataset) -> list[Atoms]:
@@ -135,18 +159,54 @@ class OMGTrainer(Trainer):
             assert len(struc.species) == struc.pos.shape[0]
             assert struc.pos.shape[1] == 3
             assert struc.cell[0].shape == (3, 3)
+            # Handle ghost atoms: species=-1 should be converted to max_real_Z+1 for ASE compatibility
+            # Following convention: Storage (LMDB) = -1, Export/ASE = max_real_Z + 1
+            species_np = (
+                struc.species.cpu().numpy()
+                if hasattr(struc.species, "cpu")
+                else struc.species.numpy()
+            )
+            is_ghost = species_np == -1
+
+            # Convert -1 to max(real_Z) + 1 for ASE Atoms (following ghost atom convention)
+            numbers_for_ase = species_np.copy()
+            if is_ghost.any():
+                real_numbers = species_np[~is_ghost]
+                max_real = int(real_numbers.max()) if real_numbers.size else 0
+                ghost_label = max_real + 1
+                numbers_for_ase[is_ghost] = ghost_label
+
             if bool(struc.pos_is_fractional):
-                atoms = Atoms(numbers=struc.species, scaled_positions=struc.pos, cell=struc.cell[0],
-                              pbc=(True, True, True))
+                atoms = Atoms(
+                    numbers=numbers_for_ase,
+                    scaled_positions=struc.pos,
+                    cell=struc.cell[0],
+                    pbc=(True, True, True),
+                )
             else:
-                atoms = Atoms(numbers=struc.species, positions=struc.pos, cell=struc.cell[0],
-                              pbc=(True, True, True))
+                atoms = Atoms(
+                    numbers=numbers_for_ase,
+                    positions=struc.pos,
+                    cell=struc.cell[0],
+                    pbc=(True, True, True),
+                )
+
+            # Set is_ghost array so filter_ghost_atoms can properly identify and remove them
+            if is_ghost.any():
+                atoms.set_array("is_ghost", is_ghost)
+
             all_ref_atoms.append(atoms)
         return all_ref_atoms
 
     @staticmethod
-    def _plot_to_pdf(reference: Sequence[Atoms], initial: Optional[Sequence[Atoms]], generated: Sequence[Atoms],
-                     plot_name: str, use_min_perm_dist: bool, symmetry_filename: Path) -> None:
+    def _plot_to_pdf(
+        reference: Sequence[Atoms],
+        initial: Optional[Sequence[Atoms]],
+        generated: Sequence[Atoms],
+        plot_name: str,
+        use_min_perm_dist: bool,
+        symmetry_filename: Path,
+    ) -> None:
         """
         Helper plotting method for the `visualize` method of the OMGTrainer class.
 
@@ -171,7 +231,66 @@ class OMGTrainer(Trainer):
             Filename for the storage of the symmetric structures.
         :type symmetry_filename: Path
         """
-        fractional_coordinates_corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
+        fractional_coordinates_corrector = PeriodicBoundaryConditionsCorrector(
+            min_value=0.0, max_value=1.0
+        )
+
+        # Filter ghost atoms from initial and generated structures before conversion
+        # This ensures shapes match when comparing initial and generated positions
+        def filter_ghost_atoms(atoms_list: Sequence[Atoms]) -> list[Atoms]:
+            """Filter ghost atoms from a list of Atoms objects."""
+            filtered = []
+            for atoms in atoms_list:
+                if "is_ghost" in atoms.arrays:
+                    is_ghost = atoms.arrays["is_ghost"].astype(bool)
+                    atoms = atoms[~is_ghost]
+                else:
+                    # Fallback: filter by atomic number (ghost atoms have number <= 0 or > MAX_ATOM_NUM)
+                    valid_mask = (atoms.numbers > 0) & (atoms.numbers <= MAX_ATOM_NUM)
+                    atoms = atoms[valid_mask]
+                filtered.append(atoms)
+            return filtered
+
+        # Filter ghost atoms
+        if initial is not None:
+            initial = filter_ghost_atoms(initial)
+            generated = filter_ghost_atoms(generated)
+
+            # Ensure initial and generated have the same length
+            if len(initial) != len(generated):
+                raise ValueError(
+                    f"After filtering ghost atoms, initial ({len(initial)}) and generated "
+                    f"({len(generated)}) have different numbers of structures."
+                )
+
+            # Filter out structure pairs where atom counts don't match
+            # This can happen if filtering removes different numbers of atoms
+            matched_initial = []
+            matched_generated = []
+            for init_atoms, gen_atoms in zip(initial, generated):
+                if len(init_atoms) == len(gen_atoms):
+                    matched_initial.append(init_atoms)
+                    matched_generated.append(gen_atoms)
+
+            if len(matched_initial) == 0:
+                # If no structures match, skip initial comparison
+                initial = None
+            elif len(matched_initial) < len(initial):
+                # Warn if some structures were filtered out
+                print(
+                    f"Warning: {len(initial) - len(matched_initial)} structure pairs were "
+                    f"skipped because atom counts didn't match after filtering ghost atoms."
+                )
+                initial = matched_initial
+                generated = matched_generated
+            else:
+                initial = matched_initial
+                generated = matched_generated
+        else:
+            generated = filter_ghost_atoms(generated)
+
+        # Filter ghost atoms from reference (test) structures as well
+        reference = filter_ghost_atoms(reference)
 
         # Keep ASE Atoms versions of certain inputs
         reference_atoms = reference
@@ -204,14 +323,17 @@ class OMGTrainer(Trainer):
         for i in range(1, MAX_ATOM_NUM + 1):
             ref_nums[i] = 0
         for i in range(len(reference.ptr) - 1):
-            num = reference.species[reference.ptr[i]:reference.ptr[i + 1]]
+            num = reference.species[reference.ptr[i] : reference.ptr[i + 1]]
             ref_vol.append(float(torch.abs(torch.det(reference.cell[i]))))
             n_type = len(set(int(n) for n in num))
             if n_type not in ref_n_types:
                 ref_n_types[n_type] = 0
             ref_n_types[n_type] += 1
             for n in num:
-                ref_nums[int(n)] += 1
+                n_int = int(n)
+                # Filter out ghost atoms (atomic number > MAX_ATOM_NUM or < 1)
+                if 1 <= n_int <= MAX_ATOM_NUM:
+                    ref_nums[n_int] += 1
             n_atom = len(num)
             if n_atom not in ref_n_atoms:
                 ref_n_atoms[n_atom] = 0
@@ -222,34 +344,64 @@ class OMGTrainer(Trainer):
         rand_pos_one = torch.rand_like(reference.pos)
         rand_pos_two = torch.rand_like(reference.pos)
         # Cell and species are not important here.
-        rand_data_one = Data(pos=rand_pos_one, cell=reference.cell, species=reference.species, ptr=reference.ptr,
-                             n_atoms=reference.n_atoms, batch=reference.batch)
-        rand_data_two = Data(pos=rand_pos_two, cell=reference.cell, species=reference.species, ptr=reference.ptr,
-                             n_atoms=reference.n_atoms, batch=reference.batch)
+        rand_data_one = Data(
+            pos=rand_pos_one,
+            cell=reference.cell,
+            species=reference.species,
+            ptr=reference.ptr,
+            n_atoms=reference.n_atoms,
+            batch=reference.batch,
+        )
+        rand_data_two = Data(
+            pos=rand_pos_two,
+            cell=reference.cell,
+            species=reference.species,
+            ptr=reference.ptr,
+            n_atoms=reference.n_atoms,
+            batch=reference.batch,
+        )
         if use_min_perm_dist:
-            correct_for_minimum_permutation_distance(rand_data_one, rand_data_two, fractional_coordinates_corrector,
-                                                     switch_species=False)
+            correct_for_minimum_permutation_distance(
+                rand_data_one,
+                rand_data_two,
+                fractional_coordinates_corrector,
+                switch_species=False,
+            )
             rand_pos_one = rand_data_one.pos
             rand_pos_two = rand_data_two.pos
-        rand_pos_prime = fractional_coordinates_corrector.unwrap(rand_pos_one, rand_pos_two)
+        rand_pos_prime = fractional_coordinates_corrector.unwrap(
+            rand_pos_one, rand_pos_two
+        )
         distances_squared = torch.sum((rand_pos_prime - rand_pos_one) ** 2, dim=-1)
         for i in range(len(reference.ptr) - 1):
-            ds = distances_squared[reference.ptr[i]:reference.ptr[i + 1]]
+            ds = distances_squared[reference.ptr[i] : reference.ptr[i + 1]]
             rand_root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
 
         ref_root_mean_square_distances = []
         rand_pos = torch.rand_like(reference.pos)
         # Cell and species are not important here.
-        rand_data = Data(pos=rand_pos, cell=reference.cell, species=reference.species, ptr=reference.ptr,
-                         n_atoms=reference.n_atoms, batch=reference.batch)
+        rand_data = Data(
+            pos=rand_pos,
+            cell=reference.cell,
+            species=reference.species,
+            ptr=reference.ptr,
+            n_atoms=reference.n_atoms,
+            batch=reference.batch,
+        )
         if use_min_perm_dist:
-            correct_for_minimum_permutation_distance(rand_data, reference, fractional_coordinates_corrector,
-                                                     switch_species=False)
+            correct_for_minimum_permutation_distance(
+                rand_data,
+                reference,
+                fractional_coordinates_corrector,
+                switch_species=False,
+            )
             rand_pos = rand_data.pos
-        rand_pos_prime = fractional_coordinates_corrector.unwrap(reference.pos, rand_pos)
+        rand_pos_prime = fractional_coordinates_corrector.unwrap(
+            reference.pos, rand_pos
+        )
         distances_squared = torch.sum((rand_pos_prime - reference.pos) ** 2, dim=-1)
         for i in range(len(reference.ptr) - 1):
-            ds = distances_squared[reference.ptr[i]:reference.ptr[i + 1]]
+            ds = distances_squared[reference.ptr[i] : reference.ptr[i + 1]]
             ref_root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
 
         ref_sg_fail = 0
@@ -274,8 +426,10 @@ class OMGTrainer(Trainer):
                 if cs not in ref_crystal_sys:
                     ref_crystal_sys[cs] = 0
                 ref_crystal_sys[cs] += 1
-        print("Number of times space group identification failed for prediction dataset: "
-              "{}/{}".format(ref_sg_fail, len(reference_atoms)))
+        print(
+            "Number of times space group identification failed for prediction dataset: "
+            "{}/{}".format(ref_sg_fail, len(reference_atoms))
+        )
 
         # List of volumes of all generated structures.
         vol = []
@@ -302,7 +456,7 @@ class OMGTrainer(Trainer):
         for i in range(1, MAX_ATOM_NUM + 1):
             nums[i] = 0
         for i in range(len(generated.ptr) - 1):
-            num = generated.species[generated.ptr[i]:generated.ptr[i + 1]]
+            num = generated.species[generated.ptr[i] : generated.ptr[i + 1]]
             vol.append(float(torch.abs(torch.det(generated.cell[i]))))
             n_type = len(set(int(n) for n in num))
             if n_type not in n_types:
@@ -321,25 +475,41 @@ class OMGTrainer(Trainer):
             assert initial.pos.shape == generated.pos.shape
             # noinspection PyTypeChecker
             assert torch.all(initial.ptr == generated.ptr)
-            generated_pos_prime = fractional_coordinates_corrector.unwrap(initial.pos, generated.pos)
-            distances_squared = torch.sum((generated_pos_prime - initial.pos) ** 2, dim=-1)
+            generated_pos_prime = fractional_coordinates_corrector.unwrap(
+                initial.pos, generated.pos
+            )
+            distances_squared = torch.sum(
+                (generated_pos_prime - initial.pos) ** 2, dim=-1
+            )
             for i in range(len(generated.ptr) - 1):
-                ds = distances_squared[generated.ptr[i]:generated.ptr[i + 1]]
+                ds = distances_squared[generated.ptr[i] : generated.ptr[i + 1]]
                 traveled_root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
 
             root_mean_square_distances = []
             rand_pos = torch.rand_like(generated.pos)
             # Cell and species are not important here.
-            rand_data = Data(pos=rand_pos, cell=generated.cell, species=generated.species, ptr=generated.ptr,
-                             n_atoms=generated.n_atoms, batch=generated.batch)
+            rand_data = Data(
+                pos=rand_pos,
+                cell=generated.cell,
+                species=generated.species,
+                ptr=generated.ptr,
+                n_atoms=generated.n_atoms,
+                batch=generated.batch,
+            )
             if use_min_perm_dist:
-                correct_for_minimum_permutation_distance(rand_data, generated, fractional_coordinates_corrector,
-                                                         switch_species=False)
+                correct_for_minimum_permutation_distance(
+                    rand_data,
+                    generated,
+                    fractional_coordinates_corrector,
+                    switch_species=False,
+                )
                 rand_pos = rand_data.pos
-            rand_pos_prime = fractional_coordinates_corrector.unwrap(generated.pos, rand_pos)
+            rand_pos_prime = fractional_coordinates_corrector.unwrap(
+                generated.pos, rand_pos
+            )
             distances_squared = torch.sum((rand_pos_prime - generated.pos) ** 2, dim=-1)
             for i in range(len(generated.ptr) - 1):
-                ds = distances_squared[generated.ptr[i]:generated.ptr[i + 1]]
+                ds = distances_squared[generated.ptr[i] : generated.ptr[i + 1]]
                 root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
 
         sg_fail = 0
@@ -353,7 +523,9 @@ class OMGTrainer(Trainer):
                     cn_species[key] = []
                 cn_species[key].extend(val)
 
-            sg_group, sg_num, cs, sym_struc = get_space_group(struc, var_prec=True, angle_tolerance=-1.0)
+            sg_group, sg_num, cs, sym_struc = get_space_group(
+                struc, var_prec=True, angle_tolerance=-1.0
+            )
             if sg_group is None:
                 assert sg_num is None and cs is None
                 sg_fail += 1
@@ -368,12 +540,15 @@ class OMGTrainer(Trainer):
                 # Only write symmetric structures.
                 if sg_num >= 3:
                     # Write original and symmetrized structures one after another for easier comparison.
-                    write(str(symmetry_filename), struc, format='extxyz', append=True)
-                    write(str(symmetry_filename), sym_struc, format='extxyz', append=True)
+                    write(str(symmetry_filename), struc, format="extxyz", append=True)
+                    write(
+                        str(symmetry_filename), sym_struc, format="extxyz", append=True
+                    )
 
             # Testing with var_prec = False, with tolerances reasonable for DFT-relaxed structures.
-            sg_group_F, sg_num_F, cs_F, sym_struc_F = get_space_group(struc, var_prec=False, symprec=1.0e-2,
-                                                                      angle_tolerance=-1.0)
+            sg_group_F, sg_num_F, cs_F, sym_struc_F = get_space_group(
+                struc, var_prec=False, symprec=1.0e-2, angle_tolerance=-1.0
+            )
             if sg_group_F is None:
                 assert sg_num_F is None and cs_F is None
                 sg_fail_F += 1
@@ -388,24 +563,42 @@ class OMGTrainer(Trainer):
                 # Only write symmetric structures.
                 if sg_num_F >= 3:
                     # Write original and symmetrized structures one after another for easier comparison.
-                    symmetry_filename_F = str(symmetry_filename.with_stem(symmetry_filename.stem + "_F"))
-                    write(symmetry_filename_F, struc, format='extxyz', append=True)
-                    write(symmetry_filename_F, sym_struc_F, format='extxyz', append=True)
+                    symmetry_filename_F = str(
+                        symmetry_filename.with_stem(symmetry_filename.stem + "_F")
+                    )
+                    write(symmetry_filename_F, struc, format="extxyz", append=True)
+                    write(
+                        symmetry_filename_F, sym_struc_F, format="extxyz", append=True
+                    )
 
-        print("Number of times space group identification failed for generated dataset (var_prec = True): "
-              "{}/{} total".format(sg_fail, len(generated_atoms)))
-        print("Number of times space group identification failed for generated dataset (var_prec = False): "
-              "{}/{} total".format(sg_fail_F, len(generated_atoms)))
+        print(
+            "Number of times space group identification failed for generated dataset (var_prec = True): "
+            "{}/{} total".format(sg_fail, len(generated_atoms))
+        )
+        print(
+            "Number of times space group identification failed for generated dataset (var_prec = False): "
+            "{}/{} total".format(sg_fail_F, len(generated_atoms))
+        )
 
         # Plot
         with PdfPages(plot_name) as pdf:
             # Plot Element distribution
             total_number_atoms = sum(v for v in nums.values())
-            plt.bar([k for k in nums.keys()], [v / total_number_atoms for v in nums.values()], alpha=0.8,
-                    label="Generated", color="blueviolet")
+            plt.bar(
+                [k for k in nums.keys()],
+                [v / total_number_atoms for v in nums.values()],
+                alpha=0.8,
+                label="Generated",
+                color="blueviolet",
+            )
             total_number_atoms_ref = sum(v for v in ref_nums.values())
-            plt.bar([k for k in ref_nums.keys()], [v / total_number_atoms_ref for v in ref_nums.values()], alpha=0.5,
-                    label="Training", color="darkslategrey")
+            plt.bar(
+                [k for k in ref_nums.keys()],
+                [v / total_number_atoms_ref for v in ref_nums.values()],
+                alpha=0.5,
+                label="Training",
+                color="darkslategrey",
+            )
             plt.title("Fractional element composition")
             plt.xlabel("Atomic Number")
             plt.ylabel("Density")
@@ -426,7 +619,9 @@ class OMGTrainer(Trainer):
             log_density_gt = kde_gt.score_samples(x_d)
             kde_gen = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(vol)
             log_density_gen = kde_gen.score_samples(x_d)
-            plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
+            plt.plot(
+                x_d, np.exp(log_density_gen), color="blueviolet", label="Generated"
+            )
             plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Test")
             # plt.text(
             #    0.05, 0.95,
@@ -443,15 +638,33 @@ class OMGTrainer(Trainer):
             plt.close()
 
             # Plot N-atoms
-            plt.bar([k for k in n_atoms.keys()], [v / len(generated.n_atoms) for v in n_atoms.values()], alpha=0.8,
-                    label="Generated", color="blueviolet")
-            plt.bar([k for k in ref_n_atoms.keys()], [v / len(reference.n_atoms) for v in ref_n_atoms.values()],
-                    alpha=0.5, label="Test", color="darkslategrey")
-            plt.xticks(ticks=np.arange(min(min(k for k in n_atoms.keys()),
-                                           min(k for k in ref_n_atoms.keys())),
-                                       max(max(k for k in n_atoms.keys()),
-                                           max(k for k in ref_n_atoms.keys())),
-                                       1))
+            plt.bar(
+                [k for k in n_atoms.keys()],
+                [v / len(generated.n_atoms) for v in n_atoms.values()],
+                alpha=0.8,
+                label="Generated",
+                color="blueviolet",
+            )
+            plt.bar(
+                [k for k in ref_n_atoms.keys()],
+                [v / len(reference.n_atoms) for v in ref_n_atoms.values()],
+                alpha=0.5,
+                label="Test",
+                color="darkslategrey",
+            )
+            plt.xticks(
+                ticks=np.arange(
+                    min(
+                        min(k for k in n_atoms.keys()),
+                        min(k for k in ref_n_atoms.keys()),
+                    ),
+                    max(
+                        max(k for k in n_atoms.keys()),
+                        max(k for k in ref_n_atoms.keys()),
+                    ),
+                    1,
+                )
+            )
             plt.title("Number of atoms")
             plt.xlabel("Number of atoms per structure")
             plt.ylabel("Density")
@@ -460,15 +673,33 @@ class OMGTrainer(Trainer):
             plt.close()
 
             # Plot N-ary
-            plt.bar([k for k in n_types.keys()], [v / len(generated.n_atoms) for v in n_types.values()], alpha=0.8,
-                    label="Generated", color="blueviolet")
-            plt.bar([k for k in ref_n_types.keys()], [v / len(reference.n_atoms) for v in ref_n_types.values()],
-                    alpha=0.5, label="Test", color="darkslategrey")
-            plt.xticks(ticks=np.arange(min(min(k for k in n_types.keys()),
-                                           min(k for k in ref_n_types.keys())),
-                                       max(max(k for k in n_types.keys()),
-                                           max(k for k in ref_n_types.keys())),
-                                       1))
+            plt.bar(
+                [k for k in n_types.keys()],
+                [v / len(generated.n_atoms) for v in n_types.values()],
+                alpha=0.8,
+                label="Generated",
+                color="blueviolet",
+            )
+            plt.bar(
+                [k for k in ref_n_types.keys()],
+                [v / len(reference.n_atoms) for v in ref_n_types.values()],
+                alpha=0.5,
+                label="Test",
+                color="darkslategrey",
+            )
+            plt.xticks(
+                ticks=np.arange(
+                    min(
+                        min(k for k in n_types.keys()),
+                        min(k for k in ref_n_types.keys()),
+                    ),
+                    max(
+                        max(k for k in n_types.keys()),
+                        max(k for k in ref_n_types.keys()),
+                    ),
+                    1,
+                )
+            )
             plt.title("N-ary")
             plt.xlabel("Unique elements per structure")
             plt.ylabel("Density")
@@ -479,24 +710,43 @@ class OMGTrainer(Trainer):
             if initial is not None:
                 # Compute distributions for fractional coordinate movement.
                 # Scott's rule for bandwidth.
-                bandwidth = np.std(ref_root_mean_square_distances) * len(ref_root_mean_square_distances) ** (-1 / 5)
+                bandwidth = np.std(ref_root_mean_square_distances) * len(
+                    ref_root_mean_square_distances
+                ) ** (-1 / 5)
                 ref_rmsds = np.array(ref_root_mean_square_distances)[:, np.newaxis]
                 rmsds = np.array(root_mean_square_distances)[:, np.newaxis]
                 trmsds = np.array(traveled_root_mean_square_distances)[:, np.newaxis]
                 rand_rmsds = np.array(rand_root_mean_square_distances)[:, np.newaxis]
                 x_d = np.linspace(0.0, (3 * 0.5 * 0.5) ** 0.5, 1000)[:, np.newaxis]
-                kde_gt = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(ref_rmsds)
+                kde_gt = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(
+                    ref_rmsds
+                )
                 log_density_gt = kde_gt.score_samples(x_d)
-                kde_gen = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(rmsds)
+                kde_gen = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(rmsds)
                 log_density_gen = kde_gen.score_samples(x_d)
-                kde_traveled = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(trmsds)
+                kde_traveled = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(
+                    trmsds
+                )
                 log_density_traveled = kde_traveled.score_samples(x_d)
-                kde_rand = KernelDensity(kernel='tophat', bandwidth=bandwidth).fit(rand_rmsds)
+                kde_rand = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(
+                    rand_rmsds
+                )
                 log_density_rand = kde_rand.score_samples(x_d)
-                plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
-                plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Test")
-                plt.plot(x_d, np.exp(log_density_traveled), color="cadetblue", label="Traveled")
-                plt.plot(x_d, np.exp(log_density_rand), color="steelblue", label="Random")
+                plt.plot(
+                    x_d, np.exp(log_density_gen), color="blueviolet", label="Generated"
+                )
+                plt.plot(
+                    x_d, np.exp(log_density_gt), color="darkslategrey", label="Test"
+                )
+                plt.plot(
+                    x_d,
+                    np.exp(log_density_traveled),
+                    color="cadetblue",
+                    label="Traveled",
+                )
+                plt.plot(
+                    x_d, np.exp(log_density_rand), color="steelblue", label="Random"
+                )
                 plt.xlabel("Root Mean Square Distance of Fractional Coordinates")
                 plt.ylabel("Density")
                 plt.legend()
@@ -514,7 +764,9 @@ class OMGTrainer(Trainer):
             # Plot avg cn KDE
             # KernelDensity expects array of shape (n_samples, n_features).
             # We only have a single feature.
-            bandwidth = np.std(ref_avg_cn) * len(ref_avg_cn) ** (-1 / 5)  # Scott's rule.
+            bandwidth = np.std(ref_avg_cn) * len(ref_avg_cn) ** (
+                -1 / 5
+            )  # Scott's rule.
             ref_avg_cn = np.array(ref_avg_cn)[:, np.newaxis]
             avg_cn = np.array(avg_cn)[:, np.newaxis]
             min_cn = min(ref_avg_cn.min(), avg_cn.min())
@@ -524,7 +776,9 @@ class OMGTrainer(Trainer):
             log_density_gt = kde_gt.score_samples(x_d)
             kde_gen = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(avg_cn)
             log_density_gen = kde_gen.score_samples(x_d)
-            plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
+            plt.plot(
+                x_d, np.exp(log_density_gen), color="blueviolet", label="Generated"
+            )
             plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Test")
             plt.title("Average coordination number by structure")
             plt.xlabel("Average CN")
@@ -541,15 +795,34 @@ class OMGTrainer(Trainer):
             for key, val in cn_species.items():
                 avg_cn_species[key] = np.mean(val)
 
-            species_order = Atoms(numbers=np.arange(1, MAX_ATOM_NUM + 1)).get_chemical_symbols()
-            avg_cn_species = OrderedDict((key, avg_cn_species[key]) for key in species_order if key in avg_cn_species)
+            species_order = Atoms(
+                numbers=np.arange(1, MAX_ATOM_NUM + 1)
+            ).get_chemical_symbols()
+            avg_cn_species = OrderedDict(
+                (key, avg_cn_species[key])
+                for key in species_order
+                if key in avg_cn_species
+            )
             ref_avg_cn_species = OrderedDict(
-                (key, ref_avg_cn_species[key]) for key in species_order if key in ref_avg_cn_species)
-            plt.bar([k for k in avg_cn_species.keys()], [v for v in avg_cn_species.values()], alpha=0.8,
-                    label="Generated", color="blueviolet")
-            plt.bar([k for k in ref_avg_cn_species.keys()], [v for v in ref_avg_cn_species.values()], alpha=0.5,
-                    label="Test", color="darkslategrey")
-            plt.xticks(rotation=75, ha='right', fontsize=4)
+                (key, ref_avg_cn_species[key])
+                for key in species_order
+                if key in ref_avg_cn_species
+            )
+            plt.bar(
+                [k for k in avg_cn_species.keys()],
+                [v for v in avg_cn_species.values()],
+                alpha=0.8,
+                label="Generated",
+                color="blueviolet",
+            )
+            plt.bar(
+                [k for k in ref_avg_cn_species.keys()],
+                [v for v in ref_avg_cn_species.values()],
+                alpha=0.5,
+                label="Test",
+                color="darkslategrey",
+            )
+            plt.xticks(rotation=75, ha="right", fontsize=4)
             plt.title("Average coordination number by species")
             plt.xlabel("Species")
             plt.ylabel("Average CN")
@@ -560,11 +833,21 @@ class OMGTrainer(Trainer):
 
             # Compute distributions of space groups
             total_sg = sum(v for v in sg.values())
-            plt.bar([k for k in sg.keys()], [v / total_sg for v in sg.values()], alpha=0.8,
-                    label="Generated", color="blueviolet")
+            plt.bar(
+                [k for k in sg.keys()],
+                [v / total_sg for v in sg.values()],
+                alpha=0.8,
+                label="Generated",
+                color="blueviolet",
+            )
             total_sg_ref = sum(v for v in ref_sg.values())
-            plt.bar([k for k in ref_sg.keys()], [v / total_sg_ref for v in ref_sg.values()], alpha=0.5,
-                    label="Test", color="darkslategrey")
+            plt.bar(
+                [k for k in ref_sg.keys()],
+                [v / total_sg_ref for v in ref_sg.values()],
+                alpha=0.5,
+                label="Test",
+                color="darkslategrey",
+            )
             plt.title("Space group distribution, varprec=True")
             plt.xlabel("Space group number")
             plt.ylabel("Density")
@@ -574,11 +857,21 @@ class OMGTrainer(Trainer):
 
             # Compute distributions of space groups
             total_sg_F = sum(v for v in sg_F.values())
-            plt.bar([k for k in sg_F.keys()], [v / total_sg_F for v in sg_F.values()], alpha=0.8,
-                    label="Generated", color="blueviolet")
+            plt.bar(
+                [k for k in sg_F.keys()],
+                [v / total_sg_F for v in sg_F.values()],
+                alpha=0.8,
+                label="Generated",
+                color="blueviolet",
+            )
             total_sg_ref = sum(v for v in ref_sg.values())
-            plt.bar([k for k in ref_sg.keys()], [v / total_sg_ref for v in ref_sg.values()], alpha=0.5,
-                    label="Test", color="darkslategrey")
+            plt.bar(
+                [k for k in ref_sg.keys()],
+                [v / total_sg_ref for v in ref_sg.values()],
+                alpha=0.5,
+                label="Test",
+                color="darkslategrey",
+            )
             plt.title("Space group distribution, varprec=False")
             plt.xlabel("Space group number")
             plt.ylabel("Density")
@@ -587,16 +880,39 @@ class OMGTrainer(Trainer):
             plt.close()
 
             # Compute distributions of crystal systems
-            cs_order = ['Triclinic', 'Monoclinic', 'Orthorhombic', 'Tetragonal', 'Hexagonal', 'Cubic']
-            crystal_sys_ord = OrderedDict((key, crystal_sys[key]) for key in cs_order if key in crystal_sys)
-            ref_crystal_sys_ord = OrderedDict((key, ref_crystal_sys[key]) for key in cs_order if key in ref_crystal_sys)
+            cs_order = [
+                "Triclinic",
+                "Monoclinic",
+                "Orthorhombic",
+                "Tetragonal",
+                "Hexagonal",
+                "Cubic",
+            ]
+            crystal_sys_ord = OrderedDict(
+                (key, crystal_sys[key]) for key in cs_order if key in crystal_sys
+            )
+            ref_crystal_sys_ord = OrderedDict(
+                (key, ref_crystal_sys[key])
+                for key in cs_order
+                if key in ref_crystal_sys
+            )
             total_cs = sum(v for v in crystal_sys.values())
-            plt.bar([k for k in crystal_sys_ord.keys()], [v / total_cs for v in crystal_sys_ord.values()], alpha=0.8,
-                    label="Generated", color="blueviolet")
+            plt.bar(
+                [k for k in crystal_sys_ord.keys()],
+                [v / total_cs for v in crystal_sys_ord.values()],
+                alpha=0.8,
+                label="Generated",
+                color="blueviolet",
+            )
             total_cs_ref = sum(v for v in ref_crystal_sys.values())
-            plt.bar([k for k in ref_crystal_sys_ord.keys()], [v / total_cs_ref for v in ref_crystal_sys_ord.values()],
-                    alpha=0.5, label="Test", color="darkslategrey")
-            plt.xticks(rotation=45, ha='right', fontsize=8)
+            plt.bar(
+                [k for k in ref_crystal_sys_ord.keys()],
+                [v / total_cs_ref for v in ref_crystal_sys_ord.values()],
+                alpha=0.5,
+                label="Test",
+                color="darkslategrey",
+            )
+            plt.xticks(rotation=45, ha="right", fontsize=8)
             plt.title("Crystal system distribution, varprec=True")
             plt.xlabel("Crystal system")
             plt.ylabel("Density")
@@ -605,13 +921,25 @@ class OMGTrainer(Trainer):
             pdf.savefig()
             plt.close()
 
-            crystal_sys_ord_F = OrderedDict((key, crystal_sys_F[key]) for key in cs_order if key in crystal_sys_F)
+            crystal_sys_ord_F = OrderedDict(
+                (key, crystal_sys_F[key]) for key in cs_order if key in crystal_sys_F
+            )
             total_cs_F = sum(v for v in crystal_sys_F.values())
-            plt.bar([k for k in crystal_sys_ord_F.keys()], [v / total_cs_F for v in crystal_sys_ord_F.values()],
-                    alpha=0.8, label="Generated", color="blueviolet")
-            plt.bar([k for k in ref_crystal_sys_ord.keys()], [v / total_cs_ref for v in ref_crystal_sys_ord.values()],
-                    alpha=0.5, label="Test", color="darkslategrey")
-            plt.xticks(rotation=45, ha='right', fontsize=8)
+            plt.bar(
+                [k for k in crystal_sys_ord_F.keys()],
+                [v / total_cs_F for v in crystal_sys_ord_F.values()],
+                alpha=0.8,
+                label="Generated",
+                color="blueviolet",
+            )
+            plt.bar(
+                [k for k in ref_crystal_sys_ord.keys()],
+                [v / total_cs_ref for v in ref_crystal_sys_ord.values()],
+                alpha=0.5,
+                label="Test",
+                color="darkslategrey",
+            )
+            plt.xticks(rotation=45, ha="right", fontsize=8)
             plt.title("Crystal system distribution, varprec=False")
             plt.xlabel("Crystal system")
             plt.ylabel("Density")
@@ -620,11 +948,24 @@ class OMGTrainer(Trainer):
             pdf.savefig()
             plt.close()
 
-    def csp_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str, skip_validation: bool = False,
-                    skip_match: bool = False, ltol: float = 0.3, stol: float = 0.5, angle_tol: float = 10.0,
-                    metre: bool = False, number_cpus: Optional[int] = None, upper_narity_limit: Optional[int] = None,
-                    xyz_file_prediction_data: Optional[str] = None, check_reduced: bool = True,
-                    result_name: str = "csp_metrics.json", plot_name: str = "rmsds.pdf") -> None:
+    def csp_metrics(
+        self,
+        model: OMGLightning,
+        datamodule: OMGDataModule,
+        xyz_file: str,
+        skip_validation: bool = False,
+        skip_match: bool = False,
+        ltol: float = 0.3,
+        stol: float = 0.5,
+        angle_tol: float = 10.0,
+        metre: bool = False,
+        number_cpus: Optional[int] = None,
+        upper_narity_limit: Optional[int] = None,
+        xyz_file_prediction_data: Optional[str] = None,
+        check_reduced: bool = True,
+        result_name: str = "csp_metrics.json",
+        plot_name: str = "rmsds.pdf",
+    ) -> None:
         """
         Compute the crystal-structure prediction (CSP) metrics for the generated structures.
 
@@ -763,95 +1104,161 @@ class OMGTrainer(Trainer):
         else:
             ref_atoms = self._load_dataset_atoms(datamodule.pred_dataset)
 
-        gen_valid_atoms = ValidAtoms.get_valid_atoms(gen_atoms, desc="Validating generated structures",
-                                                     skip_validation=skip_validation, number_cpus=number_cpus,
-                                                     upper_narity_limit=upper_narity_limit)
-        ref_valid_atoms = ValidAtoms.get_valid_atoms(ref_atoms, desc="Validating reference structures",
-                                                     skip_validation=skip_validation, number_cpus=number_cpus,
-                                                     upper_narity_limit=upper_narity_limit)
+        gen_valid_atoms = ValidAtoms.get_valid_atoms(
+            gen_atoms,
+            desc="Validating generated structures",
+            skip_validation=skip_validation,
+            number_cpus=number_cpus,
+            upper_narity_limit=upper_narity_limit,
+        )
+        ref_valid_atoms = ValidAtoms.get_valid_atoms(
+            ref_atoms,
+            desc="Validating reference structures",
+            skip_validation=skip_validation,
+            number_cpus=number_cpus,
+            upper_narity_limit=upper_narity_limit,
+        )
 
         if not skip_validation:
-            print(f"Rate of valid structures in reference dataset: "
-                  f"{100 * sum(va.valid for va in ref_valid_atoms) / len(ref_valid_atoms)}%.")
-            print(f"Rate of valid structures in generated dataset: "
-                  f"{100 * sum(va.valid for va in gen_valid_atoms) / len(gen_valid_atoms)}%.")
+            print(
+                f"Rate of valid structures in reference dataset: "
+                f"{100 * sum(va.valid for va in ref_valid_atoms) / len(ref_valid_atoms)}%."
+            )
+            print(
+                f"Rate of valid structures in generated dataset: "
+                f"{100 * sum(va.valid for va in gen_valid_atoms) / len(gen_valid_atoms)}%."
+            )
 
         if not skip_match:
             if not metre:
-                fmr, frmsd, vmr, vrmsd, rmsds, val_rmsds, corr_rmsd, vcorr_rmsd = match_rmsds(
-                    gen_valid_atoms, ref_valid_atoms, ltol=ltol, stol=stol, angle_tol=angle_tol,
-                    number_cpus=number_cpus, check_reduced=check_reduced)
+                fmr, frmsd, vmr, vrmsd, rmsds, val_rmsds, corr_rmsd, vcorr_rmsd = (
+                    match_rmsds(
+                        gen_valid_atoms,
+                        ref_valid_atoms,
+                        ltol=ltol,
+                        stol=stol,
+                        angle_tol=angle_tol,
+                        number_cpus=number_cpus,
+                        check_reduced=check_reduced,
+                    )
+                )
                 filtered_rmsds = [rmsd for rmsd in rmsds if rmsd is not None]
                 filtered_valid_rmsds = [rmsd for rmsd in val_rmsds if rmsd is not None]
 
                 assert len(rmsds) == len(val_rmsds) == len(gen_valid_atoms)
 
-                print(f"The match rate between all generated structures and the prediction dataset is "
-                        f"{100.0 * fmr}%.")
-                print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between all generated "
-                      f"structures and the prediction dataset is {frmsd}.")
-                print(f"The corrected root-mean-square distance, normalized by (V / N) ** (1/3), between all generated "
-                      f"structures and the prediction dataset is {corr_rmsd}.")
+                print(
+                    f"The match rate between all generated structures and the prediction dataset is "
+                    f"{100.0 * fmr}%."
+                )
+                print(
+                    f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between all generated "
+                    f"structures and the prediction dataset is {frmsd}."
+                )
+                print(
+                    f"The corrected root-mean-square distance, normalized by (V / N) ** (1/3), between all generated "
+                    f"structures and the prediction dataset is {corr_rmsd}."
+                )
                 print()
-                print(f"The match rate between valid generated structures and the valid prediction dataset is "
-                        f"{100.0 * vmr}%.")
-                print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between valid generated "
-                      f"structures and the valid prediction dataset is {vrmsd}.")
-                print(f"The corrected root-mean-square distance, normalized by (V / N) ** (1/3), between valid "
-                      f"generated structures and the valid prediction dataset is {vcorr_rmsd}.")
+                print(
+                    f"The match rate between valid generated structures and the valid prediction dataset is "
+                    f"{100.0 * vmr}%."
+                )
+                print(
+                    f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), between valid generated "
+                    f"structures and the valid prediction dataset is {vrmsd}."
+                )
+                print(
+                    f"The corrected root-mean-square distance, normalized by (V / N) ** (1/3), between valid "
+                    f"generated structures and the valid prediction dataset is {vcorr_rmsd}."
+                )
 
                 with open(result_name, "w") as f:
-                    json.dump({
-                        "match_rate": fmr,
-                        "mean_RMSE": frmsd,
-                        "mean_cRMSE": corr_rmsd,
-                        "valid_match_rate": vmr,
-                        "valid_mean_RMSE": vrmsd,
-                        "valid_mean_cRMSE": vcorr_rmsd
-                    }, f, indent=4)
+                    json.dump(
+                        {
+                            "match_rate": fmr,
+                            "mean_RMSE": frmsd,
+                            "mean_cRMSE": corr_rmsd,
+                            "valid_match_rate": vmr,
+                            "valid_mean_RMSE": vrmsd,
+                            "valid_mean_cRMSE": vcorr_rmsd,
+                        },
+                        f,
+                        indent=4,
+                    )
 
             else:
-                fmr, frmsd, vmr, vrmsd, rmsds, val_rmsds, corr_rmsd, vcorr_rmsd = metre_rmsds(
-                    gen_valid_atoms, ref_valid_atoms, ltol=ltol, stol=stol, angle_tol=angle_tol,
-                    number_cpus=number_cpus, check_reduced=check_reduced)
+                fmr, frmsd, vmr, vrmsd, rmsds, val_rmsds, corr_rmsd, vcorr_rmsd = (
+                    metre_rmsds(
+                        gen_valid_atoms,
+                        ref_valid_atoms,
+                        ltol=ltol,
+                        stol=stol,
+                        angle_tol=angle_tol,
+                        number_cpus=number_cpus,
+                        check_reduced=check_reduced,
+                    )
+                )
                 filtered_rmsds = [rmsd for rmsd in rmsds if rmsd is not None]
                 filtered_valid_rmsds = [rmsd for rmsd in val_rmsds if rmsd is not None]
 
                 assert len(rmsds) == len(val_rmsds) == len(gen_valid_atoms)
 
-                print(f"The match-everyone-to-reference (METRe) rate for all generated structures with respect to the "
-                      f"prediction dataset is {100.0 * fmr}%.")
-                print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), for all generated "
-                      f"structures with respect to the prediction dataset is {frmsd}.")
-                print(f"The corrected root-mean-square distance, normalized by (V / N) ** (1/3), for all generated "
-                      f"structures with respect to the prediction dataset is {corr_rmsd}.")
+                print(
+                    f"The match-everyone-to-reference (METRe) rate for all generated structures with respect to the "
+                    f"prediction dataset is {100.0 * fmr}%."
+                )
+                print(
+                    f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), for all generated "
+                    f"structures with respect to the prediction dataset is {frmsd}."
+                )
+                print(
+                    f"The corrected root-mean-square distance, normalized by (V / N) ** (1/3), for all generated "
+                    f"structures with respect to the prediction dataset is {corr_rmsd}."
+                )
                 print()
-                print(f"The match-everyone-to-reference (METRe) rate for valid generated structures with respect to the"
-                      f"valid prediction dataset is {100.0 * vmr}%.")
-                print(f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), for valid generated "
-                      f"structures with respect to the valid prediction dataset is {vrmsd}.")
-                print(f"The corrected root-mean-square distance, normalized by (V / N) ** (1/3), for valid generated "
-                      f"structures with respect to the valid prediction dataset is {vcorr_rmsd}.")
+                print(
+                    f"The match-everyone-to-reference (METRe) rate for valid generated structures with respect to the"
+                    f"valid prediction dataset is {100.0 * vmr}%."
+                )
+                print(
+                    f"The mean root-mean-square distance, normalized by (V / N) ** (1/3), for valid generated "
+                    f"structures with respect to the valid prediction dataset is {vrmsd}."
+                )
+                print(
+                    f"The corrected root-mean-square distance, normalized by (V / N) ** (1/3), for valid generated "
+                    f"structures with respect to the valid prediction dataset is {vcorr_rmsd}."
+                )
 
                 with open(result_name, "w") as f:
-                    json.dump({
-                        "METRe": fmr,
-                        "mean_RMSE": frmsd,
-                        "mean_cRMSE": corr_rmsd,
-                        "valid_METRe": vmr,
-                        "valid_mean_RMSE": vrmsd,
-                        "valid_mean_cRMSE": vcorr_rmsd
-                    }, f, indent=4)
+                    json.dump(
+                        {
+                            "METRe": fmr,
+                            "mean_RMSE": frmsd,
+                            "mean_cRMSE": corr_rmsd,
+                            "valid_METRe": vmr,
+                            "valid_mean_RMSE": vrmsd,
+                            "valid_mean_cRMSE": vcorr_rmsd,
+                        },
+                        f,
+                        indent=4,
+                    )
 
             plt.figure()
-            bandwidth = np.std(filtered_rmsds) * len(filtered_rmsds) ** (-1 / 5)  # Scott's rule.
+            bandwidth = np.std(filtered_rmsds) * len(filtered_rmsds) ** (
+                -1 / 5
+            )  # Scott's rule.
             filtered_rmsds = np.array(filtered_rmsds)[:, np.newaxis]
             filtered_valid_rmsds = np.array(filtered_valid_rmsds)[:, np.newaxis]
             max_rmsd = max(filtered_rmsds.max(), filtered_valid_rmsds.max())
             x_d = np.linspace(0.0, max_rmsd + 0.1 * max_rmsd, 1000)[:, np.newaxis]
-            kde = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(filtered_rmsds)
+            kde = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(
+                filtered_rmsds
+            )
             log_density = kde.score_samples(x_d)
-            kde_val = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(filtered_valid_rmsds)
+            kde_val = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(
+                filtered_valid_rmsds
+            )
             log_density_val = kde_val.score_samples(x_d)
             plt.plot(x_d, np.exp(log_density), color="blueviolet", label="All")
             plt.plot(x_d, np.exp(log_density_val), color="darkslategrey", label="Valid")
@@ -862,9 +1269,16 @@ class OMGTrainer(Trainer):
             plt.savefig(plot_name)
             plt.close()
 
-    def dng_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
-                    dataset_name: Optional[str] = None, number_cpus: Optional[int] = None,
-                    xyz_file_prediction_data: Optional[str] = None, result_name: str = "dng_metrics.json") -> None:
+    def dng_metrics(
+        self,
+        model: OMGLightning,
+        datamodule: OMGDataModule,
+        xyz_file: str,
+        dataset_name: Optional[str] = None,
+        number_cpus: Optional[int] = None,
+        xyz_file_prediction_data: Optional[str] = None,
+        result_name: str = "dng_metrics.json",
+    ) -> None:
         """
         Compute the de-novo generation metrics for the generated structures.
 
@@ -921,9 +1335,15 @@ class OMGTrainer(Trainer):
         if not final_file.exists():
             raise FileNotFoundError(f"File {final_file} does not exist.")
 
-        if dataset_name is not None and dataset_name not in ("mp_20", "carbon_24", "perov_5"):
-            warnings.warn("Coverage metrics can only be computed for the datasets 'mp_20', 'carbon_24', and "
-                          "'perov_5'.")
+        if dataset_name is not None and dataset_name not in (
+            "mp_20",
+            "carbon_24",
+            "perov_5",
+        ):
+            warnings.warn(
+                "Coverage metrics can only be computed for the datasets 'mp_20', 'carbon_24', and "
+                "'perov_5'."
+            )
 
         if not result_name.endswith(".json"):
             raise ValueError("The result_name must end with .json")
@@ -938,18 +1358,24 @@ class OMGTrainer(Trainer):
         else:
             ref_atoms = self._load_dataset_atoms(datamodule.pred_dataset)
 
-        gen_valid_atoms = ValidAtoms.get_valid_atoms(gen_atoms, desc="Validating generated structures",
-                                                     number_cpus=number_cpus)
-        ref_valid_atoms = ValidAtoms.get_valid_atoms(ref_atoms, desc="Validating reference structures",
-                                                     number_cpus=number_cpus)
+        gen_valid_atoms = ValidAtoms.get_valid_atoms(
+            gen_atoms, desc="Validating generated structures", number_cpus=number_cpus
+        )
+        ref_valid_atoms = ValidAtoms.get_valid_atoms(
+            ref_atoms, desc="Validating reference structures", number_cpus=number_cpus
+        )
 
         # Validity rates.
         print("Validity metrics:")
         valid_rate = sum(va.valid for va in gen_valid_atoms) / len(gen_valid_atoms)
         print(f"{valid_rate=}")
-        valid_comp_rate = sum(va.composition_valid for va in gen_valid_atoms) / len(gen_valid_atoms)
+        valid_comp_rate = sum(va.composition_valid for va in gen_valid_atoms) / len(
+            gen_valid_atoms
+        )
         print(f"{valid_comp_rate=}")
-        valid_struc_rate = sum(va.structure_valid for va in gen_valid_atoms) / len(gen_valid_atoms)
+        valid_struc_rate = sum(va.structure_valid for va in gen_valid_atoms) / len(
+            gen_valid_atoms
+        )
         print(f"{valid_struc_rate=}")
         print()
 
@@ -960,14 +1386,22 @@ class OMGTrainer(Trainer):
         wdist_density = float(wasserstein_distance(gen_densities, ref_densities))
         print(f"{wdist_density=}")
 
-        gen_volume_fractions = [get_volume_frac(struc.structure) for struc in gen_valid_atoms]
-        ref_volume_fractions = [get_volume_frac(struc.structure) for struc in ref_valid_atoms]
-        wdist_vol_frac = float(wasserstein_distance(gen_volume_fractions, ref_volume_fractions))
+        gen_volume_fractions = [
+            get_volume_frac(struc.structure) for struc in gen_valid_atoms
+        ]
+        ref_volume_fractions = [
+            get_volume_frac(struc.structure) for struc in ref_valid_atoms
+        ]
+        wdist_vol_frac = float(
+            wasserstein_distance(gen_volume_fractions, ref_volume_fractions)
+        )
         print(f"{wdist_vol_frac=}")
 
         gen_number_atoms = [len(struc.structure.species) for struc in gen_valid_atoms]
         ref_number_atoms = [len(struc.structure.species) for struc in ref_valid_atoms]
-        wdist_number_atoms = float(wasserstein_distance(gen_number_atoms, ref_number_atoms))
+        wdist_number_atoms = float(
+            wasserstein_distance(gen_number_atoms, ref_number_atoms)
+        )
         print(f"{wdist_number_atoms=}")
 
         gen_narity = [len(set(struc.structure.species)) for struc in gen_valid_atoms]
@@ -975,23 +1409,35 @@ class OMGTrainer(Trainer):
         wdist_narity = float(wasserstein_distance(gen_narity, ref_narity))
         print(f"{wdist_narity=}")
 
-        gen_coordination_numbers = [np.mean(get_coordination_numbers(struc.atoms)) for struc in gen_valid_atoms]
-        ref_coordination_numbers = [np.mean(get_coordination_numbers(struc.atoms)) for struc in ref_valid_atoms]
-        wdist_coordination_numbers = float(wasserstein_distance(gen_coordination_numbers, ref_coordination_numbers))
+        gen_coordination_numbers = [
+            np.mean(get_coordination_numbers(struc.atoms)) for struc in gen_valid_atoms
+        ]
+        ref_coordination_numbers = [
+            np.mean(get_coordination_numbers(struc.atoms)) for struc in ref_valid_atoms
+        ]
+        wdist_coordination_numbers = float(
+            wasserstein_distance(gen_coordination_numbers, ref_coordination_numbers)
+        )
         print(f"{wdist_coordination_numbers=}")
         print()
 
-        if dataset_name is not None and dataset_name in ("mp_20", "carbon_24", "perov_5"):
+        if dataset_name is not None and dataset_name in (
+            "mp_20",
+            "carbon_24",
+            "perov_5",
+        ):
             # Taken from https://github.com/jiaor17/DiffCSP/blob/7121d159826efa2ba9500bf299250d96da37f146/scripts/compute_metrics.py
             COV_Cutoffs = {
                 "mp_20": {"struc": 0.4, "comp": 10.0},
                 "carbon_24": {"struc": 0.2, "comp": 4.0},
-                "perov_5": {"struc": 0.2, "comp": 4}
+                "perov_5": {"struc": 0.2, "comp": 4},
             }
             assert dataset_name in COV_Cutoffs
             struc_cutoff = COV_Cutoffs[dataset_name]["struc"]
             comp_cutoff = COV_Cutoffs[dataset_name]["comp"]
-            cov_recall, cov_precision = get_cov(gen_valid_atoms, ref_valid_atoms, struc_cutoff, comp_cutoff, None)
+            cov_recall, cov_precision = get_cov(
+                gen_valid_atoms, ref_valid_atoms, struc_cutoff, comp_cutoff, None
+            )
             cov_recall = float(cov_recall)
             cov_precision = float(cov_precision)
             print(f"Coverage metrics for {dataset_name}:")
@@ -1001,18 +1447,22 @@ class OMGTrainer(Trainer):
             cov_recall, cov_precision = None, None
 
         with open(result_name, "w") as f:
-            json.dump({
-                "valid_rate": valid_rate,
-                "valid_comp_rate": valid_comp_rate,
-                "valid_struc_rate": valid_struc_rate,
-                "wdist_density": wdist_density,
-                "wdist_vol_frac": wdist_vol_frac,
-                "wdist_number_atoms": wdist_number_atoms,
-                "wdist_narity": wdist_narity,
-                "wdist_coordination_numbers": wdist_coordination_numbers,
-                "cov_recall": cov_recall,
-                "cov_precision": cov_precision
-            }, f, indent=4)
+            json.dump(
+                {
+                    "valid_rate": valid_rate,
+                    "valid_comp_rate": valid_comp_rate,
+                    "valid_struc_rate": valid_struc_rate,
+                    "wdist_density": wdist_density,
+                    "wdist_vol_frac": wdist_vol_frac,
+                    "wdist_number_atoms": wdist_number_atoms,
+                    "wdist_narity": wdist_narity,
+                    "wdist_coordination_numbers": wdist_coordination_numbers,
+                    "cov_recall": cov_recall,
+                    "cov_precision": cov_precision,
+                },
+                f,
+                indent=4,
+            )
 
     def fit_lattice(self, model: OMGLightning, datamodule: OMGDataModule) -> None:
         """
@@ -1042,11 +1492,27 @@ class OMGTrainer(Trainer):
         shape_b, loc_b, scale_b = lognorm.fit(b, floc=0.0)
         shape_c, loc_c, scale_c = lognorm.fit(c, floc=0.0)
         assert loc_a == loc_b == loc_c == 0.0
-        print("Standard deviations of the log of the distributions: ", shape_a, shape_b, shape_c)
-        print("Means of the log of the distributions: ", log(scale_a), log(scale_b), log(scale_c))
+        print(
+            "Standard deviations of the log of the distributions: ",
+            shape_a,
+            shape_b,
+            shape_c,
+        )
+        print(
+            "Means of the log of the distributions: ",
+            log(scale_a),
+            log(scale_b),
+            log(scale_c),
+        )
 
-    def create_compositions(self, model: OMGLightning, datamodule: OMGDataModule, compositions: Sequence[str] | str,
-                            lmdb_file: str = "compositions.lmdb", repeats: int = 1) -> None:
+    def create_compositions(
+        self,
+        model: OMGLightning,
+        datamodule: OMGDataModule,
+        compositions: Sequence[str] | str,
+        lmdb_file: str = "compositions.lmdb",
+        repeats: int = 1,
+    ) -> None:
         """
         Create an LMDB file containing dummy structures with the given compositions.
 
@@ -1088,22 +1554,43 @@ class OMGTrainer(Trainer):
         structures = []
         for comp in compositions:
             pymatgen_composition = Composition(comp, strict=True)
-            species = sum(([element] * int(amount) for element, amount in pymatgen_composition.items()), start=[])
+            species = sum(
+                (
+                    [element] * int(amount)
+                    for element, amount in pymatgen_composition.items()
+                ),
+                start=[],
+            )
             assert len(species) == pymatgen_composition.num_atoms
             dummy_lattice = Lattice.cubic(3)  # Tom's favorite number.
-            dummy_fractional_coordinates = [(i / len(species), 0.0, 0.0) for i in range(len(species))]
-            dummy_structure = Structure(dummy_lattice, species, dummy_fractional_coordinates,
-                                        coords_are_cartesian=False)
+            dummy_fractional_coordinates = [
+                (i / len(species), 0.0, 0.0) for i in range(len(species))
+            ]
+            dummy_structure = Structure(
+                dummy_lattice,
+                species,
+                dummy_fractional_coordinates,
+                coords_are_cartesian=False,
+            )
             structures.append(dummy_structure)
         all_structures = sum((structures for _ in range(repeats)), start=[])
 
-        with (lmdb.Environment(str(lmdb_path), subdir=False, map_size=int(1e12), lock=False) as env,
-              env.begin(write=True) as txn):
-            for idx, struc in tqdm.tqdm(enumerate(all_structures), desc=f"Saving {len(all_structures)} structures to {lmdb_path}"):
+        with (
+            lmdb.Environment(
+                str(lmdb_path), subdir=False, map_size=int(1e12), lock=False
+            ) as env,
+            env.begin(write=True) as txn,
+        ):
+            for idx, struc in tqdm.tqdm(
+                enumerate(all_structures),
+                desc=f"Saving {len(all_structures)} structures to {lmdb_path}",
+            ):
                 data = {
                     "pos": torch.from_numpy(struc.cart_coords),
                     "cell": torch.from_numpy(np.array(struc.lattice.matrix)),
-                    "atomic_numbers": torch.from_numpy(np.array(struc.atomic_numbers, dtype=np.int32)),
-                    "ids": str(struc)
+                    "atomic_numbers": torch.from_numpy(
+                        np.array(struc.atomic_numbers, dtype=np.int32)
+                    ),
+                    "ids": str(struc),
                 }
                 txn.put(str(idx).encode(), pickle.dumps(data))

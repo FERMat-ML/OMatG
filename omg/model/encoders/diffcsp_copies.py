@@ -1,4 +1,5 @@
 """Functions and classes copied from diffcsp repository: https://github.com/jiaor17/DiffCSP/tree/main"""
+
 import math
 import numpy as np
 import torch
@@ -22,21 +23,33 @@ def lattice_params_to_matrix_torch(lengths, angles):
 
     val = (coses[:, 0] * coses[:, 1] - coses[:, 2]) / (sins[:, 0] * sins[:, 1])
     # Sometimes rounding errors result in values slightly > 1.
-    val = torch.clamp(val, -1., 1.)
+    val = torch.clamp(val, -1.0, 1.0)
     gamma_star = torch.arccos(val)
 
-    vector_a = torch.stack([
-        lengths[:, 0] * sins[:, 1],
-        torch.zeros(lengths.size(0), device=lengths.device),
-        lengths[:, 0] * coses[:, 1]], dim=1)
-    vector_b = torch.stack([
-        -lengths[:, 1] * sins[:, 0] * torch.cos(gamma_star),
-        lengths[:, 1] * sins[:, 0] * torch.sin(gamma_star),
-        lengths[:, 1] * coses[:, 0]], dim=1)
-    vector_c = torch.stack([
-        torch.zeros(lengths.size(0), device=lengths.device),
-        torch.zeros(lengths.size(0), device=lengths.device),
-        lengths[:, 2]], dim=1)
+    vector_a = torch.stack(
+        [
+            lengths[:, 0] * sins[:, 1],
+            torch.zeros(lengths.size(0), device=lengths.device),
+            lengths[:, 0] * coses[:, 1],
+        ],
+        dim=1,
+    )
+    vector_b = torch.stack(
+        [
+            -lengths[:, 1] * sins[:, 0] * torch.cos(gamma_star),
+            lengths[:, 1] * sins[:, 0] * torch.sin(gamma_star),
+            lengths[:, 1] * coses[:, 0],
+        ],
+        dim=1,
+    )
+    vector_c = torch.stack(
+        [
+            torch.zeros(lengths.size(0), device=lengths.device),
+            torch.zeros(lengths.size(0), device=lengths.device),
+            lengths[:, 2],
+        ],
+        dim=1,
+    )
 
     return torch.stack([vector_a, vector_b, vector_c], dim=1)
 
@@ -52,7 +65,7 @@ def get_pbc_distances(
     coord_is_cart=False,
     return_offsets=False,
     return_distance_vec=False,
-    lattices=None
+    lattices=None,
 ):
     """
     Copied from diffcsp: https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py
@@ -64,7 +77,7 @@ def get_pbc_distances(
         pos = coords
     else:
         lattice_nodes = torch.repeat_interleave(lattices, num_atoms, dim=0)
-        pos = torch.einsum('bi,bij->bj', coords, lattice_nodes)  # cart coords
+        pos = torch.einsum("bi,bij->bj", coords, lattice_nodes)  # cart coords
 
     j_index, i_index = edge_index
 
@@ -72,7 +85,7 @@ def get_pbc_distances(
 
     # correct for pbc
     lattice_edges = torch.repeat_interleave(lattices, num_bonds, dim=0)
-    offsets = torch.einsum('bi,bij->bj', to_jimages.float(), lattice_edges)
+    offsets = torch.einsum("bi,bij->bj", to_jimages.float(), lattice_edges)
     distance_vectors += offsets
 
     # compute distances
@@ -92,9 +105,7 @@ def get_pbc_distances(
     return out
 
 
-def get_max_neighbors_mask(
-        natoms, index, atom_distance, max_num_neighbors_threshold
-):
+def get_max_neighbors_mask(natoms, index, atom_distance, max_num_neighbors_threshold):
     """
     Give a mask that filters out edges so that each atom has at most
     `max_num_neighbors_threshold` neighbors.
@@ -110,32 +121,26 @@ def get_max_neighbors_mask(
     ones = index.new_ones(1).expand_as(index)
     num_neighbors = segment_coo(ones, index, dim_size=num_atoms)
     max_num_neighbors = num_neighbors.max()
-    num_neighbors_thresholded = num_neighbors.clamp(
-        max=max_num_neighbors_threshold
-    )
+    num_neighbors_thresholded = num_neighbors.clamp(max=max_num_neighbors_threshold)
 
     # Get number of (thresholded) neighbors per image
-    image_indptr = torch.zeros(
-        natoms.shape[0] + 1, device=device, dtype=torch.long
-    )
+    image_indptr = torch.zeros(natoms.shape[0] + 1, device=device, dtype=torch.long)
     image_indptr[1:] = torch.cumsum(natoms, dim=0)
     num_neighbors_image = segment_csr(num_neighbors_thresholded, image_indptr)
 
     # If max_num_neighbors is below the threshold, return early
     if (
-            max_num_neighbors <= max_num_neighbors_threshold
-            or max_num_neighbors_threshold <= 0
+        max_num_neighbors <= max_num_neighbors_threshold
+        or max_num_neighbors_threshold <= 0
     ):
-        mask_num_neighbors = torch.tensor(
-            [True], dtype=bool, device=device
-        ).expand_as(index)
+        mask_num_neighbors = torch.tensor([True], dtype=bool, device=device).expand_as(
+            index
+        )
         return mask_num_neighbors, num_neighbors_image
 
     # Create a tensor of size [num_atoms, max_num_neighbors] to sort the distances of the neighbors.
     # Fill with infinity so we can easily remove unused distances later.
-    distance_sort = torch.full(
-        [num_atoms * max_num_neighbors], np.inf, device=device
-    )
+    distance_sort = torch.full([num_atoms * max_num_neighbors], np.inf, device=device)
 
     # Create an index map to map distances from atom_distance to distance_sort
     # index_sort_map assumes index to be sorted
@@ -144,9 +149,9 @@ def get_max_neighbors_mask(
         index_neighbor_offset, num_neighbors
     )
     index_sort_map = (
-            index * max_num_neighbors
-            + torch.arange(len(index), device=device)
-            - index_neighbor_offset_expand
+        index * max_num_neighbors
+        + torch.arange(len(index), device=device)
+        - index_neighbor_offset_expand
     )
     distance_sort.index_copy_(0, index_sort_map, atom_distance)
     distance_sort = distance_sort.view(num_atoms, max_num_neighbors)
@@ -154,8 +159,12 @@ def get_max_neighbors_mask(
     # Sort neighboring atoms based on distance
     distance_sort, index_sort = torch.sort(distance_sort, dim=1)
     # Select the max_num_neighbors_threshold neighbors that are closest
-    distance_real_cutoff = distance_sort[:, max_num_neighbors_threshold].reshape(-1, 1).expand(-1,
-                                                                                               max_num_neighbors) + 0.01
+    distance_real_cutoff = (
+        distance_sort[:, max_num_neighbors_threshold]
+        .reshape(-1, 1)
+        .expand(-1, max_num_neighbors)
+        + 0.01
+    )
 
     mask_distance = distance_sort < distance_real_cutoff
 
@@ -180,7 +189,16 @@ def get_max_neighbors_mask(
     return mask_num_neighbors, num_neighbors_image
 
 
-def radius_graph_pbc(pos, lengths, angles, natoms, radius, max_num_neighbors_threshold, device, lattices=None):
+def radius_graph_pbc(
+    pos,
+    lengths,
+    angles,
+    natoms,
+    radius,
+    max_num_neighbors_threshold,
+    device,
+    lattices=None,
+):
     """
     Copied from diffcsp: https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py
     """
@@ -195,16 +213,12 @@ def radius_graph_pbc(pos, lengths, angles, natoms, radius, max_num_neighbors_thr
 
     # Before computing the pairwise distances between atoms, first create a list of atom indices to compare for the entire batch
     num_atoms_per_image = natoms
-    num_atoms_per_image_sqr = (num_atoms_per_image ** 2).long()
+    num_atoms_per_image_sqr = (num_atoms_per_image**2).long()
 
     # index offset between images
-    index_offset = (
-            torch.cumsum(num_atoms_per_image, dim=0) - num_atoms_per_image
-    )
+    index_offset = torch.cumsum(num_atoms_per_image, dim=0) - num_atoms_per_image
 
-    index_offset_expand = torch.repeat_interleave(
-        index_offset, num_atoms_per_image_sqr
-    )
+    index_offset_expand = torch.repeat_interleave(index_offset, num_atoms_per_image_sqr)
     num_atoms_per_image_expand = torch.repeat_interleave(
         num_atoms_per_image, num_atoms_per_image_sqr
     )
@@ -216,25 +230,19 @@ def radius_graph_pbc(pos, lengths, angles, natoms, radius, max_num_neighbors_thr
     #    batch_count = torch.cat([batch_count, torch.arange(num_atoms_per_image_sqr[batch_idx], device=device)], dim=0)
     num_atom_pairs = torch.sum(num_atoms_per_image_sqr)
     index_sqr_offset = (
-            torch.cumsum(num_atoms_per_image_sqr, dim=0) - num_atoms_per_image_sqr
+        torch.cumsum(num_atoms_per_image_sqr, dim=0) - num_atoms_per_image_sqr
     )
     index_sqr_offset = torch.repeat_interleave(
         index_sqr_offset, num_atoms_per_image_sqr
     )
-    atom_count_sqr = (
-            torch.arange(num_atom_pairs, device=device) - index_sqr_offset
-    )
+    atom_count_sqr = torch.arange(num_atom_pairs, device=device) - index_sqr_offset
 
     # Compute the indices for the pairs of atoms (using division and mod)
     # If the systems get too large this apporach could run into numerical precision issues
     index1 = (
-                 torch.div(
-                     atom_count_sqr, num_atoms_per_image_expand, rounding_mode="floor"
-                 )
-             ) + index_offset_expand
-    index2 = (
-                     atom_count_sqr % num_atoms_per_image_expand
-             ) + index_offset_expand
+        torch.div(atom_count_sqr, num_atoms_per_image_expand, rounding_mode="floor")
+    ) + index_offset_expand
+    index2 = (atom_count_sqr % num_atoms_per_image_expand) + index_offset_expand
     # Get the positions for each atom
     pos1 = torch.index_select(atom_pos, 0, index1)
     pos2 = torch.index_select(atom_pos, 0, index2)
@@ -264,7 +272,9 @@ def radius_graph_pbc(pos, lengths, angles, natoms, radius, max_num_neighbors_thr
     # (which they usually are). Changing this to sparse (scatter) operations
     # might be worth the effort if this function becomes a bottleneck.
     max_rep = torch.ones(3, dtype=torch.long, device=device)
-    min_dist = torch.cat([min_dist_a1, min_dist_a2, min_dist_a3], dim=-1)  # N_graphs * 3
+    min_dist = torch.cat(
+        [min_dist_a1, min_dist_a2, min_dist_a3], dim=-1
+    )  # N_graphs * 3
     #     reps = torch.cat([rep_a1.reshape(-1,1), rep_a2.reshape(-1,1), rep_a3.reshape(-1,1)], dim=1) # N_graphs * 3
 
     unit_cell_all = []
@@ -272,20 +282,17 @@ def radius_graph_pbc(pos, lengths, angles, natoms, radius, max_num_neighbors_thr
 
     # Tensor of unit cells
     cells_per_dim = [
-        torch.arange(-rep, rep + 1, device=device, dtype=torch.float)
-        for rep in max_rep
+        torch.arange(-rep, rep + 1, device=device, dtype=torch.float) for rep in max_rep
     ]
 
-    unit_cell = torch.cat([_.reshape(-1, 1) for _ in torch.meshgrid(cells_per_dim)], dim=-1)
+    unit_cell = torch.cat(
+        [_.reshape(-1, 1) for _ in torch.meshgrid(cells_per_dim)], dim=-1
+    )
 
     num_cells = len(unit_cell)
-    unit_cell_per_atom = unit_cell.view(1, num_cells, 3).repeat(
-        len(index2), 1, 1
-    )
+    unit_cell_per_atom = unit_cell.view(1, num_cells, 3).repeat(len(index2), 1, 1)
     unit_cell = torch.transpose(unit_cell, 0, 1)
-    unit_cell_batch = unit_cell.view(1, 3, num_cells).expand(
-        batch_size, -1, -1
-    )
+    unit_cell_batch = unit_cell.view(1, 3, num_cells).expand(batch_size, -1, -1)
 
     # Compute the x, y, z positional offsets for each cell in each image
     data_cell = torch.transpose(cell, 1, 2)
@@ -308,9 +315,11 @@ def radius_graph_pbc(pos, lengths, angles, natoms, radius, max_num_neighbors_thr
 
     # Remove pairs that are too far apart
 
-    radius_real = (min_dist.min(dim=-1)[0] + 0.01)  # .clamp(max=radius)
+    radius_real = min_dist.min(dim=-1)[0] + 0.01  # .clamp(max=radius)
 
-    radius_real = torch.repeat_interleave(radius_real, num_atoms_per_image_sqr * num_cells)
+    radius_real = torch.repeat_interleave(
+        radius_real, num_atoms_per_image_sqr * num_cells
+    )
 
     # print(min_dist.min(dim=-1)[0])
 
@@ -329,7 +338,6 @@ def radius_graph_pbc(pos, lengths, angles, natoms, radius, max_num_neighbors_thr
     atom_distance_sqr = torch.masked_select(atom_distance_sqr, mask)
 
     if max_num_neighbors_threshold is not None:
-
         mask_num_neighbors, num_neighbors_image = get_max_neighbors_mask(
             natoms=natoms,
             index=index1,
@@ -351,9 +359,7 @@ def radius_graph_pbc(pos, lengths, angles, natoms, radius, max_num_neighbors_thr
         num_neighbors = segment_coo(ones, index1, dim_size=natoms.sum())
 
         # Get number of (thresholded) neighbors per image
-        image_indptr = torch.zeros(
-            natoms.shape[0] + 1, device=device, dtype=torch.long
-        )
+        image_indptr = torch.zeros(natoms.shape[0] + 1, device=device, dtype=torch.long)
         image_indptr[1:] = torch.cumsum(natoms, dim=0)
         num_neighbors_image = segment_csr(num_neighbors, image_indptr)
 
@@ -363,22 +369,17 @@ def radius_graph_pbc(pos, lengths, angles, natoms, radius, max_num_neighbors_thr
 
 
 def frac_to_cart_coords(
-    frac_coords,
-    lengths,
-    angles,
-    num_atoms,
-    regularized = True,
-    lattices = None
+    frac_coords, lengths, angles, num_atoms, regularized=True, lattices=None
 ):
     """
     Copied from diffcsp: https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py
     """
     if regularized:
-        frac_coords = frac_coords % 1.
+        frac_coords = frac_coords % 1.0
     if lattices is None:
         lattices = lattice_params_to_matrix_torch(lengths, angles)
     lattice_nodes = torch.repeat_interleave(lattices, num_atoms, dim=0)
-    pos = torch.einsum('bi,bij->bj', frac_coords, lattice_nodes)  # cart coords
+    pos = torch.einsum("bi,bij->bj", frac_coords, lattice_nodes)  # cart coords
 
     return pos
 
@@ -453,9 +454,7 @@ def repeat_blocks(
         insert_dummy = False
 
     # Get repeats for each group using group lengths/sizes
-    r1 = torch.repeat_interleave(
-        torch.arange(len(sizes), device=sizes.device), repeats
-    )
+    r1 = torch.repeat_interleave(torch.arange(len(sizes), device=sizes.device), repeats)
 
     # Get total size of output array, as needed to initialize output indexing array
     N = (sizes * repeats).sum()
@@ -479,9 +478,7 @@ def repeat_blocks(
 
         # Add block increments
         if isinstance(block_inc, torch.Tensor):
-            insert_val += segment_csr(
-                block_inc[: r1[-1]], indptr, reduce="sum"
-            )
+            insert_val += segment_csr(block_inc[: r1[-1]], indptr, reduce="sum")
         else:
             insert_val += block_inc * (indptr[1:] - indptr[:-1])
             if insert_dummy:
@@ -534,6 +531,7 @@ class SinusoidsEmbedding(nn.Module):
     """
     Copied from diffcsp: https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/pl_modules/cspnet.py
     """
+
     def __init__(self, n_frequencies=10, n_space=3):
         super().__init__()
         self.n_frequencies = n_frequencies
@@ -556,12 +554,7 @@ class CSPLayer(nn.Module):
     """
 
     def __init__(
-            self,
-            hidden_dim=128,
-            act_fn=nn.SiLU(),
-            dis_emb=None,
-            ln=False,
-            ip=True
+        self, hidden_dim=128, act_fn=nn.SiLU(), dis_emb=None, ln=False, ip=True
     ):
         super(CSPLayer, self).__init__()
 
@@ -574,22 +567,31 @@ class CSPLayer(nn.Module):
             nn.Linear(hidden_dim * 2 + 9 + self.dis_dim, hidden_dim),
             act_fn,
             nn.Linear(hidden_dim, hidden_dim),
-            act_fn)
+            act_fn,
+        )
         self.node_mlp = nn.Sequential(
             nn.Linear(hidden_dim * 2, hidden_dim),
             act_fn,
             nn.Linear(hidden_dim, hidden_dim),
-            act_fn)
+            act_fn,
+        )
         self.ln = ln
         if self.ln:
             self.layer_norm = nn.LayerNorm(hidden_dim)
 
-    def edge_model(self, node_features, frac_coords, lattices, edge_index, edge2graph, frac_diff=None):
-
+    def edge_model(
+        self,
+        node_features,
+        frac_coords,
+        lattices,
+        edge_index,
+        edge2graph,
+        frac_diff=None,
+    ):
         hi, hj = node_features[edge_index[0]], node_features[edge_index[1]]
         if frac_diff is None:
             xi, xj = frac_coords[edge_index[0]], frac_coords[edge_index[1]]
-            frac_diff = (xj - xi) % 1.
+            frac_diff = (xj - xi) % 1.0
         if self.dis_emb is not None:
             frac_diff = self.dis_emb(frac_diff)
         if self.ip:
@@ -603,18 +605,32 @@ class CSPLayer(nn.Module):
         return edge_features
 
     def node_model(self, node_features, edge_features, edge_index):
-
-        agg = scatter(edge_features, edge_index[0], dim=0, reduce='mean', dim_size=node_features.shape[0])
+        agg = scatter(
+            edge_features,
+            edge_index[0],
+            dim=0,
+            reduce="mean",
+            dim_size=node_features.shape[0],
+        )
         agg = torch.cat([node_features, agg], dim=1)
         out = self.node_mlp(agg)
         return out
 
-    def forward(self, node_features, frac_coords, lattices, edge_index, edge2graph, frac_diff=None):
-
+    def forward(
+        self,
+        node_features,
+        frac_coords,
+        lattices,
+        edge_index,
+        edge2graph,
+        frac_diff=None,
+    ):
         node_input = node_features
         if self.ln:
             node_features = self.layer_norm(node_input)
-        edge_features = self.edge_model(node_features, frac_coords, lattices, edge_index, edge2graph, frac_diff)
+        edge_features = self.edge_model(
+            node_features, frac_coords, lattices, edge_index, edge2graph, frac_diff
+        )
         node_output = self.node_model(node_features, edge_features, edge_index)
         return node_input + node_output
 
@@ -623,42 +639,47 @@ class CSPNet(nn.Module):
     """
     Copied from diffcsp: https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/pl_modules/cspnet.py
     """
+
     def __init__(
-            self,
-            hidden_dim=128,
-            latent_dim=256,
-            num_layers=4,
-            max_atoms=100,
-            act_fn='silu',
-            dis_emb='sin',
-            num_freqs=10,
-            edge_style='fc',
-            cutoff=6.0,
-            max_neighbors=20,
-            ln=False,
-            ip=True,
-            smooth=False,
-            pred_type=False,
-            pred_scalar=False
+        self,
+        hidden_dim=128,
+        latent_dim=256,
+        num_layers=4,
+        max_atoms=100,
+        act_fn="silu",
+        dis_emb="sin",
+        num_freqs=10,
+        edge_style="fc",
+        cutoff=6.0,
+        max_neighbors=20,
+        ln=False,
+        ip=True,
+        smooth=False,
+        pred_type=False,
+        pred_scalar=False,
     ):
         super(CSPNet, self).__init__()
 
         self.ip = ip
         self.smooth = smooth
+        # Embedding size increased to accommodate ghost atoms (label 119)
+        # With species_shift=1, species 119 maps to index 118, so we need at least 119 entries
+        # Using max_atoms + 20 = 120 to safely handle species up to 119
         if self.smooth:
-            self.node_embedding = nn.Linear(max_atoms, hidden_dim)
+            self.node_embedding = nn.Linear(max_atoms + 20, hidden_dim)
         else:
-            self.node_embedding = nn.Embedding(max_atoms, hidden_dim)
+            self.node_embedding = nn.Embedding(max_atoms + 20, hidden_dim)
         self.atom_latent_emb = nn.Linear(hidden_dim + latent_dim, hidden_dim)
-        if act_fn == 'silu':
+        if act_fn == "silu":
             self.act_fn = nn.SiLU()
-        if dis_emb == 'sin':
+        if dis_emb == "sin":
             self.dis_emb = SinusoidsEmbedding(n_frequencies=num_freqs)
-        elif dis_emb == 'none':
+        elif dis_emb == "none":
             self.dis_emb = None
         for i in range(0, num_layers):
             self.add_module(
-                "csp_layer_%d" % i, CSPLayer(hidden_dim, self.act_fn, self.dis_emb, ln=ln, ip=ip)
+                "csp_layer_%d" % i,
+                CSPLayer(hidden_dim, self.act_fn, self.dis_emb, ln=ln, ip=ip),
             )
         self.num_layers = num_layers
         self.coord_out = nn.Linear(hidden_dim, 3, bias=False)
@@ -686,9 +707,7 @@ class CSPNet(nn.Module):
         tensor_ordered = tensor_cat[reorder_idx]
         return tensor_ordered
 
-    def reorder_symmetric_edges(
-            self, edge_index, cell_offsets, neighbors, edge_vector
-    ):
+    def reorder_symmetric_edges(self, edge_index, cell_offsets, neighbors, edge_vector):
         """
         Reorder edges to make finding counter-directional edges easier.
 
@@ -705,13 +724,13 @@ class CSPNet(nn.Module):
         mask_sep_atoms = edge_index[0] < edge_index[1]
         # Distinguish edges between the same (periodic) atom by ordering the cells
         cell_earlier = (
-                (cell_offsets[:, 0] < 0)
-                | ((cell_offsets[:, 0] == 0) & (cell_offsets[:, 1] < 0))
-                | (
-                        (cell_offsets[:, 0] == 0)
-                        & (cell_offsets[:, 1] == 0)
-                        & (cell_offsets[:, 2] < 0)
-                )
+            (cell_offsets[:, 0] < 0)
+            | ((cell_offsets[:, 0] == 0) & (cell_offsets[:, 1] < 0))
+            | (
+                (cell_offsets[:, 0] == 0)
+                & (cell_offsets[:, 1] == 0)
+                & (cell_offsets[:, 2] < 0)
+            )
         )
         mask_same_atoms = edge_index[0] == edge_index[1]
         mask_same_atoms &= cell_earlier
@@ -735,9 +754,7 @@ class CSPNet(nn.Module):
             neighbors,
         )
         batch_edge = batch_edge[mask]
-        neighbors_new = 2 * torch.bincount(
-            batch_edge, minlength=neighbors.size(0)
-        )
+        neighbors_new = 2 * torch.bincount(batch_edge, minlength=neighbors.size(0))
 
         # Create indexing array
         edge_reorder_idx = repeat_blocks(
@@ -764,31 +781,37 @@ class CSPNet(nn.Module):
         )
 
     def gen_edges(self, num_atoms, frac_coords, lattices, node2graph):
-
-        if self.edge_style == 'fc':
+        if self.edge_style == "fc":
             lis = [torch.ones(n, n, device=num_atoms.device) for n in num_atoms]
             fc_graph = torch.block_diag(*lis)
             fc_edges, _ = dense_to_sparse(fc_graph)
-            return fc_edges, (frac_coords[fc_edges[1]] - frac_coords[fc_edges[0]]) % 1.
-        elif self.edge_style == 'knn':
+            return fc_edges, (frac_coords[fc_edges[1]] - frac_coords[fc_edges[0]]) % 1.0
+        elif self.edge_style == "knn":
             lattice_nodes = lattices[node2graph]
-            cart_coords = torch.einsum('bi,bij->bj', frac_coords, lattice_nodes)
+            cart_coords = torch.einsum("bi,bij->bj", frac_coords, lattice_nodes)
 
             edge_index, to_jimages, num_bonds = radius_graph_pbc(
-                cart_coords, None, None, num_atoms, self.cutoff, self.max_neighbors,
-                device=num_atoms.device, lattices=lattices)
+                cart_coords,
+                None,
+                None,
+                num_atoms,
+                self.cutoff,
+                self.max_neighbors,
+                device=num_atoms.device,
+                lattices=lattices,
+            )
 
             j_index, i_index = edge_index
             distance_vectors = frac_coords[j_index] - frac_coords[i_index]
             distance_vectors += to_jimages.float()
 
-            edge_index_new, _, _, edge_vector_new = self.reorder_symmetric_edges(edge_index, to_jimages, num_bonds,
-                                                                                 distance_vectors)
+            edge_index_new, _, _, edge_vector_new = self.reorder_symmetric_edges(
+                edge_index, to_jimages, num_bonds, distance_vectors
+            )
 
             return edge_index_new, -edge_vector_new
 
     def forward(self, t, atom_types, frac_coords, lattices, num_atoms, node2graph):
-
         edges, frac_diff = self.gen_edges(num_atoms, frac_coords, lattices, node2graph)
         edge2graph = node2graph[edges[0]]
         if self.smooth:
@@ -801,15 +824,21 @@ class CSPNet(nn.Module):
         node_features = self.atom_latent_emb(node_features)
 
         for i in range(0, self.num_layers):
-            node_features = self._modules["csp_layer_%d" % i](node_features, frac_coords, lattices, edges, edge2graph,
-                                                              frac_diff=frac_diff)
+            node_features = self._modules["csp_layer_%d" % i](
+                node_features,
+                frac_coords,
+                lattices,
+                edges,
+                edge2graph,
+                frac_diff=frac_diff,
+            )
 
         if self.ln:
             node_features = self.final_layer_norm(node_features)
 
         coord_out = self.coord_out(node_features)
 
-        graph_features = scatter(node_features, node2graph, dim=0, reduce='mean')
+        graph_features = scatter(node_features, node2graph, dim=0, reduce="mean")
 
         if self.pred_scalar:
             return self.scalar_out(graph_features)
@@ -817,7 +846,7 @@ class CSPNet(nn.Module):
         lattice_out = self.lattice_out(graph_features)
         lattice_out = lattice_out.view(-1, 3, 3)
         if self.ip:
-            lattice_out = torch.einsum('bij,bjk->bik', lattice_out, lattices)
+            lattice_out = torch.einsum("bij,bjk->bik", lattice_out, lattices)
         if self.pred_type:
             type_out = self.type_out(node_features)
             return lattice_out, coord_out, type_out
