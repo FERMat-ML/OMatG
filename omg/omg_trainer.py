@@ -135,12 +135,23 @@ class OMGTrainer(Trainer):
             assert len(struc.species) == struc.pos.shape[0]
             assert struc.pos.shape[1] == 3
             assert struc.cell[0].shape == (3, 3)
+            species_np = struc.species.cpu().numpy()
+            numbers_for_ase = species_np.copy()
+            # Handle ghost atoms: species=-1 should be converted to max_real_Z+1 for ASE compatibility
+            is_ghost = species_np == -1
+            if is_ghost.any():
+                real_numbers = species_np[~is_ghost]
+                max_real = int(real_numbers.max()) if real_numbers.size else 0
+                ghost_label = max_real + 1
+                numbers_for_ase[is_ghost] = ghost_label
             if bool(struc.pos_is_fractional):
-                atoms = Atoms(numbers=struc.species, scaled_positions=struc.pos, cell=struc.cell[0],
+                atoms = Atoms(numbers=numbers_for_ase, scaled_positions=struc.pos, cell=struc.cell[0],
                               pbc=(True, True, True))
             else:
-                atoms = Atoms(numbers=struc.species, positions=struc.pos, cell=struc.cell[0],
+                atoms = Atoms(numbers=numbers_for_ase, positions=struc.pos, cell=struc.cell[0],
                               pbc=(True, True, True))
+            if is_ghost.any():
+                atoms.set_array("is_ghost", is_ghost)
             all_ref_atoms.append(atoms)
         return all_ref_atoms
 
@@ -171,17 +182,40 @@ class OMGTrainer(Trainer):
             Filename for the storage of the symmetric structures.
         :type symmetry_filename: Path
         """
+        def filter_ghost_atoms(atoms_list: Sequence[Atoms]) -> list[Atoms]:
+            """Filter ghost atoms from a list of Atoms objects."""
+            filtered = []
+            for atoms in atoms_list:
+                if "is_ghost" in atoms.arrays:
+                    is_ghost = atoms.arrays["is_ghost"].astype(bool)
+                    atoms = atoms[~is_ghost]
+                else:
+                    valid_mask = (atoms.numbers > 0) & (atoms.numbers <= MAX_ATOM_NUM)
+                    atoms = atoms[valid_mask]
+                filtered.append(atoms)
+            return filtered
+
         fractional_coordinates_corrector = PeriodicBoundaryConditionsCorrector(min_value=0.0, max_value=1.0)
 
+        # Filter ghost atoms before visualization
+        reference_atoms = filter_ghost_atoms(reference)
+        generated_atoms = filter_ghost_atoms(generated)
+        if initial is not None:
+            initial_atoms = filter_ghost_atoms(initial)
+        else:
+            initial_atoms = None
+
         # Keep ASE Atoms versions of certain inputs
-        reference_atoms = reference
-        generated_atoms = generated
+        reference_atoms_for_analysis = reference_atoms
+        generated_atoms_for_analysis = generated_atoms
 
         # Convert to Data
-        reference = convert_ase_atoms_to_data(reference)
-        if initial is not None:
-            initial = convert_ase_atoms_to_data(initial)
-        generated = convert_ase_atoms_to_data(generated)
+        reference = convert_ase_atoms_to_data(reference_atoms)
+        if initial_atoms is not None:
+            initial = convert_ase_atoms_to_data(initial_atoms)
+        else:
+            initial = None
+        generated = convert_ase_atoms_to_data(generated_atoms)
 
         # List of volumes of all test structures.
         ref_vol = []
@@ -253,7 +287,7 @@ class OMGTrainer(Trainer):
             ref_root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
 
         ref_sg_fail = 0
-        for struc in reference_atoms:
+        for struc in reference_atoms_for_analysis:
             ref_avg_cn.append(np.mean(get_coordination_numbers(struc)))
 
             cn_dict = get_coordination_numbers_species(struc)
@@ -275,7 +309,7 @@ class OMGTrainer(Trainer):
                     ref_crystal_sys[cs] = 0
                 ref_crystal_sys[cs] += 1
         print("Number of times space group identification failed for prediction dataset: "
-              "{}/{}".format(ref_sg_fail, len(reference_atoms)))
+              "{}/{}".format(ref_sg_fail, len(reference_atoms_for_analysis)))
 
         # List of volumes of all generated structures.
         vol = []
@@ -344,7 +378,7 @@ class OMGTrainer(Trainer):
 
         sg_fail = 0
         sg_fail_F = 0
-        for struc in generated_atoms:
+        for struc in generated_atoms_for_analysis:
             avg_cn.append(np.mean(get_coordination_numbers(struc)))
 
             cn_dict = get_coordination_numbers_species(struc)
@@ -393,9 +427,9 @@ class OMGTrainer(Trainer):
                     write(symmetry_filename_F, sym_struc_F, format='extxyz', append=True)
 
         print("Number of times space group identification failed for generated dataset (var_prec = True): "
-              "{}/{} total".format(sg_fail, len(generated_atoms)))
+              "{}/{} total".format(sg_fail, len(generated_atoms_for_analysis)))
         print("Number of times space group identification failed for generated dataset (var_prec = False): "
-              "{}/{} total".format(sg_fail_F, len(generated_atoms)))
+              "{}/{} total".format(sg_fail_F, len(generated_atoms_for_analysis)))
 
         # Plot
         with PdfPages(plot_name) as pdf:
