@@ -63,7 +63,7 @@ model:
   use_min_perm_dist: False
   float_32_matmul_precision: "high"
   validation_mode: "loss"
-  dataset_name: "mp_20_ghosted_j05"
+  dataset_name: "mp_20"
 data:
   train_dataset:
     class_path: omg.datamodule.StructureDataset
