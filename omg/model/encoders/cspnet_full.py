@@ -31,7 +31,8 @@ class CSPNetFull(Encoder, CSPNet):
         pred_scalar = False,
         am_hidden_dim = 128, # added to acomodate adapter module
         prop_embed_dim = 32,  # needs to match the property embedding dimension of yaml file for time
-        prop = False
+        prop = False,
+        initialize_zeros = False
     ):
 
         super().__init__()
@@ -76,6 +77,16 @@ class CSPNetFull(Encoder, CSPNet):
             for i in range (self.num_layers):
                 adapter = AdapterModule(input_dim=hidden_dim, am_hidden_dim=am_hidden_dim, property_dim=prop_embed_dim)
                 self.adapters.append(adapter) # already on CUDA
+        if initialize_zeros:
+            nn.init.zeros_(self.coord_out.weight)
+            nn.init.zeros_(self.coord_out_2.weight)
+            nn.init.zeros_(self.lattice_out.weight)
+            nn.init.zeros_(self.lattice_out_2.weight)
+            if self.pred_type:
+                nn.init.zeros_(self.type_out.weight)
+                nn.init.zeros_(self.type_out.bias)
+                nn.init.zeros_(self.type_out_2.weight)
+                nn.init.zeros_(self.type_out_2.bias)
 
     def _convert_inputs(self, x, **kwargs):
         atom_types = x.species
