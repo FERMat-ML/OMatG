@@ -1,0 +1,51 @@
+import argparse
+import sys
+import warnings
+from lightning.pytorch.cli import LightningCLI
+from omg import __version__
+from omg.datamodule import OMGDataModule
+from omg.omg_cli import OMGCLI
+from omg.omg_lightning import OMGLightning
+from omg.omg_trainer import OMGTrainer
+from omg_tf import omg_tf_lightning
+from omg_tf import omg_tf_cli
+
+
+def main():
+    """Main function to run the Open Materials Generation with Targeted Functions (OMatG-TF) command line interface
+    (used by omg_tf command)."""
+    args = sys.argv[1:]
+    try:
+        omg_index = args.index("omg")
+    except ValueError:
+        # Suppress printing traceback.
+        sys.exit("error: omg_tf requires configuration of omg model after 'omg' command-line argument")
+
+    # Ignore specific warning from LightningCLI.
+    warnings.filterwarnings(
+        "ignore",
+        "LightningCLI's args parameter is intended to run from within Python like if it were from the command line.*")
+
+    # Pass only omg arguments to OMGCLI.
+    omg_cli = OMGCLI(model_class=OMGLightning, datamodule_class=OMGDataModule, trainer_class=OMGTrainer, run=False,
+                     args=args[omg_index + 1:])
+
+    # Move OMG model to the correct device.
+    # The sequence of function calls is taken from the _run method in the Lightning Trainer.
+    trainer = omg_cli.trainer
+    trainer.strategy.connect(omg_cli.model)
+    trainer.strategy.setup_environment()
+    trainer.strategy.setup(omg_cli.trainer)
+    # Set global base models and datamodule.
+    omg_tf_lightning.base_model = omg_cli.model
+    omg_tf_cli.base_datamodule = omg_cli.datamodule
+
+    # TODO: DOES HELP STILL WORK?
+
+    # Pass only omg_tf arguments.
+    omg_tf_cli.OMGTFCLI(model_class=omg_tf_lightning.OMGTFLightning, args=args[:omg_index],
+                        parser_kwargs={"formatter_class": argparse.RawDescriptionHelpFormatter, "description": f"""
+Open Materials Generation (OMatG) Version {__version__}
+
+A state-of-the-art generative model for crystal structure prediction and de novo generation of inorganic crystals.
+"""})

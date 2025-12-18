@@ -15,9 +15,6 @@ from .reward_functions import RewardFunction, VolumeReward, DensityReward, Stabi
 from .rl_config import RLConfig
 from .omg_rl_lightning import OMGRLLightning
 
-# Legacy standalone trainer (kept for compatibility)
-from .rl_trainer import RLTrainer
-
 __all__ = [
     # Core models
     "ResidualModel",  # For continuous (pos, cell)
