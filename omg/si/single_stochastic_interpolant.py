@@ -81,20 +81,20 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         else:
             self._use_antithetic = False
         self._epsilon = epsilon
-        self._differential_equation_type = differential_equation_type
+        self.differential_equation_type = differential_equation_type
         # Corrector that needs to be applied to the points x_t during integration.
         self._corrector = self._interpolant.get_corrector()
         try:
-            self._differential_equation_type = DifferentialEquationType[differential_equation_type]
+            self.differential_equation_type = DifferentialEquationType[differential_equation_type]
         except AttributeError:
             raise ValueError(f"Unknown differential equation type f{differential_equation_type}.")
-        if self._differential_equation_type == DifferentialEquationType.ODE:
+        if self.differential_equation_type == DifferentialEquationType.ODE:
             self.loss = self._ode_loss
             self.integrate = self._ode_integrate
             if self._epsilon is not None:
                 raise ValueError("Epsilon function should not be provided for ODEs.")
         else:
-            assert self._differential_equation_type == DifferentialEquationType.SDE
+            assert self.differential_equation_type == DifferentialEquationType.SDE
             self.loss = self._sde_loss
             self.integrate = self._sde_integrate
             if self._epsilon is None:
@@ -103,7 +103,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
                 raise ValueError("Gamma function should be provided for SDEs.")
         self._integrator_kwargs = integrator_kwargs if integrator_kwargs is not None else {}
         self._correct_center_of_mass_motion = correct_center_of_mass_motion
-        self._velocity_annealing_factor = velocity_annealing_factor
+        self.velocity_annealing_factor = velocity_annealing_factor
         # This also disables PeriodicScoreBasedDiffusionModelInterpolantVP and
         # PeriodicScoreBasedDiffusionModelInterpolantVE.
         if isinstance(self._interpolant,
@@ -184,10 +184,10 @@ class SingleStochasticInterpolant(StochasticInterpolant):
             Keys of the losses.
         :rtype: Iterable[str]
         """
-        if self._differential_equation_type == DifferentialEquationType.ODE:
+        if self.differential_equation_type == DifferentialEquationType.ODE:
             yield "loss_b"
         else:
-            assert self._differential_equation_type == DifferentialEquationType.SDE
+            assert self.differential_equation_type == DifferentialEquationType.SDE
             yield "loss_b"
             yield "loss_z"
 
@@ -459,7 +459,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: torch.Tensor
         """
         # Set up ODE function
-        odefunc = lambda t, x: ((1.0 + self._velocity_annealing_factor * t)
+        odefunc = lambda t, x: ((1.0 + self.velocity_annealing_factor * t)
                                 * model_function(t, self._corrector.correct(x))[0])
         t_span = torch.tensor([time, time + time_step], device=x_t.device)
         with torch.no_grad():
@@ -522,7 +522,7 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         # SDE Integrator
         original_shape = x_t.shape
         sde = self.SDE(model_func=model_function, corrector=self._corrector, gamma=self._gamma, epsilon=self._epsilon,
-                       original_x_shape=original_shape, velocity_annealing_factor=self._velocity_annealing_factor)
+                       original_x_shape=original_shape, velocity_annealing_factor=self.velocity_annealing_factor)
         t_span = torch.tensor([time, time + time_step], device=x_t.device)
 
         with torch.no_grad():

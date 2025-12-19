@@ -65,7 +65,7 @@ class ResidualIntegrator:
         times = torch.linspace(
             SMALL_TIME,
             BIG_TIME,
-            self.si._integration_time_steps,
+            self.si.integration_time_steps,
             device=x_0.pos.device
         )
 

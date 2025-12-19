@@ -120,7 +120,7 @@ class RLTrainer:
 
         # Integrate with residual model
         batch_size = len(x_0.n_atoms)
-        times = torch.linspace(0.0, 1.0, self.si._integration_time_steps, device=self.device)
+        times = torch.linspace(0.0, 1.0, self.si.integration_time_steps, device=self.device)
 
         x_t = x_0.clone()
 

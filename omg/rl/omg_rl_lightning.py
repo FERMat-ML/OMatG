@@ -119,7 +119,7 @@ class OMGRLLightning(lightning.LightningModule):
         times = torch.linspace(
             SMALL_TIME,
             BIG_TIME,
-            self.si._integration_time_steps,
+            self.si.integration_time_steps,
             device=self.device
         )
 
