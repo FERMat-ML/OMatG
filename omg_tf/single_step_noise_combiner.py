@@ -54,19 +54,21 @@ class SingleStepNoiseCombiner(Combiner):
             with torch.no_grad():
                 # Even though base model is frozen, we should call no_grad to avoid building computational graph.
                 base_model_output = base_model(x_t, time)
-                if self._integrate_pos:
-                    x_t.pos = x_t.pos + base_model_output[DataField.pos.name + "_b"]  * dt
-                if self._integrate_cell:
-                    x_t.cell = x_t.cell + base_model_output[DataField.cell.name + "_b"]  * dt
 
             mask_per_structure = (noise_time_steps == t_index)
             structure_filter = mask_per_structure.nonzero(as_tuple=True)[0]
             if len(structure_filter) == 0:
+                # Only use base model velocities at this time step.
+                if self._integrate_pos:
+                    x_t.pos = x_t.pos + base_model_output[DataField.pos.name + "_b"] * dt
+                if self._integrate_cell:
+                    x_t.cell = x_t.cell + base_model_output[DataField.cell.name + "_b"] * dt
                 continue
 
             # noinspection PyUnresolvedReferences
             filtered_x_t = Batch.from_data_list(x_t.index_select(structure_filter)).to(x_t.pos.device)
             filtered_time = time[structure_filter]
+            # Base model was not applied to x_t yet.
             filtered_residual_output = residual_model(filtered_x_t, filtered_time)
 
             if self._integrate_pos:
@@ -80,6 +82,7 @@ class SingleStepNoiseCombiner(Combiner):
                 # Sum log probs over all atoms in each structure to get batch-wise log probs.
                 log_probs_filtered = scatter_add(log_probs_atoms, filtered_x_t.batch)
                 log_probs[structure_filter] += log_probs_filtered
+                x_t.pos = x_t.pos + base_model_output[DataField.pos.name + "_b"] * dt
                 mask_per_atom = mask_per_structure.repeat_interleave(x_0.n_atoms)
                 x_t.pos[mask_per_atom] = x_t.pos[mask_per_atom] + noisy_res_b * dt
 
@@ -92,6 +95,7 @@ class SingleStepNoiseCombiner(Combiner):
                 # Sum log probs over all dimensions except batch.
                 log_probs_filtered = -0.5 * (noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
                 log_probs[structure_filter] += log_probs_filtered
+                x_t.cell = x_t.cell + base_model_output[DataField.cell.name + "_b"] * dt
                 x_t.cell[mask_per_structure] = x_t.cell[mask_per_structure] + noisy_res_b * dt
 
         return x_t, log_probs
