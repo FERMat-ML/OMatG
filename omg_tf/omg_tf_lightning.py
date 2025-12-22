@@ -1,20 +1,14 @@
-import lightning
-from lightning.pytorch.cli import LightningCLI
-import torch
-from typing import Dict, List, Optional
 from pathlib import Path
-import numpy as np
+from typing import Dict, List, Optional
 from ase import Atoms
-
+import numpy as np
+import lightning
+import torch
 from omg.datamodule import OMGData
-from omg.globals import SMALL_TIME, BIG_TIME
 from omg.model.model import Model
-from omg.omg_lightning import OMGLightning
 from omg.rl.reward_functions import RewardFunction
-
-
-# Store the OMG base model globally to exclude it from lightning's parameter tracking.
-base_model: Optional[OMGLightning] = None
+from omg_tf.abstracts import Combiner
+from omg_tf.base_modules import base_modules
 
 
 class OMGTFLightning(lightning.LightningModule):
@@ -28,6 +22,7 @@ class OMGTFLightning(lightning.LightningModule):
     def __init__(
         self,
         residual_model: Model,
+        combiner: Combiner,
         reward_function: RewardFunction = None,
         save_structures: bool = False,
         structure_save_dir: Optional[Path] = None,
@@ -35,12 +30,8 @@ class OMGTFLightning(lightning.LightningModule):
         """Constructor for OMGRTFLightning."""
         super().__init__()
 
-        if base_model is None:
-            raise ValueError("Base model must be set globally before initializing OMGTFLightning.")
-        # Freeze base model parameters.
-        base_model.freeze()
-
         self.residual_model = residual_model
+        self.combiner = combiner
         self.reward_function = reward_function
 
         # Structure saving
@@ -63,100 +54,21 @@ class OMGTFLightning(lightning.LightningModule):
         :return: Tuple of (structures, log_probs, mean_residuals_per_step)
         :rtype: tuple[List[Atoms], torch.Tensor, List[Dict[str, torch.Tensor]]]
         """
-        x_0 = base_model.sampler.sample_p_0(batch).to(self.device)
+        x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
+
+        x_t, log_probs = self.combiner.training_integrate(self.residual_model, x_0)
+        assert len(log_probs) == len(x_0.n_atoms)
 
         # Track log probabilities and mean residuals
-        log_probs_per_step = []
-        mean_residuals_per_step = []
+        log_probs_per_step = {loss_key: [] for loss_key in self._relevant_model_keys}
+        mean_residuals_per_step = {loss_key: [] for loss_key in self._relevant_model_keys}
 
-        def combined_model(x, t):
-            base_output = base_model.model(x, t)
-            residual_output = self.residual_model(x, t)
-            combined_output = {}
-            assert set(base_output.keys()) == set(residual_output.keys())
-            for key in residual_output.keys():
-                if key.endswith("_b"):  # Velocity fields
-                    # Add noise to residual output.  # TODO: DO I NEED TO STORE MEANS?
-                    mean = residual_output[key]
-                    noise = torch.randn_like(mean)
-                    residual_output[key] = mean + self.noise_scale * noise
-                    # TODO: IS THIS EQUATION TRUE? DO I NEED THE NOISE SCALE? WHERE DO I NEED TO STORE THIS HOW?
-                    log_probs = -0.5 * (noise ** 2).sum(dim=tuple(range(1, noise.ndim)))
-                    # Add residual velocity to base velocity.
-                    combined_output[key] = base_output[key] + residual_output[key]
-                else:
-                    # Non-velocity fields are copied directly.
-                    combined_output[key] = base_output[key]
-            return combined_output
+        # TODO: METHODS TO TRY (MEAN RESIDUAL ALWAYS APPLIED DURING INFERENCE):
+        # 1) Add residual and noise at every (most) timesteps during training
+        # 2) Add residual and noise at single sampled timestep.
+        # 3) Add residual always, but noise only at sampled timestep.
 
-
-
-            residual_output, log_prob, mean_residual = self.residual_model(
-                x, t, return_log_prob=True
-            )
-            combined_output = {}
-            for key in base_output:
-                if key in residual_output:
-                    combined_output[key] = base_output[key] + residual_output[key]
-                else:
-                    combined_output[key] = base_output[key]
-            return combined_output, log_prob, mean_residual
-
-
-
-        # Integration setup
-        batch_size = len(x_0.n_atoms)
-        times = torch.linspace(
-            SMALL_TIME,
-            BIG_TIME,
-            self.si._integration_time_steps,
-            device=self.device
-        )
-
-        # Clone for integration
-        data_fields = [df.name for df in self.si._data_fields]
-        x_t = x_0.clone(*data_fields)
-        x_t_dict = x_t.to_dict()
-
-        # Integration loop
-        for t_index in range(1, len(times)):
-            t = times[t_index - 1]
-            dt = times[t_index] - times[t_index - 1]
-
-            t_batch = t.repeat(batch_size)
-
-            # Get base velocity (frozen)
-            with torch.no_grad():
-                base_output = self.base_model(x_t, t_batch)
-
-            # Get residual velocity (with noise during training)
-            residual_output, log_prob, mean_residual = self.residual_model(
-                x_t, t_batch, return_log_prob=True
-            )
-
-            # Combine velocities and integrate each field
-            for stochastic_interpolant, data_field in zip(
-                self.si._stochastic_interpolants,
-                self.si._data_fields
-            ):
-                b_key = data_field.name + "_b"
-
-                if b_key in base_output:
-                    # Combine base + residual
-                    base_vel = base_output[b_key]
-                    if b_key in residual_output:
-                        total_vel = base_vel + residual_output[b_key]
-                    else:
-                        total_vel = base_vel
-
-                    # Simple Euler step (could use more sophisticated integration)
-                    x_t_dict[data_field.name] = x_t_dict[data_field.name] + total_vel * dt
-
-            # Store log probs and mean residuals
-            if log_prob is not None:
-                log_probs_per_step.append(log_prob)
-            mean_residuals_per_step.append(mean_residual)
-
+        exit()
         # Convert to ASE Atoms
         x_t = x_t.to('cpu')
         structures = []

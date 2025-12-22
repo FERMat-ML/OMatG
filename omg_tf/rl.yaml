@@ -4,12 +4,20 @@ model:
     init_args:
       encoder:
         class_path: omg.model.encoders.cspnet_full.CSPNetFull
+        init_args:
+          initialize_zeros: true
       head:
         class_path: omg.model.heads.pass_through.PassThrough
       time_embedder:
         class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
         init_args:
           dim: 256
+  combiner:
+    class_path: omg_tf.SingleStepNoiseCombiner
+    init_args:
+      noise_scales:
+        pos: 0.1
+        cell: 0.1
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
@@ -30,6 +38,7 @@ trainer:
   precision: "32-true"
   max_epochs: 2000
   enable_progress_bar: true
+  #accumulate_grad_batches: 16
 optimizer:
   class_path: torch.optim.AdamW
   init_args:
