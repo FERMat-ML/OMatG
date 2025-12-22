@@ -77,7 +77,7 @@ class MultipleStepNoiseCombiner(Combiner):
                 # Log probability of the specific sampled velocity x is -0.5 * ((x - mean) / sigma)^2.
                 # Since we sample x = mean + sigma * noise, this becomes -0.5 * noise^2.
                 # Sum log probs over all dimensions except batch.
-                log_probs -= 0.5 * (noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
+                log_probs += -0.5 * (noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
                 cell_b = base_model_output[DataField.cell.name + "_b"] + noisy_res_b
                 x_t.cell = x_t.cell + cell_b * dt
 
