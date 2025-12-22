@@ -1,12 +1,12 @@
 import argparse
 import sys
 import warnings
-from lightning.pytorch.cli import LightningCLI
 from omg import __version__
 from omg.datamodule import OMGDataModule
 from omg.omg_cli import OMGCLI
 from omg.omg_lightning import OMGLightning
 from omg.omg_trainer import OMGTrainer
+from omg_tf.base_modules import base_modules
 from omg_tf import omg_tf_lightning
 from omg_tf import omg_tf_cli
 
@@ -37,8 +37,8 @@ def main():
     trainer.strategy.setup_environment()
     trainer.strategy.setup(omg_cli.trainer)
     # Set global base models and datamodule.
-    omg_tf_lightning.base_model = omg_cli.model
-    omg_tf_cli.base_datamodule = omg_cli.datamodule
+    base_modules["model"] = omg_cli.model
+    base_modules["datamodule"] = omg_cli.datamodule
 
     # TODO: DOES HELP STILL WORK?
 

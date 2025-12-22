@@ -1,0 +1,156 @@
+from abc import ABC, abstractmethod
+import torch
+from tqdm import trange
+from omg.datamodule import OMGData
+from omg.globals import BIG_TIME, SMALL_TIME
+from omg.model.model import Model
+from omg.si import (SingleStochasticInterpolant, SingleStochasticInterpolantIdentity, SingleStochasticInterpolantOS,
+                    DifferentialEquationType)
+from omg.utils import DataField
+from omg_tf.base_modules import base_modules
+
+
+class ResidualTransformer(ABC):
+    """
+    Abstract base class for transforming an ODE-based model by learning and applying residual velocities in a
+    reinforcement learning setting.
+
+    TODO:
+    - Add noise scale scheduling.
+    - Add species integration support.
+    - Add velocity annealing like scaling.
+    """
+
+    def __init__(self, residual_model: Model, noise_scales: dict[str, float]) -> None:
+        """Constructor of the ModelTransformer class."""
+        super().__init__()
+        self.residual_model = residual_model
+
+        base_model = base_modules["model"]
+        if base_model is None:
+            raise ValueError("Base model must be set globally before initializing OMGTFLightning.")
+        # Freeze base model parameters.
+        base_model.freeze()
+
+        self._relevant_model_keys = []
+        pos_interpolant = base_model.si.get_stochastic_interpolant(DataField.pos.name)
+        self._integrate_pos = not isinstance(pos_interpolant, SingleStochasticInterpolantIdentity)
+        if self._integrate_pos:
+            if isinstance(pos_interpolant, SingleStochasticInterpolant):
+                if not pos_interpolant.differential_equation_type == DifferentialEquationType.ODE:
+                    raise ValueError("Residual integration for positions is only supported for ODE-based stochastic "
+                                     "interpolants.")
+                if pos_interpolant.velocity_annealing_factor != 0.0:
+                    raise ValueError("Residual integration for positions is not supported with velocity annealing.")
+            elif isinstance(pos_interpolant, SingleStochasticInterpolantOS):
+                if not pos_interpolant.differential_equation_type == DifferentialEquationType.ODE:
+                    raise ValueError("Residual integration for positions is only supported for ODE-based stochastic "
+                                     "interpolants.")
+                if not pos_interpolant.predict_velocity:
+                    raise ValueError("Residual integration for positions is only supported when predicting velocity.")
+                if pos_interpolant.velocity_annealing_factor != 0.0:
+                    raise ValueError("Residual integration for positions is not supported with velocity annealing.")
+            else:
+                raise ValueError("Unsupported stochastic interpolant for position residual integration.")
+            self._relevant_model_keys.append(DataField.pos.name + "_b")
+            if DataField.pos.name not in noise_scales:
+                raise ValueError("Noise scale for position residuals must be provided when integrating positions.")
+        else:
+            if DataField.pos.name in noise_scales:
+                raise ValueError("Noise scale for position residuals provided but positions are not integrated.")
+
+        cell_interpolant = base_model.si.get_stochastic_interpolant(DataField.cell.name)
+        self._integrate_cell = not isinstance(cell_interpolant, SingleStochasticInterpolantIdentity)
+        if self._integrate_cell:
+            if isinstance(cell_interpolant, SingleStochasticInterpolant):
+                if not cell_interpolant.differential_equation_type == DifferentialEquationType.ODE:
+                    raise ValueError("Residual integration for cell is only supported for ODE-based stochastic "
+                                     "interpolants.")
+                if cell_interpolant.velocity_annealing_factor != 0.0:
+                    raise ValueError("Residual integration for cell is not supported with velocity annealing.")
+            elif isinstance(cell_interpolant, SingleStochasticInterpolantOS):
+                if not cell_interpolant.differential_equation_type == DifferentialEquationType.ODE:
+                    raise ValueError("Residual integration for cell is only supported for ODE-based stochastic "
+                                     "interpolants.")
+                if not cell_interpolant.predict_velocity:
+                    raise ValueError("Residual integration for cell is only supported when predicting velocity.")
+                if cell_interpolant.velocity_annealing_factor != 0.0:
+                    raise ValueError("Residual integration for cell is not supported with velocity annealing.")
+            else:
+                raise ValueError("Unsupported stochastic interpolant for cell residual integration.")
+            self._relevant_model_keys.append(DataField.cell.name + "_b")
+            if DataField.cell.name not in noise_scales:
+                raise ValueError("Noise scale for cell residuals must be provided when integrating cell.")
+        else:
+            if DataField.cell.name in noise_scales:
+                raise ValueError("Noise scale for cell residuals provided but cell is not integrated.")
+
+        species_interpolant = base_model.si.get_stochastic_interpolant(DataField.species.name)
+        self._integrate_species = not isinstance(species_interpolant, SingleStochasticInterpolantIdentity)
+        if self._integrate_species:
+            raise ValueError("Residual integration for species is not supported yet.")
+        else:
+            if DataField.species.name in noise_scales:
+                raise ValueError("Noise scale for species residuals provided but species are not integrated.")
+
+        try:
+            self._noise_scales = {DataField[key]: value for key, value in noise_scales.items()}
+        except KeyError as e:
+            raise ValueError(f"Invalid data field key in noise scales: {e}")
+
+        if not len(self._relevant_model_keys) > 0:
+            raise ValueError("At least one of position, cell, or species must be integrated.")
+
+    def integrate(self, x_0: OMGData) -> OMGData:
+        """
+        Integrate the structures x_0 from time 0 to 1 using the base model and adding the mean residuals predicted by
+        the residual model at each integration step.
+
+        This method performs an Euler integration, adding the sum of the base model's and residual model's predicted
+        velocities at each time step.
+
+        :param x_0:
+            Initial structures at time 0.
+        :type x_0: OMGData
+
+        :return:
+            Structures at final time 1 after integration with residuals.
+        :rtype: OMGData
+        """
+        base_model = base_modules["model"]
+        batch_size = len(x_0.n_atoms)
+        times = torch.linspace(SMALL_TIME, BIG_TIME, base_model.si.integration_time_steps, device=x_0.pos.device)
+        x_t = x_0.clone()
+        for t_index in trange(1, len(times), desc="Integrating with residuals"):
+            t = times[t_index - 1]
+            dt = times[t_index] - times[t_index - 1]
+            time = t.repeat(batch_size)
+            base_model_output = base_model.model(x_t, time)
+            residual_output = self.residual_model(x_t, time)
+            if self._integrate_pos:
+                pos_b = base_model_output[DataField.pos.name + "_b"] + residual_output[DataField.pos.name + "_b"]
+                x_t.pos = x_t.pos + pos_b * dt
+            if self._integrate_cell:
+                cell_b = base_model_output[DataField.cell.name + "_b"] + residual_output[DataField.cell.name + "_b"]
+                x_t.cell = x_t.cell + cell_b * dt
+        return x_t
+
+    @abstractmethod
+    def training_integrate(self, x_0: OMGData) -> tuple[OMGData, torch.Tensor]:
+        """
+        Abstract method for integrating the structures x_0 from time 0 to 1 using the base and residual models.
+
+        This method should typically perform an Euler integration similar to integrate_with_residual_means. However,
+        during training, it should sample residual velocities from the residual model (e.g., by adding noise) and
+        return the log probabilities of the applied residuals. These are then used for policy gradient updates.
+
+        :param x_0:
+            Initial structures at time 0.
+        :type x_0: OMGData
+
+        :return:
+            (Structures at final time 1 after integration with residuals,
+             Log probabilities of the applied residuals).
+        :rtype: tuple[OMGData, torch.tensor]
+        """
+        raise NotImplementedError
