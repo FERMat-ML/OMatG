@@ -10,21 +10,21 @@ from omg.utils import DataField
 from omg_tf.base_modules import base_modules
 
 
-class ResidualTransformer(ABC):
+class Combiner(ABC):
     """
-    Abstract base class for transforming an ODE-based model by learning and applying residual velocities in a
-    reinforcement learning setting.
+    Abstract base class for combining an ODE-based model with a residual model that learns and applies residual
+    velocities in a reinforcement learning setting.
 
     TODO:
     - Add noise scale scheduling.
     - Add species integration support.
     - Add velocity annealing like scaling.
+    - Allow to apply only to subset of fields.
     """
 
-    def __init__(self, residual_model: Model, noise_scales: dict[str, float]) -> None:
-        """Constructor of the ModelTransformer class."""
+    def __init__(self, noise_scales: dict[str, float]) -> None:
+        """Constructor of the Combiner class."""
         super().__init__()
-        self.residual_model = residual_model
 
         base_model = base_modules["model"]
         if base_model is None:
@@ -101,14 +101,16 @@ class ResidualTransformer(ABC):
         if not len(self._relevant_model_keys) > 0:
             raise ValueError("At least one of position, cell, or species must be integrated.")
 
-    def integrate(self, x_0: OMGData) -> OMGData:
+        self._integration_time_steps = base_model.si.integration_time_steps
+
+    def integrate(self, residual_model: Model, x_0: OMGData) -> OMGData:
         """
-        Integrate the structures x_0 from time 0 to 1 using the base model and adding the mean residuals predicted by
-        the residual model at each integration step.
+        Integrate the structures x_0 from time 0 to 1 with an Euler integration scheme relying on the added velocities
+        of the base and residual models.
 
-        This method performs an Euler integration, adding the sum of the base model's and residual model's predicted
-        velocities at each time step.
-
+        :param residual_model:
+            The residual model predicting residual velocities.
+        :type residual_model: Model
         :param x_0:
             Initial structures at time 0.
         :type x_0: OMGData
@@ -117,16 +119,17 @@ class ResidualTransformer(ABC):
             Structures at final time 1 after integration with residuals.
         :rtype: OMGData
         """
-        base_model = base_modules["model"]
+        base_model = base_modules["model"].model
+        assert base_model is not None
         batch_size = len(x_0.n_atoms)
-        times = torch.linspace(SMALL_TIME, BIG_TIME, base_model.si.integration_time_steps, device=x_0.pos.device)
+        times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps, device=x_0.pos.device)
         x_t = x_0.clone()
         for t_index in trange(1, len(times), desc="Integrating with residuals"):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             time = t.repeat(batch_size)
-            base_model_output = base_model.model(x_t, time)
-            residual_output = self.residual_model(x_t, time)
+            base_model_output = base_model(x_t, time)
+            residual_output = residual_model(x_t, time)
             if self._integrate_pos:
                 pos_b = base_model_output[DataField.pos.name + "_b"] + residual_output[DataField.pos.name + "_b"]
                 x_t.pos = x_t.pos + pos_b * dt
@@ -136,21 +139,27 @@ class ResidualTransformer(ABC):
         return x_t
 
     @abstractmethod
-    def training_integrate(self, x_0: OMGData) -> tuple[OMGData, torch.Tensor]:
+    def training_integrate(self, residual_model: Model, x_0: OMGData) -> tuple[OMGData, torch.Tensor]:
         """
-        Abstract method for integrating the structures x_0 from time 0 to 1 using the base and residual models.
+        Integrate the structures x_0 from time 0 to 1 with an Euler integration scheme relying on the added velocities
+        of the base and residual models.
 
         This method should typically perform an Euler integration similar to integrate_with_residual_means. However,
-        during training, it should sample residual velocities from the residual model (e.g., by adding noise) and
+        during training, it should randomize the residual velocities from the residual model (e.g., by adding noise) and
         return the log probabilities of the applied residuals. These are then used for policy gradient updates.
 
+        The implementation of this method in subclasses decides how the residuals are randomized.
+
+        :param residual_model:
+            The residual model predicting residual velocities.
+        :type residual_model: Model
         :param x_0:
             Initial structures at time 0.
         :type x_0: OMGData
 
         :return:
             (Structures at final time 1 after integration with residuals,
-             Log probabilities of the applied residuals).
+             Batch-wise log probabilities of the applied residuals).
         :rtype: tuple[OMGData, torch.tensor]
         """
         raise NotImplementedError
