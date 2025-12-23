@@ -23,7 +23,7 @@ class Combiner(ABC):
     - Add species integration support.
     - Add velocity annealing like scaling.
     - Allow to apply only to subset of fields.
-    - Use means for different fields
+    - Use means for different fields? What happens for different sized structures?
     """
 
     def __init__(self, noise_scales: dict[str, float]) -> None:
@@ -36,7 +36,7 @@ class Combiner(ABC):
         # Freeze base model parameters.
         base_model.freeze()
 
-        self._relevant_model_keys = []
+        self._integrated_data_fields = []
         pos_interpolant = base_model.si.get_stochastic_interpolant(DataField.pos.name)
         self._integrate_pos = not isinstance(pos_interpolant, SingleStochasticInterpolantIdentity)
         if self._integrate_pos:
@@ -56,7 +56,7 @@ class Combiner(ABC):
                     raise ValueError("Residual integration for positions is not supported with velocity annealing.")
             else:
                 raise ValueError("Unsupported stochastic interpolant for position residual integration.")
-            self._relevant_model_keys.append(DataField.pos.name + "_b")
+            self._integrated_data_fields.append(DataField.pos)
             if DataField.pos.name not in noise_scales:
                 raise ValueError("Noise scale for position residuals must be provided when integrating positions.")
         else:
@@ -82,7 +82,7 @@ class Combiner(ABC):
                     raise ValueError("Residual integration for cell is not supported with velocity annealing.")
             else:
                 raise ValueError("Unsupported stochastic interpolant for cell residual integration.")
-            self._relevant_model_keys.append(DataField.cell.name + "_b")
+            self._integrated_data_fields.append(DataField.cell)
             if DataField.cell.name not in noise_scales:
                 raise ValueError("Noise scale for cell residuals must be provided when integrating cell.")
         else:
@@ -102,7 +102,7 @@ class Combiner(ABC):
         except KeyError as e:
             raise ValueError(f"Invalid data field key in noise scales: {e}")
 
-        if not len(self._relevant_model_keys) > 0:
+        if not len(self._integrated_data_fields) > 0:
             raise ValueError("At least one of position, cell, or species must be integrated.")
 
         self._integration_time_steps = base_model.si.integration_time_steps
@@ -143,14 +143,22 @@ class Combiner(ABC):
         return x_t
 
     @abstractmethod
-    def training_integrate(self, residual_model: Model, x_0: OMGData) -> tuple[OMGData, torch.Tensor]:
+    def training_integrate(
+            self,
+            residual_model: Model,
+            x_0: OMGData
+    ) -> tuple[OMGData, dict[DataField, torch.Tensor], dict[DataField, torch.Tensor]]:
         """
         Integrate the structures x_0 from time 0 to 1 with an Euler integration scheme relying on the added velocities
         of the base and residual models.
 
         This method should typically perform an Euler integration similar to integrate_with_residual_means. However,
-        during training, it should randomize the residual velocities from the residual model (e.g., by adding noise) and
-        return the log probabilities of the applied residuals. These are then used for policy gradient updates.
+        it should randomize the residual velocities from the residual model (e.g., by adding noise) and return the log
+        probabilities of the applied residuals for each integrated data field. These can then be used for policy
+        gradient updates.
+
+        In addition, this method should also return the mean squared residuals per integrated data field for
+        regularization purposes.
 
         The implementation of this method in subclasses decides how the residuals are randomized.
 
@@ -163,8 +171,9 @@ class Combiner(ABC):
 
         :return:
             (Structures at final time 1 after integration with residuals,
-             Batch-wise log probabilities of the applied residuals).
-        :rtype: tuple[OMGData, torch.tensor]
+             Batch-wise log probabilities of the applied residuals for each integrated data field,
+             Batch-wise mean squared residuals for each integrated data field).
+        :rtype: tuple[OMGData, dict[DataField, torch.tensor], dict[DataField, torch.tensor]]
         """
         raise NotImplementedError
 

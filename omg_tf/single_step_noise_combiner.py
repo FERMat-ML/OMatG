@@ -1,6 +1,6 @@
 import torch
 from torch_geometric.data import Batch
-from torch_scatter import scatter_add
+from torch_scatter import scatter_add, scatter_mean
 from tqdm import trange
 from omg.datamodule import OMGData
 from omg.globals import SMALL_TIME, BIG_TIME
@@ -15,16 +15,23 @@ class SingleStepNoiseCombiner(Combiner):
         """Constructor of the SingleStepNoiseCombiner class."""
         super().__init__(noise_scales=noise_scales)
 
-    def training_integrate(self, residual_model: Model, x_0: OMGData) -> tuple[OMGData, torch.Tensor]:
+    def training_integrate(
+            self,
+            residual_model: Model,
+            x_0: OMGData
+    ) -> tuple[OMGData, dict[DataField, torch.Tensor], dict[DataField, torch.Tensor]]:
         """
         Integrate the structures x_0 from time 0 to 1 with an Euler integration scheme relying on the added velocities
         of the base and residual models.
 
-        This method performs an Euler integration similar to integrate_with_residual_means. During training, however, it
-        uses only the velocity from the base model at most timesteps. Only at a single randomly chosen timestep per
-        structure, it randomizes the residual velocities from the residual model by adding noise, and adds that to the
-        velocity of the base model. The returned log probability of the applied residuals can then be used for policy
-        gradient updates.
+        This method performs an Euler integration similar to integrate_with_residual_means. It uses only the velocity
+        from the base model at most timesteps. However, at a single randomly chosen timestep per structure, it
+        randomizes the residual velocities from the residual model by adding noise, and adds that to the velocity of the
+        base model. The returned log probability of the applied residuals for each integrated data field can then be
+        used for policy gradient updates.
+
+        In addition, this method also returns the mean squared residuals per integrated data field for regularization
+        purposes.
 
         TODO: IS THERE A WAY TO ALWAYS APPLY MEAN?
 
@@ -37,15 +44,19 @@ class SingleStepNoiseCombiner(Combiner):
 
         :return:
             (Structures at final time 1 after integration with residuals,
-             Batch-wise log probabilities of the applied residuals).
-        :rtype: tuple[OMGData, torch.tensor]
+             Batch-wise log probabilities of the applied residuals for each integrated data field,
+             Batch-wise mean squared residuals for each integrated data field).
+        :rtype: tuple[OMGData, dict[DataField, torch.tensor], dict[DataField, torch.tensor]]
         """
         base_model = base_modules["model"].model
         assert base_model is not None
         batch_size = len(x_0.n_atoms)
         times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps, device=x_0.pos.device)
         x_t = x_0.clone()
-        log_probs = torch.zeros(batch_size, device=x_0.pos.device)
+        log_probs = {key: torch.zeros(batch_size, device=x_0.pos.device)
+                     for key in self._integrated_data_fields}
+        mean_squared_residuals = {key: torch.zeros(batch_size, device=x_0.pos.device)
+                                  for key in self._integrated_data_fields}
         noise_time_steps = torch.randint(low=1, high=len(times), size=(batch_size,), device=x_0.pos.device)
         for t_index in trange(1, len(times), desc="Integrating with residuals"):
             t = times[t_index - 1]
@@ -81,7 +92,12 @@ class SingleStepNoiseCombiner(Combiner):
                 log_probs_atoms = -0.5 * (noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
                 # Sum log probs over all atoms in each structure to get batch-wise log probs.
                 log_probs_filtered = scatter_add(log_probs_atoms, filtered_x_t.batch)
-                log_probs[structure_filter] += log_probs_filtered
+                log_probs[DataField.pos][structure_filter] += log_probs_filtered
+                # Sum squared residuals over x, y, z dimensions.
+                squared_res_pos = (res_b ** 2).sum(dim=-1)
+                # Get batch-wise mean squared residuals for regularization.
+                mean_squared_residuals_filtered = scatter_mean(squared_res_pos, filtered_x_t.batch)
+                mean_squared_residuals[DataField.pos][structure_filter] += mean_squared_residuals_filtered
                 x_t.pos = x_t.pos + base_model_output[DataField.pos.name + "_b"] * dt
                 mask_per_atom = mask_per_structure.repeat_interleave(x_0.n_atoms)
                 x_t.pos[mask_per_atom] = x_t.pos[mask_per_atom] + noisy_res_b * dt
@@ -94,8 +110,12 @@ class SingleStepNoiseCombiner(Combiner):
                 # Since we sample x = mean + sigma * noise, this becomes -0.5 * noise^2.
                 # Sum log probs over all dimensions except batch.
                 log_probs_filtered = -0.5 * (noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
-                log_probs[structure_filter] += log_probs_filtered
+                log_probs[DataField.cell][structure_filter] += log_probs_filtered
+                # Get batch-wise mean squared residuals for regularization.
+                mean_squared_residuals_filtered = (res_b ** 2).mean(dim=tuple(range(1, res_b.ndim)))
+                mean_squared_residuals[DataField.cell][structure_filter] += mean_squared_residuals_filtered
                 x_t.cell = x_t.cell + base_model_output[DataField.cell.name + "_b"] * dt
                 x_t.cell[mask_per_structure] = x_t.cell[mask_per_structure] + noisy_res_b * dt
 
-        return x_t, log_probs
+        # No mean over time necessary for mean_squared_residuals since it consists only of a single timestep.
+        return x_t, log_probs, mean_squared_residuals
