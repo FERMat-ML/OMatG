@@ -4,10 +4,10 @@ from ase import Atoms
 import numpy as np
 import lightning
 import torch
+from torch_geometric.data import Batch
 from omg.datamodule import OMGData
 from omg.model.model import Model
-from omg.rl.reward_functions import RewardFunction
-from omg_tf.abstracts import Combiner
+from omg_tf.abstracts import Combiner, Reward
 from omg_tf.base_modules import base_modules
 
 
@@ -23,7 +23,9 @@ class OMGTFLightning(lightning.LightningModule):
         self,
         residual_model: Model,
         combiner: Combiner,
-        reward_function: RewardFunction = None,
+        reward: Reward,
+        grpo_group_size: int = 32,
+        grpo_batch_size: int = 16,
         save_structures: bool = False,
         structure_save_dir: Optional[Path] = None,
     ):
@@ -32,7 +34,16 @@ class OMGTFLightning(lightning.LightningModule):
 
         self.residual_model = residual_model
         self.combiner = combiner
-        self.reward_function = reward_function
+        self.reward = reward
+
+        if not grpo_group_size > 0:
+            raise ValueError("GRPO group size must be positive.")
+        if not grpo_batch_size > 0:
+            raise ValueError("GRPO batch size must be positive.")
+        self.grpo_group_size = grpo_group_size
+        self.grpo_batch_size = grpo_batch_size
+        # Change batch size of base datamodule that is used by this class to grpo_batch_size.
+        base_modules["datamodule"].kwargs["batch_size"] = grpo_batch_size
 
         # Structure saving
         self.save_structures = save_structures
@@ -43,49 +54,6 @@ class OMGTFLightning(lightning.LightningModule):
         # Metrics tracking
         self.validation_structures = []
         self.validation_rewards = []
-
-    def generate_trajectories(self, batch: OMGData) -> tuple[List[Atoms], torch.Tensor, List[Dict[str, torch.Tensor]]]:
-        """
-        Generate structures using base + residual model.
-
-        :param batch: Batch of data for conditioning
-        :type batch: OMGData
-
-        :return: Tuple of (structures, log_probs, mean_residuals_per_step)
-        :rtype: tuple[List[Atoms], torch.Tensor, List[Dict[str, torch.Tensor]]]
-        """
-        x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
-
-        x_t, log_probs = self.combiner.training_integrate(self.residual_model, x_0)
-        assert len(log_probs) == len(x_0.n_atoms)
-
-        # Track log probabilities and mean residuals
-        log_probs_per_step = {loss_key: [] for loss_key in self._relevant_model_keys}
-        mean_residuals_per_step = {loss_key: [] for loss_key in self._relevant_model_keys}
-
-        # TODO: METHODS TO TRY (MEAN RESIDUAL ALWAYS APPLIED DURING INFERENCE):
-        # 1) Add residual and noise at every (most) timesteps during training
-        # 2) Add residual and noise at single sampled timestep.
-        # 3) Add residual always, but noise only at sampled timestep.
-
-        exit()
-        # Convert to ASE Atoms
-        x_t = x_t.to('cpu')
-        structures = []
-        for i in range(batch_size):
-            lower, upper = x_t.ptr[i], x_t.ptr[i + 1]
-            atoms = Atoms(
-                numbers=x_t.species[lower:upper].numpy(),
-                scaled_positions=x_t.pos[lower:upper, :].numpy(),
-                cell=x_t.cell[i, :, :].numpy(),
-                pbc=(1, 1, 1)
-            )
-            structures.append(atoms)
-
-        # Sum log probs over trajectory
-        total_log_probs = sum(log_probs_per_step) if log_probs_per_step else torch.zeros(batch_size)
-
-        return structures, total_log_probs, mean_residuals_per_step
 
     def compute_loss(
         self,
@@ -205,11 +173,29 @@ class OMGTFLightning(lightning.LightningModule):
         :return: Loss value
         :rtype: torch.Tensor
         """
-        # Generate trajectories
-        structures, log_probs, mean_residuals = self.generate_trajectories(batch)
+        # Replicate batch from training data according to GRPO group size.
+        grpo_batch = Batch.from_data_list(
+            [batch[i // self.grpo_group_size] for i in range(self.grpo_group_size * len(batch))]).to(self.device)
 
-        # Compute rewards
-        rewards = self.reward_function.compute(structures).to(self.device)
+        # Sample initial structures independently for each structure in the GRPO groups.
+        x_0 = base_modules["model"].sampler.sample_p_0(grpo_batch).to(self.device)
+
+        x_1, log_probs = self.combiner.training_integrate(self.residual_model, x_0)
+        assert len(log_probs) == len(x_0.n_atoms)
+
+        # Convert to ASE Atoms.
+        x_1 = x_1.to('cpu')
+        structures = []
+        for i in range(len(x_1.n_atoms)):
+            sl = slice(x_1.ptr[i], x_1.ptr[i + 1])
+            if x_1.pos_is_fractional[i]:
+                structures.append(Atoms(numbers=x_1.species[sl], scaled_positions=x_1.pos[sl, :],
+                                        cell=x_1.cell[i, :, :], pbc=True))
+            else:
+                structures.append(Atoms(numbers=x_1.species[sl], positions=x_1.pos[sl, :],
+                                        cell=x_1.cell[i, :, :], pbc=True))
+
+        rewards = self.reward.compute(structures)
 
         # Compute loss
         loss, metrics = self.compute_loss(rewards, log_probs, mean_residuals)

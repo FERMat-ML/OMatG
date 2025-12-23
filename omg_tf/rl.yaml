@@ -13,11 +13,15 @@ model:
         init_args:
           dim: 256
   combiner:
-    class_path: omg_tf.SingleStepNoiseCombiner
+    class_path: omg_tf.CommonSingleStepNoiseCombiner
     init_args:
       noise_scales:
         pos: 0.1
         cell: 0.1
+  reward:
+    class_path: omg_tf.rewards.VolumeReward
+  grpo_group_size: 2
+  grpo_batch_size: 4
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
