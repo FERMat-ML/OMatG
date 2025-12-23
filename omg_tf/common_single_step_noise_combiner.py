@@ -1,5 +1,4 @@
 import torch
-from torch_geometric.data import Batch
 from torch_scatter import scatter_add
 from tqdm import trange
 from omg.datamodule import OMGData

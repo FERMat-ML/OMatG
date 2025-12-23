@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from typing import Sequence
+from ase import Atoms
 import torch
 from tqdm import trange
 from omg.datamodule import OMGData
@@ -20,6 +22,7 @@ class Combiner(ABC):
     - Add species integration support.
     - Add velocity annealing like scaling.
     - Allow to apply only to subset of fields.
+    - Use means for different fields
     """
 
     def __init__(self, noise_scales: dict[str, float]) -> None:
@@ -161,5 +164,28 @@ class Combiner(ABC):
             (Structures at final time 1 after integration with residuals,
              Batch-wise log probabilities of the applied residuals).
         :rtype: tuple[OMGData, torch.tensor]
+        """
+        raise NotImplementedError
+
+
+class Reward(ABC):
+    """
+    Abstract base class for reward functions.
+
+    TODO: SHOULD I MAKE SURE THAT REWARDS ARE NOT SCALED WITH NUMBER OF ATOMS?
+    """
+
+    @abstractmethod
+    def compute(self, structures: Sequence[Atoms]) -> list[float]:
+        """
+        Compute rewards for a batch of structures.
+
+        :param structures:
+            Sequence of ASE Atoms objects representing generated structures
+        :type structures: Sequence[Atoms]
+
+        :return:
+            List of rewards, one per structure.
+        :rtype: list[float]
         """
         raise NotImplementedError
