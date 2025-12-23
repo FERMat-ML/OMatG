@@ -25,7 +25,7 @@ class OMGTFLightning(lightning.LightningModule):
         combiner: Combiner,
         reward: Reward,
         grpo_group_size: int = 32,
-        grpo_batch_size: int = 16,
+        grpo_num_groups: int = 16,
         save_structures: bool = False,
         structure_save_dir: Optional[Path] = None,
     ):
@@ -36,14 +36,15 @@ class OMGTFLightning(lightning.LightningModule):
         self.combiner = combiner
         self.reward = reward
 
-        if not grpo_group_size > 0:
-            raise ValueError("GRPO group size must be positive.")
-        if not grpo_batch_size > 0:
+        if not grpo_group_size > 1:
+            raise ValueError("GRPO group size must be bigger than one.")
+        if not grpo_num_groups > 0:
             raise ValueError("GRPO batch size must be positive.")
         self.grpo_group_size = grpo_group_size
-        self.grpo_batch_size = grpo_batch_size
-        # Change batch size of base datamodule that is used by this class to grpo_batch_size.
-        base_modules["datamodule"].kwargs["batch_size"] = grpo_batch_size
+        self.grpo_num_groups = grpo_num_groups
+        # Change batch size of base datamodule that is used by this class to grpo_num_groups.
+        # We can then replicate each batch element grpo_group_size times during training and validation.
+        base_modules["datamodule"].kwargs["batch_size"] = grpo_num_groups
 
         # Structure saving
         self.save_structures = save_structures
@@ -119,21 +120,20 @@ class OMGTFLightning(lightning.LightningModule):
     ) -> tuple[torch.Tensor, Dict[str, float]]:
         """Compute GRPO loss."""
         # Split into groups and normalize within each group
-        group_size = self.rl_config.grpo_group_size
-        num_groups = len(rewards) // group_size
+        # TODO: ADD CLIPPING!
+        assert len(rewards) == self.grpo_num_groups * self.grpo_group_size
+        assert len(log_probs) == len(rewards)
 
-        advantages = torch.zeros_like(rewards)
+        advantages = torch.zeros_like(rewards).detach()
 
-        for i in range(num_groups):
-            start_idx = i * group_size
-            end_idx = start_idx + group_size
-
-            group_rewards = rewards[start_idx:end_idx]
-
-            # Normalize within group
+        for i in range(self.grpo_num_groups):
+            sl = slice(i * self.grpo_group_size, (i + 1) * self.grpo_group_size)
+            group_rewards = rewards[sl]
             group_mean = group_rewards.mean()
-            group_std = group_rewards.std()
-            advantages[start_idx:end_idx] = (group_rewards - group_mean) / (group_std + 1e-8)
+            # This is not a statistical estimator but the population std within the group. Use unbiased=False.
+            group_std = group_rewards.std(unbiased=False)
+            # Add small epsilon to avoid division by zero.
+            advantages[sl] = (group_rewards - group_mean) / (group_std + 1.0e-8)
 
         # Policy loss
         policy_loss = -(advantages * log_probs).mean()
@@ -195,10 +195,10 @@ class OMGTFLightning(lightning.LightningModule):
                 structures.append(Atoms(numbers=x_1.species[sl], positions=x_1.pos[sl, :],
                                         cell=x_1.cell[i, :, :], pbc=True))
 
-        rewards = self.reward.compute(structures)
+        rewards = torch.from_numpy(self.reward.compute(structures)).detach().to(self.device)
 
         # Compute loss
-        loss, metrics = self.compute_loss(rewards, log_probs, mean_residuals)
+        loss, metrics = self._compute_grpo_loss(rewards, log_probs, mean_residuals)
 
         # Log metrics (Lightning handles this)
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True)
