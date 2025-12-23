@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 from ase import Atoms
+import numpy as np
 import torch
 from tqdm import trange
 from omg.datamodule import OMGData
@@ -176,7 +177,7 @@ class Reward(ABC):
     """
 
     @abstractmethod
-    def compute(self, structures: Sequence[Atoms]) -> list[float]:
+    def compute(self, structures: Sequence[Atoms]) -> np.ndarray:
         """
         Compute rewards for a batch of structures.
 
@@ -186,6 +187,6 @@ class Reward(ABC):
 
         :return:
             List of rewards, one per structure.
-        :rtype: list[float]
+        :rtype: np.ndarray
         """
         raise NotImplementedError
