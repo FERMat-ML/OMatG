@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from ase import Atoms
 import numpy as np
 import lightning
@@ -52,6 +52,7 @@ class OMGTFLightning(lightning.LightningModule):
                     raise ValueError(f"Relative cost for policy provided for unknown data field '{base_field}'.")
             else:
                 raise ValueError(f"Relative cost provided for unknown term '{field}'.")
+        self.relative_costs = relative_costs
 
         if not grpo_group_size > 1:
             raise ValueError("GRPO group size must be bigger than one.")
@@ -121,28 +122,29 @@ class OMGTFLightning(lightning.LightningModule):
         for i in range(len(x_1.n_atoms)):
             sl = slice(x_1.ptr[i], x_1.ptr[i + 1])
             if x_1.pos_is_fractional[i]:
-                structures.append(Atoms(numbers=x_1.species[sl], scaled_positions=x_1.pos[sl, :],
-                                        cell=x_1.cell[i, :, :], pbc=True))
+                structures.append(Atoms(numbers=x_1.species[sl].numpy(force=True),
+                                        scaled_positions=x_1.pos[sl, :].numpy(force=True),
+                                        cell=x_1.cell[i, :, :].numpy(force=True), pbc=True))
             else:
-                structures.append(Atoms(numbers=x_1.species[sl], positions=x_1.pos[sl, :],
-                                        cell=x_1.cell[i, :, :], pbc=True))
+                structures.append(Atoms(numbers=x_1.species[sl].numpy(force=True),
+                                        positions=x_1.pos[sl, :].numpy(force=True),
+                                        cell=x_1.cell[i, :, :].numpy(force=True), pbc=True))
 
-        rewards = torch.from_numpy(self.reward.compute(structures)).detach().to(self.device)
+        rewards = torch.tensor(self.reward.compute(structures), dtype=self.dtype).detach().to(self.device)
 
-        # Compute loss
         losses = self._compute_grpo_losses(rewards, log_probs, mean_squared_residuals)
         total_loss = torch.tensor(0.0, device=self.device)
 
-        for loss_key in losses:
-            weight = self.rl_config.relative_costs[loss_key]
+        for loss_key in losses.keys():
+            weight = self.relative_costs[loss_key]
             losses[loss_key] = weight * losses[loss_key]
             total_loss += losses[loss_key]
 
-        self.log_dict(losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(grpo_batch))
+        self.log_dict(losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
         self.log("loss_total", total_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
-                 batch_size=len(grpo_batch))
-        self.log('reward_mean', rewards.mean(), on_step=True, on_epoch=True, prog_bar=True)
-        self.log('reward_std', rewards.std(), on_step=False, on_epoch=True)
+                 batch_size=len(batch))
+        self.log("reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, batch_size=len(batch))
+        self.log("reward_std", rewards.std(), on_step=False, on_epoch=True, batch_size=len(batch))
 
         return total_loss
 
