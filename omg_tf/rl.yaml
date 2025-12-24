@@ -27,6 +27,7 @@ model:
     cell_policy: 0.25
     pos_regularization: 0.25
     cell_regularization: 0.25
+  normalize_log_probs: true
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint

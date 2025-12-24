@@ -11,7 +11,7 @@ from omg_tf.base_modules import base_modules
 
 class CommonSingleStepNoiseCombiner(Combiner):
     def __init__(self, noise_scales: dict[str, float]) -> None:
-        """Constructor of the SingleStepNoiseCombiner class."""
+        """Constructor of the CommonSingleStepNoiseCombiner class."""
         super().__init__(noise_scales=noise_scales)
 
     def training_integrate(

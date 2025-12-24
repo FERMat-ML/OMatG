@@ -18,7 +18,7 @@ class MultipleStepNoiseCombiner(Combiner):
     """
 
     def __init__(self, noise_scales: dict[str, float]) -> None:
-        """Constructor of the MultipleStepNoiseResidualTransformer class."""
+        """Constructor of the MultipleStepNoiseCombiner class."""
         super().__init__(noise_scales=noise_scales)
 
     def training_integrate(

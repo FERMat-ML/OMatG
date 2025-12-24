@@ -22,13 +22,49 @@ class OMGTFLightning(lightning.LightningModule):
 
     def __init__(self, residual_model: Model, combiner: Combiner, reward: Reward,
                  relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
-                 generation_xyz_filename: Optional[str] = None) -> None:
-        """Constructor for OMGRTFLightning."""
+                 normalize_log_probs: bool = True, generation_xyz_filename: Optional[str] = None) -> None:
+        """
+        Constructor for OMGTFLightning.
+
+        :param residual_model:
+            The residual model that predicts velocity corrections.
+        :type residual_model: Model
+        :param combiner:
+            The combiner that integrates base and residual velocities.
+        :type combiner: Combiner
+        :param reward:
+            The reward function to optimize.
+        :type reward: Reward
+        :param relative_costs:
+            Dictionary of relative costs for each loss term (policy and regularization per field).
+            Must sum to 1.0.
+        :type relative_costs: dict[str, float]
+        :param grpo_group_size:
+            Number of samples per GRPO group.
+        :type grpo_group_size: int
+        :param grpo_num_groups:
+            Number of GRPO groups per batch.
+        :type grpo_num_groups: int
+        :param normalize_log_probs:
+            If True, scale log probabilities by number of dimensions before computing policy loss.
+            This ensures that structures with different numbers of atoms contribute equally to
+            gradients, and that position and cell policy losses are comparable in scale.
+            Note: This is gradient scaling for practical purposes; the combiners still return
+            mathematically correct (summed) log probabilities.
+        :type normalize_log_probs: bool
+        :param generation_xyz_filename:
+            Filename for saving generated structures during prediction.
+        :type generation_xyz_filename: Optional[str]
+        """
         super().__init__()
 
         self.residual_model = residual_model
         self.combiner = combiner
         self.reward = reward
+
+        if normalize_log_probs and DataField.pos not in self.combiner.integrated_data_fields():
+            raise ValueError("Log probability normalization requested but position is not an integrated data field.")
+        self.normalize_log_probs = normalize_log_probs
 
         if not all(cost >= 0.0 for cost in relative_costs.values()):
             raise ValueError("All relative costs must be non-negative.")
@@ -68,13 +104,15 @@ class OMGTFLightning(lightning.LightningModule):
         self.generation_xyz_filename = generation_xyz_filename
 
     def _compute_grpo_losses(self, rewards: torch.Tensor, log_probs: dict[DataField, torch.Tensor],
-                             mean_squared_residuals: dict[DataField, torch.Tensor]) -> dict[str, torch.Tensor]:
+                             mean_squared_residuals: dict[DataField, torch.Tensor],
+                             n_atoms: torch.Tensor) -> dict[str, torch.Tensor]:
         # TODO: ADD CLIPPING!
         # Partial batch possible.
         assert len(rewards) % self.grpo_group_size == 0
         assert len(rewards) // self.grpo_group_size <= self.grpo_num_groups
         assert all(len(lp) == len(rewards) for lp in log_probs.values())
         assert all(len(msr) == len(rewards) for msr in mean_squared_residuals.values())
+        assert len(n_atoms) == len(rewards)
 
         advantages = torch.zeros_like(rewards).detach()
 
@@ -86,6 +124,13 @@ class OMGTFLightning(lightning.LightningModule):
             group_std = group_rewards.std(unbiased=False)
             # Add small epsilon to avoid division by zero.
             advantages[sl] = (group_rewards - group_mean) / (group_std + 1.0e-8)
+
+        # Apply normalization to log probs if requested.
+        # This ensures structures with different sizes contribute equally to gradients,
+        # and that position and cell policy losses are comparable in scale.
+        if self.normalize_log_probs:
+            assert DataField.pos in log_probs
+            log_probs[DataField.pos] = log_probs[DataField.pos] / n_atoms
 
         losses = {
             field.name + "_policy": -(advantages * log_probs[field]).mean()
@@ -127,7 +172,7 @@ class OMGTFLightning(lightning.LightningModule):
 
         rewards = torch.tensor(self.reward.compute(structures), dtype=self.dtype).detach().to(self.device)
 
-        losses = self._compute_grpo_losses(rewards, log_probs, mean_squared_residuals)
+        losses = self._compute_grpo_losses(rewards, log_probs, mean_squared_residuals, x_0.n_atoms)
         total_loss = torch.tensor(0.0, device=self.device)
 
         for loss_key in losses.keys():

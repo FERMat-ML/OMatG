@@ -23,11 +23,16 @@ class Combiner(ABC):
     - Add species integration support.
     - Add velocity annealing like scaling.
     - Allow to apply only to subset of fields.
-    - Use means for different fields? What happens for different sized structures?
     """
 
     def __init__(self, noise_scales: dict[str, float]) -> None:
-        """Constructor of the Combiner class."""
+        """
+        Constructor of the Combiner class.
+
+        :param noise_scales:
+            Dictionary mapping data field names to noise scales for stochastic policy.
+        :type noise_scales: dict[str, float]
+        """
         super().__init__()
 
         base_model = base_modules["model"]
