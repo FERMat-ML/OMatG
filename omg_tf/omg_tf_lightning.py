@@ -1,13 +1,13 @@
 from pathlib import Path
-from typing import Dict, Optional
+import time
+from typing import Optional
 from ase import Atoms
-import numpy as np
 import lightning
 import torch
 from torch_geometric.data import Batch
 from omg.datamodule import OMGData
 from omg.model.model import Model
-from omg.utils import DataField
+from omg.utils import DataField, xyz_saver
 from omg_tf.abstracts import Combiner, Reward
 from omg_tf.base_modules import base_modules
 
@@ -22,7 +22,7 @@ class OMGTFLightning(lightning.LightningModule):
 
     def __init__(self, residual_model: Model, combiner: Combiner, reward: Reward,
                  relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
-                 save_structures: bool = False, structure_save_dir: Optional[Path] = None) -> None:
+                 generation_xyz_filename: Optional[str] = None) -> None:
         """Constructor for OMGRTFLightning."""
         super().__init__()
 
@@ -62,17 +62,10 @@ class OMGTFLightning(lightning.LightningModule):
         self.grpo_num_groups = grpo_num_groups
         # Change batch size of base datamodule that is used by this class to grpo_num_groups.
         # We can then replicate each batch element grpo_group_size times during training and validation.
+        # noinspection PyUnresolvedReferences
         base_modules["datamodule"].kwargs["batch_size"] = grpo_num_groups
 
-        # Structure saving
-        self.save_structures = save_structures
-        self.structure_save_dir = structure_save_dir
-        if save_structures and structure_save_dir is not None:
-            structure_save_dir.mkdir(parents=True, exist_ok=True)
-
-        # Metrics tracking
-        self.validation_structures = []
-        self.validation_rewards = []
+        self.generation_xyz_filename = generation_xyz_filename
 
     def _compute_grpo_losses(self, rewards: torch.Tensor, log_probs: dict[DataField, torch.Tensor],
                              mean_squared_residuals: dict[DataField, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -105,7 +98,7 @@ class OMGTFLightning(lightning.LightningModule):
 
     def training_step(self, batch: OMGData, batch_idx: int) -> torch.Tensor:
         # Replicate batch from training data according to GRPO group size.
-        # noinspection PyTypeChecker
+        # noinspection PyTypeChecker,PyUnresolvedReferences
         grpo_batch = Batch.from_data_list(
             [batch[i // self.grpo_group_size] for i in range(self.grpo_group_size * len(batch))]).to(self.device)
 
@@ -149,89 +142,58 @@ class OMGTFLightning(lightning.LightningModule):
         return total_loss
 
     def validation_step(self, batch: OMGData, batch_idx: int) -> torch.Tensor:
-        """
-        Validation step (Lightning method).
+        # Replicate batch from training data according to GRPO group size.
+        # noinspection PyTypeChecker,PyUnresolvedReferences
+        grpo_batch = Batch.from_data_list(
+            [batch[i // self.grpo_group_size] for i in range(self.grpo_group_size * len(batch))]).to(self.device)
 
-        :param batch: Batch of data
-        :type batch: OMGData
-        :param batch_idx: Batch index
-        :type batch_idx: int
+        # Sample initial structures independently for each structure in the GRPO groups.
+        x_0 = base_modules["model"].sampler.sample_p_0(grpo_batch).to(self.device)
 
-        :return: Loss value
-        :rtype: torch.Tensor
-        """
-        # Generate trajectories
-        structures, log_probs, mean_residuals = self.generate_trajectories(batch)
+        x_1, log_probs, mean_squared_residuals = self.combiner.training_integrate(self.residual_model, x_0)
+        assert all(len(lp) == len(x_0.n_atoms) for lp in log_probs.values())
+        assert (all(len(msr) == len(x_0.n_atoms) for msr in mean_squared_residuals.values()))
 
-        # Compute rewards
-        rewards = self.reward_function.compute(structures).to(self.device)
+        # Convert to ASE Atoms.
+        x_1 = x_1.to('cpu')
+        structures = []
+        for i in range(len(x_1.n_atoms)):
+            sl = slice(x_1.ptr[i], x_1.ptr[i + 1])
+            if x_1.pos_is_fractional[i]:
+                structures.append(Atoms(numbers=x_1.species[sl].numpy(force=True),
+                                        scaled_positions=x_1.pos[sl, :].numpy(force=True),
+                                        cell=x_1.cell[i, :, :].numpy(force=True), pbc=True))
+            else:
+                structures.append(Atoms(numbers=x_1.species[sl].numpy(force=True),
+                                        positions=x_1.pos[sl, :].numpy(force=True),
+                                        cell=x_1.cell[i, :, :].numpy(force=True), pbc=True))
 
-        # Compute loss
-        loss, metrics = self.compute_loss(rewards, log_probs, mean_residuals)
+        rewards = torch.tensor(self.reward.compute(structures), dtype=self.dtype).detach().to(self.device)
 
-        # Log validation metrics
-        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True)
-        self.log('val_reward_mean', rewards.mean(), on_step=False, on_epoch=True, prog_bar=True)
-        self.log('val_reward_std', rewards.std(), on_step=False, on_epoch=True)
-        self.log('val_policy_loss', metrics['policy_loss'], on_step=False, on_epoch=True)
-        self.log('val_reg_loss', metrics['regularization_loss'], on_step=False, on_epoch=True)
+        losses = self._compute_grpo_losses(rewards, log_probs, mean_squared_residuals)
+        total_loss = torch.tensor(0.0, device=self.device)
 
-        # Store structures for end-of-epoch analysis
-        if self.save_structures:
-            self.validation_structures.extend(structures)
-            self.validation_rewards.extend(rewards.cpu().tolist())
+        # Force creation of copy of keys because dictionary will be changed in iteration.
+        for loss_key in list(losses.keys()):
+            weight = self.relative_costs[loss_key]
+            losses[f"val_{loss_key}"] = weight * losses[loss_key]
+            total_loss += losses[f"val_{loss_key}"]
+            losses.pop(loss_key)
 
-        return loss
+        self.log_dict(losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
+        self.log("val_loss_total", total_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+                 batch_size=len(batch))
+        self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, batch_size=len(batch))
+        self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True, batch_size=len(batch))
 
-    def on_validation_epoch_end(self) -> None:
-        """
-        Called at the end of validation epoch (Lightning callback).
+        return total_loss
 
-        Saves best structures if configured.
-        """
-        if self.save_structures and len(self.validation_structures) > 0:
-            # Save top-k structures by reward
-            k = min(10, len(self.validation_structures))
-            top_indices = np.argsort(self.validation_rewards)[-k:]
-
-            save_path = self.structure_save_dir / f"epoch_{self.current_epoch}"
-            save_path.mkdir(exist_ok=True)
-
-            for rank, idx in enumerate(top_indices):
-                atoms = self.validation_structures[idx]
-                reward = self.validation_rewards[idx]
-                from ase.io import write
-                write(
-                    save_path / f"rank_{rank}_reward_{reward:.4f}.xyz",
-                    atoms
-                )
-
-            # Clear for next epoch
-            self.validation_structures = []
-            self.validation_rewards = []
-
-    def on_train_epoch_end(self) -> None:
-        """Called at the end of training epoch (Lightning callback)."""
-        # Could add custom logic here (e.g., update reward function)
-        pass
-
-    def on_save_checkpoint(self, checkpoint: Dict) -> None:
-        """
-        Called when saving checkpoint (Lightning callback).
-
-        :param checkpoint: Checkpoint dictionary
-        :type checkpoint: Dict
-        """
-        # Add custom data to checkpoint if needed
-        checkpoint['rl_config'] = self.rl_config
-        checkpoint['reward_function_type'] = type(self.reward_function).__name__
-
-    def on_load_checkpoint(self, checkpoint: Dict) -> None:
-        """
-        Called when loading checkpoint (Lightning callback).
-
-        :param checkpoint: Checkpoint dictionary
-        :type checkpoint: Dict
-        """
-        # Restore custom data from checkpoint if needed
-        pass
+    def predict_step(self, batch: OMGData) -> OMGData:
+        x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
+        x_1 = self.combiner.integrate(self.residual_model, x_0)
+        filename = (Path(self.generation_xyz_filename) if self.generation_xyz_filename is not None
+                    else Path(f"{time.strftime('%Y%m%d-%H%M%S')}.xyz"))
+        init_filename = filename.with_stem(filename.stem + "_init")
+        xyz_saver(x_0.to('cpu'), init_filename)
+        xyz_saver(x_1.to('cpu'), filename)
+        return x_1
