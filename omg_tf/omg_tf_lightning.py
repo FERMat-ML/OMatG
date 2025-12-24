@@ -143,18 +143,12 @@ class OMGTFLightning(lightning.LightningModule):
 
         return total_loss
 
-    def validation_step(self, batch: OMGData, batch_idx: int) -> torch.Tensor:
-        # Replicate batch from training data according to GRPO group size.
-        # noinspection PyTypeChecker,PyUnresolvedReferences
-        grpo_batch = Batch.from_data_list(
-            [batch[i // self.grpo_group_size] for i in range(self.grpo_group_size * len(batch))]).to(self.device)
-
+    def validation_step(self, batch: OMGData, batch_idx: int) -> None:
         # Sample initial structures independently for each structure in the GRPO groups.
-        x_0 = base_modules["model"].sampler.sample_p_0(grpo_batch).to(self.device)
+        x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
 
-        x_1, log_probs, mean_squared_residuals = self.combiner.training_integrate(self.residual_model, x_0)
-        assert all(len(lp) == len(x_0.n_atoms) for lp in log_probs.values())
-        assert (all(len(msr) == len(x_0.n_atoms) for msr in mean_squared_residuals.values()))
+        # Use deterministic integration (no noise) for validation.
+        x_1 = self.combiner.integrate(self.residual_model, x_0)
 
         # Convert to ASE Atoms.
         x_1 = x_1.to('cpu')
@@ -172,23 +166,10 @@ class OMGTFLightning(lightning.LightningModule):
 
         rewards = torch.tensor(self.reward.compute(structures), dtype=self.dtype).detach().to(self.device)
 
-        losses = self._compute_grpo_losses(rewards, log_probs, mean_squared_residuals)
-        total_loss = torch.tensor(0.0, device=self.device)
-
-        # Force creation of copy of keys because dictionary will be changed in iteration.
-        for loss_key in list(losses.keys()):
-            weight = self.relative_costs[loss_key]
-            losses[f"val_{loss_key}"] = weight * losses[loss_key]
-            total_loss += losses[f"val_{loss_key}"]
-            losses.pop(loss_key)
-
-        self.log_dict(losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
-        self.log("val_loss_total", total_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
-                 batch_size=len(batch))
-        self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, batch_size=len(batch))
-        self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True, batch_size=len(batch))
-
-        return total_loss
+        self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True,
+                 sync_dist=True, batch_size=len(batch))
+        self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True,
+                 sync_dist=True, batch_size=len(batch))
 
     def predict_step(self, batch: OMGData) -> OMGData:
         x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
