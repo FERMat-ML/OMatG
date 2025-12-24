@@ -7,6 +7,7 @@ import torch
 from torch_geometric.data import Batch
 from omg.datamodule import OMGData
 from omg.model.model import Model
+from omg.utils import DataField
 from omg_tf.abstracts import Combiner, Reward
 from omg_tf.base_modules import base_modules
 
@@ -19,22 +20,38 @@ class OMGTFLightning(lightning.LightningModule):
     providing a consistent interface for RL-based residual policy learning.
     """
 
-    def __init__(
-        self,
-        residual_model: Model,
-        combiner: Combiner,
-        reward: Reward,
-        grpo_group_size: int = 32,
-        grpo_num_groups: int = 16,
-        save_structures: bool = False,
-        structure_save_dir: Optional[Path] = None,
-    ):
+    def __init__(self, residual_model: Model, combiner: Combiner, reward: Reward,
+                 relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
+                 save_structures: bool = False, structure_save_dir: Optional[Path] = None) -> None:
         """Constructor for OMGRTFLightning."""
         super().__init__()
 
         self.residual_model = residual_model
         self.combiner = combiner
         self.reward = reward
+
+        if not all(cost >= 0.0 for cost in relative_costs.values()):
+            raise ValueError("All relative costs must be non-negative.")
+        if not abs(sum(relative_costs.values()) - 1.0) < 1e-10:
+            raise ValueError("The sum of all cost factors should be equal to 1.")
+        integrated_data_fields = [df.name for df in self.combiner.integrated_data_fields()]
+        for field in integrated_data_fields:
+            if field + "_policy" not in relative_costs:
+                raise ValueError(f"Missing relative cost for policy of integrated data field '{field}'.")
+            if field + "_regularization" not in relative_costs:
+                raise ValueError(f"Missing relative cost for regularization of data field '{field}'.")
+        for field in relative_costs.keys():
+            if field.endswith("_regularization"):
+                base_field = field[:-len("_regularization")]
+                if base_field not in integrated_data_fields:
+                    raise ValueError(f"Relative cost for regularization provided for unknown data "
+                                     f"field '{base_field}'.")
+            elif field.endswith("_policy"):
+                base_field = field[:-len("_policy")]
+                if base_field not in integrated_data_fields:
+                    raise ValueError(f"Relative cost for policy provided for unknown data field '{base_field}'.")
+            else:
+                raise ValueError(f"Relative cost provided for unknown term '{field}'.")
 
         if not grpo_group_size > 1:
             raise ValueError("GRPO group size must be bigger than one.")
@@ -56,73 +73,12 @@ class OMGTFLightning(lightning.LightningModule):
         self.validation_structures = []
         self.validation_rewards = []
 
-    def compute_loss(
-        self,
-        rewards: torch.Tensor,
-        log_probs: torch.Tensor,
-        mean_residuals_per_step: List[Dict[str, torch.Tensor]],
-    ) -> tuple[torch.Tensor, Dict[str, float]]:
-        """
-        Compute RL loss based on configured algorithm.
-
-        :param rewards: Rewards for each trajectory
-        :type rewards: torch.Tensor
-        :param log_probs: Log probabilities for each trajectory
-        :type log_probs: torch.Tensor
-        :param mean_residuals_per_step: Mean residuals for regularization
-        :type mean_residuals_per_step: List[Dict[str, torch.Tensor]]
-
-        :return: Total loss and metrics dict
-        :rtype: tuple[torch.Tensor, Dict[str, float]]
-        """
-        if self.rl_config.algorithm == 'reinforce':
-            return self._compute_reinforce_loss(rewards, log_probs, mean_residuals_per_step)
-        elif self.rl_config.algorithm == 'grpo':
-            return self._compute_grpo_loss(rewards, log_probs, mean_residuals_per_step)
-        elif self.rl_config.algorithm == 'ppo':
-            # For now, fall back to REINFORCE
-            # Full PPO would require storing old log probs and multiple epochs
-            return self._compute_reinforce_loss(rewards, log_probs, mean_residuals_per_step)
-        else:
-            raise ValueError(f"Unknown algorithm: {self.rl_config.algorithm}")
-
-    def _compute_reinforce_loss(
-        self,
-        rewards: torch.Tensor,
-        log_probs: torch.Tensor,
-        mean_residuals_per_step: List[Dict[str, torch.Tensor]],
-    ) -> tuple[torch.Tensor, Dict[str, float]]:
-        """Compute REINFORCE loss."""
-        # Normalize rewards (baseline)
-        normalized_rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-8)
-
-        # Policy loss: -E[reward * log_prob]
-        policy_loss = -(normalized_rewards * log_probs).mean()
-
-        # Regularization
-        reg_loss = self._compute_regularization_loss(mean_residuals_per_step)
-
-        # Total loss
-        total_loss = policy_loss + reg_loss
-
-        metrics = {
-            'policy_loss': policy_loss.item(),
-            'regularization_loss': reg_loss.item(),
-        }
-
-        return total_loss, metrics
-
-    def _compute_grpo_loss(
-        self,
-        rewards: torch.Tensor,
-        log_probs: torch.Tensor,
-        mean_residuals_per_step: List[Dict[str, torch.Tensor]],
-    ) -> tuple[torch.Tensor, Dict[str, float]]:
-        """Compute GRPO loss."""
-        # Split into groups and normalize within each group
+    def _compute_grpo_losses(self, rewards: torch.Tensor, log_probs: dict[DataField, torch.Tensor],
+                             mean_squared_residuals: dict[DataField, torch.Tensor]) -> dict[str, torch.Tensor]:
         # TODO: ADD CLIPPING!
         assert len(rewards) == self.grpo_num_groups * self.grpo_group_size
-        assert len(log_probs) == len(rewards)
+        assert all(len(lp) == len(rewards) for lp in log_probs.values())
+        assert all(len(msr) == len(rewards) for msr in mean_squared_residuals.values())
 
         advantages = torch.zeros_like(rewards).detach()
 
@@ -135,53 +91,29 @@ class OMGTFLightning(lightning.LightningModule):
             # Add small epsilon to avoid division by zero.
             advantages[sl] = (group_rewards - group_mean) / (group_std + 1.0e-8)
 
-        # Policy loss
-        policy_loss = -(advantages * log_probs).mean()
-
-        # Regularization
-        reg_loss = self._compute_regularization_loss(mean_residuals_per_step)
-
-        # Total loss
-        total_loss = policy_loss + reg_loss
-
-        metrics = {
-            'policy_loss': policy_loss.item(),
-            'regularization_loss': reg_loss.item(),
+        losses = {
+            field.name + "_policy": -(advantages * log_probs[field]).mean()
+            for field in self.combiner.integrated_data_fields()
         }
+        losses.update({
+            field.name + "_regularization": mean_squared_residuals[field].mean()
+            for field in self.combiner.integrated_data_fields()}
+        )
 
-        return total_loss, metrics
-
-    def _compute_regularization_loss(
-        self,
-        mean_residuals_per_step: List[Dict[str, torch.Tensor]],
-    ) -> torch.Tensor:
-        """Compute regularization loss averaged over trajectory."""
-        reg_loss = 0.0
-        for mean_res in mean_residuals_per_step:
-            reg_loss = reg_loss + self.residual_model.compute_regularization_loss(mean_res)
-        return reg_loss / len(mean_residuals_per_step)
+        return losses
 
     def training_step(self, batch: OMGData, batch_idx: int) -> torch.Tensor:
-        """
-        Training step (Lightning method).
-
-        :param batch: Batch of data
-        :type batch: OMGData
-        :param batch_idx: Batch index
-        :type batch_idx: int
-
-        :return: Loss value
-        :rtype: torch.Tensor
-        """
         # Replicate batch from training data according to GRPO group size.
+        # noinspection PyTypeChecker
         grpo_batch = Batch.from_data_list(
             [batch[i // self.grpo_group_size] for i in range(self.grpo_group_size * len(batch))]).to(self.device)
 
         # Sample initial structures independently for each structure in the GRPO groups.
         x_0 = base_modules["model"].sampler.sample_p_0(grpo_batch).to(self.device)
 
-        x_1, log_probs = self.combiner.training_integrate(self.residual_model, x_0)
-        assert len(log_probs) == len(x_0.n_atoms)
+        x_1, log_probs, mean_squared_residuals = self.combiner.training_integrate(self.residual_model, x_0)
+        assert all(len(lp) == len(x_0.n_atoms) for lp in log_probs.values())
+        assert (all(len(msr) == len(x_0.n_atoms) for msr in mean_squared_residuals.values()))
 
         # Convert to ASE Atoms.
         x_1 = x_1.to('cpu')
@@ -198,23 +130,21 @@ class OMGTFLightning(lightning.LightningModule):
         rewards = torch.from_numpy(self.reward.compute(structures)).detach().to(self.device)
 
         # Compute loss
-        loss, metrics = self._compute_grpo_loss(rewards, log_probs, mean_residuals)
+        losses = self._compute_grpo_losses(rewards, log_probs, mean_squared_residuals)
+        total_loss = torch.tensor(0.0, device=self.device)
 
-        # Log metrics (Lightning handles this)
-        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True)
-        self.log('train_reward_mean', rewards.mean(), on_step=True, on_epoch=True, prog_bar=True)
-        self.log('train_reward_std', rewards.std(), on_step=False, on_epoch=True)
-        self.log('train_policy_loss', metrics['policy_loss'], on_step=False, on_epoch=True)
-        self.log('train_reg_loss', metrics['regularization_loss'], on_step=False, on_epoch=True)
+        for loss_key in losses:
+            weight = self.rl_config.relative_costs[loss_key]
+            losses[loss_key] = weight * losses[loss_key]
+            total_loss += losses[loss_key]
 
-        # Anneal noise if configured
-        if self.rl_config.noise_anneal:
-            current_step = self.global_step
-            new_noise = self.rl_config.noise_scale * (self.rl_config.noise_anneal_factor ** current_step)
-            self.residual_model.set_noise_scale(new_noise)
-            self.log('noise_scale', new_noise, on_step=False, on_epoch=True)
+        self.log_dict(losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(grpo_batch))
+        self.log("loss_total", total_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+                 batch_size=len(grpo_batch))
+        self.log('reward_mean', rewards.mean(), on_step=True, on_epoch=True, prog_bar=True)
+        self.log('reward_std', rewards.std(), on_step=False, on_epoch=True)
 
-        return loss
+        return total_loss
 
     def validation_step(self, batch: OMGData, batch_idx: int) -> torch.Tensor:
         """

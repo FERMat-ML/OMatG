@@ -107,6 +107,16 @@ class Combiner(ABC):
 
         self._integration_time_steps = base_model.si.integration_time_steps
 
+    def integrated_data_fields(self) -> list[DataField]:
+        """
+        Get the data fields that are integrated with residuals.
+
+        :return:
+            List of data fields integrated with residuals.
+        :rtype: list[DataField]
+        """
+        return self._integrated_data_fields
+
     def integrate(self, residual_model: Model, x_0: OMGData) -> OMGData:
         """
         Integrate the structures x_0 from time 0 to 1 with an Euler integration scheme relying on the added velocities
