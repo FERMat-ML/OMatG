@@ -21,7 +21,12 @@ model:
   reward:
     class_path: omg_tf.rewards.VolumeReward
   grpo_group_size: 2
-  grpo_batch_size: 4
+  grpo_num_groups: 4
+  relative_costs:
+    pos_policy: 0.25
+    cell_policy: 0.25
+    pos_regularization: 0.25
+    cell_regularization: 0.25
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint

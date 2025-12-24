@@ -33,7 +33,7 @@ model:
         - "species"
         - "pos"
         - "cell"
-      integration_time_steps: 210
+      integration_time_steps: 100
   relative_si_costs:
     species_loss: 0.0
     pos_loss_b: 0.9994149341846618
