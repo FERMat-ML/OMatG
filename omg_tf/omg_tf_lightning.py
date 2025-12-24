@@ -70,13 +70,15 @@ class OMGTFLightning(lightning.LightningModule):
     def _compute_grpo_losses(self, rewards: torch.Tensor, log_probs: dict[DataField, torch.Tensor],
                              mean_squared_residuals: dict[DataField, torch.Tensor]) -> dict[str, torch.Tensor]:
         # TODO: ADD CLIPPING!
-        assert len(rewards) == self.grpo_num_groups * self.grpo_group_size
+        # Partial batch possible.
+        assert len(rewards) % self.grpo_group_size == 0
+        assert len(rewards) // self.grpo_group_size <= self.grpo_num_groups
         assert all(len(lp) == len(rewards) for lp in log_probs.values())
         assert all(len(msr) == len(rewards) for msr in mean_squared_residuals.values())
 
         advantages = torch.zeros_like(rewards).detach()
 
-        for i in range(self.grpo_num_groups):
+        for i in range(len(rewards) // self.grpo_group_size):
             sl = slice(i * self.grpo_group_size, (i + 1) * self.grpo_group_size)
             group_rewards = rewards[sl]
             group_mean = group_rewards.mean()
