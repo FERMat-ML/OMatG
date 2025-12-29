@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
-from ase import Atoms
 import numpy as np
 import torch
 from tqdm import trange
-from omg.datamodule import OMGData
+from omg.datamodule import OMGData, OMGDataset, Structure
 from omg.globals import BIG_TIME, SMALL_TIME
 from omg.model.model import Model
 from omg.si import (SingleStochasticInterpolant, SingleStochasticInterpolantIdentity, SingleStochasticInterpolantOS,
@@ -201,13 +200,20 @@ class Reward(ABC):
     """
 
     @abstractmethod
-    def compute(self, structures: Sequence[Atoms]) -> np.ndarray:
+    def compute(self, structures: Sequence[Structure], reference_dataset: OMGDataset) -> np.ndarray:
         """
         Compute rewards for a batch of structures.
 
+        Some reward functions may require access to a reference dataset for computing rewards (e.g., to compute
+        similarity to known stable structures). This dataset is the training or validation dataset, depending on the
+        context in which the reward is computed.
+
         :param structures:
-            Sequence of ASE Atoms objects representing generated structures
-        :type structures: Sequence[Atoms]
+            Sequence of Structure objects representing generated structures.
+        :type structures: Sequence[Structure]
+        :param reference_dataset:
+            Reference dataset for computing rewards.
+        :type reference_dataset: OMGDataset
 
         :return:
             List of rewards, one per structure.

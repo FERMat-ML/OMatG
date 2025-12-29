@@ -1,11 +1,10 @@
 from pathlib import Path
 import time
 from typing import Optional
-from ase import Atoms
 import lightning
 import torch
 from torch_geometric.data import Batch
-from omg.datamodule import OMGData
+from omg.datamodule import OMGData, Structure
 from omg.model.model import Model
 from omg.utils import DataField, xyz_saver
 from omg_tf.abstracts import Combiner, Reward
@@ -156,21 +155,18 @@ class OMGTFLightning(lightning.LightningModule):
         assert all(len(lp) == len(x_0.n_atoms) for lp in log_probs.values())
         assert (all(len(msr) == len(x_0.n_atoms) for msr in mean_squared_residuals.values()))
 
-        # Convert to ASE Atoms.
+        # Convert to Structures.
         x_1 = x_1.to('cpu')
         structures = []
         for i in range(len(x_1.n_atoms)):
             sl = slice(x_1.ptr[i], x_1.ptr[i + 1])
-            if x_1.pos_is_fractional[i]:
-                structures.append(Atoms(numbers=x_1.species[sl].numpy(force=True),
-                                        scaled_positions=x_1.pos[sl, :].numpy(force=True),
-                                        cell=x_1.cell[i, :, :].numpy(force=True), pbc=True))
-            else:
-                structures.append(Atoms(numbers=x_1.species[sl].numpy(force=True),
-                                        positions=x_1.pos[sl, :].numpy(force=True),
-                                        cell=x_1.cell[i, :, :].numpy(force=True), pbc=True))
+            structures.append(Structure(cell=x_1.cell[i, :, :].detach(),
+                                        atomic_numbers=x_1.species[sl].detach(),
+                                        pos=x_1.pos[sl, :].detach(),
+                                        pos_is_fractional=x_1.pos_is_fractional[i]))
 
-        rewards = torch.tensor(self.reward.compute(structures), dtype=self.dtype).detach().to(self.device)
+        rewards = torch.tensor(self.reward.compute(structures, self.trainer.train_dataloader.dataset),
+                               dtype=self.dtype).detach().to(self.device)
 
         losses = self._compute_grpo_losses(rewards, log_probs, mean_squared_residuals, x_0.n_atoms)
         total_loss = torch.tensor(0.0, device=self.device)
@@ -200,16 +196,12 @@ class OMGTFLightning(lightning.LightningModule):
         structures = []
         for i in range(len(x_1.n_atoms)):
             sl = slice(x_1.ptr[i], x_1.ptr[i + 1])
-            if x_1.pos_is_fractional[i]:
-                structures.append(Atoms(numbers=x_1.species[sl].numpy(force=True),
-                                        scaled_positions=x_1.pos[sl, :].numpy(force=True),
-                                        cell=x_1.cell[i, :, :].numpy(force=True), pbc=True))
-            else:
-                structures.append(Atoms(numbers=x_1.species[sl].numpy(force=True),
-                                        positions=x_1.pos[sl, :].numpy(force=True),
-                                        cell=x_1.cell[i, :, :].numpy(force=True), pbc=True))
+            structures.append(Structure(cell=x_1.cell[i, :, :].detach(),
+                                        atomic_numbers=x_1.species[sl].detach(),
+                                        pos=x_1.pos[sl, :].detach(),
+                                        pos_is_fractional=x_1.pos_is_fractional[i]))
 
-        rewards = torch.tensor(self.reward.compute(structures), dtype=self.dtype).detach().to(self.device)
+        rewards = torch.tensor(self.reward.compute(structures, self.trainer.val_dataloaders.dataset), dtype=self.dtype).detach().to(self.device)
 
         self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True,
                  sync_dist=True, batch_size=len(batch))

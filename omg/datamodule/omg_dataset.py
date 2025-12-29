@@ -45,6 +45,16 @@ class OMGDataset(Dataset):
         """
         return OMGData(self._dataset[idx])
 
+    def get_structure_dataset(self) -> StructureDataset:
+        """
+        Get the underlying StructureDataset.
+
+        :return:
+            The underlying StructureDataset.
+        :rtype: StructureDataset
+        """
+        return self._dataset
+
 
 if __name__ == '__main__':
     from torch_geometric.data.lightning import LightningDataset
