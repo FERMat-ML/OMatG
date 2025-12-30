@@ -99,13 +99,13 @@ class CRMSEReward(Reward):
                     relevant_py_structures.append(ref_py_structure)
             # Match found structures and take smallest RMSE.
             # Use stol for non-matching structures.
-            if len(relevant_py_structures) > 0:
-                rmses = []
-                for ref_py_structure in relevant_py_structures:
-                    res = sm.get_rms_dist(py_structure, ref_py_structure)
-                    assert res is None or res[0] <= self._stol
-                    rmses.append(self._stol if res is None else res[0])
-                crmse_values[structure_index] = min(rmses)
+            assert len(relevant_py_structures) > 0
+            rmses = []
+            for ref_py_structure in relevant_py_structures:
+                res = sm.get_rms_dist(py_structure, ref_py_structure)
+                assert res is None or res[0] <= self._stol
+                rmses.append(self._stol if res is None else res[0])
+            crmse_values[structure_index] = min(rmses)
         return self._stol - crmse_values
 
 
