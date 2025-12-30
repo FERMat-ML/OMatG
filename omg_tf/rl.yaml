@@ -42,6 +42,9 @@ trainer:
         monitor: "val_loss_total"
         every_n_epochs: 100
         save_weights_only: false
+    - class_path: lightning.pytorch.callbacks.TQDMProgressBar
+      init_args:
+        leave: True
   gradient_clip_val: 0.5
   gradient_clip_algorithm: "value"
   num_sanity_val_steps: 0

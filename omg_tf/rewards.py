@@ -58,22 +58,33 @@ class CRMSEReward(Reward):
         Angle tolerance in degrees for Pymatgen's StructureMatcher.
         Defaults to 10.0 (Pymatgen's default is 10.0).
     :type angle_tol: float
+    :param scale:
+        Scaling factor for the reward.
+        Must be positive.
+        Defaults to 1.0.
+    :type scale: float
+
+    :raises ValueError:
+        If scale is not positive.
     """
-    def __init__(self, ltol: float = 0.3, stol: float = 0.5, angle_tol: float = 10.0) -> None:
+    def __init__(self, ltol: float = 0.3, stol: float = 0.5, angle_tol: float = 10.0, scale: float = 1.0) -> None:
         """Constructor for CRMSEReward."""
         super().__init__()
         self._ltol = ltol
         self._stol = stol
         self._angle_tol = angle_tol
+        if not scale > 0.0:
+            raise ValueError("Scale must be positive.")
+        self._scale = scale
 
     def compute(self, structures: Sequence[Structure], reference_dataset: OMGDataset) -> np.ndarray:
         """
         Compute rewards for a batch of structures.
 
-        The reward is computed as (stol - cRMSE) for each structure, where cRMSE is the corrected root-mean-square
-        error between the generated structure and the closest matching structure in the reference dataset with the same
-        reduced composition. If no match is found, cRMSE is set to stol. Thus, higher rewards correspond to lower cRMSE
-        values.
+        The reward is computed as scale * (stol - cRMSE) for each structure, where cRMSE is the corrected
+        root-mean-square error between the generated structure and the closest matching structure in the reference
+        dataset with the same reduced composition. If no match is found, cRMSE is set to stol. Thus, higher rewards
+        correspond to lower cRMSE values.
 
         :param structures:
             Sequence of Structure objects representing generated structures.
@@ -106,8 +117,7 @@ class CRMSEReward(Reward):
                 assert res is None or res[0] <= self._stol
                 rmses.append(self._stol if res is None else res[0])
             crmse_values[structure_index] = min(rmses)
-        return self._stol - crmse_values
-
+        return self._scale * (self._stol - crmse_values)
 
 class CompositeRewards(Reward):
     """
