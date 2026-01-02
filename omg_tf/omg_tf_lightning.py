@@ -197,8 +197,10 @@ class OMGTFLightning(lightning.LightningModule):
         self.log_dict(losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
         self.log("loss_total", total_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, batch_size=len(batch))
-        self.log("reward_std", rewards.std(), on_step=False, on_epoch=True, batch_size=len(batch))
+        self.log("reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+                 batch_size=len(batch))
+        self.log("reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
+                 batch_size=len(batch))
 
         return total_loss
 
@@ -222,10 +224,10 @@ class OMGTFLightning(lightning.LightningModule):
         rewards = torch.tensor(self.reward.compute(structures, Reward.ComputeStage.VAL),
                                dtype=self.dtype).detach().to(self.device)
 
-        self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True,
-                 sync_dist=True, batch_size=len(batch))
-        self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True,
-                 sync_dist=True, batch_size=len(batch))
+        self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+                 batch_size=len(batch))
+        self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
+                 batch_size=len(batch))
 
     def predict_step(self, batch: OMGData) -> OMGData:
         # Sample initial structures independently.
