@@ -95,10 +95,10 @@ class OMGTFLightning(lightning.LightningModule):
             raise ValueError("GRPO batch size must be positive.")
         self.grpo_group_size = grpo_group_size
         self.grpo_num_groups = grpo_num_groups
-        # Change batch size of base datamodule that is used by this class to grpo_num_groups.
+        # Change training batch size of base datamodule that is used by this class to grpo_num_groups.
         # We can then replicate each batch element grpo_group_size times during training and validation.
         # noinspection PyUnresolvedReferences
-        base_modules["datamodule"].kwargs["batch_size"] = grpo_num_groups
+        base_modules["datamodule"].train_batch_size = grpo_num_groups
 
         self.generation_xyz_filename = generation_xyz_filename
 
@@ -203,7 +203,7 @@ class OMGTFLightning(lightning.LightningModule):
         return total_loss
 
     def validation_step(self, batch: OMGData, batch_idx: int) -> None:
-        # Sample initial structures independently for each structure in the GRPO groups.
+        # Sample initial structures independently.
         x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
 
         # Use deterministic integration (no noise) for validation.
@@ -228,11 +228,17 @@ class OMGTFLightning(lightning.LightningModule):
                  sync_dist=True, batch_size=len(batch))
 
     def predict_step(self, batch: OMGData) -> OMGData:
+        # Sample initial structures independently.
         x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
+
+        # Use deterministic integration (no noise) for validation.
         x_1 = self.combiner.integrate(self.residual_model, x_0)
+
+        # Store initial and final structures as XYZ files.
         filename = (Path(self.generation_xyz_filename) if self.generation_xyz_filename is not None
                     else Path(f"{time.strftime('%Y%m%d-%H%M%S')}.xyz"))
         init_filename = filename.with_stem(filename.stem + "_init")
         xyz_saver(x_0.to('cpu'), init_filename)
         xyz_saver(x_1.to('cpu'), filename)
+
         return x_1
