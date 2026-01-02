@@ -1,6 +1,7 @@
 from typing import Sequence
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
+import tqdm
 from omg.datamodule import OMGDataset, Structure
 from .abstracts import Reward
 
@@ -100,7 +101,7 @@ class CRMSEReward(Reward):
         crmse_values = np.zeros(len(structures))
         sm = StructureMatcher(ltol=self._ltol, stol=self._stol, angle_tol=self._angle_tol)
         # TODO: This might have to be parallelized.
-        for structure_index, structure in enumerate(structures):
+        for structure_index, structure in tqdm.tqdm(enumerate(structures), desc="Computing cRMSE rewards"):
             py_structure = structure.get_pymatgen_structure()
             py_composition = py_structure.composition.reduced_composition
             relevant_py_structures = []

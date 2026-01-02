@@ -201,7 +201,8 @@ class OMGTFLightning(lightning.LightningModule):
                                         pos=x_1.pos[sl, :].detach(),
                                         pos_is_fractional=x_1.pos_is_fractional[i]))
 
-        rewards = torch.tensor(self.reward.compute(structures, self.trainer.val_dataloaders.dataset), dtype=self.dtype).detach().to(self.device)
+        rewards = torch.tensor(self.reward.compute(structures, self.trainer.val_dataloaders.dataset),
+                               dtype=self.dtype).detach().to(self.device)
 
         self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True,
                  sync_dist=True, batch_size=len(batch))
