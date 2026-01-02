@@ -102,20 +102,15 @@ class OMGTFLightning(lightning.LightningModule):
 
         self.generation_xyz_filename = generation_xyz_filename
 
-    def setup(self, stage: str) -> None:
+    def on_train_start(self) -> None:
         """
         Set up the reward function with the training and validation datasets.
 
-        This is called by Lightning at the beginning of fit/test/predict.
-
-        :param stage:
-            Stage of the setup, either "fit", "validate", "test", or "predict".
-        :type stage: str
+        This is called by Lightning at the beginning of fit training.
         """
-        if stage == "fit":
-            train_dataset = self.trainer.train_dataloader.dataset
-            val_dataset = self.trainer.val_dataloaders.dataset
-            self.reward.set_datasets(train_dataset, val_dataset)
+        train_dataset = self.trainer.train_dataloader.dataset
+        val_dataset = self.trainer.val_dataloaders.dataset
+        self.reward.set_datasets(train_dataset, val_dataset)
 
     def _compute_grpo_losses(self, rewards: torch.Tensor, log_probs: dict[DataField, torch.Tensor],
                              mean_squared_residuals: dict[DataField, torch.Tensor],
