@@ -1,6 +1,5 @@
 import torch
 from torch_geometric.data import Batch
-from torch_scatter import scatter_add, scatter_mean
 from tqdm import trange
 from omg.datamodule import OMGData
 from omg.globals import SMALL_TIME, BIG_TIME
