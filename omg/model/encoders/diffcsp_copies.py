@@ -9,7 +9,8 @@ from omg.globals import MAX_ATOM_NUM
 
 
 def lattice_params_to_matrix_torch(lengths, angles):
-    """Batched torch version to compute lattice matrix from params.
+    """
+    Batched torch version to compute lattice matrix from params.
 
     Copied from diffcsp: https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py
 
@@ -392,14 +393,16 @@ def repeat_blocks(
     repeat_inc=0,
 ):
     """Repeat blocks of indices.
-    Adapted from https://stackoverflow.com/questions/51154989/numpy-vectorized-function-to-repeat-blocks-of-consecutive-elements
 
-    continuous_indexing: Whether to keep increasing the index after each block
-    start_idx: Starting index
-    block_inc: Number to increment by after each block,
-               either global or per block. Shape: len(sizes) - 1
-    repeat_inc: Number to increment by after each repetition,
-                either global or per block
+    Adapted from https://stackoverflow.com/questions/51154989/numpy-vectorized-function-to-repeat-blocks-of-consecutive-elements
+    Copied from diffcsp: https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py
+
+    :param continuous_indexing: Whether to keep increasing the index after each block
+    :param start_idx: Starting index
+    :param block_inc: Number to increment by after each block,
+        either global or per block. Shape: len(sizes) - 1
+    :param repeat_inc: Number to increment by after each repetition,
+        either global or per block
 
     Examples
     --------
@@ -421,7 +424,6 @@ def repeat_blocks(
         sizes = [2,3,2] ; repeats = [2,0,2] ; continuous_indexing = True
         Return: [0 1 0 1  5 6 5 6]
 
-    Copied from diffcsp: https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py
     """
     assert sizes.dim() == 1
     assert all(sizes >= 0)
