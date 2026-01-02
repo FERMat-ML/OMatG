@@ -1,6 +1,7 @@
 from functools import partial
 import os
 from typing import Optional, Sequence
+import warnings
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure as PymatgenStructure
@@ -116,10 +117,15 @@ class CRMSEReward(Reward):
         :rtype: float
         """
         sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
-        py_composition = py_structure.composition.reduced_composition
+        with warnings.catch_warnings():  # Ignore warnings about missing Pauling electronegativities.
+            warnings.simplefilter("ignore")
+            py_composition = py_structure.composition.reduced_composition
         relevant_py_structures = []
         for ref_py_structure in reference_py_structures:
-            if ref_py_structure.composition.reduced_composition == py_composition:
+            with warnings.catch_warnings():  # Ignore warnings about missing Pauling electronegativities.
+                warnings.simplefilter("ignore")
+                ref_py_composition = ref_py_structure.composition.reduced_composition
+            if ref_py_composition == py_composition:
                 relevant_py_structures.append(ref_py_structure)
         # Match found structures and take smallest RMSE.
         # Use stol for non-matching structures.
@@ -154,6 +160,7 @@ class CRMSEReward(Reward):
         # Be careful to convert structures to pymatgen structures before parallel processing to avoid pickling issues
         # with torch tensors.
         py_structures = [structure.get_pymatgen_structure() for structure in structures]
+        # TODO: This is not optimal for large datasets. Also, we might want to cache it.
         reference_py_structures = [reference_structure.get_pymatgen_structure()
                                    for reference_structure in reference_dataset.get_structure_dataset()]
         crmse_function = partial(self._compute_rmse, reference_py_structures=reference_py_structures, ltol=self._ltol,
