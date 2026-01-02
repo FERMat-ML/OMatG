@@ -215,10 +215,14 @@ class Reward(ABC):
         """
         Validation stage.
         """
-
-    def set_datasets(self, train_dataset: OMGDataset, val_dataset: OMGDataset) -> None:
+        PRED = auto()
         """
-        Set the training and validation datasets for reward computation.
+        Prediction stage.
+        """
+
+    def set_train_dataset(self, train_dataset: OMGDataset) -> None:
+        """
+        Set the training dataset for reward computation.
 
         This method is called in the OMGTFLightning class before compute is called. Subclasses can override this method
         to pre-compute any necessary data structures for efficient reward computation.
@@ -226,9 +230,32 @@ class Reward(ABC):
         :param train_dataset:
             Training dataset.
         :type train_dataset: OMGDataset
+        """
+        pass
+
+    def set_val_dataset(self, val_dataset: OMGDataset) -> None:
+        """
+        Set the validation dataset for reward computation.
+
+        This method is called in the OMGTFLightning class before compute is called. Subclasses can override this method
+        to pre-compute any necessary data structures for efficient reward computation.
+
         :param val_dataset:
             Validation dataset.
         :type val_dataset: OMGDataset
+        """
+        pass
+
+    def set_pred_dataset(self, pred_dataset: OMGDataset) -> None:
+        """
+        Set the prediction dataset for reward computation.
+
+        This method is called in the OMGTFLightning class before compute is called. Subclasses can override this method
+        to pre-compute any necessary data structures for efficient reward computation.
+
+        :param pred_dataset:
+            Prediction dataset.
+        :type pred_dataset: OMGDataset
         """
         pass
 

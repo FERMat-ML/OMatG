@@ -93,31 +93,56 @@ class CRMSEReward(Reward):
             raise ValueError("The number of CPUs must be at least 1.")
         self._cpu_count = number_cpus if number_cpus is not None else os.cpu_count()
 
-        # Composition indices for training and validation datasets.
         self._train_reduced_composition_map = None
         self._val_reduced_composition_map = None
+        self._pred_reduced_composition_map = None
 
-    def set_datasets(self, train_dataset: OMGDataset, val_dataset: OMGDataset) -> None:
+    def set_train_dataset(self, train_dataset: OMGDataset) -> None:
         """
-        Set the training and validation datasets for reward computation.
+        Set the training dataset for reward computation.
 
-        This method is called in the OMGTFLightning class before compute is called. It builds dictionaries that map
-        reduced compositions to lists of Pymatgen Structures with that composition in the training and validation
-        datasets for efficient lookup during reward computation.
+        This method is called in the OMGTFLightning class before compute is called. It builds a dictionary that maps
+        reduced compositions to lists of Pymatgen Structures with that composition in the training dataset for
+        efficient lookup during reward computation.
 
         # TODO: This is not optimal for large datasets.
 
         :param train_dataset:
             Training dataset.
         :type train_dataset: OMGDataset
+        """
+        self._train_reduced_composition_map = self._build_reduced_composition_map(
+            train_dataset, desc="Building reduced composition map for training dataset")
+
+    def set_val_dataset(self, val_dataset: OMGDataset) -> None:
+        """
+        Set the validation dataset for reward computation.
+
+        This method is called in the OMGTFLightning class before compute is called. It builds a dictionary that maps
+        reduced compositions to lists of Pymatgen Structures with that composition in the validation dataset for
+        efficient lookup during reward computation.
+
         :param val_dataset:
             Validation dataset.
         :type val_dataset: OMGDataset
         """
-        self._train_reduced_composition_map = self._build_reduced_composition_map(
-            train_dataset, desc="Building reduced composition map for training dataset")
         self._val_reduced_composition_map = self._build_reduced_composition_map(
             val_dataset, desc="Building reduced composition map for validation dataset")
+
+    def set_pred_dataset(self, pred_dataset: OMGDataset) -> None:
+        """
+        Set the prediction dataset for reward computation.
+
+        This method is called in the OMGTFLightning class before compute is called. It builds a dictionary that maps
+        reduced compositions to lists of Pymatgen Structures with that composition in the prediction dataset for
+        efficient lookup during reward computation.
+
+        :param pred_dataset:
+            Prediction dataset.
+        :type pred_dataset: OMGDataset
+        """
+        self._pred_reduced_composition_map = self._build_reduced_composition_map(
+            pred_dataset, desc="Building reduced composition map for prediction dataset")
 
     @staticmethod
     def _get_reduced_composition_key(atomic_numbers: np.ndarray) -> tuple[int, ...]:
@@ -232,12 +257,17 @@ class CRMSEReward(Reward):
         """
         if stage == Reward.ComputeStage.TRAIN:
             reduced_composition_map = self._train_reduced_composition_map
-        else:
-            assert stage == Reward.ComputeStage.VAL
+            if reduced_composition_map is None:
+                raise RuntimeError("Training dataset not set. Call set_train_dataset before compute.")
+        elif stage == Reward.ComputeStage.VAL:
             reduced_composition_map = self._val_reduced_composition_map
-
-        if reduced_composition_map is None:
-            raise RuntimeError("Datasets not set. Call set_datasets before compute.")
+            if reduced_composition_map is None:
+                raise RuntimeError("Validation dataset not set. Call set_val_dataset before compute.")
+        else:
+            assert stage == Reward.ComputeStage.PRED
+            reduced_composition_map = self._pred_reduced_composition_map
+            if reduced_composition_map is None:
+                raise RuntimeError("Prediction dataset not set. Call set_pred_dataset before compute.")
 
         # Be careful to convert structures to pymatgen structures before parallel processing to avoid pickling issues
         # with torch tensors.
@@ -286,19 +316,38 @@ class CompositeRewards(Reward):
         self._reward_functions = rewards
         self._weights = weights
 
-    def set_datasets(self, train_dataset: OMGDataset, val_dataset: OMGDataset) -> None:
+    def set_train_dataset(self, train_dataset: OMGDataset) -> None:
         """
-        Set the training and validation datasets for all reward functions.
+        Set the training dataset for all reward functions.
 
         :param train_dataset:
             Training dataset.
         :type train_dataset: OMGDataset
+        """
+        for reward_function in self._reward_functions:
+            reward_function.set_train_dataset(train_dataset)
+
+    def set_val_dataset(self, val_dataset: OMGDataset) -> None:
+        """
+        Set the validation dataset for all reward functions.
+
         :param val_dataset:
             Validation dataset.
         :type val_dataset: OMGDataset
         """
         for reward_function in self._reward_functions:
-            reward_function.set_datasets(train_dataset, val_dataset)
+            reward_function.set_val_dataset(val_dataset)
+
+    def set_pred_dataset(self, pred_dataset: OMGDataset) -> None:
+        """
+        Set the prediction dataset for all reward functions.
+
+        :param pred_dataset:
+            Prediction dataset.
+        :type pred_dataset: OMGDataset
+        """
+        for reward_function in self._reward_functions:
+            reward_function.set_pred_dataset(pred_dataset)
 
     def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage) -> np.ndarray:
         """
