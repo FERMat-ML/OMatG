@@ -102,6 +102,21 @@ class OMGTFLightning(lightning.LightningModule):
 
         self.generation_xyz_filename = generation_xyz_filename
 
+    def setup(self, stage: str) -> None:
+        """
+        Set up the reward function with the training and validation datasets.
+
+        This is called by Lightning at the beginning of fit/test/predict.
+
+        :param stage:
+            Stage of the setup, either "fit", "validate", "test", or "predict".
+        :type stage: str
+        """
+        if stage == "fit":
+            train_dataset = self.trainer.train_dataloader.dataset
+            val_dataset = self.trainer.val_dataloaders.dataset
+            self.reward.set_datasets(train_dataset, val_dataset)
+
     def _compute_grpo_losses(self, rewards: torch.Tensor, log_probs: dict[DataField, torch.Tensor],
                              mean_squared_residuals: dict[DataField, torch.Tensor],
                              n_atoms: torch.Tensor) -> dict[str, torch.Tensor]:
@@ -165,7 +180,7 @@ class OMGTFLightning(lightning.LightningModule):
                                         pos=x_1.pos[sl, :].detach(),
                                         pos_is_fractional=x_1.pos_is_fractional[i]))
 
-        rewards = torch.tensor(self.reward.compute(structures, self.trainer.train_dataloader.dataset),
+        rewards = torch.tensor(self.reward.compute(structures, Reward.ComputeStage.TRAIN),
                                dtype=self.dtype).detach().to(self.device)
 
         losses = self._compute_grpo_losses(rewards, log_probs, mean_squared_residuals, x_0.n_atoms)
@@ -201,7 +216,7 @@ class OMGTFLightning(lightning.LightningModule):
                                         pos=x_1.pos[sl, :].detach(),
                                         pos_is_fractional=x_1.pos_is_fractional[i]))
 
-        rewards = torch.tensor(self.reward.compute(structures, self.trainer.val_dataloaders.dataset),
+        rewards = torch.tensor(self.reward.compute(structures, Reward.ComputeStage.VAL),
                                dtype=self.dtype).detach().to(self.device)
 
         self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True,

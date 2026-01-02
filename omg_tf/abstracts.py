@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enum import auto, Enum
 from typing import Sequence
 import numpy as np
 import torch
@@ -196,24 +197,57 @@ class Reward(ABC):
     """
     Abstract base class for reward functions.
 
+    Reward functions must be initialized with the training and validation datasets before compute is called.
+    This allows reward functions to pre-compute any necessary data structures for efficient reward computation.
+
     TODO: SHOULD I MAKE SURE THAT REWARDS ARE NOT SCALED WITH NUMBER OF ATOMS?
     """
+    class ComputeStage(Enum):
+        """
+        Enum for the possible stages of reward computation.
+        """
+
+        TRAIN = auto()
+        """
+        Train stage.
+        """
+        VAL = auto()
+        """
+        Validation stage.
+        """
+
+    def set_datasets(self, train_dataset: OMGDataset, val_dataset: OMGDataset) -> None:
+        """
+        Set the training and validation datasets for reward computation.
+
+        This method is called in the OMGTFLightning class before compute is called. Subclasses can override this method
+        to pre-compute any necessary data structures for efficient reward computation.
+
+        :param train_dataset:
+            Training dataset.
+        :type train_dataset: OMGDataset
+        :param val_dataset:
+            Validation dataset.
+        :type val_dataset: OMGDataset
+        """
+        pass
 
     @abstractmethod
-    def compute(self, structures: Sequence[Structure], reference_dataset: OMGDataset) -> np.ndarray:
+    def compute(self, structures: Sequence[Structure], stage: ComputeStage) -> np.ndarray:
         """
         Compute rewards for a batch of structures.
 
         Some reward functions may require access to a reference dataset for computing rewards (e.g., to compute
-        similarity to known stable structures). This dataset is the training or validation dataset, depending on the
-        context in which the reward is computed.
+        similarity to known stable structures). The stage parameter indicates whether the reward is being computed
+        for training or validation, allowing the reward function to use the appropriate precomputed data from the
+        set_datasets method.
 
         :param structures:
             Sequence of Structure objects representing generated structures.
         :type structures: Sequence[Structure]
-        :param reference_dataset:
-            Reference dataset for computing rewards.
-        :type reference_dataset: OMGDataset
+        :param stage:
+            Stage of the reward computation.
+        :type stage: ComputeStage
 
         :return:
             List of rewards, one per structure.
