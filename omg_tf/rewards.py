@@ -1,7 +1,10 @@
-from typing import Sequence
+from functools import partial
+import os
+from typing import Optional, Sequence
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 import tqdm
+from tqdm.contrib.concurrent import process_map
 from omg.datamodule import OMGDataset, Structure
 from .abstracts import Reward
 
@@ -64,11 +67,15 @@ class CRMSEReward(Reward):
         Must be positive.
         Defaults to 1.0.
     :type scale: float
-
+    :param number_cpus:
+        Number of CPUs to use for parallelization. If None, use os.cpu_count().
+        Defaults to None.
+    :type number_cpus: Optional[int]
     :raises ValueError:
         If scale is not positive.
     """
-    def __init__(self, ltol: float = 0.3, stol: float = 0.5, angle_tol: float = 10.0, scale: float = 1.0) -> None:
+    def __init__(self, ltol: float = 0.3, stol: float = 0.5, angle_tol: float = 10.0, scale: float = 1.0,
+                 number_cpus: Optional[int] = None) -> None:
         """Constructor for CRMSEReward."""
         super().__init__()
         self._ltol = ltol
@@ -77,6 +84,53 @@ class CRMSEReward(Reward):
         if not scale > 0.0:
             raise ValueError("Scale must be positive.")
         self._scale = scale
+        if number_cpus is not None and number_cpus < 1:
+            raise ValueError("The number of CPUs must be at least 1.")
+        self._cpu_count = number_cpus if number_cpus is not None else os.cpu_count()
+
+    @staticmethod
+    def _compute_rmse(structure: Structure, reference_dataset: OMGDataset, ltol: float, stol: float,
+                      angle_tol: float) -> float:
+        """
+        Compute the cRMSE between a generated structure and the closest matching structure in the reference dataset.
+
+        :param structure:
+            Generated structure.
+        :type structure: Structure
+        :param reference_dataset:
+            Reference dataset for computing cRMSE.
+        :type reference_dataset: OMGDataset
+        :param ltol:
+            Fractional length tolerance for Pymatgen's StructureMatcher.
+        :type ltol: float
+        :param stol:
+            Site tolerance for Pymatgen's StructureMatcher.
+        :type stol: float
+        :param angle_tol:
+            Angle tolerance in degrees for Pymatgen's StructureMatcher.
+        :type angle_tol: float
+
+        :return:
+            The cRMSE value.
+        :rtype: float
+        """
+        sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
+        py_structure = structure.get_pymatgen_structure()
+        py_composition = py_structure.composition.reduced_composition
+        relevant_py_structures = []
+        for reference_structure in reference_dataset.get_structure_dataset():
+            ref_py_structure = reference_structure.get_pymatgen_structure()
+            if ref_py_structure.composition.reduced_composition == py_composition:
+                relevant_py_structures.append(ref_py_structure)
+        # Match found structures and take smallest RMSE.
+        # Use stol for non-matching structures.
+        assert len(relevant_py_structures) > 0
+        rmses = []
+        for ref_py_structure in relevant_py_structures:
+            res = sm.get_rms_dist(py_structure, ref_py_structure)
+            assert res is None or res[0] <= stol
+            rmses.append(stol if res is None else res[0])
+        return min(rmses)
 
     def compute(self, structures: Sequence[Structure], reference_dataset: OMGDataset) -> np.ndarray:
         """
@@ -98,27 +152,19 @@ class CRMSEReward(Reward):
             List of rewards, one per structure.
         :rtype: np.ndarray
         """
-        crmse_values = np.zeros(len(structures))
-        sm = StructureMatcher(ltol=self._ltol, stol=self._stol, angle_tol=self._angle_tol)
-        # TODO: This might have to be parallelized.
-        for structure_index, structure in tqdm.tqdm(enumerate(structures), desc="Computing cRMSE rewards"):
-            py_structure = structure.get_pymatgen_structure()
-            py_composition = py_structure.composition.reduced_composition
-            relevant_py_structures = []
-            for reference_structure in reference_dataset.get_structure_dataset():
-                ref_py_structure = reference_structure.get_pymatgen_structure()
-                if ref_py_structure.composition.reduced_composition == py_composition:
-                    relevant_py_structures.append(ref_py_structure)
-            # Match found structures and take smallest RMSE.
-            # Use stol for non-matching structures.
-            assert len(relevant_py_structures) > 0
-            rmses = []
-            for ref_py_structure in relevant_py_structures:
-                res = sm.get_rms_dist(py_structure, ref_py_structure)
-                assert res is None or res[0] <= self._stol
-                rmses.append(self._stol if res is None else res[0])
-            crmse_values[structure_index] = min(rmses)
-        return self._scale * (self._stol - crmse_values)
+        crmse_function = partial(self._compute_rmse, reference_dataset=reference_dataset, ltol=self._ltol,
+                                 stol=self._stol, angle_tol=self._angle_tol)
+
+        if self._cpu_count > 1:
+            crmse_values = process_map(crmse_function, structures, desc="Computing cRMSE rewards",
+                                       chunksize=max(min(len(structures) // self._cpu_count, 100), 1),
+                                       max_workers=self._cpu_count)
+        else:
+            crmse_values = list(map(crmse_function,
+                                    tqdm.tqdm(structures, desc="Computing cRMSE rewards", total=len(structures))))
+
+        return self._scale * (self._stol - np.array(crmse_values))
+
 
 class CompositeRewards(Reward):
     """
