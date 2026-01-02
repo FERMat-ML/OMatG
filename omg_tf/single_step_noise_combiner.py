@@ -87,9 +87,11 @@ class SingleStepNoiseCombiner(Combiner):
                 noise_b = torch.randn_like(res_b)
                 noisy_res_b = res_b + self._noise_scales[DataField.pos] * noise_b
                 # Log probability of the specific sampled velocity x is -0.5 * ((x - mean) / sigma)^2.
-                # Since we sample x = mean + sigma * noise, this becomes -0.5 * noise^2.
+                # We write it as ((noisy_res_b - res_b) / sigma)^2 to maintain gradient connection to res_b.
                 # Sum log probs over all dimensions except atom dimension.
-                log_probs_atoms = -0.5 * (noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
+                log_probs_atoms = -0.5 * (
+                        ((noisy_res_b - res_b) / self._noise_scales[DataField.pos]) ** 2
+                ).sum(dim=tuple(range(1, noise_b.ndim)))
                 # Sum log probs over all atoms in each structure to get batch-wise log probs.
                 log_probs_filtered = scatter_add(log_probs_atoms, filtered_x_t.batch)
                 log_probs[DataField.pos][structure_filter] += log_probs_filtered
@@ -107,9 +109,11 @@ class SingleStepNoiseCombiner(Combiner):
                 noise_b = torch.randn_like(res_b)
                 noisy_res_b = res_b + self._noise_scales[DataField.cell] * noise_b
                 # Log probability of the specific sampled velocity x is -0.5 * ((x - mean) / sigma)^2.
-                # Since we sample x = mean + sigma * noise, this becomes -0.5 * noise^2.
+                # We write it as ((noisy_res_b - res_b) / sigma)^2 to maintain gradient connection to res_b.
                 # Sum log probs over all dimensions except batch.
-                log_probs_filtered = -0.5 * (noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
+                log_probs_filtered = -0.5 * (
+                        ((noisy_res_b - res_b) / self._noise_scales[DataField.cell]) ** 2
+                ).sum(dim=tuple(range(1, noise_b.ndim)))
                 log_probs[DataField.cell][structure_filter] += log_probs_filtered
                 # Get batch-wise mean squared residuals for regularization.
                 mean_squared_residuals_filtered = (res_b ** 2).mean(dim=tuple(range(1, res_b.ndim)))

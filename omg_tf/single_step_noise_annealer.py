@@ -93,8 +93,11 @@ class SingleStepNoiseAnnealer(Combiner):
                 scale_mean = filtered_residual_output[DataField.pos.name + "_s"]  # [batch, 1]
                 noise = torch.randn_like(scale_mean)
                 noisy_scale = scale_mean + self._noise_scales[DataField.pos] * noise
-                # Log probability: -0.5 * noise^2, summed over dimensions (just 1 here)
-                log_probs_filtered = -0.5 * (noise ** 2).sum(dim=-1)
+                # Log probability: -0.5 * ((noisy_scale - scale_mean) / sigma)^2
+                # This maintains gradient connection to scale_mean (mathematically equivalent to -0.5 * noise^2)
+                log_probs_filtered = -0.5 * (
+                        ((noisy_scale - scale_mean) / self._noise_scales[DataField.pos]) ** 2
+                ).sum(dim=-1)
                 log_probs[DataField.pos][structure_filter] += log_probs_filtered
                 # Mean squared scale for regularization (already per-structure)
                 mean_squared_scales_filtered = (scale_mean ** 2).squeeze(-1)
@@ -116,8 +119,11 @@ class SingleStepNoiseAnnealer(Combiner):
                 scale_mean = filtered_residual_output[DataField.cell.name + "_s"]  # [batch, 1]
                 noise = torch.randn_like(scale_mean)
                 noisy_scale = scale_mean + self._noise_scales[DataField.cell] * noise
-                # Log probability: -0.5 * noise^2, summed over dimensions (just 1 here)
-                log_probs_filtered = -0.5 * (noise ** 2).sum(dim=-1)
+                # Log probability: -0.5 * ((noisy_scale - scale_mean) / sigma)^2
+                # This maintains gradient connection to scale_mean (mathematically equivalent to -0.5 * noise^2)
+                log_probs_filtered = -0.5 * (
+                        ((noisy_scale - scale_mean) / self._noise_scales[DataField.cell]) ** 2
+                ).sum(dim=-1)
                 log_probs[DataField.cell][structure_filter] += log_probs_filtered
                 # Mean squared scale for regularization (already per-structure)
                 mean_squared_scales_filtered = (scale_mean ** 2).squeeze(-1)
