@@ -2,7 +2,7 @@ from collections import OrderedDict
 import json
 from math import log
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Union
 import warnings
 from ase import Atoms
 from ase.io import write
@@ -1107,3 +1107,30 @@ class OMGTrainer(Trainer):
                     "ids": str(struc)
                 }
                 txn.put(str(idx).encode(), pickle.dumps(data))
+
+    def load(self, model: OMGLightning, datamodule: OMGDataModule,
+             ckpt_path: Optional[Union[str, Path]] = None) -> None:
+        """
+        Load the model, datamodule, and optionally a checkpoint to ensure everything is working.
+
+        Within LightningCLI, this subcommand enables loading a checkpoint without starting training or testing. This
+        circumvents the problem that, if no subcommand is provided to LightningCLI, it either errors out (if run=True
+        in LightningCLI) or just initializes the model and datamodule without loading a checkpoint (if run=False in
+        LightningCLI). By using this subcommand with run=True, one can test whether a checkpoint can be loaded, without
+        actually starting training or testing.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        :param ckpt_path:
+            Path to the checkpoint file to load. If None, no checkpoint is loaded.
+            This argument can be optionally set on the command line.
+            Defaults to None.
+        :type ckpt_path: Optional[Union[str, Path]]
+        """
+        if ckpt_path is not None:
+            ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
+            model.load_state_dict(ckpt["state_dict"])

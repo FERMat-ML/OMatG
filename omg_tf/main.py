@@ -19,7 +19,12 @@ def main():
         omg_index = args.index("omg")
     except ValueError:
         # Suppress printing traceback.
-        sys.exit("error: omg_tf requires configuration of omg model after 'omg' command-line argument")
+        sys.exit("error: omg_tf requires configuration of omg model after 'omg' command-line argument (without any "
+                 "subcommand)")
+
+    if any(subcommand in args[omg_index + 1:] for subcommand in OMGCLI.subcommands().keys()):
+        sys.exit("error: omg_tf requires configuration of omg model after 'omg' command-line argument (without any "
+                 "subcommand)")
 
     # Ignore specific warning from LightningCLI.
     warnings.filterwarnings(
@@ -27,8 +32,11 @@ def main():
         "LightningCLI's args parameter is intended to run from within Python like if it were from the command line.*")
 
     # Pass only omg arguments to OMGCLI.
-    omg_cli = OMGCLI(model_class=OMGLightning, datamodule_class=OMGDataModule, trainer_class=OMGTrainer, run=False,
-                     args=args[omg_index + 1:])
+    # Run the 'load' subcommand that does nothing except loading the model, the datamodule, and optionally a checkpoint.
+    # Using run=False would not work because it also disables loading from checkpoints.
+    omg_cli = OMGCLI(model_class=OMGLightning, datamodule_class=OMGDataModule, trainer_class=OMGTrainer, run=True,
+                     args=["load"] + args[omg_index + 1:])
+    print("OMG model and datamodule loaded successfully.")
 
     # Move OMG model to the correct device.
     # The sequence of function calls is taken from the _run method in the Lightning Trainer.
