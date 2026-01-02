@@ -90,17 +90,17 @@ class CRMSEReward(Reward):
         self._cpu_count = number_cpus if number_cpus is not None else os.cpu_count()
 
     @staticmethod
-    def _compute_rmse(py_structure: PymatgenStructure, reference_dataset: OMGDataset, ltol: float, stol: float,
-                      angle_tol: float) -> float:
+    def _compute_rmse(py_structure: PymatgenStructure, reference_py_structures: Sequence[PymatgenStructure],
+                      ltol: float, stol: float, angle_tol: float) -> float:
         """
-        Compute the cRMSE between a generated structure and the closest matching structure in the reference dataset.
+        Compute the cRMSE between a generated structure and the closest matching structure of the reference structures.
 
         :param py_structure:
             Generated structure as a Pymatgen Structure.
         :type py_structure: PymatgenStructure
-        :param reference_dataset:
-            Reference dataset for computing cRMSE.
-        :type reference_dataset: OMGDataset
+        :param reference_py_structures:
+            Sequence of reference structures as Pymatgen Structures.
+        :type reference_py_structures: Sequence[PymatgenStructure]
         :param ltol:
             Fractional length tolerance for Pymatgen's StructureMatcher.
         :type ltol: float
@@ -118,8 +118,7 @@ class CRMSEReward(Reward):
         sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
         py_composition = py_structure.composition.reduced_composition
         relevant_py_structures = []
-        for reference_structure in reference_dataset.get_structure_dataset():
-            ref_py_structure = reference_structure.get_pymatgen_structure()
+        for ref_py_structure in reference_py_structures:
             if ref_py_structure.composition.reduced_composition == py_composition:
                 relevant_py_structures.append(ref_py_structure)
         # Match found structures and take smallest RMSE.
@@ -152,11 +151,13 @@ class CRMSEReward(Reward):
             List of rewards, one per structure.
         :rtype: np.ndarray
         """
-        crmse_function = partial(self._compute_rmse, reference_dataset=reference_dataset, ltol=self._ltol,
-                                 stol=self._stol, angle_tol=self._angle_tol)
         # Be careful to convert structures to pymatgen structures before parallel processing to avoid pickling issues
         # with torch tensors.
         py_structures = [structure.get_pymatgen_structure() for structure in structures]
+        reference_py_structures = [reference_structure.get_pymatgen_structure()
+                                   for reference_structure in reference_dataset.get_structure_dataset()]
+        crmse_function = partial(self._compute_rmse, reference_py_structures=reference_py_structures, ltol=self._ltol,
+                                 stol=self._stol, angle_tol=self._angle_tol)
 
         if self._cpu_count > 1:
             crmse_values = process_map(crmse_function, py_structures, desc="Computing cRMSE rewards",
