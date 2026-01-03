@@ -117,10 +117,12 @@ class SingleStepNoiseAnnealer(Combiner):
                 scale_mean = filtered_residual_output[DataField.pos.name + "_s"]
                 noise = torch.randn_like(scale_mean)
                 noisy_scale = scale_mean + self._noise_scales[DataField.pos] * noise
-                # Log probability: -0.5 * ((noisy_scale - scale_mean) / sigma)^2
+                # Treat sampled action as constant for likelihood-ratio gradient.
+                noisy_scale_detached = noisy_scale.detach()
+                # Log probability: -0.5 * ((noisy_scale_detached - scale_mean) / sigma)^2
                 # This maintains gradient connection to scale_mean (mathematically equivalent to -0.5 * noise^2)
                 log_probs_filtered = -0.5 * (
-                        ((noisy_scale - scale_mean) / self._noise_scales[DataField.pos]) ** 2
+                        ((noisy_scale_detached - scale_mean) / self._noise_scales[DataField.pos]) ** 2
                 ).squeeze(-1)
                 log_probs[DataField.pos][structure_filter] += log_probs_filtered
                 # Mean squared scale for regularization (already per-structure)
@@ -138,10 +140,12 @@ class SingleStepNoiseAnnealer(Combiner):
                 scale_mean = filtered_residual_output[DataField.cell.name + "_s"]  # [batch, 1]
                 noise = torch.randn_like(scale_mean)
                 noisy_scale = scale_mean + self._noise_scales[DataField.cell] * noise
-                # Log probability: -0.5 * ((noisy_scale - scale_mean) / sigma)^2
+                # Treat sampled action as constant for likelihood-ratio gradient.
+                noisy_scale_detached = noisy_scale.detach()
+                # Log probability: -0.5 * ((noisy_scale_detached - scale_mean) / sigma)^2
                 # This maintains gradient connection to scale_mean (mathematically equivalent to -0.5 * noise^2)
                 log_probs_filtered = -0.5 * (
-                        ((noisy_scale - scale_mean) / self._noise_scales[DataField.cell]) ** 2
+                        ((noisy_scale_detached - scale_mean) / self._noise_scales[DataField.cell]) ** 2
                 ).squeeze(-1)
                 log_probs[DataField.cell][structure_filter] += log_probs_filtered
                 # Mean squared scale for regularization (already per-structure)

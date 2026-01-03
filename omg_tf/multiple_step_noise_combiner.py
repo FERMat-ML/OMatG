@@ -73,11 +73,13 @@ class MultipleStepNoiseCombiner(Combiner):
                 res_b = residual_output[DataField.pos.name + "_b"]
                 noise_b = torch.randn_like(res_b)
                 noisy_res_b = res_b + self._noise_scales[DataField.pos] * noise_b
+                # Treat sampled action as constant for likelihood-ratio gradient.
+                noisy_res_b_detached = noisy_res_b.detach()
                 # Log probability of the specific sampled velocity x is -0.5 * ((x - mean) / sigma)^2.
-                # We write it as ((noisy_res_b - res_b) / sigma)^2 to maintain gradient connection to res_b.
+                # We write it as ((noisy_res_b_detached - res_b) / sigma)^2 to maintain gradient connection to res_b.
                 # Sum log probs over all dimensions except atom dimension.
                 log_probs_atoms = -0.5 * (
-                        ((noisy_res_b - res_b) / self._noise_scales[DataField.pos]) ** 2
+                        ((noisy_res_b_detached - res_b) / self._noise_scales[DataField.pos]) ** 2
                 ).sum(dim=tuple(range(1, noise_b.ndim)))
                 # Sum log probs over all atoms in each structure to get batch-wise log probs.
                 log_probs[DataField.pos] += scatter_add(log_probs_atoms, x_t.batch)
@@ -92,11 +94,13 @@ class MultipleStepNoiseCombiner(Combiner):
                 res_b = residual_output[DataField.cell.name + "_b"]
                 noise_b = torch.randn_like(res_b)
                 noisy_res_b = res_b + self._noise_scales[DataField.cell] * noise_b
+                noisy_res_b_detached = noisy_res_b.detach()
+                # Treat sampled action as constant for likelihood-ratio gradient.
                 # Log probability of the specific sampled velocity x is -0.5 * ((x - mean) / sigma)^2.
-                # We write it as ((noisy_res_b - res_b) / sigma)^2 to maintain gradient connection to res_b.
+                # We write it as ((noisy_res_b_detached - res_b) / sigma)^2 to maintain gradient connection to res_b.
                 # Sum log probs over all dimensions except batch.
                 log_probs[DataField.cell] += -0.5 * (
-                        ((noisy_res_b - res_b) / self._noise_scales[DataField.cell]) ** 2
+                        ((noisy_res_b_detached - res_b) / self._noise_scales[DataField.cell]) ** 2
                 ).sum(dim=tuple(range(1, noise_b.ndim)))
                 # Get batch-wise mean squared residuals for regularization.
                 mean_squared_residuals[DataField.cell] += (res_b ** 2).mean(dim=tuple(range(1, res_b.ndim)))
