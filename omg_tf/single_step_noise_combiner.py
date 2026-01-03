@@ -24,16 +24,14 @@ class SingleStepNoiseCombiner(Combiner):
         Integrate the structures x_0 from time 0 to 1 with an Euler integration scheme relying on the added velocities
         of the base and residual models.
 
-        This method performs an Euler integration similar to integrate_with_residual_means. It uses only the velocity
-        from the base model at most timesteps. However, at a single randomly chosen timestep per structure, it
-        randomizes the residual velocities from the residual model by adding noise, and adds that to the velocity of the
-        base model. The returned log probability of the applied residuals for each integrated data field can then be
-        used for policy gradient updates.
+        This method performs an Euler integration similar to integrate_with_residual_means. It applies the mean residual
+        at all timesteps (matching inference behavior), but adds noise at a single randomly chosen timestep per
+        structure. At non-noisy timesteps, the residual model is called with torch.no_grad() to avoid building a
+        computational graph through the entire trajectory. The returned log probability of the applied residuals for
+        each integrated data field can then be used for policy gradient updates.
 
         In addition, this method also returns the mean squared residuals per integrated data field for regularization
         purposes.
-
-        TODO: IS THERE A WAY TO ALWAYS APPLY MEAN?
 
         :param residual_model:
             The residual model predicting residual velocities.
@@ -68,18 +66,32 @@ class SingleStepNoiseCombiner(Combiner):
 
             mask_per_structure = (noise_time_steps == t_index)
             structure_filter = mask_per_structure.nonzero(as_tuple=True)[0]
-            if len(structure_filter) == 0:
-                # Only use base model velocities at this time step.
+            non_noisy_filter = (~mask_per_structure).nonzero(as_tuple=True)[0]
+
+            # For structures not at their noisy timestep apply base + mean residual (no gradients).
+            if len(non_noisy_filter) > 0:
+                # noinspection PyUnresolvedReferences
+                non_noisy_x_t = Batch.from_data_list(x_t.index_select(non_noisy_filter)).to(x_t.pos.device)
+                non_noisy_time = time[non_noisy_filter]
+                with torch.no_grad():
+                    non_noisy_residual_output = residual_model(non_noisy_x_t, non_noisy_time)
                 if self._integrate_pos:
-                    x_t.pos = x_t.pos + base_model_output[DataField.pos.name + "_b"] * dt
+                    non_noisy_mask_per_atom = (~mask_per_structure).repeat_interleave(x_0.n_atoms)
+                    base_vel = base_model_output[DataField.pos.name + "_b"][non_noisy_mask_per_atom]
+                    res_vel = non_noisy_residual_output[DataField.pos.name + "_b"]
+                    x_t.pos[non_noisy_mask_per_atom] = x_t.pos[non_noisy_mask_per_atom] + (base_vel + res_vel) * dt
                 if self._integrate_cell:
-                    x_t.cell = x_t.cell + base_model_output[DataField.cell.name + "_b"] * dt
+                    base_vel = base_model_output[DataField.cell.name + "_b"][non_noisy_filter]
+                    res_vel = non_noisy_residual_output[DataField.cell.name + "_b"]
+                    x_t.cell[non_noisy_filter] = x_t.cell[non_noisy_filter] + (base_vel + res_vel) * dt
+
+            if len(structure_filter) == 0:
                 continue
 
+            # For structures at their noisy timestep: apply base + noisy residual (with gradients).
             # noinspection PyUnresolvedReferences
             filtered_x_t = Batch.from_data_list(x_t.index_select(structure_filter)).to(x_t.pos.device)
             filtered_time = time[structure_filter]
-            # Base model was not applied to x_t yet.
             filtered_residual_output = residual_model(filtered_x_t, filtered_time)
 
             if self._integrate_pos:
@@ -100,9 +112,10 @@ class SingleStepNoiseCombiner(Combiner):
                 # Get batch-wise mean squared residuals for regularization.
                 mean_squared_residuals_filtered = scatter_mean(squared_res_pos, filtered_x_t.batch)
                 mean_squared_residuals[DataField.pos][structure_filter] += mean_squared_residuals_filtered
-                x_t.pos = x_t.pos + base_model_output[DataField.pos.name + "_b"] * dt
+                # Apply base + noisy residual to filtered structures.
                 mask_per_atom = mask_per_structure.repeat_interleave(x_0.n_atoms)
-                x_t.pos[mask_per_atom] = x_t.pos[mask_per_atom] + noisy_res_b * dt
+                base_vel = base_model_output[DataField.pos.name + "_b"][mask_per_atom]
+                x_t.pos[mask_per_atom] = x_t.pos[mask_per_atom] + (base_vel + noisy_res_b) * dt
 
             if self._integrate_cell:
                 res_b = filtered_residual_output[DataField.cell.name + "_b"]
@@ -118,8 +131,9 @@ class SingleStepNoiseCombiner(Combiner):
                 # Get batch-wise mean squared residuals for regularization.
                 mean_squared_residuals_filtered = (res_b ** 2).mean(dim=tuple(range(1, res_b.ndim)))
                 mean_squared_residuals[DataField.cell][structure_filter] += mean_squared_residuals_filtered
-                x_t.cell = x_t.cell + base_model_output[DataField.cell.name + "_b"] * dt
-                x_t.cell[mask_per_structure] = x_t.cell[mask_per_structure] + noisy_res_b * dt
+                # Apply base + noisy residual to filtered structures.
+                base_vel = base_model_output[DataField.cell.name + "_b"][mask_per_structure]
+                x_t.cell[mask_per_structure] = x_t.cell[mask_per_structure] + (base_vel + noisy_res_b) * dt
 
         # No mean over time necessary for mean_squared_residuals since it consists only of a single timestep.
         return x_t, log_probs, mean_squared_residuals

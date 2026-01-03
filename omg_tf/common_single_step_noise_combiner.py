@@ -23,16 +23,14 @@ class CommonSingleStepNoiseCombiner(Combiner):
         Integrate the structures x_0 from time 0 to 1 with an Euler integration scheme relying on the added velocities
         of the base and residual models.
 
-        This method performs an Euler integration similar to integrate_with_residual_means. It uses only the velocity
-        from the base model at most timesteps. However, at a single randomly chosen timestep per batch, it randomizes
-        the residual velocities from the residual model by adding noise, and adds that to the velocity of the base
-        model. The returned log probability of the applied residuals for each integrated data field can then be used for
-        policy gradient updates.
+        This method performs an Euler integration similar to integrate_with_residual_means. It applies the mean residual
+        at all timesteps (matching inference behavior), but adds noise at a single randomly chosen timestep per batch.
+        At non-noisy timesteps, the residual model is called with torch.no_grad() to avoid building a computational
+        graph through the entire trajectory. The returned log probability of the applied residuals for each integrated
+        data field can then be used for policy gradient updates.
 
         In addition, this method also returns the mean squared residuals per integrated data field for regularization
         purposes.
-
-        TODO: IS THERE A WAY TO ALWAYS APPLY MEAN?
 
         :param residual_model:
             The residual model predicting residual velocities.
@@ -66,14 +64,18 @@ class CommonSingleStepNoiseCombiner(Combiner):
                 base_model_output = base_model(x_t, time)
 
             if noise_time_step != t_index:
-                # Only use base model velocities at this time step.
+                # Apply base + mean residual (no gradients) at non-noisy timesteps.
+                with torch.no_grad():
+                    residual_output = residual_model(x_t, time)
                 if self._integrate_pos:
-                    x_t.pos = x_t.pos + base_model_output[DataField.pos.name + "_b"] * dt
+                    pos_b = base_model_output[DataField.pos.name + "_b"] + residual_output[DataField.pos.name + "_b"]
+                    x_t.pos = x_t.pos + pos_b * dt
                 if self._integrate_cell:
-                    x_t.cell = x_t.cell + base_model_output[DataField.cell.name + "_b"] * dt
+                    cell_b = base_model_output[DataField.cell.name + "_b"] + residual_output[DataField.cell.name + "_b"]
+                    x_t.cell = x_t.cell + cell_b * dt
                 continue
 
-            # Base model was not applied to x_t yet.
+            # At the noisy timestep: apply base + noisy residual (with gradients).
             residual_output = residual_model(x_t, time)
 
             if self._integrate_pos:
