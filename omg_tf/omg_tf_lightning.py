@@ -199,6 +199,13 @@ class OMGTFLightning(lightning.LightningModule):
             losses[loss_key] = weight * losses[loss_key]
             total_loss += losses[loss_key]
 
+        # Compute diagnostics for GRPO correlation
+        group_reward_stds = []
+        for i in range(len(rewards) // self.grpo_group_size):
+            sl = slice(i * self.grpo_group_size, (i + 1) * self.grpo_group_size)
+            group_reward_stds.append(rewards[sl].std(unbiased=False).item())
+        within_group_std = torch.tensor(group_reward_stds).mean()
+
         self.log_dict(losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
         self.log("loss_total", total_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
@@ -206,6 +213,8 @@ class OMGTFLightning(lightning.LightningModule):
                  batch_size=len(batch))
         self.log("reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
+        self.log("reward_std_within_group", within_group_std, on_step=False, on_epoch=True, prog_bar=False,
+                 sync_dist=True, batch_size=len(batch))
 
         return total_loss
 
