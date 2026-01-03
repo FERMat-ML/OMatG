@@ -121,7 +121,7 @@ class SingleStepNoiseAnnealer(Combiner):
                 noisy_scale_detached = noisy_scale.detach()
                 # Log probability: -0.5 * (log(2 π sigma^2) + ((noisy_scale_detached - scale_mean) / sigma)^2)
                 # This maintains gradient connection to scale_mean
-                sigma = self._noise_scales[DataField.pos]
+                sigma = torch.tensor(self._noise_scales[DataField.pos])
                 log_probs_filtered = -0.5 * (
                         torch.log(2.0 * torch.pi * sigma**2)
                         + ((noisy_scale_detached - scale_mean) / sigma) ** 2
@@ -146,7 +146,7 @@ class SingleStepNoiseAnnealer(Combiner):
                 noisy_scale_detached = noisy_scale.detach()
                 # Log probability: -0.5 * (log(2 π sigma^2) + ((noisy_scale_detached - scale_mean) / sigma)^2)
                 # This maintains gradient connection to scale_mean
-                sigma = self._noise_scales[DataField.cell]
+                sigma = torch.tensor(self._noise_scales[DataField.cell])
                 log_probs_filtered = -0.5 * (
                         torch.log(2.0 * torch.pi * sigma**2)
                         + ((noisy_scale_detached - scale_mean) / sigma) ** 2

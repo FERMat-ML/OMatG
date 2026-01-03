@@ -78,7 +78,7 @@ class MultipleStepNoiseCombiner(Combiner):
                 # Log probability: -0.5 * (log(2 π sigma^2) + ((x - mean) / sigma)^2)
                 # We write it as ((noisy_res_b_detached - res_b) / sigma)^2 to maintain gradient connection to res_b.
                 # Sum log probs over all dimensions except atom dimension.
-                sigma = self._noise_scales[DataField.pos]
+                sigma = torch.tensor(self._noise_scales[DataField.pos])
                 log_probs_atoms = -0.5 * (
                         torch.log(2.0 * torch.pi * sigma**2)
                         + ((noisy_res_b_detached - res_b) / sigma) ** 2
@@ -101,7 +101,7 @@ class MultipleStepNoiseCombiner(Combiner):
                 # Log probability: -0.5 * (log(2 π sigma^2) + ((x - mean) / sigma)^2)
                 # We write it as ((noisy_res_b_detached - res_b) / sigma)^2 to maintain gradient connection to res_b.
                 # Sum log probs over all dimensions except batch.
-                sigma = self._noise_scales[DataField.cell]
+                sigma = torch.tensor(self._noise_scales[DataField.cell])
                 log_probs[DataField.cell] += -0.5 * (
                         torch.log(2.0 * torch.pi * sigma**2)
                         + ((noisy_res_b_detached - res_b) / sigma) ** 2
