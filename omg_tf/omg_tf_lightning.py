@@ -21,7 +21,8 @@ class OMGTFLightning(lightning.LightningModule):
 
     def __init__(self, residual_model: Model, combiner: Combiner, reward: Reward,
                  relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
-                 normalize_log_probs: bool = True, generation_xyz_filename: Optional[str] = None) -> None:
+                 grpo_share_x_0: bool = True, normalize_log_probs: bool = True,
+                 generation_xyz_filename: Optional[str] = None) -> None:
         """
         Constructor for OMGTFLightning.
 
@@ -44,6 +45,9 @@ class OMGTFLightning(lightning.LightningModule):
         :param grpo_num_groups:
             Number of GRPO groups per batch.
         :type grpo_num_groups: int
+        :param grpo_share_x_0:
+            If True, all group members share the same initial structure x_0.
+        :type grpo_share_x_0: bool
         :param normalize_log_probs:
             If True, scale log probabilities by number of dimensions before computing policy loss.
             This ensures that structures with different numbers of atoms contribute equally to
@@ -95,6 +99,7 @@ class OMGTFLightning(lightning.LightningModule):
             raise ValueError("GRPO batch size must be positive.")
         self.grpo_group_size = grpo_group_size
         self.grpo_num_groups = grpo_num_groups
+        self.grpo_share_x_0 = grpo_share_x_0
         # Change training batch size of base datamodule that is used by this class to grpo_num_groups.
         # We can then replicate each batch element grpo_group_size times during training and validation.
         # noinspection PyUnresolvedReferences
@@ -163,16 +168,25 @@ class OMGTFLightning(lightning.LightningModule):
 
     def training_step(self, batch: OMGData, batch_idx: int) -> torch.Tensor:
         # TODO: COMPARE TO RANDOM x_0 FOR EVERY GROUP MEMBER AND COMPUTING BASELINE REWARD FROM UNNOISED X_0
-        # Sample one x_0 per unique structure (not per group member).
-        x_0_per_structure = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
+        if self.grpo_share_x_0:
+            # Sample one x_0 per unique structure (not per group member).
+            x_0_per_structure = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
 
-        # Replicate each x_0 sample grpo_group_size times.
-        # This ensures all group members start from the same initial structure,
-        # so reward variance within groups comes from residual actions, not x_0 differences.
-        # noinspection PyTypeChecker,PyUnresolvedReferences
-        x_0 = Batch.from_data_list(
-            [x_0_per_structure[i // self.grpo_group_size]
-             for i in range(self.grpo_group_size * len(batch))]).to(self.device)
+            # Replicate each x_0 sample grpo_group_size times.
+            # This ensures all group members start from the same initial structure,
+            # so reward variance within groups comes from residual actions, not x_0 differences.
+            # noinspection PyTypeChecker,PyUnresolvedReferences
+            x_0 = Batch.from_data_list(
+                [x_0_per_structure[i // self.grpo_group_size]
+                for i in range(self.grpo_group_size * len(batch))]).to(self.device)
+        else:
+            # Replicate batch from training data according to GRPO group size.
+            # noinspection PyTypeChecker,PyUnresolvedReferences
+            grpo_batch = Batch.from_data_list(
+                [batch[i // self.grpo_group_size] for i in range(self.grpo_group_size * len(batch))]).to(self.device)
+
+            # Sample initial structures independently for each structure in the GRPO groups.
+            x_0 = base_modules["model"].sampler.sample_p_0(grpo_batch).to(self.device)
 
         x_1, log_probs, mean_squared_residuals = self.combiner.training_integrate(self.residual_model, x_0)
         assert all(len(lp) == len(x_0.n_atoms) for lp in log_probs.values())
