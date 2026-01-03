@@ -225,9 +225,9 @@ class OMGTFLightning(lightning.LightningModule):
                  batch_size=len(batch))
         self.log("reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("reward_std", rewards.std(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_std_within_group", within_group_std, on_step=False, on_epoch=True, prog_bar=False,
+        self.log("reward_std_within_group", within_group_std, on_step=True, on_epoch=True, prog_bar=True,
                  sync_dist=True, batch_size=len(batch))
 
         return total_loss
@@ -254,7 +254,7 @@ class OMGTFLightning(lightning.LightningModule):
 
         self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("val_reward_std", rewards.std(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
 
     def predict_step(self, batch: OMGData) -> OMGData:
