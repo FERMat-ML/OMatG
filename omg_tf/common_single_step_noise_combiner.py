@@ -84,11 +84,13 @@ class CommonSingleStepNoiseCombiner(Combiner):
                 noisy_res_b = res_b + self._noise_scales[DataField.pos] * noise_b
                 noisy_res_b_detached = noisy_res_b.detach()
                 # Treat sampled action as constant for likelihood-ratio gradient.
-                # Log probability of the specific sampled velocity x is -0.5 * ((x - mean) / sigma)^2.
+                # Log probability: -0.5 * (log(2 π sigma^2) + ((x - mean) / sigma)^2)
                 # We write it as ((noisy_res_b_detached - res_b) / sigma)^2 to maintain gradient connection to res_b.
                 # Sum log probs over all dimensions except atom dimension.
+                sigma = self._noise_scales[DataField.pos]
                 log_probs_atoms = -0.5 * (
-                        ((noisy_res_b_detached - res_b) / self._noise_scales[DataField.pos]) ** 2
+                        torch.log(2.0 * torch.pi * sigma**2)
+                        + ((noisy_res_b_detached - res_b) / sigma) ** 2
                 ).sum(dim=tuple(range(1, noise_b.ndim)))
                 # Sum log probs over all atoms in each structure to get batch-wise log probs.
                 log_probs[DataField.pos] += scatter_add(log_probs_atoms, x_t.batch)
@@ -105,11 +107,13 @@ class CommonSingleStepNoiseCombiner(Combiner):
                 noisy_res_b = res_b + self._noise_scales[DataField.cell] * noise_b
                 noisy_res_b_detached = noisy_res_b.detach()
                 # Treat sampled action as constant for likelihood-ratio gradient.
-                # Log probability of the specific sampled velocity x is -0.5 * ((x - mean) / sigma)^2.
+                # Log probability: -0.5 * (log(2 π sigma^2) + ((x - mean) / sigma)^2)
                 # We write it as ((noisy_res_b_detached - res_b) / sigma)^2 to maintain gradient connection to res_b.
                 # Sum log probs over all dimensions except batch.
+                sigma = self._noise_scales[DataField.cell]
                 log_probs[DataField.cell] += -0.5 * (
-                        ((noisy_res_b_detached - res_b) / self._noise_scales[DataField.cell]) ** 2
+                        torch.log(2.0 * torch.pi * sigma**2)
+                        + ((noisy_res_b_detached - res_b) / sigma) ** 2
                 ).sum(dim=tuple(range(1, noise_b.ndim)))
                 # Get batch-wise mean squared residuals for regularization.
                 mean_squared_residuals[DataField.cell] += (res_b ** 2).mean(dim=tuple(range(1, res_b.ndim)))
