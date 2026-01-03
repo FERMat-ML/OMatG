@@ -102,6 +102,7 @@ class OMGTFLightning(lightning.LightningModule):
 
         self.generation_xyz_filename = generation_xyz_filename
 
+    # noinspection PyUnresolvedReferences
     def setup(self, stage: str) -> None:
         """
         Set up the reward function with the training and validation datasets.
@@ -161,13 +162,17 @@ class OMGTFLightning(lightning.LightningModule):
         return losses
 
     def training_step(self, batch: OMGData, batch_idx: int) -> torch.Tensor:
-        # Replicate batch from training data according to GRPO group size.
-        # noinspection PyTypeChecker,PyUnresolvedReferences
-        grpo_batch = Batch.from_data_list(
-            [batch[i // self.grpo_group_size] for i in range(self.grpo_group_size * len(batch))]).to(self.device)
+        # TODO: COMPARE TO RANDOM x_0 FOR EVERY GROUP MEMBER AND COMPUTING BASELINE REWARD FROM UNNOISED X_0
+        # Sample one x_0 per unique structure (not per group member).
+        x_0_per_structure = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
 
-        # Sample initial structures independently for each structure in the GRPO groups.
-        x_0 = base_modules["model"].sampler.sample_p_0(grpo_batch).to(self.device)
+        # Replicate each x_0 sample grpo_group_size times.
+        # This ensures all group members start from the same initial structure,
+        # so reward variance within groups comes from residual actions, not x_0 differences.
+        # noinspection PyTypeChecker,PyUnresolvedReferences
+        x_0 = Batch.from_data_list(
+            [x_0_per_structure[i // self.grpo_group_size]
+             for i in range(self.grpo_group_size * len(batch))]).to(self.device)
 
         x_1, log_probs, mean_squared_residuals = self.combiner.training_integrate(self.residual_model, x_0)
         assert all(len(lp) == len(x_0.n_atoms) for lp in log_probs.values())
