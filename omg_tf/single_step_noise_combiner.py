@@ -68,7 +68,7 @@ class SingleStepNoiseCombiner(Combiner):
             structure_filter = mask_per_structure.nonzero(as_tuple=True)[0]
             non_noisy_filter = (~mask_per_structure).nonzero(as_tuple=True)[0]
 
-            # For structures not at their noisy timestep apply base + mean residual (no gradients).
+            # For structures not at their noisy timestep, apply base + mean residual (no gradients).
             if len(non_noisy_filter) > 0:
                 # noinspection PyUnresolvedReferences
                 non_noisy_x_t = Batch.from_data_list(x_t.index_select(non_noisy_filter)).to(x_t.pos.device)
@@ -88,7 +88,7 @@ class SingleStepNoiseCombiner(Combiner):
             if len(structure_filter) == 0:
                 continue
 
-            # For structures at their noisy timestep: apply base + noisy residual (with gradients).
+            # For structures at their noisy timestep, apply base + noisy residual (with gradients).
             # noinspection PyUnresolvedReferences
             filtered_x_t = Batch.from_data_list(x_t.index_select(structure_filter)).to(x_t.pos.device)
             filtered_time = time[structure_filter]

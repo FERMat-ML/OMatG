@@ -74,45 +74,64 @@ class SingleStepNoiseAnnealer(Combiner):
 
             mask_per_structure = (noise_time_steps == t_index)
             structure_filter = mask_per_structure.nonzero(as_tuple=True)[0]
-            if len(structure_filter) == 0:
-                # Only use base model velocities at this time step.
+            non_noisy_filter = (~mask_per_structure).nonzero(as_tuple=True)[0]
+
+            # For structures not at their noisy timestep, apply scaled velocities (no gradients).
+            if len(non_noisy_filter) > 0:
+                # noinspection PyUnresolvedReferences
+                non_noisy_x_t = Batch.from_data_list(x_t.index_select(non_noisy_filter)).to(x_t.pos.device)
+                non_noisy_time = time[non_noisy_filter]
+                with torch.no_grad():
+                    non_noisy_residual_output = residual_model(non_noisy_x_t, non_noisy_time)
                 if self._integrate_pos:
-                    x_t.pos = x_t.pos + base_model_output[DataField.pos.name + "_b"] * dt
+                    non_noisy_mask_per_atom = (~mask_per_structure).repeat_interleave(x_0.n_atoms)
+                    base_vel = base_model_output[DataField.pos.name + "_b"][non_noisy_mask_per_atom]
+                    # pos_s is per-structure scalar factor [non_noisy_batch_size, 1].
+                    scale = non_noisy_residual_output[DataField.pos.name + "_s"]
+                    # Expand scale to match atom dimension.
+                    scale_per_atom = scale.repeat_interleave(x_0.n_atoms[non_noisy_filter], dim=0)
+                    # Apply scaled velocity to non-noisy structures.
+                    x_t.pos[non_noisy_mask_per_atom] = (x_t.pos[non_noisy_mask_per_atom]
+                                                        + base_vel * (1.0 + scale_per_atom) * dt)
                 if self._integrate_cell:
-                    x_t.cell = x_t.cell + base_model_output[DataField.cell.name + "_b"] * dt
+                    base_vel = base_model_output[DataField.cell.name + "_b"][non_noisy_filter]
+                    # cell_s is per-structure scalar factor [non_noisy_batch_size, 1].
+                    scale = non_noisy_residual_output[DataField.cell.name + "_s"]
+                    # Expand scale to match cell dimensions [non_noisy_batch_size, 3, 3].
+                    scale_expanded = scale.unsqueeze(-1)  # [non_noisy_batch_size, 1, 1]
+                    # Apply scaled velocity to non-noisy structures.
+                    x_t.cell[non_noisy_filter] = (x_t.cell[non_noisy_filter]
+                                                  + base_vel * (1.0 + scale_expanded) * dt)
+
+            if len(structure_filter) == 0:
                 continue
 
+            # For structures at their noisy timestep, apply scaled velocities with noise (with gradients).
             # noinspection PyUnresolvedReferences
             filtered_x_t = Batch.from_data_list(x_t.index_select(structure_filter)).to(x_t.pos.device)
             filtered_time = time[structure_filter]
-            # Get scalar factors from residual model.
             filtered_residual_output = residual_model(filtered_x_t, filtered_time)
 
             if self._integrate_pos:
                 # pos_s is per-structure scalar factor [filtered_batch_size, 1]
-                scale_mean = filtered_residual_output[DataField.pos.name + "_s"]  # [batch, 1]
+                scale_mean = filtered_residual_output[DataField.pos.name + "_s"]
                 noise = torch.randn_like(scale_mean)
                 noisy_scale = scale_mean + self._noise_scales[DataField.pos] * noise
                 # Log probability: -0.5 * ((noisy_scale - scale_mean) / sigma)^2
                 # This maintains gradient connection to scale_mean (mathematically equivalent to -0.5 * noise^2)
                 log_probs_filtered = -0.5 * (
                         ((noisy_scale - scale_mean) / self._noise_scales[DataField.pos]) ** 2
-                ).sum(dim=-1)
+                ).squeeze(-1)
                 log_probs[DataField.pos][structure_filter] += log_probs_filtered
                 # Mean squared scale for regularization (already per-structure)
                 mean_squared_scales_filtered = (scale_mean ** 2).squeeze(-1)
                 mean_squared_scales[DataField.pos][structure_filter] += mean_squared_scales_filtered
-
-                # Apply base velocity to all structures
-                x_t.pos = x_t.pos + base_model_output[DataField.pos.name + "_b"] * dt
-                # For filtered structures, apply additional scaling: base_vel * scale * dt
-                # Total becomes: base_vel * dt + base_vel * scale * dt = base_vel * (1 + scale) * dt
+                # Apply base + scaled velocity to filtered structures.
                 mask_per_atom = mask_per_structure.repeat_interleave(x_0.n_atoms)
                 base_vel_filtered = base_model_output[DataField.pos.name + "_b"][mask_per_atom]
-                # Expand noisy_scale to match atom dimension
-                noisy_scale_per_atom = noisy_scale.repeat_interleave(
-                    x_0.n_atoms[structure_filter], dim=0)
-                x_t.pos[mask_per_atom] = x_t.pos[mask_per_atom] + base_vel_filtered * noisy_scale_per_atom * dt
+                # Expand noisy_scale to match atom dimension.
+                noisy_scale_per_atom = noisy_scale.repeat_interleave(x_0.n_atoms[structure_filter], dim=0)
+                x_t.pos[mask_per_atom] = x_t.pos[mask_per_atom] + base_vel_filtered * (1.0 + noisy_scale_per_atom) * dt
 
             if self._integrate_cell:
                 # cell_s is per-structure scalar factor [filtered_batch_size, 1]
@@ -123,20 +142,17 @@ class SingleStepNoiseAnnealer(Combiner):
                 # This maintains gradient connection to scale_mean (mathematically equivalent to -0.5 * noise^2)
                 log_probs_filtered = -0.5 * (
                         ((noisy_scale - scale_mean) / self._noise_scales[DataField.cell]) ** 2
-                ).sum(dim=-1)
+                ).squeeze(-1)
                 log_probs[DataField.cell][structure_filter] += log_probs_filtered
                 # Mean squared scale for regularization (already per-structure)
                 mean_squared_scales_filtered = (scale_mean ** 2).squeeze(-1)
                 mean_squared_scales[DataField.cell][structure_filter] += mean_squared_scales_filtered
-
-                # Apply base velocity to all structures
-                x_t.cell = x_t.cell + base_model_output[DataField.cell.name + "_b"] * dt
-                # For filtered structures, apply additional scaling
+                # Apply base + scaled velocity to filtered structures.
                 base_vel_filtered = base_model_output[DataField.cell.name + "_b"][mask_per_structure]
-                # Expand noisy_scale to match cell dimensions [batch, 3, 3]
-                noisy_scale_expanded = noisy_scale.unsqueeze(-1)  # [batch, 1, 1]
-                x_t.cell[mask_per_structure] = (x_t.cell[mask_per_structure] +
-                                                 base_vel_filtered * noisy_scale_expanded * dt)
+                # Expand noisy_scale to match cell dimensions [filtered_batch_size, 3, 3]
+                noisy_scale_expanded = noisy_scale.unsqueeze(-1)  # [filtered_batch_size, 1, 1]
+                x_t.cell[mask_per_structure] = (x_t.cell[mask_per_structure]
+                                                + base_vel_filtered * (1.0 + noisy_scale_expanded) * dt)
 
         # No mean over time necessary for mean_squared_scales since it consists only of a single timestep.
         return x_t, log_probs, mean_squared_scales
