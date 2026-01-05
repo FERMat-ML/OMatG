@@ -60,7 +60,7 @@ class MultipleStepNoiseCombiner(Combiner):
                      for key in self._integrated_data_fields}
         mean_squared_residuals = {key: torch.zeros(batch_size, device=x_0.pos.device)
                                   for key in self._integrated_data_fields}
-        for t_index in trange(1, len(times), desc="Integrating with residuals"):
+        for t_index in trange(1, len(times), desc="Integrating with residuals", position=1, leave=False):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             time = t.repeat(batch_size)

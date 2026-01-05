@@ -64,7 +64,7 @@ class SingleStepNoiseAnnealer(Combiner):
         mean_squared_scales = {key: torch.zeros(batch_size, device=x_0.pos.device)
                                for key in self._integrated_data_fields}
         noise_time_steps = torch.randint(low=1, high=len(times), size=(batch_size,), device=x_0.pos.device)
-        for t_index in trange(1, len(times), desc="Integrating with scaling"):
+        for t_index in trange(1, len(times), desc="Integrating with scaling", position=1, leave=False):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             time = t.repeat(batch_size)
@@ -187,7 +187,7 @@ class SingleStepNoiseAnnealer(Combiner):
         times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps, device=x_0.pos.device)
         x_t = x_0.clone()
 
-        for t_index in trange(1, len(times), desc="Integrating with scaling"):
+        for t_index in trange(1, len(times), desc="Integrating with scaling", position=1, leave=False):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             time = t.repeat(batch_size)

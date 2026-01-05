@@ -25,13 +25,16 @@ class Combiner(ABC):
     - Allow to apply only to subset of fields.
     """
 
-    def __init__(self, noise_scales: dict[str, float]) -> None:
+    def __init__(self, noise_scales: dict[str, float], integrate_noisy: bool = False) -> None:
         """
         Constructor of the Combiner class.
 
         :param noise_scales:
             Dictionary mapping data field names to noise scales for stochastic policy.
         :type noise_scales: dict[str, float]
+        :param integrate_noisy:
+            Whether to integrate noisy residuals.
+        :type integrate_noisy: bool
         """
         super().__init__()
 
@@ -111,6 +114,7 @@ class Combiner(ABC):
             raise ValueError("At least one of position, cell, or species must be integrated.")
 
         self._integration_time_steps = base_model.si.integration_time_steps
+        self._integrate_noisy = integrate_noisy
 
     def integrated_data_fields(self) -> list[DataField]:
         """
@@ -122,6 +126,7 @@ class Combiner(ABC):
         """
         return self._integrated_data_fields
 
+    @torch.no_grad()
     def integrate(self, residual_model: Model, x_0: OMGData) -> OMGData:
         """
         Integrate the structures x_0 from time 0 to 1 with an Euler integration scheme relying on the added velocities
@@ -138,12 +143,16 @@ class Combiner(ABC):
             Structures at final time 1 after integration with residuals.
         :rtype: OMGData
         """
+        if self._integrate_noisy:
+            x_t, _, _ = self.training_integrate(residual_model, x_0)
+            return x_t
+
         base_model = base_modules["model"].model
         assert base_model is not None
         batch_size = len(x_0.n_atoms)
         times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps, device=x_0.pos.device)
         x_t = x_0.clone()
-        for t_index in trange(1, len(times), desc="Integrating with residuals"):
+        for t_index in trange(1, len(times), desc="Integrating with residuals", position=1, leave=False):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             time = t.repeat(batch_size)

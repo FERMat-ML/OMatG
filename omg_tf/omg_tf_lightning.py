@@ -202,8 +202,10 @@ class OMGTFLightning(lightning.LightningModule):
                                         pos=x_1.pos[sl, :].detach(),
                                         pos_is_fractional=x_1.pos_is_fractional[i]))
 
-        rewards = torch.tensor(self.reward.compute(structures, Reward.ComputeStage.TRAIN),
-                               dtype=self.dtype).detach().to(self.device)
+        rewards, info_dict = self.reward.compute(structures, Reward.ComputeStage.TRAIN)
+        rewards = torch.tensor(rewards, dtype=self.dtype, device=self.device).detach()
+        info_dict = {key: torch.tensor(value, dtype=self.dtype, device=self.device).detach().mean()
+                     for key, value in info_dict.items()}
 
         losses = self._compute_grpo_losses(rewards, log_probs, mean_squared_residuals, x_0.n_atoms)
         total_loss = torch.tensor(0.0, device=self.device)
@@ -223,12 +225,13 @@ class OMGTFLightning(lightning.LightningModule):
         self.log_dict(losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
         self.log("loss_total", total_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("reward_mean", rewards.mean(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_std", rewards.std(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_std_within_group", within_group_std, on_step=True, on_epoch=True, prog_bar=True,
+        self.log("reward_std_within_group", within_group_std, on_step=False, on_epoch=True, prog_bar=True,
                  sync_dist=True, batch_size=len(batch))
+        self.log_dict(info_dict, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
 
         return total_loss
 
@@ -249,13 +252,16 @@ class OMGTFLightning(lightning.LightningModule):
                                         pos=x_1.pos[sl, :].detach(),
                                         pos_is_fractional=x_1.pos_is_fractional[i]))
 
-        rewards = torch.tensor(self.reward.compute(structures, Reward.ComputeStage.VAL),
-                               dtype=self.dtype).detach().to(self.device)
+        rewards, info_dict = self.reward.compute(structures, Reward.ComputeStage.VAL)
+        rewards = torch.tensor(rewards, dtype=self.dtype, device=self.device)
+        info_dict = {f"val_{key}": torch.tensor(value, dtype=self.dtype, device=self.device).mean()
+                     for key, value in info_dict.items()}
 
-        self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("val_reward_mean", rewards.mean(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("val_reward_std", rewards.std(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
+        self.log_dict(info_dict, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
 
     def predict_step(self, batch: OMGData) -> OMGData:
         # Sample initial structures independently.
