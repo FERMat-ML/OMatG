@@ -26,8 +26,6 @@ class TrajectoryData:
     sampled_residuals: list[dict[DataField, torch.Tensor]]
     # List of old log probabilities at each timestep, per field.
     old_log_probs: list[dict[DataField, torch.Tensor]]
-    # List of mean squared residuals at each timestep, per field.
-    mean_squared_residuals: list[dict[DataField, torch.Tensor]]
     # Final structures after integration.
     x_1: OMGData
     # Rewards for final structures.
@@ -281,7 +279,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
         states = []
         sampled_residuals = []
         old_log_probs = []
-        mean_squared_residuals = []
 
         # Integrate over time with residuals.
         for t_index in trange(1, len(times), desc="Rollout with residuals"):
@@ -295,7 +292,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
             step_sampled_residuals = {}
             step_old_log_probs = {}
-            step_mean_squared_residuals = {}
 
             if self.integrate_pos:
                 res_b = residual_output[DataField.pos.name + "_b"]
@@ -310,11 +306,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 log_probs_atoms = -0.5 * (torch.log(2.0 * torch.pi * (sigma ** 2))
                                           + noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
                 step_old_log_probs[DataField.pos] = scatter_add(log_probs_atoms, x_t.batch)
-
-                # Sum squared residuals over x, y, z dimensions.
-                squared_res = (res_b ** 2).sum(dim=-1)
-                # Get batch-wise mean squared residuals for regularization.
-                step_mean_squared_residuals[DataField.pos] = scatter_mean(squared_res, x_t.batch)
 
                 pos_b = base_model_output[DataField.pos.name + "_b"] + noisy_res_b
                 x_t.pos = x_t.pos + pos_b * dt
@@ -333,15 +324,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
                                    + noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
                 step_old_log_probs[DataField.cell] = log_prob
 
-                # Get batch-wise mean squared residuals for regularization.
-                step_mean_squared_residuals[DataField.cell] = (res_b ** 2).mean(dim=tuple(range(1, res_b.ndim)))
-
                 cell_b = base_model_output[DataField.cell.name + "_b"] + noisy_res_b
                 x_t.cell = x_t.cell + cell_b * dt
 
             sampled_residuals.append(step_sampled_residuals)
             old_log_probs.append(step_old_log_probs)
-            mean_squared_residuals.append(step_mean_squared_residuals)
 
         # Convert to Structures.
         x_1 = x_t.to('cpu')
@@ -375,7 +362,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
             states=states,
             sampled_residuals=sampled_residuals,
             old_log_probs=old_log_probs,
-            mean_squared_residuals=mean_squared_residuals,
             x_1=x_t,
             rewards=rewards,
             advantages=advantages
@@ -407,7 +393,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         opt = self.optimizers()
         opt.zero_grad()
 
-        for t_index in range(num_timesteps):
+        for t_index in trange(num_timesteps, desc="Perform PPO update"):
             t = times[t_index]
             time = t.repeat(batch_size)
             # Get stored state and move to device.
@@ -443,8 +429,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_epsilon, 1 + self.ppo_clip_epsilon)
                 policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
 
-                # Regularization loss.
-                reg_loss = trajectory.mean_squared_residuals[t_index][DataField.pos].to(self.device).mean()
+                # Regularization loss from current model output.
+                # Sum squared residuals over x, y, z dimensions.
+                squared_res = (res_b ** 2).sum(dim=-1)
+                # Get batch-wise mean squared residuals for regularization and then take mean over batch.
+                reg_loss = scatter_mean(squared_res, x_t.batch).mean()
 
                 # Add weighted losses.
                 timestep_loss += self.relative_costs[DataField.pos.name + "_policy"] * policy_loss
@@ -469,7 +458,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_epsilon, 1 + self.ppo_clip_epsilon)
                 policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
 
-                reg_loss = trajectory.mean_squared_residuals[t_index][DataField.cell].to(self.device).mean()
+                # Regularization loss from current model output.
+                # Get batch-wise mean squared residuals for regularization and then take mean over batch
+                reg_loss = (res_b ** 2).mean()
 
                 timestep_loss += self.relative_costs[DataField.cell.name + "_policy"] * policy_loss
                 timestep_loss += self.relative_costs[DataField.cell.name + "_regularization"] * reg_loss
