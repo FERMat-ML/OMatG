@@ -17,9 +17,9 @@ class MultipleStepNoiseCombiner(Combiner):
           small batch sizes and possibly accumulate_grad_batches.
     """
 
-    def __init__(self, noise_scales: dict[str, float]) -> None:
+    def __init__(self, noise_scales: dict[str, float], integrate_noisy: bool = False) -> None:
         """Constructor of the MultipleStepNoiseCombiner class."""
-        super().__init__(noise_scales=noise_scales)
+        super().__init__(noise_scales=noise_scales, integrate_noisy=integrate_noisy)
 
     def training_integrate(
             self,
