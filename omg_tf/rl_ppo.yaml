@@ -1,0 +1,61 @@
+model:
+  residual_model:
+    class_path: omg.model.model.Model
+    init_args:
+      encoder:
+        class_path: omg.model.encoders.cspnet_full.CSPNetFull
+        init_args:
+          initialize_zeros: true
+          pred_pos_scalar: true
+          pred_cell_scalar: true
+      head:
+        class_path: omg.model.heads.pass_through.PassThrough
+      time_embedder:
+        class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+        init_args:
+          dim: 256
+  reward:
+    class_path: omg_tf.rewards.VolumeReward
+  noise_scales:
+    pos: 0.1
+    cell: 0.1
+  relative_costs:
+    pos_policy: 0.45
+    cell_policy: 0.45
+    pos_regularization: 0.05
+    cell_regularization: 0.05
+  grpo_group_size: 64
+  grpo_num_groups: 10
+  grpo_share_x_0: false
+  ppo_clip_epsilon: 0.2
+  ppo_epochs: 2
+  normalize_log_probs: true
+trainer:
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: "best_val_loss_total"
+        save_top_k: 1
+        monitor: "val_loss_total"
+        save_weights_only: false
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        save_top_k: -1  # Store every checkpoint after 100 epochs.
+        monitor: "val_loss_total"
+        every_n_epochs: 100
+        save_weights_only: false
+    - class_path: lightning.pytorch.callbacks.TQDMProgressBar
+      init_args:
+        leave: True
+  gradient_clip_val: 0.5
+  gradient_clip_algorithm: "value"
+  num_sanity_val_steps: 0
+  precision: "32-true"
+  max_epochs: 2000
+  enable_progress_bar: true
+  #accumulate_grad_batches: 16
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 0.00019745455354877462
+    weight_decay: 0.0003111161289640361

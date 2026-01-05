@@ -58,7 +58,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
     def __init__(self, residual_model: Model, reward: Reward, noise_scales: dict[str, float],
                  relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
-                 grpo_share_x_0: bool = True, ppo_clip_ratio: float = 0.2, ppo_epochs: int = 1,
+                 grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1,
                  gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
                  normalize_log_probs: bool = True, generation_xyz_filename: Optional[str] = None) -> None:
         """
@@ -86,9 +86,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :param grpo_share_x_0:
             If True, all group members share the same initial structure x_0.
         :type grpo_share_x_0: bool
-        :param ppo_clip_ratio:
+        :param ppo_clip_epsilon:
             PPO clipping parameter epsilon. Ratio is clipped to [1-eps, 1+eps].
-        :type ppo_clip_ratio: float
+        :type ppo_clip_epsilon: float
         :param ppo_epochs:
             Number of PPO update epochs per rollout.
         :type ppo_epochs: int
@@ -198,7 +198,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
             raise ValueError("All relative costs must be non-negative.")
         if not abs(sum(relative_costs.values()) - 1.0) < 1e-10:
             raise ValueError("The sum of all cost factors should be equal to 1.")
-        integrated_data_fields = [df.name for df in self.combiner.integrated_data_fields()]
+        integrated_data_fields = [df.name for df in self.integrated_data_fields]
         for field in integrated_data_fields:
             if field + "_policy" not in relative_costs:
                 raise ValueError(f"Missing relative cost for policy of integrated data field '{field}'.")
@@ -230,11 +230,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
         # noinspection PyUnresolvedReferences
         base_modules["datamodule"].train_batch_size = grpo_num_groups
 
-        if not ppo_clip_ratio >= 0.0:
+        if not ppo_clip_epsilon >= 0.0:
             raise ValueError("PPO clip ratio must be non-negative.")
         if not ppo_epochs >= 1:
             raise ValueError("PPO epochs must be at least 1.")
-        self.ppo_clip_ratio = ppo_clip_ratio
+        self.ppo_clip_epsilon = ppo_clip_epsilon
         self.ppo_epochs = ppo_epochs
         self.gradient_clip_val = gradient_clip_val
         self.gradient_clip_algorithm = gradient_clip_algorithm
@@ -440,7 +440,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
                 # PPO ratio and clipped loss.
                 ratio = torch.exp(corrected_current_log_prob - corrected_old_log_prob.detach())
-                clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_ratio, 1 + self.ppo_clip_ratio)
+                clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_epsilon, 1 + self.ppo_clip_epsilon)
                 policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
 
                 # Regularization loss.
@@ -466,7 +466,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 ).sum(dim=tuple(range(1, sampled_action.ndim)))
 
                 ratio = torch.exp(current_log_prob - old_log_prob.detach())
-                clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_ratio, 1 + self.ppo_clip_ratio)
+                clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_epsilon, 1 + self.ppo_clip_epsilon)
                 policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
 
                 reg_loss = trajectory.mean_squared_residuals[t_index][DataField.cell].to(self.device).mean()
