@@ -9,6 +9,7 @@ from omg.globals import BIG_TIME, SMALL_TIME
 from omg.model.model import Model
 from omg.si import (SingleStochasticInterpolant, SingleStochasticInterpolantIdentity, SingleStochasticInterpolantOS,
                     DifferentialEquationType)
+from omg.si.abstracts import TimeChecker
 from omg.utils import DataField
 from omg_tf.base_modules import base_modules
 
@@ -292,5 +293,30 @@ class Reward(ABC):
         :return:
             (List of rewards per structure, info dictionary).
         :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
+        """
+        raise NotImplementedError
+
+
+class NoiseSchedule(ABC, TimeChecker):
+    """
+    Abstract base class for defining a noise schedule sigma(t).
+    """
+
+    def __init__(self) -> None:
+        """Constructor of the NoiseSchedule class."""
+        super().__init__()
+
+    @abstractmethod
+    def noise(self, t: torch.Tensor) -> torch.Tensor:
+        """
+        Get the noise level at times t.
+
+        :param t:
+            Times in [0, 1].
+        :type t: torch.Tensor
+
+        :return:
+            Noise levels sigma(t).
+        :rtype: torch.Tensor
         """
         raise NotImplementedError
