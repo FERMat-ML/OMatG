@@ -59,6 +59,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
     def __init__(self, residual_model: Model, reward: Reward, noise_scales: dict[str, float],
                  relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
                  grpo_share_x_0: bool = True, ppo_clip_ratio: float = 0.2, ppo_epochs: int = 1,
+                 gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
                  normalize_log_probs: bool = True, generation_xyz_filename: Optional[str] = None) -> None:
         """
         Constructor for OMGTFLightningPPO.
@@ -91,6 +92,12 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :param ppo_epochs:
             Number of PPO update epochs per rollout.
         :type ppo_epochs: int
+        :param gradient_clip_val:
+            Maximum gradient norm for clipping. Set to None to disable gradient clipping.
+        :type gradient_clip_val: Optional[float]
+        :param gradient_clip_algorithm:
+            Algorithm for gradient clipping: "norm" (clip by total norm) or "value" (clip by value).
+        :type gradient_clip_algorithm: str
         :param normalize_log_probs:
             If True, scale log probabilities by number of dimensions before computing policy loss.
         :type normalize_log_probs: bool
@@ -99,6 +106,10 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :type generation_xyz_filename: Optional[str]
         """
         super().__init__()
+
+        # Use manual optimization for multiple optimizer steps per training_step.
+        # See https://lightning.ai/docs/pytorch/stable/common/optimization.html.
+        self.automatic_optimization = False
 
         base_model = base_modules["model"]
         if base_model is None:
@@ -219,8 +230,14 @@ class OMGTFLightningPPO(lightning.LightningModule):
         # noinspection PyUnresolvedReferences
         base_modules["datamodule"].train_batch_size = grpo_num_groups
 
+        if not ppo_clip_ratio >= 0.0:
+            raise ValueError("PPO clip ratio must be non-negative.")
+        if not ppo_epochs >= 1:
+            raise ValueError("PPO epochs must be at least 1.")
         self.ppo_clip_ratio = ppo_clip_ratio
         self.ppo_epochs = ppo_epochs
+        self.gradient_clip_val = gradient_clip_val
+        self.gradient_clip_algorithm = gradient_clip_algorithm
 
         self.generation_xyz_filename = generation_xyz_filename
 
@@ -292,7 +309,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 # Sum log probs over all dimensions except atom dimension.
                 log_probs_atoms = -0.5 * (torch.log(2.0 * torch.pi * (sigma ** 2))
                                           + noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
-                # TODO: DO I NEED TO STORE IT ON EVERY STEP?
                 step_old_log_probs[DataField.pos] = scatter_add(log_probs_atoms, x_t.batch)
 
                 # Sum squared residuals over x, y, z dimensions.
@@ -365,26 +381,31 @@ class OMGTFLightningPPO(lightning.LightningModule):
             advantages=advantages
         )
 
-    def ppo_update(self, trajectory: TrajectoryData) -> dict[str, torch.Tensor]:
+    def ppo_update(self, trajectory: TrajectoryData) -> dict[str, float]:
         """
         Perform PPO update by re-evaluating policy at each timestep.
+
+        Accumulates gradients across all timesteps, then performs a single optimizer step.
 
         :param trajectory:
             Trajectory data from rollout.
         :type trajectory: TrajectoryData
 
         :return:
-            Dictionary of losses.
-        :rtype: dict[str, torch.Tensor]
+            Dictionary of average losses (for logging).
+        :rtype: dict[str, float]
         """
         batch_size = len(trajectory.rewards)
         times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
-
-        total_policy_losses = {field: torch.tensor(0.0, device=self.device)
-                               for field in self.integrated_data_fields}
-        total_reg_losses = {field: torch.tensor(0.0, device=self.device)
-                            for field in self.integrated_data_fields}
         num_timesteps = len(times) - 1
+
+        # Track losses for logging.
+        total_policy_losses = {field: 0.0 for field in self.integrated_data_fields}
+        total_reg_losses = {field: 0.0 for field in self.integrated_data_fields}
+
+        # Zero gradients once at the start, then accumulate across all timesteps.
+        opt = self.optimizers()
+        opt.zero_grad()
 
         for t_index in range(num_timesteps):
             t = times[t_index]
@@ -393,6 +414,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
             x_t = trajectory.states[t_index].to(self.device)
             # Re-evaluate residual model with gradients.
             residual_output = self.residual_model(x_t, time)
+            # Compute loss for this timestep.
+            timestep_loss = torch.tensor(0.0, device=self.device)
 
             if self.integrate_pos:
                 res_b = residual_output[DataField.pos.name + "_b"]
@@ -415,17 +438,23 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     corrected_current_log_prob = current_log_prob
                     corrected_old_log_prob = old_log_prob
 
-                # PPO ratio and clipped loss.  # TODO: Check this carefully. Shouldn't I multiply with log probs?
+                # PPO ratio and clipped loss.
                 ratio = torch.exp(corrected_current_log_prob - corrected_old_log_prob.detach())
                 clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_ratio, 1 + self.ppo_clip_ratio)
                 policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
-                total_policy_losses[DataField.pos] += policy_loss
 
                 # Regularization loss.
                 reg_loss = trajectory.mean_squared_residuals[t_index][DataField.pos].to(self.device).mean()
-                total_reg_losses[DataField.pos] += reg_loss
 
-            if DataField.cell in self.integrated_data_fields:
+                # Add weighted losses.
+                timestep_loss += self.relative_costs[DataField.pos.name + "_policy"] * policy_loss
+                timestep_loss += self.relative_costs[DataField.pos.name + "_regularization"] * reg_loss
+
+                # Track for logging.
+                total_policy_losses[DataField.pos] += policy_loss.item()
+                total_reg_losses[DataField.pos] += reg_loss.item()
+
+            if self.integrate_cell:
                 res_b = residual_output[DataField.cell.name + "_b"]
                 sampled_action = trajectory.sampled_residuals[t_index][DataField.cell].to(self.device)
                 old_log_prob = trajectory.old_log_probs[t_index][DataField.cell].to(self.device)
@@ -439,12 +468,26 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 ratio = torch.exp(current_log_prob - old_log_prob.detach())
                 clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_ratio, 1 + self.ppo_clip_ratio)
                 policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
-                total_policy_losses[DataField.cell] += policy_loss
 
                 reg_loss = trajectory.mean_squared_residuals[t_index][DataField.cell].to(self.device).mean()
-                total_reg_losses[DataField.cell] += reg_loss
 
-        # Average over timesteps.
+                timestep_loss += self.relative_costs[DataField.cell.name + "_policy"] * policy_loss
+                timestep_loss += self.relative_costs[DataField.cell.name + "_regularization"] * reg_loss
+
+                total_policy_losses[DataField.cell] += policy_loss.item()
+                total_reg_losses[DataField.cell] += reg_loss.item()
+
+            # Scale loss by 1/num_timesteps and accumulate gradients.
+            scaled_loss = timestep_loss / num_timesteps
+            self.manual_backward(scaled_loss)
+
+        # After all timesteps: clip gradients and perform single optimizer step.
+        if self.gradient_clip_val is not None:
+            self.clip_gradients(opt, gradient_clip_val=self.gradient_clip_val,
+                                gradient_clip_algorithm=self.gradient_clip_algorithm)
+        opt.step()
+
+        # Return average losses for logging.
         losses = {}
         for field in self.integrated_data_fields:
             losses[field.name + "_policy"] = total_policy_losses[field] / num_timesteps
@@ -474,7 +517,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 x_t.cell = x_t.cell + cell_b * dt
         return x_t
 
-    def training_step(self, batch: OMGData, batch_idx: int) -> torch.Tensor:
+    def training_step(self, batch: OMGData, batch_idx: int) -> None:
         if self.grpo_share_x_0:
             # Sample one x_0 per unique structure (not per group member).
             x_0_per_structure = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
@@ -498,18 +541,24 @@ class OMGTFLightningPPO(lightning.LightningModule):
         # Rollout without gradients.
         trajectory = self.rollout(x_0)
 
-        # PPO update with gradients (can do multiple epochs).
-        total_loss = torch.tensor(0.0, device=self.device)
-        for _ in range(self.ppo_epochs):
+        # PPO update with gradients.
+        # Each call to ppo_update performs one optimizer step.
+        # Multiple epochs = multiple passes over the same trajectory.
+        all_losses = {}
+        for epoch in range(self.ppo_epochs):
             losses = self.ppo_update(trajectory)
+            # Accumulate for logging (losses are already floats, not tensors).
+            for key, value in losses.items():
+                if key not in all_losses:
+                    all_losses[key] = 0.0
+                all_losses[key] += value
 
-            for loss_key in losses.keys():
-                weight = self.relative_costs[loss_key]
-                losses[loss_key] = weight * losses[loss_key]
-                total_loss += losses[loss_key]
+        # Average losses over PPO epochs for logging.
+        for key in all_losses:
+            all_losses[key] /= self.ppo_epochs
 
-        # Average over PPO epochs.
-        total_loss = total_loss / self.ppo_epochs
+        # Compute total loss for logging (not used for backprop since we use manual optimization).
+        total_loss = sum(self.relative_costs[key] * all_losses[key] for key in all_losses)
 
         # Compute diagnostics.
         rewards = trajectory.rewards
@@ -519,7 +568,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
             group_reward_stds.append(rewards[sl].std(unbiased=False).item())
         within_group_std = torch.tensor(group_reward_stds).mean()
 
-        self.log_dict(losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
+        self.log_dict(all_losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
         self.log("loss_total", total_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
         self.log("reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
@@ -528,8 +577,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
                  batch_size=len(batch))
         self.log("reward_std_within_group", within_group_std, on_step=True, on_epoch=True, prog_bar=True,
                  sync_dist=True, batch_size=len(batch))
-
-        return total_loss
 
     def validation_step(self, batch: OMGData, batch_idx: int) -> None:
         # Sample initial structures independently.
