@@ -281,7 +281,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         old_log_probs = []
 
         # Integrate over time with residuals.
-        for t_index in trange(1, len(times), desc="Rollout with residuals"):
+        for t_index in trange(1, len(times), desc="Rollout with residuals", position=1, leave=False):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             time = t.repeat(batch_size)
@@ -393,7 +393,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         opt = self.optimizers()
         opt.zero_grad()
 
-        for t_index in trange(num_timesteps, desc="Perform PPO update"):
+        for t_index in trange(num_timesteps, desc="Perform PPO update", position=1, leave=False):
             t = times[t_index]
             time = t.repeat(batch_size)
             # Get stored state and move to device.
@@ -494,7 +494,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         batch_size = len(x_0.n_atoms)
         times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
         x_t = x_0.clone()
-        for t_index in trange(1, len(times), desc="Integrating"):
+        for t_index in trange(1, len(times), desc="Integrating", position=1, leave=False):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             time = t.repeat(batch_size)
