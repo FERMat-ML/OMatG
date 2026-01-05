@@ -593,13 +593,17 @@ class OMGTFLightningPPO(lightning.LightningModule):
                                         pos=x_1.pos[sl, :].detach(),
                                         pos_is_fractional=x_1.pos_is_fractional[i]))
 
-        rewards = torch.tensor(self.reward.compute(structures, Reward.ComputeStage.VAL),
-                               dtype=self.dtype).detach().to(self.device)
+        # Compute rewards for final structures.
+        rewards, info_dict = self.reward.compute(structures, Reward.ComputeStage.VAL)
+        rewards = torch.tensor(rewards, dtype=self.dtype, device=self.device)
+        info_dict = {f"val_{key}": torch.tensor(value, dtype=self.dtype, device=self.device).mean()
+                     for key, value in info_dict.items()}
 
         self.log("val_reward_mean", rewards.mean(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
         self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
+        self.log_dict(info_dict, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
 
     def predict_step(self, batch: OMGData) -> OMGData:
         # Sample initial structures independently.
