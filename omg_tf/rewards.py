@@ -190,8 +190,7 @@ class CRMSEReward(Reward):
         :rtype: Dict[tuple[int, ...], List[PymatgenStructure]]
         """
         reduced_composition_map = {}
-        for structure in tqdm.tqdm(dataset.get_structure_dataset(), desc=desc, total=len(dataset), position=1,
-                                   leave=False):
+        for structure in tqdm.tqdm(dataset.get_structure_dataset(), desc=desc, total=len(dataset)):
             key = CRMSEReward._get_reduced_composition_key(structure.atomic_numbers.numpy(force=True))
             py_structure = structure.get_pymatgen_structure()
             if key not in reduced_composition_map:
@@ -289,10 +288,11 @@ class CRMSEReward(Reward):
             crmse_values = process_map(crmse_function, py_structures, relevant_structures_list,
                                        desc="Computing cRMSE rewards",
                                        chunksize=max(min(len(py_structures) // self._cpu_count, 100), 1),
-                                       max_workers=self._cpu_count)
+                                       max_workers=self._cpu_count, position=1, leave=False)
         else:
             crmse_values = list(map(crmse_function,
-                                    tqdm.tqdm(py_structures, desc="Computing cRMSE rewards", total=len(py_structures)),
+                                    tqdm.tqdm(py_structures, desc="Computing cRMSE rewards", total=len(py_structures),
+                                              position=1, leave=False),
                                     relevant_structures_list))
 
         return self._scale * (self._stol - np.array(crmse_values)), {"cRMSE": np.array(crmse_values)}
