@@ -190,7 +190,8 @@ class CRMSEReward(Reward):
         :rtype: Dict[tuple[int, ...], List[PymatgenStructure]]
         """
         reduced_composition_map = {}
-        for structure in tqdm.tqdm(dataset.get_structure_dataset(), desc=desc, total=len(dataset)):
+        for structure in tqdm.tqdm(dataset.get_structure_dataset(), desc=desc, total=len(dataset), position=1,
+                                   leave=False):
             key = CRMSEReward._get_reduced_composition_key(structure.atomic_numbers.numpy(force=True))
             py_structure = structure.get_pymatgen_structure()
             if key not in reduced_composition_map:
