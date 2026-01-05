@@ -32,6 +32,8 @@ class TrajectoryData:
     rewards: torch.Tensor
     # Advantages for final structures.
     advantages: torch.Tensor
+    # Info dictionary for final structures.
+    info_dict: dict[str, torch.Tensor]
 
 
 class OMGTFLightningPPO(lightning.LightningModule):
@@ -341,8 +343,10 @@ class OMGTFLightningPPO(lightning.LightningModule):
                                         pos_is_fractional=x_1.pos_is_fractional[i]))
 
         # Compute rewards for final structures.
-        rewards = torch.tensor(self.reward.compute(structures, Reward.ComputeStage.TRAIN),
-                               dtype=self.dtype, device=self.device)
+        rewards, info_dict = self.reward.compute(structures, Reward.ComputeStage.TRAIN)
+        rewards = torch.tensor(rewards, dtype=self.dtype, device=self.device)
+        info_dict = {key: torch.tensor(value, dtype=self.dtype, device=self.device).mean()
+                     for key, value in info_dict.items()}
 
         # Compute GRPO advantages.
         # Partial batch possible.
@@ -364,7 +368,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
             old_log_probs=old_log_probs,
             x_1=x_t,
             rewards=rewards,
-            advantages=advantages
+            advantages=advantages,
+            info_dict=info_dict,
         )
 
     def ppo_update(self, trajectory: TrajectoryData) -> dict[str, float]:
@@ -562,12 +567,14 @@ class OMGTFLightningPPO(lightning.LightningModule):
         self.log_dict(all_losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
         self.log("loss_total", total_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("reward_mean", rewards.mean(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_std", rewards.std(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_std_within_group", within_group_std, on_step=True, on_epoch=True, prog_bar=True,
+        self.log("reward_std_within_group", within_group_std, on_step=False, on_epoch=True, prog_bar=True,
                  sync_dist=True, batch_size=len(batch))
+        self.log_dict(trajectory.info_dict, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
+                      batch_size=len(batch))
 
     def validation_step(self, batch: OMGData, batch_idx: int) -> None:
         # Sample initial structures independently.
@@ -589,9 +596,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
         rewards = torch.tensor(self.reward.compute(structures, Reward.ComputeStage.VAL),
                                dtype=self.dtype).detach().to(self.device)
 
-        self.log("val_reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("val_reward_mean", rewards.mean(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("val_reward_std", rewards.std(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
 
     def predict_step(self, batch: OMGData) -> OMGData:

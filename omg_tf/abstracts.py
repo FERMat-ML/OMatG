@@ -260,7 +260,7 @@ class Reward(ABC):
         pass
 
     @abstractmethod
-    def compute(self, structures: Sequence[Structure], stage: ComputeStage) -> np.ndarray:
+    def compute(self, structures: Sequence[Structure], stage: ComputeStage) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """
         Compute rewards for a batch of structures.
 
@@ -268,6 +268,10 @@ class Reward(ABC):
         similarity to known stable structures). The stage parameter indicates whether the reward is being computed
         for training or validation, allowing the reward function to use the appropriate precomputed data from the
         set_datasets method.
+
+        Since rewards should always be maximized, the returned rewards might be transformed versions of the actual
+        property of interest. For logging purposes, additional information (e.g., the untransformed property values) can
+        be returned in the info dictionary. This dictionary maps string keys to numpy arrays of shape (batch_size,).
 
         :param structures:
             Sequence of Structure objects representing generated structures.
@@ -277,7 +281,7 @@ class Reward(ABC):
         :type stage: ComputeStage
 
         :return:
-            List of rewards, one per structure.
-        :rtype: np.ndarray
+            (List of rewards per structure, info dictionary).
+        :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
         """
         raise NotImplementedError

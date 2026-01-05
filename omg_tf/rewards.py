@@ -20,7 +20,8 @@ class VolumeReward(Reward):
         """Constructor for VolumeReward."""
         super().__init__()
 
-    def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage) -> np.ndarray:
+    def compute(self, structures: Sequence[Structure],
+                stage: Reward.ComputeStage) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """
         Compute rewards for a batch of structures.
 
@@ -35,10 +36,11 @@ class VolumeReward(Reward):
         :type stage: Reward.ComputeStage
 
         :return:
-            List of rewards, one per structure.
-        :rtype: np.ndarray
+            (List of rewards per structure, info dictionary).
+        :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
         """
-        return np.array([structure.get_ase_atoms().get_volume() for structure in structures])
+        volumes = np.array([structure.get_ase_atoms().get_volume() for structure in structures])
+        return volumes, {"volume": volumes}
 
 
 class CRMSEReward(Reward):
@@ -235,7 +237,8 @@ class CRMSEReward(Reward):
             rmses.append(stol if res is None else res[0])
         return min(rmses)
 
-    def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage) -> np.ndarray:
+    def compute(self, structures: Sequence[Structure],
+                stage: Reward.ComputeStage) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """
         Compute rewards for a batch of structures.
 
@@ -252,8 +255,8 @@ class CRMSEReward(Reward):
         :type stage: Reward.ComputeStage
 
         :return:
-            List of rewards, one per structure.
-        :rtype: np.ndarray
+            (List of rewards per structure, info dictionary).
+        :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
         """
         if stage == Reward.ComputeStage.TRAIN:
             reduced_composition_map = self._train_reduced_composition_map
@@ -291,7 +294,7 @@ class CRMSEReward(Reward):
                                     tqdm.tqdm(py_structures, desc="Computing cRMSE rewards", total=len(py_structures)),
                                     relevant_structures_list))
 
-        return self._scale * (self._stol - np.array(crmse_values))
+        return self._scale * (self._stol - np.array(crmse_values)), {"cRMSE": np.array(crmse_values)}
 
 
 class CompositeRewards(Reward):
@@ -349,7 +352,8 @@ class CompositeRewards(Reward):
         for reward_function in self._reward_functions:
             reward_function.set_pred_dataset(pred_dataset)
 
-    def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage) -> np.ndarray:
+    def compute(self, structures: Sequence[Structure],
+                stage: Reward.ComputeStage) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """
         Compute rewards for a batch of structures.
 
@@ -366,11 +370,15 @@ class CompositeRewards(Reward):
         :type stage: Reward.ComputeStage
 
         :return:
-            List of rewards, one per structure.
-        :rtype: np.ndarray
+            (List of rewards per structure, info dictionary).
+        :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
         """
         total_rewards = np.zeros(len(structures))
+        total_dict = {}
         for reward_function, weight in zip(self._reward_functions, self._weights):
-            rewards = reward_function.compute(structures, stage)
+            rewards, info_dict = reward_function.compute(structures, stage)
             total_rewards += weight * rewards
-        return total_rewards
+            for key, value in info_dict.items():
+                assert key not in total_dict
+                total_dict[key] = value
+        return total_rewards, total_dict
