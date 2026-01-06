@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from enum import auto, Enum
 from time import strftime
 from typing import Optional
 import lightning
@@ -54,12 +55,38 @@ class OMGTFLightningPPO(lightning.LightningModule):
     providing stronger learning signal than single-step approaches.
     """
 
+    class PolicyNormalization(Enum):
+        """
+        Enumeration of policy normalization modes for position residuals.
+        """
+
+        NONE = auto()
+        """
+        Use joint-action PPO ratio without normalization. 
+        
+        This is the standard PPO approach where the log probabilities of all atoms in a structure are summed
+        to compute the joint action log probability for the entire structure.
+        """
+        PER_STRUCTURE_WEIGHT = auto()
+        """
+        Use joint-action PPO ratio, but weight per-structure advantage by 1 / n_atoms.
+        
+        This normalization reduces the influence of larger structures on the policy update.
+        """
+        PER_ATOM_SURROGATE = auto()
+        """
+        Use per-atom PPO ratio averaged per structure.
+        
+        This normalization computes the PPO ratio for each atom individually and averages them per structure,
+        effectively normalizing the policy update on a per-atom basis.
+        """
+
     def __init__(self, residual_model: Model, reward: Reward, noise_schedules: dict[str, NoiseSchedule],
                  relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
                  grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1,
                  gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
-                 normalize_log_probs: bool = True, generation_xyz_filename: Optional[str] = None,
-                 reference_sigma: float = 1e-3) -> None:
+                 generation_xyz_filename: Optional[str] = None, reference_sigma: float = 1e-3,
+                 policy_normalization: str = "none") -> None:
         """
         Constructor for OMGTFLightningPPO.
 
@@ -97,15 +124,18 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :param gradient_clip_algorithm:
             Algorithm for gradient clipping: "norm" (clip by total norm) or "value" (clip by value).
         :type gradient_clip_algorithm: str
-        :param normalize_log_probs:
-            If True, scale log probabilities by number of dimensions before computing policy loss.
-        :type normalize_log_probs: bool
         :param generation_xyz_filename:
             Filename for saving generated structures during prediction.
         :type generation_xyz_filename: Optional[str]
         :param reference_sigma:
             Reference sigma value.
         :type reference_sigma: float
+        :param policy_normalization:
+            Policy normalization mode for position residuals. Options:
+            - "none": joint-action PPO ratio without normalization
+            - "per_structure_weight": joint-action ratio, but weight per-structure advantage by 1 / n_atoms
+            - "per_atom_surrogate": per-atom PPO ratio averaged per structure
+        :type policy_normalization: str
         """
         super().__init__()
 
@@ -192,9 +222,13 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
         self.integration_time_steps = base_model.si.integration_time_steps
 
-        if normalize_log_probs and DataField.pos not in self.integrated_data_fields:
-            raise ValueError("Log probability normalization requested but position is not an integrated field.")
-        self.normalize_log_probs = normalize_log_probs
+        try:
+            normalization = self.PolicyNormalization[policy_normalization.upper()]
+        except KeyError:
+            raise ValueError(f"Invalid policy normalization: {policy_normalization}")
+        if normalization != self.PolicyNormalization.NONE and DataField.pos not in self.integrated_data_fields:
+            raise ValueError("Policy normalization requires position to be an integrated field.")
+        self.policy_normalization = normalization
 
         if not all(cost >= 0.0 for cost in relative_costs.values()):
             raise ValueError("All relative costs must be non-negative.")
@@ -324,12 +358,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 step_sampled_residual_effects[DataField.pos] = res_b * dt + sigma * noise_b * sqrt_dt
 
                 # Log probability of x_t+1 given x_t for SDE.
-                # Sum log probs over all dimensions except atom dimension.
+                # Sum log probs over x, y, and z.
                 log_probs_atoms = -0.5 * (
                         torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (noise_b ** 2)
                 ).sum(dim=tuple(range(1, noise_b.ndim)))
-                # Sum over atoms to get batch-wise log probs.
-                step_old_log_probs[DataField.pos] = scatter_add(log_probs_atoms, x_t.batch)
+                step_old_log_probs[DataField.pos] = log_probs_atoms
 
             if self.integrate_cell:
                 base_b = base_model_output[DataField.cell.name + "_b"]
@@ -435,28 +468,46 @@ class OMGTFLightningPPO(lightning.LightningModule):
             if self.integrate_pos:
                 res_b = residual_output[DataField.pos.name + "_b"]
                 sigma = self.noise_schedules[DataField.pos].noise(t)
-                old_log_prob = trajectory.old_log_probs[t_index][DataField.pos]
+                old_log_probs_atoms = trajectory.old_log_probs[t_index][DataField.pos]
                 # This is (x_t+1 - x_t - base_b * dt).
                 sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.pos]
-
-                log_probs_atoms = -0.5 * (
+                # Sum log probs over x, y, z.
+                current_log_probs_atoms = -0.5 * (
                         torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
                         + ((sampled_residual_effect.detach() - res_b * dt) / (sigma * sqrt_dt)) ** 2
                 ).sum(dim=tuple(range(1, sampled_residual_effect.ndim)))
-                current_log_prob = scatter_add(log_probs_atoms, x_t.batch)
 
-                # Normalize by number of atoms if requested.
-                if self.normalize_log_probs:
-                    corrected_current_log_prob = current_log_prob / x_t.n_atoms
-                    corrected_old_log_prob = old_log_prob / x_t.n_atoms
+                if self.policy_normalization == self.PolicyNormalization.NONE:
+                    # Sum log probs over all atoms in each structure to get batch-wise log probs.
+                    old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
+                    current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
+                    ratio = torch.exp(current_log_prob - old_log_prob.detach())
+                    clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                    # Take mean over batch.
+                    policy_loss = -torch.min(ratio * trajectory.advantages,
+                                             clipped_ratio * trajectory.advantages).mean()
+                elif self.policy_normalization == self.PolicyNormalization.PER_ATOM_SURROGATE:
+                    ratio_atoms = torch.exp(current_log_probs_atoms - old_log_probs_atoms.detach())
+                    clipped_ratio_atoms = torch.clamp(ratio_atoms, 1.0 - self.ppo_clip_epsilon,
+                                                      1.0 + self.ppo_clip_epsilon)
+                    # Expand advantages to per-atom.
+                    advantages_atoms = trajectory.advantages[x_t.batch]
+                    loss_atoms = -torch.min(ratio_atoms * advantages_atoms,
+                                            clipped_ratio_atoms * advantages_atoms)
+                    # Average per structure and then take mean over batch.
+                    policy_loss = scatter_mean(loss_atoms, x_t.batch).mean()
                 else:
-                    corrected_current_log_prob = current_log_prob
-                    corrected_old_log_prob = old_log_prob
-
-                # PPO ratio and clipped loss.
-                ratio = torch.exp(corrected_current_log_prob - corrected_old_log_prob.detach())
-                clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_epsilon, 1 + self.ppo_clip_epsilon)
-                policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
+                    assert self.policy_normalization == self.PolicyNormalization.PER_STRUCTURE_WEIGHT
+                    # Sum log probs over all atoms in each structure to get batch-wise log probs.
+                    old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
+                    current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
+                    ratio = torch.exp(current_log_prob - old_log_prob.detach())
+                    clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                    # Weight advantages by 1 / n_atoms so that large structures do not dominate.
+                    weighted_advantages = trajectory.advantages / x_t.n_atoms.to(dtype=ratio.dtype)
+                    # Take mean over batch.
+                    policy_loss = -torch.min(ratio * weighted_advantages,
+                                             clipped_ratio * weighted_advantages).mean()
 
                 # Regularization loss as KL divergence between modified and base policy.
                 # KL(modified || base) = ||res_b||^2 * dt / (2 sigma^2) per timestep.
