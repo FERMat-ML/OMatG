@@ -550,6 +550,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 # This is (x_t+1 - x_t - base_b * dt).
                 sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.cell]
 
+                # Here we effectively choose the NONE policy normalization since the cell shape is always the same.
+                # Sum log probs over all cell dimensions except batch.
                 current_log_prob = -0.5 * (
                         torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
                         + ((sampled_residual_effect.detach() - res_b * dt) / (sigma * sqrt_dt)) ** 2
@@ -562,12 +564,12 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
 
                 # Regularization loss as KL divergence between modified and base policy.
-                # KL(modified || base) = ||res_b||^2 * dt / (2 sigma^2) per timestep.
-                # Get batch-wise mean squared residuals for regularization.
-                squared_res = (res_b ** 2).mean(dim=tuple(range(1, res_b.ndim)))
                 sigma_ref = torch.tensor(self.reference_sigma, device=self.device)
-                reg_loss = (torch.log(sigma_ref / sigma)
-                            + (sigma * sigma + squared_res * dt) / (2 * sigma_ref * sigma_ref) - 0.5).mean()
+                # This is the KL divergence per cell dimension.
+                kl_div = (torch.log(sigma_ref / sigma)
+                          + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
+                # Sum over cell dimensions and take mean over batch.
+                reg_loss = kl_div.sum(dim=tuple(range(1, kl_div.ndim))).mean()
 
                 timestep_loss += self.relative_costs[DataField.cell.name + "_policy"] * policy_loss
                 timestep_loss += self.relative_costs[DataField.cell.name + "_regularization"] * reg_loss
@@ -579,7 +581,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 # Entropy bonus when learning sigma.
                 if self.noise_schedules[DataField.cell].learnable():
                     # Entropy of Gaussian grows with log(σ). Take negative since we want to maximize entropy.
-                    entropy_loss = -0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5
+                    # Multiply by cell dimensions.
+                    entropy_loss = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5) * res_b.shape[1:].numel()
                     timestep_loss += self.relative_costs[DataField.cell.name + "_entropy"] * entropy_loss
                     total_entropy_losses[DataField.cell] += entropy_loss.item()
 
