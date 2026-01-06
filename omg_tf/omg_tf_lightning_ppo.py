@@ -518,14 +518,18 @@ class OMGTFLightningPPO(lightning.LightningModule):
                                              clipped_ratio * weighted_advantages).mean()
 
                 # Regularization loss as KL divergence between modified and base policy.
-                # KL(modified || base) = ||res_b||^2 * dt / (2 sigma^2) per timestep.
-                # Sum squared residuals over x, y, z.  TODO: IS THIS REALLY CORRECT? DO I WANT MEAN?
-                squared_res = (res_b ** 2).sum(dim=-1)
-                # Get batch-wise mean squared residuals for regularization.
-                squared_res_mean = scatter_mean(squared_res, x_t.batch)
                 sigma_ref = torch.tensor(self.reference_sigma, device=self.device)
-                reg_loss = (torch.log(sigma_ref / sigma)
-                            + (sigma * sigma + squared_res_mean * dt) / (2 * sigma_ref * sigma_ref) - 0.5).mean()
+                # This is the KL divergence per position dimension.
+                kl_div = (torch.log(sigma_ref / sigma)
+                          + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
+                # Sum over position dimensions to get per-atom KL.
+                per_atom_kl = kl_div.sum(dim=-1)
+                if self.policy_normalization == self.PolicyNormalization.NONE:
+                    # Sum over atoms to get per-structure KL and take mean over batch.
+                    reg_loss = scatter_add(per_atom_kl, x_t.batch).mean()
+                else:
+                    # Average over atoms to get per-structure KL and take mean over batch.
+                    reg_loss = scatter_mean(per_atom_kl, x_t.batch).mean()
 
                 # Add weighted losses.
                 timestep_loss += self.relative_costs[DataField.pos.name + "_policy"] * policy_loss
@@ -538,8 +542,15 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
                 # Entropy bonus when learning sigma.
                 if self.noise_schedules[DataField.pos].learnable():
-                    # Entropy of Gaussian grows with log(σ). Take negative since we want to maximize entropy.
-                    entropy_loss = -0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5
+                    # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
+                    # Multiply by position dimensions.
+                    entropy_loss_per_atom = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5) * res_b.shape[-1]
+                    if self.policy_normalization == self.PolicyNormalization.NONE:
+                        # Sum over atoms to get per-structure entropy and take mean over batch.
+                        entropy_loss = (entropy_loss_per_atom * x_t.n_atoms).mean()
+                    else:
+                        # Take mean over batch.
+                        entropy_loss = entropy_loss_per_atom.mean()
                     timestep_loss += self.relative_costs[DataField.pos.name + "_entropy"] * entropy_loss
                     total_entropy_losses[DataField.pos] += entropy_loss.item()
 
@@ -580,7 +591,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
                 # Entropy bonus when learning sigma.
                 if self.noise_schedules[DataField.cell].learnable():
-                    # Entropy of Gaussian grows with log(σ). Take negative since we want to maximize entropy.
+                    # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
                     # Multiply by cell dimensions.
                     entropy_loss = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5) * res_b.shape[1:].numel()
                     timestep_loss += self.relative_costs[DataField.cell.name + "_entropy"] * entropy_loss
