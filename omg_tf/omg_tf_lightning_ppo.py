@@ -5,6 +5,7 @@ from time import strftime
 from typing import Optional
 import lightning
 import torch
+import torch.nn as nn
 from torch_geometric.data import Batch
 from torch_scatter import scatter_add, scatter_mean
 from tqdm import trange
@@ -216,6 +217,12 @@ class OMGTFLightningPPO(lightning.LightningModule):
             self.noise_schedules = {DataField[key]: value for key, value in noise_schedules.items()}
         except KeyError as e:
             raise ValueError(f"Invalid data field key in noise schedules: {e}")
+        # Store learnable noise schedules in ModuleDict for proper registration.
+        self.noise_schedule_modules = nn.ModuleDict()
+        for field, schedule in self.noise_schedules.items():
+            if isinstance(schedule, nn.Module):
+                assert schedule.learnable()
+                self.noise_schedule_modules[field.name] = schedule
 
         if not len(self.integrated_data_fields) > 0:
             raise ValueError("At least one of position, cell, or species must be integrated.")
