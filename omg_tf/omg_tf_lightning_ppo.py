@@ -500,24 +500,35 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
     @torch.no_grad()
     def integrate(self, x_0: OMGData) -> OMGData:
-        """Integrate using mean residuals (no noise) for validation/prediction."""
+        """Integrate for validation/prediction."""
         base_model = base_modules["model"].model
         assert base_model is not None
         batch_size = len(x_0.n_atoms)
         times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
         x_t = x_0.clone()
-        for t_index in trange(1, len(times), desc="Integrating", position=1, leave=False):
+
+        # Integrate over time with residuals.
+        for t_index in trange(1, len(times), desc="Integrating with residuals", position=1, leave=False):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
+            sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
             base_model_output = base_model(x_t, time)
             residual_output = self.residual_model(x_t, time)
             if self.integrate_pos:
-                pos_b = base_model_output[DataField.pos.name + "_b"] + residual_output[DataField.pos.name + "_b"]
-                x_t.pos = x_t.pos + pos_b * dt
+                base_b = base_model_output[DataField.pos.name + "_b"]
+                res_b = residual_output[DataField.pos.name + "_b"]
+                noise_b = torch.randn_like(res_b)
+                sigma = self.noise_schedules[DataField.pos].noise(t)
+                # Euler-Maruyama update for SDE.
+                x_t.pos = x_t.pos + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt
             if self.integrate_cell:
-                cell_b = base_model_output[DataField.cell.name + "_b"] + residual_output[DataField.cell.name + "_b"]
-                x_t.cell = x_t.cell + cell_b * dt
+                base_b = base_model_output[DataField.cell.name + "_b"]
+                res_b = residual_output[DataField.cell.name + "_b"]
+                noise_b = torch.randn_like(res_b)
+                sigma = self.noise_schedules[DataField.cell].noise(t)
+                # Euler-Maruyama update for SDE.
+                x_t.cell = x_t.cell + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt
         return x_t
 
     def training_step(self, batch: OMGData, batch_idx: int) -> None:
@@ -587,7 +598,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
         # Sample initial structures independently.
         x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
 
-        # Use deterministic integration (no noise) for validation.
         x_1 = self.integrate(x_0)
 
         # Convert to Structures.
@@ -616,7 +626,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
         # Sample initial structures independently.
         x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
 
-        # Use deterministic integration (no noise) for prediction.
         x_1 = self.integrate(x_0)
 
         # Store initial and final structures as XYZ files.
