@@ -426,7 +426,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
             info_dict=info_dict,
         )
 
-    def ppo_update(self, trajectory: TrajectoryData) -> dict[str, float]:
+    def ppo_update(self, trajectory: TrajectoryData) -> tuple[dict[str, float], dict[str, float]]:
         """
         Perform PPO update by re-evaluating policy at each timestep.
 
@@ -437,8 +437,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :type trajectory: TrajectoryData
 
         :return:
-            Dictionary of average losses (for logging).
-        :rtype: dict[str, float]
+            Tuple of (average losses, clip fractions) for logging.
+        :rtype: tuple[dict[str, float], dict[str, float]]
         """
         batch_size = len(trajectory.rewards)
         times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
@@ -448,6 +448,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         total_policy_losses = {field: 0.0 for field in self.integrated_data_fields}
         total_reg_losses = {field: 0.0 for field in self.integrated_data_fields}
         total_entropy_losses = {field: 0.0 for field in self.integrated_data_fields}
+        total_clip_fractions = {field: 0.0 for field in self.integrated_data_fields}
 
         # Zero gradients once at the start, then accumulate across all timesteps.
         opt = self.optimizers()
@@ -483,6 +484,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
                     ratio = torch.exp(current_log_prob - old_log_prob.detach())
                     clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                    clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
+                                     | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
                     # Take mean over batch.
                     policy_loss = -torch.min(ratio * trajectory.advantages,
                                              clipped_ratio * trajectory.advantages).mean()
@@ -490,6 +493,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     ratio_atoms = torch.exp(current_log_probs_atoms - old_log_probs_atoms.detach())
                     clipped_ratio_atoms = torch.clamp(ratio_atoms, 1.0 - self.ppo_clip_epsilon,
                                                       1.0 + self.ppo_clip_epsilon)
+                    clip_mask_atoms = ((ratio_atoms < (1.0 - self.ppo_clip_epsilon))
+                                       | (ratio_atoms > (1.0 + self.ppo_clip_epsilon))).float()
+                    clip_fraction = scatter_mean(clip_mask_atoms, x_t.batch).mean()
                     # Expand advantages to per-atom.
                     advantages_atoms = trajectory.advantages[x_t.batch]
                     loss_atoms = -torch.min(ratio_atoms * advantages_atoms,
@@ -503,6 +509,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
                     ratio = torch.exp(current_log_prob - old_log_prob.detach())
                     clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                    clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
+                                     | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
                     # Weight advantages by 1 / n_atoms so that large structures do not dominate.
                     weighted_advantages = trajectory.advantages / x_t.n_atoms.to(dtype=ratio.dtype)
                     # Take mean over batch.
@@ -526,6 +534,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 # Track for logging.
                 total_policy_losses[DataField.pos] += policy_loss.item()
                 total_reg_losses[DataField.pos] += reg_loss.item()
+                total_clip_fractions[DataField.pos] += clip_fraction.item()
 
                 # Entropy bonus when learning sigma.
                 if self.noise_schedules[DataField.pos].learnable():
@@ -548,6 +557,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
                 ratio = torch.exp(current_log_prob - old_log_prob.detach())
                 clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_epsilon, 1 + self.ppo_clip_epsilon)
+                clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
+                                 | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
                 policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
 
                 # Regularization loss as KL divergence between modified and base policy.
@@ -563,6 +574,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
                 total_policy_losses[DataField.cell] += policy_loss.item()
                 total_reg_losses[DataField.cell] += reg_loss.item()
+                total_clip_fractions[DataField.cell] += clip_fraction.item()
 
                 # Entropy bonus when learning sigma.
                 if self.noise_schedules[DataField.cell].learnable():
@@ -584,13 +596,15 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
         # Return average losses for logging.
         losses = {}
+        clip_fractions = {}
         for field in self.integrated_data_fields:
             losses[field.name + "_policy"] = total_policy_losses[field] / num_timesteps
             losses[field.name + "_regularization"] = total_reg_losses[field] / num_timesteps
             if self.noise_schedules[field].learnable():
                 losses[field.name + "_entropy"] = total_entropy_losses[field] / num_timesteps
+            clip_fractions[field.name + "_clip_fraction"] = total_clip_fractions[field] / num_timesteps
 
-        return losses
+        return losses, clip_fractions
 
     @torch.no_grad()
     def integrate(self, x_0: OMGData) -> OMGData:
@@ -653,17 +667,24 @@ class OMGTFLightningPPO(lightning.LightningModule):
         # Each call to ppo_update performs one optimizer step.
         # Multiple epochs = multiple passes over the same trajectory.
         all_losses = {}
+        all_clip_fractions = {}
         for epoch in range(self.ppo_epochs):
-            losses = self.ppo_update(trajectory)
+            losses, clip_fractions = self.ppo_update(trajectory)
             # Accumulate for logging (losses are already floats, not tensors).
             for key, value in losses.items():
                 if key not in all_losses:
                     all_losses[key] = 0.0
                 all_losses[key] += value
+            for key, value in clip_fractions.items():
+                if key not in all_clip_fractions:
+                    all_clip_fractions[key] = 0.0
+                all_clip_fractions[key] += value
 
         # Average losses over PPO epochs for logging.
         for key in all_losses:
             all_losses[key] /= self.ppo_epochs
+        for key in all_clip_fractions:
+            all_clip_fractions[key] /= self.ppo_epochs
 
         # Compute total loss for logging (not used for backprop since we use manual optimization).
         total_loss = sum(self.relative_costs[key] * all_losses[key] for key in all_losses)
@@ -679,6 +700,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
         self.log_dict(all_losses, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
         self.log("loss_total", total_loss, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
+        self.log_dict(all_clip_fractions, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
+                      batch_size=len(batch))
         self.log("reward_mean", rewards.mean(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
         self.log("reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
