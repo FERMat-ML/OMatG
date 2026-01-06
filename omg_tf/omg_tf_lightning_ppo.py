@@ -320,7 +320,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 # Euler-Maruyama update for SDE.
                 x_t.pos = x_t.pos + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt
 
-                # Effectively x_t+1 - x_t - base_b * dt.
+                # Effectively x_t+1 - x_t - base_b * dt. TODO: Do I have to worry about sigma being in here?
                 step_sampled_residual_effects[DataField.pos] = res_b * dt + sigma * noise_b * sqrt_dt
 
                 # Log probability of x_t+1 given x_t for SDE.
@@ -460,7 +460,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
                 # Regularization loss as KL divergence between modified and base policy.
                 # KL(modified || base) = ||res_b||^2 * dt / (2 sigma^2) per timestep.
-                # Sum squared residuals over x, y, z.
+                # Sum squared residuals over x, y, z.  TODO: IS THIS REALLY CORRECT? DO I WANT MEAN?
                 squared_res = (res_b ** 2).sum(dim=-1)
                 # Get batch-wise mean squared residuals for regularization.
                 squared_res_mean = scatter_mean(squared_res, x_t.batch)
@@ -649,7 +649,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                          batch_size=len(batch))
 
     def validation_step(self, batch: OMGData, batch_idx: int) -> None:
-        # Sample initial structures independently.
+        # Sample initial structures independently.  # TODO: VALIDATE that NOISING LEAVES METRIC IN TACT?
         x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
 
         x_1 = self.integrate(x_0)
