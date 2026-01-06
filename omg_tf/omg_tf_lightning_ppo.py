@@ -439,11 +439,12 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_epsilon, 1 + self.ppo_clip_epsilon)
                 policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
 
-                # Regularization loss from current model output.
-                # Sum squared residuals over x, y, z dimensions.
+                # Regularization loss as KL divergence between modified and base policy.
+                # KL(modified || base) = ||res_b||^2 ^ dt / (2 sigma^2) per timestep.
+                # Sum squared residuals over x, y, z.
                 squared_res = (res_b ** 2).sum(dim=-1)
                 # Get batch-wise mean squared residuals for regularization and then take mean over batch.
-                reg_loss = scatter_mean(squared_res, x_t.batch).mean()
+                reg_loss = scatter_mean(squared_res, x_t.batch).mean() * dt / (2 * sigma ** 2)
 
                 # Add weighted losses.
                 timestep_loss += self.relative_costs[DataField.pos.name + "_policy"] * policy_loss
@@ -469,9 +470,10 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_epsilon, 1 + self.ppo_clip_epsilon)
                 policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
 
-                # Regularization loss from current model output.
+                # Regularization loss as KL divergence between modified and base policy.
+                # KL(modified || base) = ||res_b||^2 ^ dt / (2 sigma^2) per timestep.
                 # Get batch-wise mean squared residuals for regularization and then take mean over batch
-                reg_loss = (res_b ** 2).mean()
+                reg_loss = (res_b ** 2).mean() * dt / (2.0 * sigma ** 2)
 
                 timestep_loss += self.relative_costs[DataField.cell.name + "_policy"] * policy_loss
                 timestep_loss += self.relative_costs[DataField.cell.name + "_regularization"] * reg_loss
