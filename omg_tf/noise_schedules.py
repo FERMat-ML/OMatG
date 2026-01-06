@@ -37,6 +37,16 @@ class ConstantNoiseSchedule(NoiseSchedule):
         self._check_t(t)
         return torch.full_like(t, self._noise_scale)
 
+    def learnable(self) -> bool:
+        """
+        Return whether the noise schedule has learnable parameters.
+
+        :return:
+            True if the noise schedule has learnable parameters, False otherwise.
+        :rtype: bool
+        """
+        return False
+
 
 class SqrtNoiseSchedule(NoiseSchedule):
     """
@@ -74,6 +84,16 @@ class SqrtNoiseSchedule(NoiseSchedule):
         """
         self._check_t(t)
         return self._noise_scale * torch.sqrt((1 - t) / t)
+
+    def learnable(self) -> bool:
+        """
+        Return whether the noise schedule has learnable parameters.
+
+        :return:
+            True if the noise schedule has learnable parameters, False otherwise.
+        :rtype: bool
+        """
+        return False
 
 
 class MLPNoiseSchedule(NoiseSchedule):
@@ -140,6 +160,16 @@ class MLPNoiseSchedule(NoiseSchedule):
         # Make sure that the output is zero if model output is zero, softplus(0) = log(2).
         output -= torch.log(torch.tensor(2.0, device=t.device))
         return self._initial_noise_scale + output
+
+    def learnable(self) -> bool:
+        """
+        Return whether the noise schedule has learnable parameters.
+
+        :return:
+            True if the noise schedule has learnable parameters, False otherwise.
+        :rtype: bool
+        """
+        return True
 
 
 if __name__ == '__main__':

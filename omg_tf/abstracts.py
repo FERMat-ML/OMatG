@@ -320,3 +320,14 @@ class NoiseSchedule(ABC, TimeChecker):
         :rtype: torch.Tensor
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def learnable(self) -> bool:
+        """
+        Return whether the noise schedule has learnable parameters.
+
+        :return:
+            True if the noise schedule has learnable parameters, False otherwise.
+        :rtype: bool
+        """
+        raise NotImplementedError
