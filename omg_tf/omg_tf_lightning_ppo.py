@@ -13,7 +13,7 @@ from omg.model.model import Model
 from omg.si import (DifferentialEquationType, SingleStochasticInterpolant, SingleStochasticInterpolantOS,
                     SingleStochasticInterpolantIdentity)
 from omg.utils import DataField, xyz_saver
-from omg_tf.abstracts import Reward
+from omg_tf.abstracts import Reward, NoiseSchedule
 from omg_tf.base_modules import base_modules
 
 
@@ -22,12 +22,10 @@ class TrajectoryData:
     """Stores trajectory data from rollout for PPO-style training."""
     # List of x_t states at each timestep (detached).
     states: list[OMGData]
-    # List of sampled noisy residuals at each timestep, per field.
-    sampled_residuals: list[dict[DataField, torch.Tensor]]
-    # List of old log probabilities at each timestep, per field.
+    # List of residual model effects at each timestep per field.
+    sampled_residual_effects: list[dict[DataField, torch.Tensor]]
+    # List of old log probabilities at each timestep per field.
     old_log_probs: list[dict[DataField, torch.Tensor]]
-    # Final structures after integration.
-    x_1: OMGData
     # Rewards for final structures.
     rewards: torch.Tensor
     # Advantages for final structures.
@@ -56,7 +54,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
     providing stronger learning signal than single-step approaches.
     """
 
-    def __init__(self, residual_model: Model, reward: Reward, noise_scales: dict[str, float],
+    def __init__(self, residual_model: Model, reward: Reward, noise_schedules: dict[str, NoiseSchedule],
                  relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
                  grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1,
                  gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
@@ -70,9 +68,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :param reward:
             The reward function to optimize.
         :type reward: Reward
-        :param noise_scales:
-            Dictionary mapping data field names to noise scales for stochastic policy.
-        :type noise_scales: dict[str, float]
+        :param noise_schedules:
+            Dictionary mapping data field names to noise schedules for stochastic policy.
+        :type noise_schedules: dict[str, float]
         :param relative_costs:
             Dictionary of relative costs for each loss term (policy and regularization per field).
             Must sum to 1.0.
@@ -140,11 +138,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
             else:
                 raise ValueError("Unsupported stochastic interpolant for position residual integration.")
             self.integrated_data_fields.append(DataField.pos)
-            if DataField.pos.name not in noise_scales:
-                raise ValueError("Noise scale for position residuals must be provided when integrating positions.")
+            if DataField.pos.name not in noise_schedules:
+                raise ValueError("Noise schedule for position residuals must be provided when integrating positions.")
         else:
-            if DataField.pos.name in noise_scales:
-                raise ValueError("Noise scale for position residuals provided but positions are not integrated.")
+            if DataField.pos.name in noise_schedules:
+                raise ValueError("Noise schedule for position residuals provided but positions are not integrated.")
 
         cell_interpolant = base_model.si.get_stochastic_interpolant(DataField.cell.name)
         self.integrate_cell = not isinstance(cell_interpolant, SingleStochasticInterpolantIdentity)
@@ -166,24 +164,24 @@ class OMGTFLightningPPO(lightning.LightningModule):
             else:
                 raise ValueError("Unsupported stochastic interpolant for cell residual integration.")
             self.integrated_data_fields.append(DataField.cell)
-            if DataField.cell.name not in noise_scales:
-                raise ValueError("Noise scale for cell residuals must be provided when integrating cell.")
+            if DataField.cell.name not in noise_schedules:
+                raise ValueError("Noise schedule for cell residuals must be provided when integrating cell.")
         else:
-            if DataField.cell.name in noise_scales:
-                raise ValueError("Noise scale for cell residuals provided but cell is not integrated.")
+            if DataField.cell.name in noise_schedules:
+                raise ValueError("Noise schedule for cell residuals provided but cell is not integrated.")
 
         species_interpolant = base_model.si.get_stochastic_interpolant(DataField.species.name)
         self.integrate_species = not isinstance(species_interpolant, SingleStochasticInterpolantIdentity)
         if self.integrate_species:
             raise ValueError("Residual integration for species is not supported yet.")
         else:
-            if DataField.species.name in noise_scales:
-                raise ValueError("Noise scale for species residuals provided but species are not integrated.")
+            if DataField.species.name in noise_schedules:
+                raise ValueError("Noise schedule for species residuals provided but species are not integrated.")
 
         try:
-            self.noise_scales = {DataField[key]: value for key, value in noise_scales.items()}
+            self.noise_schedules = {DataField[key]: value for key, value in noise_schedules.items()}
         except KeyError as e:
-            raise ValueError(f"Invalid data field key in noise scales: {e}")
+            raise ValueError(f"Invalid data field key in noise schedules: {e}")
 
         if not len(self.integrated_data_fields) > 0:
             raise ValueError("At least one of position, cell, or species must be integrated.")
@@ -279,58 +277,64 @@ class OMGTFLightningPPO(lightning.LightningModule):
         times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
         x_t = x_0.clone()
         states = []
-        sampled_residuals = []
         old_log_probs = []
+        sampled_residual_effects = []
 
         # Integrate over time with residuals.
         for t_index in trange(1, len(times), desc="Rollout with residuals", position=1, leave=False):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
+            sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
             states.append(x_t.clone())
 
             base_model_output = base_model(x_t, time)
             residual_output = self.residual_model(x_t, time)
 
-            step_sampled_residuals = {}
+            step_sampled_residual_effects = {}
             step_old_log_probs = {}
 
             if self.integrate_pos:
+                base_b = base_model_output[DataField.pos.name + "_b"]
                 res_b = residual_output[DataField.pos.name + "_b"]
                 noise_b = torch.randn_like(res_b)
-                sigma = torch.tensor(self.noise_scales[DataField.pos], device=self.device)
-                noisy_res_b = res_b + sigma * noise_b
+                sigma = self.noise_schedules[DataField.pos].noise(t)
+                # Euler-Maruyama update for SDE.
+                x_t.pos = x_t.pos + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt
 
-                step_sampled_residuals[DataField.pos] = noisy_res_b.clone()
-                # Log probability: -0.5 * (log(2 π sigma^2) + ((x - mean) / sigma)^2)
-                # This simplifies to -0.5 * (log(2 π sigma^2) + noise_b^2) since noisy_res_b = res_b + sigma * noise_b.
+                # Effectively x_t+1 - x_t - base_b * dt.
+                step_sampled_residual_effects[DataField.pos] = res_b * dt + sigma * noise_b * sqrt_dt
+
+                # Log probability of x_t+1 given x_t for SDE.
                 # Sum log probs over all dimensions except atom dimension.
-                log_probs_atoms = -0.5 * (torch.log(2.0 * torch.pi * (sigma ** 2))
-                                          + noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
+                log_probs_atoms = -0.5 * (
+                        torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (noise_b ** 2)
+                ).sum(dim=tuple(range(1, noise_b.ndim)))
+                # Sum over atoms to get batch-wise log probs.
                 step_old_log_probs[DataField.pos] = scatter_add(log_probs_atoms, x_t.batch)
 
-                pos_b = base_model_output[DataField.pos.name + "_b"] + noisy_res_b
-                x_t.pos = x_t.pos + pos_b * dt
-
             if self.integrate_cell:
+                base_b = base_model_output[DataField.cell.name + "_b"]
                 res_b = residual_output[DataField.cell.name + "_b"]
                 noise_b = torch.randn_like(res_b)
-                sigma = torch.tensor(self.noise_scales[DataField.cell], device=self.device)
-                noisy_res_b = res_b + sigma * noise_b
+                sigma = self.noise_schedules[DataField.cell].noise(t)
+                # Euler-Maruyama update for SDE.
+                x_t.cell = x_t.cell + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt
 
-                step_sampled_residuals[DataField.cell] = noisy_res_b.clone()
-                # Log probability: -0.5 * (log(2 π sigma^2) + ((x - mean) / sigma)^2)
-                # This simplifies to -0.5 * (log(2 π sigma^2) + noise_b^2) since noisy_res_b = res_b + sigma * noise_b.
+                # Effectively x_t+1 - x_t - base_b * dt.
+                step_sampled_residual_effects[DataField.cell] = res_b * dt + sigma * noise_b * sqrt_dt
+
+                # Log probability of x_t+1 given x_t for SDE.
                 # Sum log probs over all dimensions except batch.
-                log_prob = -0.5 * (torch.log(2.0 * torch.pi * (sigma ** 2))
-                                   + noise_b ** 2).sum(dim=tuple(range(1, noise_b.ndim)))
-                step_old_log_probs[DataField.cell] = log_prob
+                step_old_log_probs[DataField.cell] = -0.5 * (
+                        torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (noise_b ** 2)
+                ).sum(dim=tuple(range(1, noise_b.ndim)))
 
-                cell_b = base_model_output[DataField.cell.name + "_b"] + noisy_res_b
-                x_t.cell = x_t.cell + cell_b * dt
-
-            sampled_residuals.append(step_sampled_residuals)
+            sampled_residual_effects.append(step_sampled_residual_effects)
             old_log_probs.append(step_old_log_probs)
+
+        # Append final state.
+        states.append(x_t.clone())
 
         # Convert to Structures.
         x_1 = x_t.to('cpu')
@@ -364,9 +368,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
         return TrajectoryData(
             states=states,
-            sampled_residuals=sampled_residuals,
+            sampled_residual_effects=sampled_residual_effects,
             old_log_probs=old_log_probs,
-            x_1=x_t,
             rewards=rewards,
             advantages=advantages,
             info_dict=info_dict,
@@ -400,9 +403,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
         for t_index in trange(num_timesteps, desc="Perform PPO update", position=1, leave=False):
             t = times[t_index]
+            dt = times[t_index + 1] - times[t_index]
+            sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
             # Get stored state and move to device.
-            x_t = trajectory.states[t_index].to(self.device)
+            x_t = trajectory.states[t_index]
             # Re-evaluate residual model with gradients.
             residual_output = self.residual_model(x_t, time)
             # Compute loss for this timestep.
@@ -410,15 +415,15 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
             if self.integrate_pos:
                 res_b = residual_output[DataField.pos.name + "_b"]
-                sampled_action = trajectory.sampled_residuals[t_index][DataField.pos].to(self.device)
-                old_log_prob = trajectory.old_log_probs[t_index][DataField.pos].to(self.device)
+                sigma = self.noise_schedules[DataField.pos].noise(t)
+                old_log_prob = trajectory.old_log_probs[t_index][DataField.pos]
+                # This is (x_t+1 - x_t - base_b * dt).
+                sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.pos]
 
-                # Compute current log probability with gradients.
-                sigma = torch.tensor(self.noise_scales[DataField.pos], device=self.device)
                 log_probs_atoms = -0.5 * (
-                        torch.log(2.0 * torch.pi * (sigma ** 2))
-                        + ((sampled_action.detach() - res_b) / sigma) ** 2
-                ).sum(dim=tuple(range(1, sampled_action.ndim)))
+                        torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
+                        + ((sampled_residual_effect.detach() - res_b * dt) / (sigma * sqrt_dt)) ** 2
+                ).sum(dim=tuple(range(1, sampled_residual_effect.ndim)))
                 current_log_prob = scatter_add(log_probs_atoms, x_t.batch)
 
                 # Normalize by number of atoms if requested.
@@ -450,14 +455,15 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
             if self.integrate_cell:
                 res_b = residual_output[DataField.cell.name + "_b"]
-                sampled_action = trajectory.sampled_residuals[t_index][DataField.cell].to(self.device)
-                old_log_prob = trajectory.old_log_probs[t_index][DataField.cell].to(self.device)
+                sigma = self.noise_schedules[DataField.cell].noise(t)
+                old_log_prob = trajectory.old_log_probs[t_index][DataField.cell]
+                # This is (x_t+1 - x_t - base_b * dt).
+                sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.cell]
 
-                sigma = torch.tensor(self.noise_scales[DataField.cell], device=self.device)
                 current_log_prob = -0.5 * (
-                        torch.log(2.0 * torch.pi * (sigma ** 2))
-                        + ((sampled_action.detach() - res_b) / sigma) ** 2
-                ).sum(dim=tuple(range(1, sampled_action.ndim)))
+                        torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
+                        + ((sampled_residual_effect.detach() - res_b * dt) / (sigma * sqrt_dt)) ** 2
+                ).sum(dim=tuple(range(1, sampled_residual_effect.ndim)))
 
                 ratio = torch.exp(current_log_prob - old_log_prob.detach())
                 clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_epsilon, 1 + self.ppo_clip_epsilon)
@@ -479,6 +485,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
         # After all timesteps: clip gradients and perform single optimizer step.
         if self.gradient_clip_val is not None:
+            # noinspection PyTypeChecker
             self.clip_gradients(opt, gradient_clip_val=self.gradient_clip_val,
                                 gradient_clip_algorithm=self.gradient_clip_algorithm)
         opt.step()
