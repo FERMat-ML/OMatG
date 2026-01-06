@@ -55,9 +55,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
     providing stronger learning signal than single-step approaches.
     """
 
-    class PolicyNormalization(Enum):
+    class PositionNormalization(Enum):
         """
-        Enumeration of policy normalization modes for position residuals.
+        Enumeration of position normalization modes for position residuals.
         """
 
         NONE = auto()
@@ -86,7 +86,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                  grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1,
                  gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
                  generation_xyz_filename: Optional[str] = None, reference_sigma: float = 1e-3,
-                 policy_normalization: str = "none") -> None:
+                 position_normalization: str = "none") -> None:
         """
         Constructor for OMGTFLightningPPO.
 
@@ -130,12 +130,12 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :param reference_sigma:
             Reference sigma value.
         :type reference_sigma: float
-        :param policy_normalization:
-            Policy normalization mode for position residuals. Options:
+        :param position_normalization:
+            Position normalization mode for position residuals. Options:
             - "none": joint-action PPO ratio without normalization
             - "per_structure_weight": joint-action ratio, but weight per-structure advantage by 1 / n_atoms
             - "per_atom_surrogate": per-atom PPO ratio averaged per structure
-        :type policy_normalization: str
+        :type position_normalization: str
         """
         super().__init__()
 
@@ -223,12 +223,12 @@ class OMGTFLightningPPO(lightning.LightningModule):
         self.integration_time_steps = base_model.si.integration_time_steps
 
         try:
-            normalization = self.PolicyNormalization[policy_normalization.upper()]
+            normalization = self.PositionNormalization[position_normalization.upper()]
         except KeyError:
-            raise ValueError(f"Invalid policy normalization: {policy_normalization}")
-        if normalization != self.PolicyNormalization.NONE and DataField.pos not in self.integrated_data_fields:
-            raise ValueError("Policy normalization requires position to be an integrated field.")
-        self.policy_normalization = normalization
+            raise ValueError(f"Invalid position normalization: {position_normalization}")
+        if normalization != self.PositionNormalization.NONE and DataField.pos not in self.integrated_data_fields:
+            raise ValueError("Position normalization requires position to be an integrated field.")
+        self.position_normalization = normalization
 
         if not all(cost >= 0.0 for cost in relative_costs.values()):
             raise ValueError("All relative costs must be non-negative.")
@@ -478,7 +478,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                         + ((sampled_residual_effect.detach() - res_b * dt) / (sigma * sqrt_dt)) ** 2
                 ).sum(dim=tuple(range(1, sampled_residual_effect.ndim)))
 
-                if self.policy_normalization == self.PolicyNormalization.NONE:
+                if self.position_normalization == self.PositionNormalization.NONE:
                     # Sum log probs over all atoms in each structure to get batch-wise log probs.
                     old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
                     current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
@@ -489,7 +489,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     # Take mean over batch.
                     policy_loss = -torch.min(ratio * trajectory.advantages,
                                              clipped_ratio * trajectory.advantages).mean()
-                elif self.policy_normalization == self.PolicyNormalization.PER_ATOM_SURROGATE:
+                elif self.position_normalization == self.PositionNormalization.PER_ATOM_SURROGATE:
                     ratio_atoms = torch.exp(current_log_probs_atoms - old_log_probs_atoms.detach())
                     clipped_ratio_atoms = torch.clamp(ratio_atoms, 1.0 - self.ppo_clip_epsilon,
                                                       1.0 + self.ppo_clip_epsilon)
@@ -503,7 +503,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     # Average per structure and then take mean over batch.
                     policy_loss = scatter_mean(loss_atoms, x_t.batch).mean()
                 else:
-                    assert self.policy_normalization == self.PolicyNormalization.PER_STRUCTURE_WEIGHT
+                    assert self.position_normalization == self.PositionNormalization.PER_STRUCTURE_WEIGHT
                     # Sum log probs over all atoms in each structure to get batch-wise log probs.
                     old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
                     current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
@@ -524,7 +524,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                           + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
                 # Sum over position dimensions to get per-atom KL.
                 per_atom_kl = kl_div.sum(dim=-1)
-                if self.policy_normalization == self.PolicyNormalization.NONE:
+                if self.position_normalization == self.PositionNormalization.NONE:
                     # Sum over atoms to get per-structure KL and take mean over batch.
                     reg_loss = scatter_add(per_atom_kl, x_t.batch).mean()
                 else:
@@ -545,7 +545,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
                     # Multiply by position dimensions.
                     entropy_loss_per_atom = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5) * res_b.shape[-1]
-                    if self.policy_normalization == self.PolicyNormalization.NONE:
+                    if self.position_normalization == self.PositionNormalization.NONE:
                         # Sum over atoms to get per-structure entropy and take mean over batch.
                         entropy_loss = (entropy_loss_per_atom * x_t.n_atoms).mean()
                     else:
@@ -561,7 +561,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 # This is (x_t+1 - x_t - base_b * dt).
                 sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.cell]
 
-                # Here we effectively choose the NONE policy normalization since the cell shape is always the same.
+                # Here we effectively choose the NONE position normalization since the cell shape is always the same.
                 # Sum log probs over all cell dimensions except batch.
                 current_log_prob = -0.5 * (
                         torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
