@@ -58,7 +58,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                  relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
                  grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1,
                  gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
-                 normalize_log_probs: bool = True, generation_xyz_filename: Optional[str] = None) -> None:
+                 normalize_log_probs: bool = True, generation_xyz_filename: Optional[str] = None,
+                 reference_sigma: float = 1e-3) -> None:
         """
         Constructor for OMGTFLightningPPO.
 
@@ -102,6 +103,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :param generation_xyz_filename:
             Filename for saving generated structures during prediction.
         :type generation_xyz_filename: Optional[str]
+        :param reference_sigma:
+            Reference sigma value.
+        :type reference_sigma: float
         """
         super().__init__()
 
@@ -196,12 +200,15 @@ class OMGTFLightningPPO(lightning.LightningModule):
             raise ValueError("All relative costs must be non-negative.")
         if not abs(sum(relative_costs.values()) - 1.0) < 1e-10:
             raise ValueError("The sum of all cost factors should be equal to 1.")
+        for field in self.integrated_data_fields:
+            if field.name + "_policy" not in relative_costs:
+                raise ValueError(f"Missing relative cost for policy of integrated data field '{field.name}'.")
+            if field.name + "_regularization" not in relative_costs:
+                raise ValueError(f"Missing relative cost for regularization of data field '{field.name}'.")
+            if self.noise_schedules[field].learnable() and field.name + "_entropy" not in relative_costs:
+                raise ValueError(f"Missing relative cost for entropy of data field '{field.name}' with learnable noise "
+                                 f"schedule.")
         integrated_data_fields = [df.name for df in self.integrated_data_fields]
-        for field in integrated_data_fields:
-            if field + "_policy" not in relative_costs:
-                raise ValueError(f"Missing relative cost for policy of integrated data field '{field}'.")
-            if field + "_regularization" not in relative_costs:
-                raise ValueError(f"Missing relative cost for regularization of data field '{field}'.")
         for field in relative_costs.keys():
             if field.endswith("_regularization"):
                 base_field = field[:-len("_regularization")]
@@ -212,6 +219,13 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 base_field = field[:-len("_policy")]
                 if base_field not in integrated_data_fields:
                     raise ValueError(f"Relative cost for policy provided for unknown data field '{base_field}'.")
+            elif field.endswith("_entropy"):
+                base_field = field[:-len("_entropy")]
+                if base_field not in integrated_data_fields:
+                    raise ValueError(f"Relative cost for entropy provided for unknown data field '{base_field}'.")
+                if not self.noise_schedules[DataField[base_field]].learnable():
+                    raise ValueError(f"Relative cost for entropy provided for data field '{base_field}' without "
+                                     f"learnable noise schedule.")
             else:
                 raise ValueError(f"Relative cost provided for unknown term '{field}'.")
         self.relative_costs = relative_costs
@@ -238,6 +252,10 @@ class OMGTFLightningPPO(lightning.LightningModule):
         self.gradient_clip_algorithm = gradient_clip_algorithm
 
         self.generation_xyz_filename = generation_xyz_filename
+
+        if not reference_sigma > 0.0:
+            raise ValueError("Reference sigma must be positive.")
+        self.reference_sigma = reference_sigma
 
     # noinspection PyUnresolvedReferences
     def setup(self, stage: str) -> None:
@@ -396,6 +414,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         # Track losses for logging.
         total_policy_losses = {field: 0.0 for field in self.integrated_data_fields}
         total_reg_losses = {field: 0.0 for field in self.integrated_data_fields}
+        total_entropy_losses = {field: 0.0 for field in self.integrated_data_fields}
 
         # Zero gradients once at the start, then accumulate across all timesteps.
         opt = self.optimizers()
@@ -443,8 +462,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 # KL(modified || base) = ||res_b||^2 * dt / (2 sigma^2) per timestep.
                 # Sum squared residuals over x, y, z.
                 squared_res = (res_b ** 2).sum(dim=-1)
-                # Get batch-wise mean squared residuals for regularization and then take mean over batch.
-                reg_loss = scatter_mean(squared_res, x_t.batch).mean() * dt / (2 * sigma ** 2)
+                # Get batch-wise mean squared residuals for regularization.
+                squared_res_mean = scatter_mean(squared_res, x_t.batch)
+                sigma_ref = torch.tensor(self.reference_sigma, device=self.device)
+                reg_loss = (torch.log(sigma_ref / sigma)
+                            + (sigma * sigma + squared_res_mean * dt) / (2 * sigma_ref * sigma_ref) - 0.5).mean()
 
                 # Add weighted losses.
                 timestep_loss += self.relative_costs[DataField.pos.name + "_policy"] * policy_loss
@@ -453,6 +475,13 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 # Track for logging.
                 total_policy_losses[DataField.pos] += policy_loss.item()
                 total_reg_losses[DataField.pos] += reg_loss.item()
+
+                # Entropy bonus when learning sigma.
+                if self.noise_schedules[DataField.pos].learnable():
+                    # Entropy of Gaussian grows with log(σ). Take negative since we want to maximize entropy.
+                    entropy_loss = -0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5
+                    timestep_loss += self.relative_costs[DataField.pos.name + "_entropy"] * entropy_loss
+                    total_entropy_losses[DataField.pos] += entropy_loss.item()
 
             if self.integrate_cell:
                 res_b = residual_output[DataField.cell.name + "_b"]
@@ -472,14 +501,24 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
                 # Regularization loss as KL divergence between modified and base policy.
                 # KL(modified || base) = ||res_b||^2 * dt / (2 sigma^2) per timestep.
-                # Get batch-wise mean squared residuals for regularization and then take mean over batch
-                reg_loss = (res_b ** 2).mean() * dt / (2.0 * sigma ** 2)
+                # Get batch-wise mean squared residuals for regularization.
+                squared_res = (res_b ** 2).mean(dim=tuple(range(1, res_b.ndim)))
+                sigma_ref = torch.tensor(self.reference_sigma, device=self.device)
+                reg_loss = (torch.log(sigma_ref / sigma)
+                            + (sigma * sigma + squared_res * dt) / (2 * sigma_ref * sigma_ref) - 0.5).mean()
 
                 timestep_loss += self.relative_costs[DataField.cell.name + "_policy"] * policy_loss
                 timestep_loss += self.relative_costs[DataField.cell.name + "_regularization"] * reg_loss
 
                 total_policy_losses[DataField.cell] += policy_loss.item()
                 total_reg_losses[DataField.cell] += reg_loss.item()
+
+                # Entropy bonus when learning sigma.
+                if self.noise_schedules[DataField.cell].learnable():
+                    # Entropy of Gaussian grows with log(σ). Take negative since we want to maximize entropy.
+                    entropy_loss = -0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5
+                    timestep_loss += self.relative_costs[DataField.cell.name + "_entropy"] * entropy_loss
+                    total_entropy_losses[DataField.cell] += entropy_loss.item()
 
             # Scale loss by 1/num_timesteps and accumulate gradients.
             scaled_loss = timestep_loss / num_timesteps
@@ -497,6 +536,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
         for field in self.integrated_data_fields:
             losses[field.name + "_policy"] = total_policy_losses[field] / num_timesteps
             losses[field.name + "_regularization"] = total_reg_losses[field] / num_timesteps
+            if self.noise_schedules[field].learnable():
+                losses[field.name + "_entropy"] = total_entropy_losses[field] / num_timesteps
 
         return losses
 
@@ -595,6 +636,17 @@ class OMGTFLightningPPO(lightning.LightningModule):
                  sync_dist=True, batch_size=len(batch))
         self.log_dict(trajectory.info_dict, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                       batch_size=len(batch))
+
+        for field in self.integrated_data_fields:
+            if self.noise_schedules[field].learnable():
+                times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
+                sigmas = self.noise_schedules[field].noise(times)
+                self.log(f"sigma_{field.name}_mean", sigmas.mean(), on_step=False, on_epoch=True, prog_bar=True,
+                         sync_dist=True, batch_size=len(batch))
+                self.log(f"sigma_{field.name}_min", sigmas.min(), on_step=False, on_epoch=True, sync_dist=True,
+                         batch_size=len(batch))
+                self.log(f"sigma_{field.name}_max", sigmas.max(), on_step=False, on_epoch=True, sync_dist=True,
+                         batch_size=len(batch))
 
     def validation_step(self, batch: OMGData, batch_idx: int) -> None:
         # Sample initial structures independently.
