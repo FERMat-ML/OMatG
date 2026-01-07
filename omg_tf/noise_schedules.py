@@ -18,7 +18,7 @@ class ConstantNoiseSchedule(NoiseSchedule):
     def __init__(self, noise_scale: float) -> None:
         """Constructor of the ConstantNoiseSchedule class."""
         super().__init__()
-        if not noise_scale > 0.0:
+        if not noise_scale >= 0.0:
             raise ValueError("Noise scale must be positive.")
         self._noise_scale = noise_scale
 
