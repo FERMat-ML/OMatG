@@ -111,6 +111,9 @@ class MultipleStepNoiseCombiner(Combiner):
                 cell_b = base_model_output[DataField.cell.name + "_b"] + noisy_res_b
                 x_t.cell = x_t.cell + cell_b * dt
 
+            # Detach to avoid backpropagating through the entire trajectory graph.
+            x_t = x_t.detach()
+
         # Average mean squared residuals over time steps for regularization.
         for key in mean_squared_residuals.keys():
             mean_squared_residuals[key] /= (len(times) - 1)
