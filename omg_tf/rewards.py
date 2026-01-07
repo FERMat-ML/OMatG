@@ -6,8 +6,8 @@ from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure as PymatgenStructure
 import tqdm
 from tqdm.contrib.concurrent import process_map
+import warnings
 from omg.datamodule import OMGDataset, Structure
-from omg.globals import MAX_ATOM_NUM
 from .abstracts import Reward
 
 
@@ -147,29 +147,6 @@ class CRMSEReward(Reward):
             pred_dataset, desc="Building reduced composition map for prediction dataset")
 
     @staticmethod
-    def _get_reduced_composition_key(atomic_numbers: np.ndarray) -> tuple[int, ...]:
-        """
-        Compute a hashable key representing the reduced composition from atomic numbers.
-
-        This method uses the same approach as omg.analysis.analysis._element_check. It counts occurrences of each
-        element and divides by the minimum count to obtain a reduced count of elements. It the returns a tuple of the
-        reduced counts.
-
-        :param atomic_numbers:
-            Array of atomic numbers for the structure.
-        :type atomic_numbers: np.ndarray
-
-        :return:
-            Hashable tuple of length MAX_ATOM_NUM representing the reduced composition.
-        :rtype: tuple[int, ...]
-        """
-        counts = np.bincount(atomic_numbers, minlength=MAX_ATOM_NUM)
-        # Find the element with the minimum number of occurrences.
-        min_count = np.min(counts[counts > 0])
-        reduced_counts = counts // min_count
-        return tuple(int(rc) for rc in reduced_counts)
-
-    @staticmethod
     def _build_reduced_composition_map(dataset: OMGDataset,
                                        desc: Optional[str] = None) -> dict[tuple[int, ...], list[PymatgenStructure]]:
         """
@@ -190,12 +167,15 @@ class CRMSEReward(Reward):
         :rtype: Dict[tuple[int, ...], List[PymatgenStructure]]
         """
         reduced_composition_map = {}
+        # noinspection PyTypeChecker
         for structure in tqdm.tqdm(dataset.get_structure_dataset(), desc=desc, total=len(dataset)):
-            key = CRMSEReward._get_reduced_composition_key(structure.atomic_numbers.numpy(force=True))
             py_structure = structure.get_pymatgen_structure()
-            if key not in reduced_composition_map:
-                reduced_composition_map[key] = []
-            reduced_composition_map[key].append(py_structure)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=UserWarning)
+                reduced_composition = py_structure.composition.reduced_composition
+            if reduced_composition not in reduced_composition_map:
+                reduced_composition_map[reduced_composition] = []
+            reduced_composition_map[reduced_composition].append(py_structure)
         return reduced_composition_map
 
     @staticmethod
@@ -277,10 +257,14 @@ class CRMSEReward(Reward):
         py_structures = []
         relevant_structures_list = []
         for structure in structures:
-            key = self._get_reduced_composition_key(structure.atomic_numbers.numpy(force=True))
-            py_structures.append(structure.get_pymatgen_structure())
-            assert key in reduced_composition_map and len(reduced_composition_map[key]) > 0
-            relevant_structures_list.append(reduced_composition_map[key])
+            py_structure = structure.get_pymatgen_structure()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=UserWarning)
+                reduced_composition = py_structure.composition.reduced_composition
+            py_structures.append(py_structure)
+            assert (reduced_composition in reduced_composition_map
+                    and len(reduced_composition_map[reduced_composition]) > 0)
+            relevant_structures_list.append(reduced_composition_map[reduced_composition])
 
         crmse_function = partial(self._compute_rmse, ltol=self._ltol, stol=self._stol, angle_tol=self._angle_tol)
 
