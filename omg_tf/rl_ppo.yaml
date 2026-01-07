@@ -29,7 +29,7 @@ model:
   grpo_share_x_0: false
   ppo_clip_epsilon: 0.2
   ppo_epochs: 2
-  normalize_log_probs: true
+  position_normalization: "per_atom_surrogate"
   gradient_clip_val: 0.5
   gradient_clip_algorithm: "value"
 trainer:
