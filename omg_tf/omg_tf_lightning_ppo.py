@@ -155,6 +155,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         self.integrated_data_fields = []
         pos_interpolant = base_model.si.get_stochastic_interpolant(DataField.pos.name)
         self.integrate_pos = not isinstance(pos_interpolant, SingleStochasticInterpolantIdentity)
+        self.pos_corrector = None
         if self.integrate_pos:
             if isinstance(pos_interpolant, SingleStochasticInterpolant):
                 if not pos_interpolant.differential_equation_type == DifferentialEquationType.ODE:
@@ -162,6 +163,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                                      "interpolants.")
                 if pos_interpolant.velocity_annealing_factor != 0.0:
                     raise ValueError("Residual integration for positions is not supported with velocity annealing.")
+                self.pos_corrector = pos_interpolant.get_corrector()
             elif isinstance(pos_interpolant, SingleStochasticInterpolantOS):
                 if not pos_interpolant.differential_equation_type == DifferentialEquationType.ODE:
                     raise ValueError("Residual integration for positions is only supported for ODE-based stochastic "
@@ -170,6 +172,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     raise ValueError("Residual integration for positions is only supported when predicting velocity.")
                 if pos_interpolant.velocity_annealing_factor != 0.0:
                     raise ValueError("Residual integration for positions is not supported with velocity annealing.")
+                self.pos_corrector = pos_interpolant.get_corrector()
             else:
                 raise ValueError("Unsupported stochastic interpolant for position residual integration.")
             self.integrated_data_fields.append(DataField.pos)
@@ -178,9 +181,12 @@ class OMGTFLightningPPO(lightning.LightningModule):
         else:
             if DataField.pos.name in noise_schedules:
                 raise ValueError("Noise schedule for position residuals provided but positions are not integrated.")
+        assert ((self.integrate_pos and self.pos_corrector is not None)
+                or (not self.integrate_pos and self.pos_corrector is None))
 
         cell_interpolant = base_model.si.get_stochastic_interpolant(DataField.cell.name)
         self.integrate_cell = not isinstance(cell_interpolant, SingleStochasticInterpolantIdentity)
+        self.cell_corrector = None
         if self.integrate_cell:
             if isinstance(cell_interpolant, SingleStochasticInterpolant):
                 if not cell_interpolant.differential_equation_type == DifferentialEquationType.ODE:
@@ -188,6 +194,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                                      "interpolants.")
                 if cell_interpolant.velocity_annealing_factor != 0.0:
                     raise ValueError("Residual integration for cell is not supported with velocity annealing.")
+                self.cell_corrector = cell_interpolant.get_corrector()
             elif isinstance(cell_interpolant, SingleStochasticInterpolantOS):
                 if not cell_interpolant.differential_equation_type == DifferentialEquationType.ODE:
                     raise ValueError("Residual integration for cell is only supported for ODE-based stochastic "
@@ -196,6 +203,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     raise ValueError("Residual integration for cell is only supported when predicting velocity.")
                 if cell_interpolant.velocity_annealing_factor != 0.0:
                     raise ValueError("Residual integration for cell is not supported with velocity annealing.")
+                self.cell_corrector = cell_interpolant.get_corrector()
             else:
                 raise ValueError("Unsupported stochastic interpolant for cell residual integration.")
             self.integrated_data_fields.append(DataField.cell)
@@ -204,6 +212,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
         else:
             if DataField.cell.name in noise_schedules:
                 raise ValueError("Noise schedule for cell residuals provided but cell is not integrated.")
+        assert ((self.integrate_cell and self.cell_corrector is not None)
+                or (not self.integrate_cell and self.cell_corrector is None))
 
         species_interpolant = base_model.si.get_stochastic_interpolant(DataField.species.name)
         self.integrate_species = not isinstance(species_interpolant, SingleStochasticInterpolantIdentity)
@@ -359,7 +369,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 noise_b = torch.randn_like(res_b)
                 sigma = self.noise_schedules[DataField.pos].noise(t)
                 # Euler-Maruyama update for SDE.
-                x_t.pos = x_t.pos + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt
+                x_t.pos = self.pos_corrector.correct(x_t.pos + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt)
 
                 # Effectively x_t+1 - x_t - base_b * dt. TODO: Do I have to worry about sigma being in here?
                 step_sampled_residual_effects[DataField.pos] = res_b * dt + sigma * noise_b * sqrt_dt
@@ -377,7 +387,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 noise_b = torch.randn_like(res_b)
                 sigma = self.noise_schedules[DataField.cell].noise(t)
                 # Euler-Maruyama update for SDE.
-                x_t.cell = x_t.cell + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt
+                x_t.cell = self.cell_corrector.correct(x_t.cell + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt)
 
                 # Effectively x_t+1 - x_t - base_b * dt.
                 step_sampled_residual_effects[DataField.cell] = res_b * dt + sigma * noise_b * sqrt_dt
@@ -477,7 +487,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 res_b = residual_output[DataField.pos.name + "_b"]
                 sigma = self.noise_schedules[DataField.pos].noise(t)
                 old_log_probs_atoms = trajectory.old_log_probs[t_index][DataField.pos]
-                # This is (x_t+1 - x_t - base_b * dt).
+                # This is effectively (x_t+1 - x_t - base_b * dt).
                 sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.pos]
                 # Sum log probs over x, y, z.
                 current_log_probs_atoms = -0.5 * (
@@ -650,14 +660,14 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 noise_b = torch.randn_like(res_b)
                 sigma = self.noise_schedules[DataField.pos].noise(t)
                 # Euler-Maruyama update for SDE.
-                x_t.pos = x_t.pos + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt
+                x_t.pos = self.pos_corrector.correct(x_t.pos + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt)
             if self.integrate_cell:
                 base_b = base_model_output[DataField.cell.name + "_b"]
                 res_b = residual_output[DataField.cell.name + "_b"]
                 noise_b = torch.randn_like(res_b)
                 sigma = self.noise_schedules[DataField.cell].noise(t)
                 # Euler-Maruyama update for SDE.
-                x_t.cell = x_t.cell + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt
+                x_t.cell = self.cell_corrector.correct(x_t.cell + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt)
         return x_t
 
     def training_step(self, batch: OMGData, batch_idx: int) -> None:
