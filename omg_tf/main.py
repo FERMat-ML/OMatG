@@ -7,7 +7,7 @@ from omg.omg_cli import OMGCLI
 from omg.omg_lightning import OMGLightning
 from omg.omg_trainer import OMGTrainer
 from omg_tf.base_modules import base_modules
-from omg_tf import omg_tf_lightning
+from omg_tf import omg_tf_lightning_ppo
 from omg_tf import omg_tf_cli
 
 
@@ -51,7 +51,7 @@ def main():
     # TODO: DOES HELP STILL WORK?
 
     # Pass only omg_tf arguments.
-    omg_tf_cli.OMGTFCLI(model_class=omg_tf_lightning.OMGTFLightning, args=args[:omg_index],
+    omg_tf_cli.OMGTFCLI(model_class=omg_tf_lightning_ppo.OMGTFLightningPPO, args=args[:omg_index],
                         parser_kwargs={"formatter_class": argparse.RawDescriptionHelpFormatter, "description": f"""
 Open Materials Generation (OMatG) Version {__version__}
 
