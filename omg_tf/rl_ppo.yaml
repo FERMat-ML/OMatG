@@ -40,6 +40,7 @@ model:
   ppo_epochs: 1
   gradient_clip_val: 1.0
   gradient_clip_algorithm: value
+  residual_mode: additive
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint

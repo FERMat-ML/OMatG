@@ -63,23 +63,42 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
         NONE = auto()
         """
-        Use joint-action PPO ratio without normalization. 
-        
+        Use joint-action PPO ratio without normalization.
+
         This is the standard PPO approach where the log probabilities of all atoms in a structure are summed
         to compute the joint action log probability for the entire structure.
         """
         PER_STRUCTURE_WEIGHT = auto()
         """
         Use joint-action PPO ratio, but weight per-structure advantage by 1 / n_atoms.
-        
+
         This normalization reduces the influence of larger structures on the policy update.
         """
         PER_ATOM_SURROGATE = auto()
         """
         Use per-atom PPO ratio averaged per structure.
-        
+
         This normalization computes the PPO ratio for each atom individually and averages them per structure,
         effectively normalizing the policy update on a per-atom basis.
+        """
+
+    class ResidualMode(Enum):
+        """
+        Enumeration of residual application modes.
+        """
+
+        ADDITIVE = auto()
+        """
+        Additive residual: v_total = base_b + res_b.
+
+        The residual model output is added to the base velocity.
+        """
+        SCALE = auto()
+        """
+        Multiplicative residual: v_total = (1 + res_b) * base_b.
+
+        The residual model output is used to scale the base velocity.
+        This is useful for learning speed adjustments to the base flow.
         """
 
     def __init__(self, residual_model: Model, reward: Reward, noise_schedules: dict[str, NoiseSchedule],
@@ -87,7 +106,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                  grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1,
                  gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
                  generation_xyz_filename: Optional[str] = None, reference_sigma: float = 1e-3,
-                 position_normalization: str = "none") -> None:
+                 position_normalization: str = "none", residual_mode: str = "additive") -> None:
         """
         Constructor for OMGTFLightningPPO.
 
@@ -137,6 +156,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
             - "per_structure_weight": joint-action ratio, but weight per-structure advantage by 1 / n_atoms
             - "per_atom_surrogate": per-atom PPO ratio averaged per structure
         :type position_normalization: str
+        :param residual_mode:
+            Mode for applying residual model output. Options:
+            - "additive": v_total = base_b + res_b (default)
+            - "scale": v_total = (1 + res_b) * base_b
+        :type residual_mode: str
         """
         super().__init__()
 
@@ -151,6 +175,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
         self.residual_model = residual_model
         self.reward = reward
+
+        try:
+            self.residual_mode = self.ResidualMode[residual_mode.upper()]
+        except KeyError:
+            raise ValueError(f"Invalid residual mode '{residual_mode}'. Must be 'additive' or 'scale'.")
 
         self.integrated_data_fields = []
         pos_interpolant = base_model.si.get_stochastic_interpolant(DataField.pos.name)
@@ -656,18 +685,43 @@ class OMGTFLightningPPO(lightning.LightningModule):
             residual_output = self.residual_model(x_t, time)
             if self.integrate_pos:
                 base_b = base_model_output[DataField.pos.name + "_b"]
-                res_b = residual_output[DataField.pos.name + "_b"]
-                noise_b = torch.randn_like(res_b)
-                sigma = self.noise_schedules[DataField.pos].noise(t)
+                sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
+                assert sigma.ndim == 0
+                if self.residual_mode == self.ResidualMode.ADDITIVE:
+                    res_b = residual_output[DataField.pos.name + "_b"]
+                    assert res_b.shape == base_b.shape
+                    velocity = base_b + res_b
+                    noise = sigma * torch.randn_like(res_b)
+                else:
+                    assert self.residual_mode == self.ResidualMode.SCALE
+                    res_s = residual_output[DataField.pos.name + "_s"]  # Tensor of shape (batch_size,).
+                    assert res_s.shape == time.shape
+                    res_s_per_atom = res_s[x_t.batch]  # Tensor of shape (sum(n_atoms),).
+                    assert res_s_per_atom.shape == base_b.shape[:1]
+                    velocity = (1.0 + res_s_per_atom) * base_b
+                    randn = torch.randn_like(res_s)  # Tensor of shape (batch_size,).
+                    randn_per_atom = randn[x_t.batch]  # Tensor of shape (sum(n_atoms),).
+                    noise = sigma * randn_per_atom * base_b
                 # Euler-Maruyama update for SDE.
-                x_t.pos = self.pos_corrector.correct(x_t.pos + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt)
+                x_t.pos = self.pos_corrector.correct(x_t.pos + velocity * dt + noise * sqrt_dt)
             if self.integrate_cell:
                 base_b = base_model_output[DataField.cell.name + "_b"]
-                res_b = residual_output[DataField.cell.name + "_b"]
-                noise_b = torch.randn_like(res_b)
-                sigma = self.noise_schedules[DataField.cell].noise(t)
+                sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
+                assert sigma.ndim == 0
+                if self.residual_mode == self.ResidualMode.ADDITIVE:
+                    res_b = residual_output[DataField.cell.name + "_b"]
+                    assert res_b.shape == base_b.shape
+                    velocity = base_b + res_b
+                    noise = sigma * torch.randn_like(res_b)
+                else:
+                    assert self.residual_mode == self.ResidualMode.SCALE
+                    res_s = residual_output[DataField.cell.name + "_s"]  # Tensor of shape (batch_size,).
+                    assert res_s.shape == time.shape
+                    assert res_s.shape == base_b.shape[:1]
+                    velocity = (1.0 + res_s) * base_b
+                    noise = sigma * torch.randn_like(res_s) * base_b
                 # Euler-Maruyama update for SDE.
-                x_t.cell = self.cell_corrector.correct(x_t.cell + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt)
+                x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
         return x_t
 
     def training_step(self, batch: OMGData, batch_idx: int) -> None:
