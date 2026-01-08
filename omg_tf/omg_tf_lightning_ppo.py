@@ -569,23 +569,100 @@ class OMGTFLightningPPO(lightning.LightningModule):
             residual_output = self.residual_model(x_t, time)
             # Compute loss for this timestep.
             timestep_loss = torch.tensor(0.0, device=self.device)
+            sigma_ref = torch.tensor(self.reference_sigma, device=self.device)  # Scalar.
 
             if self.integrate_pos:
-                res_b = residual_output[DataField.pos.name + "_b"]
-                sigma = self.noise_schedules[DataField.pos].noise(t)
-                old_log_probs_atoms = trajectory.old_log_probs[t_index][DataField.pos]
-                # This is effectively (x_t+1 - x_t - base_b * dt).
-                sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.pos]
-                # Sum log probs over x, y, z.
-                current_log_probs_atoms = -0.5 * (
-                        torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
-                        + ((sampled_residual_effect.detach() - res_b * dt) / (sigma * sqrt_dt)) ** 2
-                ).sum(dim=tuple(range(1, sampled_residual_effect.ndim)))
+                sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
+                assert sigma.ndim == 0
 
-                if self.position_normalization == self.PositionNormalization.NONE:
-                    # Sum log probs over all atoms in each structure to get batch-wise log probs.
-                    old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
-                    current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
+                if self.residual_mode == self.ResidualMode.ADDITIVE:
+                    res_b = residual_output[DataField.pos.name + "_b"]  # Shape (sum(n_atoms), 3).
+                    old_log_probs_atoms = trajectory.old_log_probs[t_index][DataField.pos]  # Shape (sum(n_atoms),).
+                    # This is effectively x_t+dt - x_t - base_b * dt. Shape (sum(n_atoms), 3).
+                    sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.pos]
+                    # Sum log probs over x, y, z.
+                    current_log_probs_atoms = -0.5 * (
+                            torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
+                            + ((sampled_residual_effect.detach() - res_b * dt) / (sigma * sqrt_dt)) ** 2
+                    ).sum(dim=tuple(range(1, sampled_residual_effect.ndim)))
+
+                    if self.position_normalization == self.PositionNormalization.NONE:
+                        # Sum log probs over all atoms in each structure to get batch-wise log probs.
+                        old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
+                        current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
+                        ratio = torch.exp(current_log_prob - old_log_prob.detach())
+                        clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                        clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
+                                         | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
+                        # Take mean over batch.
+                        policy_loss = -torch.min(ratio * trajectory.advantages,
+                                                 clipped_ratio * trajectory.advantages).mean()
+                    elif self.position_normalization == self.PositionNormalization.PER_ATOM_SURROGATE:
+                        ratio_atoms = torch.exp(current_log_probs_atoms - old_log_probs_atoms.detach())
+                        clipped_ratio_atoms = torch.clamp(ratio_atoms, 1.0 - self.ppo_clip_epsilon,
+                                                          1.0 + self.ppo_clip_epsilon)
+                        clip_mask_atoms = ((ratio_atoms < (1.0 - self.ppo_clip_epsilon))
+                                           | (ratio_atoms > (1.0 + self.ppo_clip_epsilon))).float()
+                        clip_fraction = scatter_mean(clip_mask_atoms, x_t.batch).mean()
+                        # Expand advantages to per-atom.
+                        advantages_atoms = trajectory.advantages[x_t.batch]
+                        loss_atoms = -torch.min(ratio_atoms * advantages_atoms,
+                                                clipped_ratio_atoms * advantages_atoms)
+                        # Average per structure and then take mean over batch.
+                        policy_loss = scatter_mean(loss_atoms, x_t.batch).mean()
+                    else:
+                        assert self.position_normalization == self.PositionNormalization.PER_STRUCTURE_WEIGHT
+                        # Sum log probs over all atoms in each structure to get batch-wise log probs.
+                        old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
+                        current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
+                        ratio = torch.exp(current_log_prob - old_log_prob.detach())
+                        clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                        clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
+                                         | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
+                        # Weight advantages by 1 / n_atoms so that large structures do not dominate.
+                        weighted_advantages = trajectory.advantages / x_t.n_atoms.to(dtype=ratio.dtype)
+                        # Take mean over batch.
+                        policy_loss = -torch.min(ratio * weighted_advantages,
+                                                 clipped_ratio * weighted_advantages).mean()
+
+                    # Regularization loss as KL divergence between modified and base policy.
+                    # This is the KL divergence per position dimension.
+                    kl_div = (torch.log(sigma_ref) - torch.log(sigma)
+                              + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
+                    # Sum over position dimensions to get per-atom KL.
+                    per_atom_kl = kl_div.sum(dim=-1)
+                    if self.position_normalization == self.PositionNormalization.NONE:
+                        # Sum over atoms to get per-structure KL and take mean over batch.
+                        reg_loss = scatter_add(per_atom_kl, x_t.batch).mean()
+                    else:
+                        # Average over atoms to get per-structure KL and take mean over batch.
+                        reg_loss = scatter_mean(per_atom_kl, x_t.batch).mean()
+
+                    # Entropy bonus when learning sigma.
+                    if self.noise_schedules[DataField.pos].learnable():
+                        # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
+                        # Multiply by position dimensions.
+                        entropy_loss_per_atom = ((-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5)
+                                                 * res_b.shape[-1])
+                        if self.position_normalization == self.PositionNormalization.NONE:
+                            # Sum over atoms to get per-structure entropy and take mean over batch.
+                            entropy_loss = (entropy_loss_per_atom * x_t.n_atoms).mean()
+                        else:
+                            # Take mean over batch.
+                            entropy_loss = entropy_loss_per_atom.mean()
+                else:
+                    assert self.residual_mode == self.ResidualMode.SCALE
+                    res_s = residual_output[DataField.pos.name + "_s"]  # Shape (batch_size,).
+                    old_log_prob = trajectory.old_log_probs[t_index][DataField.pos]  # Shape (batch_size,).
+                    # This is effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
+                    # Noise is effectively one-dimensional. Shape (batch_size,).
+                    sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.pos]
+                    # Tensor of shape (batch_size,).
+                    current_log_prob = -0.5 * (
+                            torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
+                            + ((sampled_residual_effect.detach() - res_s * dt) / (sigma * sqrt_dt)) ** 2
+                    )
+                    # No special treatment of position normalization since log probs are already per-structure.
                     ratio = torch.exp(current_log_prob - old_log_prob.detach())
                     clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
                     clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
@@ -593,112 +670,122 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     # Take mean over batch.
                     policy_loss = -torch.min(ratio * trajectory.advantages,
                                              clipped_ratio * trajectory.advantages).mean()
-                elif self.position_normalization == self.PositionNormalization.PER_ATOM_SURROGATE:
-                    ratio_atoms = torch.exp(current_log_probs_atoms - old_log_probs_atoms.detach())
-                    clipped_ratio_atoms = torch.clamp(ratio_atoms, 1.0 - self.ppo_clip_epsilon,
-                                                      1.0 + self.ppo_clip_epsilon)
-                    clip_mask_atoms = ((ratio_atoms < (1.0 - self.ppo_clip_epsilon))
-                                       | (ratio_atoms > (1.0 + self.ppo_clip_epsilon))).float()
-                    clip_fraction = scatter_mean(clip_mask_atoms, x_t.batch).mean()
-                    # Expand advantages to per-atom.
-                    advantages_atoms = trajectory.advantages[x_t.batch]
-                    loss_atoms = -torch.min(ratio_atoms * advantages_atoms,
-                                            clipped_ratio_atoms * advantages_atoms)
-                    # Average per structure and then take mean over batch.
-                    policy_loss = scatter_mean(loss_atoms, x_t.batch).mean()
-                else:
-                    assert self.position_normalization == self.PositionNormalization.PER_STRUCTURE_WEIGHT
-                    # Sum log probs over all atoms in each structure to get batch-wise log probs.
-                    old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
-                    current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
-                    ratio = torch.exp(current_log_prob - old_log_prob.detach())
-                    clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
-                    clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
-                                     | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
-                    # Weight advantages by 1 / n_atoms so that large structures do not dominate.
-                    weighted_advantages = trajectory.advantages / x_t.n_atoms.to(dtype=ratio.dtype)
-                    # Take mean over batch.
-                    policy_loss = -torch.min(ratio * weighted_advantages,
-                                             clipped_ratio * weighted_advantages).mean()
 
-                # Regularization loss as KL divergence between modified and base policy.
-                sigma_ref = torch.tensor(self.reference_sigma, device=self.device)
-                # This is the KL divergence per position dimension.
-                kl_div = (torch.log(sigma_ref / sigma)
-                          + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
-                # Sum over position dimensions to get per-atom KL.
-                per_atom_kl = kl_div.sum(dim=-1)
-                if self.position_normalization == self.PositionNormalization.NONE:
-                    # Sum over atoms to get per-structure KL and take mean over batch.
-                    reg_loss = scatter_add(per_atom_kl, x_t.batch).mean()
-                else:
-                    # Average over atoms to get per-structure KL and take mean over batch.
-                    reg_loss = scatter_mean(per_atom_kl, x_t.batch).mean()
+                    # TODO: WRONG!
+                    # Regularization loss as KL divergence between modified and base policy.
+                    # This is the KL divergence per position dimension.
+                    kl_div = (torch.log(sigma_ref) - torch.log(sigma)
+                              + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
+                    # Sum over position dimensions to get per-atom KL.
+                    per_atom_kl = kl_div.sum(dim=-1)
+                    if self.position_normalization == self.PositionNormalization.NONE:
+                        # Sum over atoms to get per-structure KL and take mean over batch.
+                        reg_loss = scatter_add(per_atom_kl, x_t.batch).mean()
+                    else:
+                        # Average over atoms to get per-structure KL and take mean over batch.
+                        reg_loss = scatter_mean(per_atom_kl, x_t.batch).mean()
+
+                    # Entropy bonus when learning sigma.
+                    if self.noise_schedules[DataField.pos].learnable():
+                        # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
+                        entropy_loss = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5)
 
                 # Add weighted losses.
                 timestep_loss += self.relative_costs[DataField.pos.name + "_policy"] * policy_loss
                 timestep_loss += self.relative_costs[DataField.pos.name + "_regularization"] * reg_loss
+                if self.noise_schedules[DataField.pos].learnable():
+                    timestep_loss += self.relative_costs[DataField.pos.name + "_entropy"] * entropy_loss
 
                 # Track for logging.
                 total_policy_losses[DataField.pos] += policy_loss.item()
                 total_reg_losses[DataField.pos] += reg_loss.item()
                 total_clip_fractions[DataField.pos] += clip_fraction.item()
-
-                # Entropy bonus when learning sigma.
                 if self.noise_schedules[DataField.pos].learnable():
-                    # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
-                    # Multiply by position dimensions.
-                    entropy_loss_per_atom = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5) * res_b.shape[-1]
-                    if self.position_normalization == self.PositionNormalization.NONE:
-                        # Sum over atoms to get per-structure entropy and take mean over batch.
-                        entropy_loss = (entropy_loss_per_atom * x_t.n_atoms).mean()
-                    else:
-                        # Take mean over batch.
-                        entropy_loss = entropy_loss_per_atom.mean()
-                    timestep_loss += self.relative_costs[DataField.pos.name + "_entropy"] * entropy_loss
                     total_entropy_losses[DataField.pos] += entropy_loss.item()
 
             if self.integrate_cell:
-                res_b = residual_output[DataField.cell.name + "_b"]
-                sigma = self.noise_schedules[DataField.cell].noise(t)
-                old_log_prob = trajectory.old_log_probs[t_index][DataField.cell]
-                # This is (x_t+1 - x_t - base_b * dt).
-                sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.cell]
+                sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
+                assert sigma.ndim == 0
 
-                # Here we effectively choose the NONE position normalization since the cell shape is always the same.
-                # Sum log probs over all cell dimensions except batch.
-                current_log_prob = -0.5 * (
-                        torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
-                        + ((sampled_residual_effect.detach() - res_b * dt) / (sigma * sqrt_dt)) ** 2
-                ).sum(dim=tuple(range(1, sampled_residual_effect.ndim)))
+                if self.residual_mode == self.ResidualMode.ADDITIVE:
+                    res_b = residual_output[DataField.cell.name + "_b"]  # Shape (batch_size, 3, 3).
+                    old_log_prob = trajectory.old_log_probs[t_index][DataField.cell]  # Shape (batch_size,).
+                    # This is effectively x_t+dt - x_t - base_b * dt. Shape (batch_size, 3, 3).
+                    sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.cell]
 
-                ratio = torch.exp(current_log_prob - old_log_prob.detach())
-                clipped_ratio = torch.clamp(ratio, 1 - self.ppo_clip_epsilon, 1 + self.ppo_clip_epsilon)
-                clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
-                                 | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
-                policy_loss = -torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages).mean()
+                    # Here we effectively choose the NONE normalization since the cell shape is always the same.
+                    # Sum log probs over all cell dimensions except batch.
+                    current_log_prob = -0.5 * (
+                            torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
+                            + ((sampled_residual_effect.detach() - res_b * dt) / (sigma * sqrt_dt)) ** 2
+                    ).sum(dim=tuple(range(1, sampled_residual_effect.ndim)))
 
-                # Regularization loss as KL divergence between modified and base policy.
-                sigma_ref = torch.tensor(self.reference_sigma, device=self.device)
-                # This is the KL divergence per cell dimension.
-                kl_div = (torch.log(sigma_ref / sigma)
-                          + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
-                # Sum over cell dimensions and take mean over batch.
-                reg_loss = kl_div.sum(dim=tuple(range(1, kl_div.ndim))).mean()
+                    ratio = torch.exp(current_log_prob - old_log_prob.detach())
+                    clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                    clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
+                                     | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
+                    # Take mean over batch.
+                    policy_loss = -torch.min(ratio * trajectory.advantages,
+                                             clipped_ratio * trajectory.advantages).mean()
 
+                    # Regularization loss as KL divergence between modified and base policy.
+                    # This is the KL divergence per cell dimension.
+                    kl_div = (torch.log(sigma_ref) - torch.log(sigma)
+                              + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
+                    # Sum over cell dimensions and take mean over batch.
+                    reg_loss = kl_div.sum(dim=tuple(range(1, kl_div.ndim))).mean()
+
+                    # Entropy bonus when learning sigma.
+                    if self.noise_schedules[DataField.cell].learnable():
+                        # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
+                        # Multiply by cell dimensions.
+                        entropy_loss = ((-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5)
+                                        * res_b.shape[1:].numel())
+                else:
+                    assert self.residual_mode == self.ResidualMode.SCALE
+                    res_s = residual_output[DataField.cell.name + "_s"]  # Shape (batch_size,).
+                    old_log_prob = trajectory.old_log_probs[t_index][DataField.cell]  # Shape (batch_size,).
+                    # This is effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
+                    # Noise is effectively one-dimensional. Shape (batch_size,).
+                    sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.cell]
+                    # Tensor of shape (batch_size,).
+                    current_log_prob = -0.5 * (
+                            torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
+                            + ((sampled_residual_effect.detach() - res_s * dt) / (sigma * sqrt_dt)) ** 2
+                    )
+
+                    ratio = torch.exp(current_log_prob - old_log_prob.detach())
+                    clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                    clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
+                                     | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
+                    # Take mean over batch.
+                    policy_loss = -torch.min(ratio * trajectory.advantages,
+                                             clipped_ratio * trajectory.advantages).mean()
+
+                    # TODO: WRONG!
+                    # Regularization loss as KL divergence between modified and base policy.
+                    # This is the KL divergence per cell dimension.
+                    kl_div = (torch.log(sigma_ref) - torch.log(sigma)
+                              + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
+                    # Sum over cell dimensions and take mean over batch.
+                    reg_loss = kl_div.sum(dim=tuple(range(1, kl_div.ndim))).mean()
+
+                    # Entropy bonus when learning sigma.
+                    if self.noise_schedules[DataField.cell].learnable():
+                        # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
+                        entropy_loss = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5)
+
+                # Add weighted losses.
                 timestep_loss += self.relative_costs[DataField.cell.name + "_policy"] * policy_loss
                 timestep_loss += self.relative_costs[DataField.cell.name + "_regularization"] * reg_loss
+                if self.noise_schedules[DataField.cell].learnable():
+                    timestep_loss += self.relative_costs[DataField.cell.name + "_entropy"] * entropy_loss
 
+                # Track for logging.
                 total_policy_losses[DataField.cell] += policy_loss.item()
                 total_reg_losses[DataField.cell] += reg_loss.item()
                 total_clip_fractions[DataField.cell] += clip_fraction.item()
-
-                # Entropy bonus when learning sigma.
                 if self.noise_schedules[DataField.cell].learnable():
-                    # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
-                    # Multiply by cell dimensions.
-                    entropy_loss = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5) * res_b.shape[1:].numel()
-                    timestep_loss += self.relative_costs[DataField.cell.name + "_entropy"] * entropy_loss
                     total_entropy_losses[DataField.cell] += entropy_loss.item()
 
             # Scale loss by 1/num_timesteps and accumulate gradients.
@@ -759,7 +846,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     assert res_s_per_atom.shape[:1] == base_b.shape[:1]
                     velocity = (1.0 + res_s_per_atom) * base_b
                     randn = torch.randn_like(res_s)  # Tensor of shape (batch_size,).
-                    randn_per_atom = randn[x_t.batch].unsqueeze(-1)  # Tensor of shape (sum(n_atoms),).
+                    randn_per_atom = randn[x_t.batch].unsqueeze(-1)  # Tensor of shape (sum(n_atoms), 1).
                     noise = sigma * randn_per_atom * base_b
                 # Euler-Maruyama update for SDE.
                 x_t.pos = self.pos_corrector.correct(x_t.pos + velocity * dt + noise * sqrt_dt)
@@ -774,7 +861,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     noise = sigma * torch.randn_like(res_b)
                 else:
                     assert self.residual_mode == self.ResidualMode.SCALE
-                    # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to cell base_b shape (batch_size, 3, 3).
+                    # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
                     res_s = residual_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
                     assert res_s.shape[:1] == base_b.shape[:1]
                     velocity = (1.0 + res_s) * base_b
