@@ -69,6 +69,13 @@ class CRMSEReward(Reward):
         Angle tolerance in degrees for Pymatgen's StructureMatcher.
         Defaults to 10.0 (Pymatgen's default is 10.0).
     :type angle_tol: float
+    :param volume_check_cutoff:
+        Minimum volume for which to compute the RMSD normally.
+        If the generated structure has a volume below this cutoff, the RMSD is set to stol directly.
+        This avoids issues with very small volumes leading to Pymatgen's StructureMatcher hanging indefinitely.
+        Must be non-negative.
+        Defaults to 0.1.
+    :type volume_check_cutoff: float
     :param scale:
         Scaling factor for the reward.
         Must be positive.
@@ -82,12 +89,15 @@ class CRMSEReward(Reward):
         If scale is not positive.
     """
     def __init__(self, ltol: float = 0.3, stol: float = 0.5, angle_tol: float = 10.0, scale: float = 1.0,
-                 number_cpus: Optional[int] = None) -> None:
+                 volume_check_cutoff: float = 0.1, number_cpus: Optional[int] = None) -> None:
         """Constructor for CRMSEReward."""
         super().__init__()
         self._ltol = ltol
         self._stol = stol
         self._angle_tol = angle_tol
+        if not volume_check_cutoff >= 0.0:
+            raise ValueError("Volume check cutoff must be non-negative.")
+        self._volume_check_cutoff = volume_check_cutoff
         if not scale > 0.0:
             raise ValueError("Scale must be positive.")
         self._scale = scale
@@ -180,7 +190,7 @@ class CRMSEReward(Reward):
 
     @staticmethod
     def _compute_rmse(py_structure: PymatgenStructure, reference_py_structures: Sequence[PymatgenStructure],
-                      ltol: float, stol: float, angle_tol: float) -> float:
+                      ltol: float, stol: float, angle_tol: float, volume_check_cutoff: float) -> float:
         """
         Compute the cRMSE between a generated structure and the closest matching structure of the reference structures.
 
@@ -201,6 +211,11 @@ class CRMSEReward(Reward):
         :param angle_tol:
             Angle tolerance in degrees for Pymatgen's StructureMatcher.
         :type angle_tol: float
+        :param volume_check_cutoff:
+            Minimum volume for which to compute the RMSD normally.
+            If the generated structure has a volume below this cutoff, the RMSD is set to stol directly.
+            This avoids issues with very small volumes leading to Pymatgen's StructureMatcher hanging indefinitely.
+        :type volume_check_cutoff: float
 
         :return:
             The cRMSE value.
@@ -212,7 +227,11 @@ class CRMSEReward(Reward):
         assert len(reference_py_structures) > 0
         rmses = []
         for ref_py_structure in reference_py_structures:
-            res = sm.get_rms_dist(py_structure, ref_py_structure)
+            if py_structure.volume >= volume_check_cutoff:
+                # res is None if no match is found.
+                res = sm.get_rms_dist(py_structure, ref_py_structure)
+            else:
+                res = None
             assert res is None or res[0] <= stol
             rmses.append(stol if res is None else res[0])
         return min(rmses)
@@ -266,7 +285,8 @@ class CRMSEReward(Reward):
                     and len(reduced_composition_map[reduced_composition]) > 0)
             relevant_structures_list.append(reduced_composition_map[reduced_composition])
 
-        crmse_function = partial(self._compute_rmse, ltol=self._ltol, stol=self._stol, angle_tol=self._angle_tol)
+        crmse_function = partial(self._compute_rmse, ltol=self._ltol, stol=self._stol, angle_tol=self._angle_tol,
+                                 volume_check_cutoff=self._volume_check_cutoff)
 
         if self._cpu_count > 1:
             crmse_values = process_map(crmse_function, py_structures, relevant_structures_list,
