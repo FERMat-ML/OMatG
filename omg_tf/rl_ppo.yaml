@@ -1,17 +1,23 @@
 model:
   residual_model:
-    class_path: omg.model.model.Model
+    #class_path: omg.model.model.Model
+    #init_args:
+    #  encoder:
+    #    class_path: omg.model.encoders.cspnet_full.CSPNetFull
+    #    init_args:
+    #      initialize_zeros: true
+    #  head:
+    #    class_path: omg.model.heads.pass_through.PassThrough
+    #  time_embedder:
+    #    class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+    #    init_args:
+    #      dim: 256
+    class_path: omg_tf.time_mlp.TimeMLP
     init_args:
-      encoder:
-        class_path: omg.model.encoders.cspnet_full.CSPNetFull
-        init_args:
-          initialize_zeros: true
-      head:
-        class_path: omg.model.heads.pass_through.PassThrough
-      time_embedder:
-        class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
-        init_args:
-          dim: 256
+      hidden_dimension: 64
+      number_hidden_layers: 2
+      initialize_zeros: true
+      shared_trunk: true
   reward:
     class_path: omg_tf.rewards.CRMSEReward
     init_args:
@@ -40,7 +46,7 @@ model:
   ppo_epochs: 1
   gradient_clip_val: 1.0
   gradient_clip_algorithm: value
-  residual_mode: additive
+  residual_mode: "scale"
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint

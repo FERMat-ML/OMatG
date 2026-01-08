@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from enum import auto, Enum
 from time import strftime
-from typing import Optional
+from typing import Optional, Union
 import lightning
 import torch
 import torch.nn as nn
@@ -17,6 +17,7 @@ from omg.si import (DifferentialEquationType, SingleStochasticInterpolant, Singl
 from omg.utils import DataField, xyz_saver
 from omg_tf.abstracts import Reward, NoiseSchedule
 from omg_tf.base_modules import base_modules
+from omg_tf.time_mlp import TimeMLP
 
 
 @dataclass
@@ -101,7 +102,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         This is useful for learning speed adjustments to the base flow.
         """
 
-    def __init__(self, residual_model: Model, reward: Reward, noise_schedules: dict[str, NoiseSchedule],
+    def __init__(self, residual_model: Union[Model, TimeMLP], reward: Reward, noise_schedules: dict[str, NoiseSchedule],
                  relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
                  grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1,
                  gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
@@ -180,6 +181,13 @@ class OMGTFLightningPPO(lightning.LightningModule):
             self.residual_mode = self.ResidualMode[residual_mode.upper()]
         except KeyError:
             raise ValueError(f"Invalid residual mode '{residual_mode}'. Must be 'additive' or 'scale'.")
+        if self.residual_mode == self.ResidualMode.ADDITIVE:
+            if not isinstance(self.residual_model, Model):
+                raise ValueError("Additive residual mode requires residual model to be of type Model.")
+        else:
+            assert self.residual_mode == self.ResidualMode.SCALE
+            if not isinstance(self.residual_model, TimeMLP):
+                raise ValueError("Scale residual mode requires residual model to be of type TimeMLP.")
 
         self.integrated_data_fields = []
         pos_interpolant = base_model.si.get_stochastic_interpolant(DataField.pos.name)
@@ -696,11 +704,12 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     assert self.residual_mode == self.ResidualMode.SCALE
                     res_s = residual_output[DataField.pos.name + "_s"]  # Tensor of shape (batch_size,).
                     assert res_s.shape == time.shape
-                    res_s_per_atom = res_s[x_t.batch]  # Tensor of shape (sum(n_atoms),).
-                    assert res_s_per_atom.shape == base_b.shape[:1]
+                    # Tensor of shape (sum(n_atoms), 1) so that it can be broadcast to base_b shape (sum(n_atoms), 3).
+                    res_s_per_atom = res_s[x_t.batch].unsqueeze(-1)
+                    assert res_s_per_atom.shape[:1] == base_b.shape[:1]
                     velocity = (1.0 + res_s_per_atom) * base_b
                     randn = torch.randn_like(res_s)  # Tensor of shape (batch_size,).
-                    randn_per_atom = randn[x_t.batch]  # Tensor of shape (sum(n_atoms),).
+                    randn_per_atom = randn[x_t.batch].unsqueeze(-1)  # Tensor of shape (sum(n_atoms),).
                     noise = sigma * randn_per_atom * base_b
                 # Euler-Maruyama update for SDE.
                 x_t.pos = self.pos_corrector.correct(x_t.pos + velocity * dt + noise * sqrt_dt)
@@ -715,9 +724,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     noise = sigma * torch.randn_like(res_b)
                 else:
                     assert self.residual_mode == self.ResidualMode.SCALE
-                    res_s = residual_output[DataField.cell.name + "_s"]  # Tensor of shape (batch_size,).
-                    assert res_s.shape == time.shape
-                    assert res_s.shape == base_b.shape[:1]
+                    # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to cell base_b shape (batch_size, 3, 3).
+                    res_s = residual_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
+                    assert res_s.shape[:1] == base_b.shape[:1]
                     velocity = (1.0 + res_s) * base_b
                     noise = sigma * torch.randn_like(res_s) * base_b
                 # Euler-Maruyama update for SDE.
