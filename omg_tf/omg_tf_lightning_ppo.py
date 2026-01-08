@@ -392,48 +392,96 @@ class OMGTFLightningPPO(lightning.LightningModule):
             dt = times[t_index] - times[t_index - 1]
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
-            states.append(x_t.clone())
-
             base_model_output = base_model(x_t, time)
             residual_output = self.residual_model(x_t, time)
 
+            states.append(x_t.clone())
             step_sampled_residual_effects = {}
             step_old_log_probs = {}
 
             if self.integrate_pos:
                 base_b = base_model_output[DataField.pos.name + "_b"]
-                res_b = residual_output[DataField.pos.name + "_b"]
-                noise_b = torch.randn_like(res_b)
-                sigma = self.noise_schedules[DataField.pos].noise(t)
+                sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
+                assert sigma.ndim == 0
+
+                if self.residual_mode == self.ResidualMode.ADDITIVE:
+                    res_b = residual_output[DataField.pos.name + "_b"]
+                    assert res_b.shape == base_b.shape
+                    velocity = base_b + res_b
+                    randn = torch.randn_like(res_b)
+                    noise = sigma * randn
+                    # Store deviation effect for PPO update: res_b * dt + noise * sqrt(dt).
+                    # Effectively x_t+dt - x_t - base_b * dt. Shape (sum(n_atoms), 3).
+                    step_sampled_residual_effects[DataField.pos] = res_b * dt + noise * sqrt_dt
+                    # Log probability of x_t+dt given x_t for SDE.
+                    # Sum log probs over x, y, and z for additive mode yielding tensor of shape (sum(n_atoms),).
+                    log_probs_atoms = -0.5 * (
+                            torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2)
+                    ).sum(dim=tuple(range(1, randn.ndim)))
+                    step_old_log_probs[DataField.pos] = log_probs_atoms
+                else:
+                    assert self.residual_mode == self.ResidualMode.SCALE
+                    res_s = residual_output[DataField.pos.name + "_s"]  # Tensor of shape (batch_size,).
+                    assert res_s.shape == time.shape
+                    # Tensor of shape (sum(n_atoms), 1) so that it can be broadcast to base_b shape (sum(n_atoms), 3).
+                    res_s_per_atom = res_s[x_t.batch].unsqueeze(-1)
+                    assert res_s_per_atom.shape[:1] == base_b.shape[:1]
+                    velocity = (1.0 + res_s_per_atom) * base_b
+                    randn = torch.randn_like(res_s)  # Tensor of shape (batch_size).
+                    randn_per_atom = randn[x_t.batch].unsqueeze(-1)  # Tensor of shape (sum(n_atoms), 1).
+                    noise = sigma * randn_per_atom * base_b
+                    # Store deviation effect for PPO update: res_s * dt + noise * sqrt(dt).
+                    # Effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
+                    # Noise is effectively one-dimensional. Shape (batch_size,).
+                    step_sampled_residual_effects[DataField.pos] = res_s * dt + sigma * randn * sqrt_dt
+                    # Log probability of x_t+dt given x_t for SDE.
+                    # Tensor of shape (batch_size,).
+                    log_prob = -0.5 * (torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2))
+                    step_old_log_probs[DataField.pos] = log_prob
+
                 # Euler-Maruyama update for SDE.
-                x_t.pos = self.pos_corrector.correct(x_t.pos + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt)
-
-                # Effectively x_t+1 - x_t - base_b * dt. TODO: Do I have to worry about sigma being in here?
-                step_sampled_residual_effects[DataField.pos] = res_b * dt + sigma * noise_b * sqrt_dt
-
-                # Log probability of x_t+1 given x_t for SDE.
-                # Sum log probs over x, y, and z.
-                log_probs_atoms = -0.5 * (
-                        torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (noise_b ** 2)
-                ).sum(dim=tuple(range(1, noise_b.ndim)))
-                step_old_log_probs[DataField.pos] = log_probs_atoms
+                x_t.pos = self.pos_corrector.correct(x_t.pos + velocity * dt + noise * sqrt_dt)
 
             if self.integrate_cell:
                 base_b = base_model_output[DataField.cell.name + "_b"]
-                res_b = residual_output[DataField.cell.name + "_b"]
-                noise_b = torch.randn_like(res_b)
-                sigma = self.noise_schedules[DataField.cell].noise(t)
+                sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
+                assert sigma.ndim == 0
+
+                if self.residual_mode == self.ResidualMode.ADDITIVE:
+                    res_b = residual_output[DataField.cell.name + "_b"]
+                    assert res_b.shape == base_b.shape
+                    velocity = base_b + res_b
+                    randn = torch.randn_like(res_b)
+                    noise = sigma * randn
+                    # Store deviation effect for PPO update: res_b * dt + noise * sqrt(dt).
+                    # Effectively x_t+dt - x_t - base_b * dt. Shape (batch_size, 3, 3).
+                    step_sampled_residual_effects[DataField.cell] = res_b * dt + noise * sqrt_dt
+                    # Log probability of x_t+dt given x_t for SDE.
+                    # Sum log probs over all dimensions except batch yielding tensor of shape (batch_size,).
+                    step_old_log_probs[DataField.cell] = -0.5 * (
+                            torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2)
+                    ).sum(dim=tuple(range(1, randn.ndim)))
+                else:
+                    assert self.residual_mode == self.ResidualMode.SCALE
+                    # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
+                    res_s = residual_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
+                    assert res_s.shape[:1] == base_b.shape[:1]
+                    velocity = (1.0 + res_s) * base_b
+                    randn = torch.randn_like(res_s)
+                    noise = sigma * randn * base_b
+                    # Store deviation effect for PPO update: res_s * dt + noise * sqrt(dt).
+                    # Effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
+                    # Noise is effectively one-dimensional. Shape (batch_size,).
+                    step_sampled_residual_effects[DataField.cell] = (
+                            res_s.squeeze(dim=(1, 2)) * dt + sigma * randn.squeeze(dim=(1, 2)) * sqrt_dt)
+                    # Log probability of x_t+dt given x_t for SDE.
+                    # Tensor of shape (batch_size,).
+                    step_old_log_probs[DataField.cell] = -0.5 * (
+                            torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn.squeeze(dim=(1, 2)) ** 2)
+                    )
+
                 # Euler-Maruyama update for SDE.
-                x_t.cell = self.cell_corrector.correct(x_t.cell + (base_b + res_b) * dt + sigma * noise_b * sqrt_dt)
-
-                # Effectively x_t+1 - x_t - base_b * dt.
-                step_sampled_residual_effects[DataField.cell] = res_b * dt + sigma * noise_b * sqrt_dt
-
-                # Log probability of x_t+1 given x_t for SDE.
-                # Sum log probs over all dimensions except batch.
-                step_old_log_probs[DataField.cell] = -0.5 * (
-                        torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (noise_b ** 2)
-                ).sum(dim=tuple(range(1, noise_b.ndim)))
+                x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
 
             sampled_residual_effects.append(step_sampled_residual_effects)
             old_log_probs.append(step_old_log_probs)
