@@ -210,7 +210,7 @@ class ValidAtoms(object):
         # Pad diagonal with a large number
         dist_mat = dist_mat + np.diag(
             np.ones(dist_mat.shape[0]) * (cutoff + 10.))
-        if dist_mat.min() < cutoff or structure.volume < 0.1:
+        if dist_mat.min() < cutoff:
             return False
         else:
             return True
