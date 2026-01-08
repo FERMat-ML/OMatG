@@ -282,6 +282,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
             raise ValueError(f"Invalid position normalization: {position_normalization}")
         if normalization != self.PositionNormalization.NONE and DataField.pos not in self.integrated_data_fields:
             raise ValueError("Position normalization requires position to be an integrated field.")
+        if normalization != self.PositionNormalization.NONE and self.residual_mode != self.ResidualMode.ADDITIVE:
+            raise ValueError("Position normalization is only supported for additive residual mode.")
         self.position_normalization = normalization
 
         if not all(cost >= 0.0 for cost in relative_costs.values()):
