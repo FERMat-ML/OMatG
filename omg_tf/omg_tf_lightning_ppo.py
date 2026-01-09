@@ -37,6 +37,7 @@ class TrajectoryData:
     info_dict: dict[str, torch.Tensor]
 
 
+# noinspection DuplicatedCode
 class OMGTFLightningPPO(lightning.LightningModule):
     """
     Lightning module for PPO-style RL training of residual models.
@@ -140,7 +141,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
             Number of PPO update epochs per rollout.
         :type ppo_epochs: int
         :param gradient_clip_val:
-            Maximum gradient norm for clipping. Set to None to disable gradient clipping.
+            Maximum gradient norm for clipping. Use None to disable gradient clipping.
         :type gradient_clip_val: Optional[float]
         :param gradient_clip_algorithm:
             Algorithm for gradient clipping: "norm" (clip by total norm) or "value" (clip by value).
@@ -650,6 +651,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                         else:
                             # Take mean over batch.
                             entropy_loss = entropy_loss_per_atom.mean()
+                    else:
+                        entropy_loss = None
                 else:
                     assert self.residual_mode == self.ResidualMode.SCALE
                     res_s = residual_output[DataField.pos.name + "_s"]  # Shape (batch_size,).
@@ -671,24 +674,19 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     policy_loss = -torch.min(ratio * trajectory.advantages,
                                              clipped_ratio * trajectory.advantages).mean()
 
-                    # TODO: WRONG!
                     # Regularization loss as KL divergence between modified and base policy.
-                    # This is the KL divergence per position dimension.
+                    # This is already the KL divergence per structure. Shape (batch_size,).
                     kl_div = (torch.log(sigma_ref) - torch.log(sigma)
-                              + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
-                    # Sum over position dimensions to get per-atom KL.
-                    per_atom_kl = kl_div.sum(dim=-1)
-                    if self.position_normalization == self.PositionNormalization.NONE:
-                        # Sum over atoms to get per-structure KL and take mean over batch.
-                        reg_loss = scatter_add(per_atom_kl, x_t.batch).mean()
-                    else:
-                        # Average over atoms to get per-structure KL and take mean over batch.
-                        reg_loss = scatter_mean(per_atom_kl, x_t.batch).mean()
+                              + (sigma * sigma + res_s * res_s * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
+                    # Take mean over batch.
+                    reg_loss = kl_div.mean()
 
                     # Entropy bonus when learning sigma.
                     if self.noise_schedules[DataField.pos].learnable():
                         # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
                         entropy_loss = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5)
+                    else:
+                        entropy_loss = None
 
                 # Add weighted losses.
                 timestep_loss += self.relative_costs[DataField.pos.name + "_policy"] * policy_loss
@@ -741,6 +739,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                         # Multiply by cell dimensions.
                         entropy_loss = ((-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5)
                                         * res_b.shape[1:].numel())
+                    else:
+                        entropy_loss = None
                 else:
                     assert self.residual_mode == self.ResidualMode.SCALE
                     res_s = residual_output[DataField.cell.name + "_s"]  # Shape (batch_size,).
@@ -762,18 +762,19 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     policy_loss = -torch.min(ratio * trajectory.advantages,
                                              clipped_ratio * trajectory.advantages).mean()
 
-                    # TODO: WRONG!
                     # Regularization loss as KL divergence between modified and base policy.
-                    # This is the KL divergence per cell dimension.
+                    # This is already the KL divergence per structure. Shape (batch_size,).
                     kl_div = (torch.log(sigma_ref) - torch.log(sigma)
-                              + (sigma * sigma + res_b * res_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
-                    # Sum over cell dimensions and take mean over batch.
-                    reg_loss = kl_div.sum(dim=tuple(range(1, kl_div.ndim))).mean()
+                              + (sigma * sigma + res_s * res_s * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
+                    # Take mean over batch.
+                    reg_loss = kl_div.mean()
 
                     # Entropy bonus when learning sigma.
                     if self.noise_schedules[DataField.cell].learnable():
                         # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
                         entropy_loss = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5)
+                    else:
+                        entropy_loss = None
 
                 # Add weighted losses.
                 timestep_loss += self.relative_costs[DataField.cell.name + "_policy"] * policy_loss
