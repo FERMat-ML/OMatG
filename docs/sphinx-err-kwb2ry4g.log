@@ -1,0 +1,39 @@
+Versions
+========
+
+* Platform:         linux; (Linux-6.8.0-90-generic-x86_64-with-glibc2.39)
+* Python version:   3.11.4 (CPython)
+* Sphinx version:   8.2.3
+* Docutils version: 0.21.2
+* Jinja2 version:   3.1.6
+* Pygments version: 2.19.2
+
+Last Messages
+=============
+
+None.
+
+Loaded Extensions
+=================
+
+None.
+
+Traceback
+=========
+
+    Traceback (most recent call last):
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/cmd/build.py", line 414, in build_main
+        app = Sphinx(
+              ^^^^^^^
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/application.py", line 332, in __init__
+        self._init_builder()
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/application.py", line 413, in _init_builder
+        self.builder.init()
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/builders/html/__init__.py", line 176, in init
+        self.init_templates()
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/builders/html/__init__.py", line 232, in init_templates
+        self.theme = theme_factory.create(theme_name)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/theming.py", line 228, in create
+        raise ThemeError(__('no theme named %r found (missing theme.toml?)') % name)
+    sphinx.errors.ThemeError: no theme named 'pydata_sphinx_theme' found (missing theme.toml?)

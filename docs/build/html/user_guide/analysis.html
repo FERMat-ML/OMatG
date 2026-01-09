@@ -1,0 +1,1239 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Analysis &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/analysis';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Training" href="training.html" />
+    <link rel="prev" title="Model" href="model.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="#">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="stochastic_interpolants.html">Stochastic Interpolants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sampler.html">Samplers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datamodule.html">DataModule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training.html">Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generation.html">Generation</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Analysis</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="analysis">
+<h1>Analysis<a class="headerlink" href="#analysis" title="Link to this heading">#</a></h1>
+<p>Analysis tools for validating and evaluating generated crystal structures.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>OMatG provides comprehensive metrics for both generation modes:</p>
+<ul class="simple">
+<li><p><strong>CSP Metrics</strong>: Match rates, RMSD, corrected RMSD</p></li>
+<li><p><strong>DNG Metrics</strong>: Validity, diversity, coverage, Wasserstein distances</p></li>
+<li><p><strong>Validation</strong>: Structural and compositional checks</p></li>
+</ul>
+</section>
+<section id="crystal-structure-prediction-metrics">
+<h2>Crystal Structure Prediction Metrics<a class="headerlink" href="#crystal-structure-prediction-metrics" title="Link to this heading">#</a></h2>
+<section id="match-rate">
+<h3>Match Rate<a class="headerlink" href="#match-rate" title="Link to this heading">#</a></h3>
+<p>Percentage of generated structures matching target structures using PyMatgen’s <code class="docutils literal notranslate"><span class="pre">StructureMatcher</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>csp_metrics<span class="w"> </span>--config<span class="o">=</span>config.yaml<span class="w"> </span>--xyz_file<span class="o">=</span>generated.xyz
+</pre></div>
+</div>
+<p><strong>Output</strong> (<code class="docutils literal notranslate"><span class="pre">csp_metrics.json</span></code>):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;match_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.85</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;match_rate_valid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.92</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;validity_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.93</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;avg_rmsd&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.12</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;avg_crmse&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.15</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="match-everyone-to-reference-metre">
+<h3>Match-Everyone-to-Reference (METRe)<a class="headerlink" href="#match-everyone-to-reference-metre" title="Link to this heading">#</a></h3>
+<p>Compute best match for each reference structure:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>csp_metrics<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xyz_file<span class="o">=</span>generated.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--metre<span class="o">=</span>True
+</pre></div>
+</div>
+<p>Finds best match from all generated structures for each target.</p>
+</section>
+<section id="root-mean-square-displacement-rmsd">
+<h3>Root Mean Square Displacement (RMSD)<a class="headerlink" href="#root-mean-square-displacement-rmsd" title="Link to this heading">#</a></h3>
+<p>Average RMSD between matched structures:</p>
+<div class="math notranslate nohighlight">
+\[\text{RMSD} = \sqrt{\frac{1}{N} \sum_{i=1}^N \| \mathbf{x}_i - \mathbf{x}'_i \|^2}\]</div>
+<p><strong>Interpretation</strong>:</p>
+<ul class="simple">
+<li><p>&lt; 0.1 Å: Excellent match</p></li>
+<li><p>0.1-0.3 Å: Good match</p></li>
+<li><p>&gt; 0.3 Å: Poor match</p></li>
+</ul>
+</section>
+<section id="corrected-rmse-crmse">
+<h3>Corrected RMSE (cRMSE)<a class="headerlink" href="#corrected-rmse-crmse" title="Link to this heading">#</a></h3>
+<p>RMSD with penalty for non-matches:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cRMSE</span> <span class="o">=</span> <span class="n">RMSD</span> <span class="k">if</span> <span class="n">matched</span> <span class="k">else</span> <span class="n">stol</span>
+</pre></div>
+</div>
+<p>where <code class="docutils literal notranslate"><span class="pre">stol</span></code> is the site tolerance parameter (default: 0.3 Å).</p>
+<p><strong>Purpose</strong>: Avoids ignoring failed matches in averages.</p>
+</section>
+<section id="validation">
+<h3>Validation<a class="headerlink" href="#validation" title="Link to this heading">#</a></h3>
+<p>Structures are validated before matching:</p>
+<ul class="simple">
+<li><p><strong>Volume check</strong>: Reasonable atomic volumes</p></li>
+<li><p><strong>Structure check</strong>: Valid atomic positions</p></li>
+<li><p><strong>Composition check</strong>: Expected elements</p></li>
+<li><p><strong>Fingerprint check</strong>: Structural integrity</p></li>
+</ul>
+<p>Skip validation (faster):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>csp_metrics<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xyz_file<span class="o">=</span>generated.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--skip_validation<span class="o">=</span>True
+</pre></div>
+</div>
+</section>
+<section id="configuration">
+<h3>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">#</a></h3>
+<p>Customize <code class="docutils literal notranslate"><span class="pre">StructureMatcher</span></code> parameters:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>csp_metrics<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xyz_file<span class="o">=</span>generated.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ltol<span class="o">=</span><span class="m">0</span>.2<span class="w"> </span><span class="se">\ </span><span class="w">          </span><span class="c1"># Lattice tolerance</span>
+<span class="w">    </span>--stol<span class="o">=</span><span class="m">0</span>.3<span class="w"> </span><span class="se">\ </span><span class="w">          </span><span class="c1"># Site tolerance</span>
+<span class="w">    </span>--angle_tol<span class="o">=</span><span class="m">5</span>.0<span class="w">        </span><span class="c1"># Angle tolerance (degrees)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="de-novo-generation-metrics">
+<h2><em>De Novo</em> Generation Metrics<a class="headerlink" href="#de-novo-generation-metrics" title="Link to this heading">#</a></h2>
+<section id="validity">
+<h3>Validity<a class="headerlink" href="#validity" title="Link to this heading">#</a></h3>
+<p>Percentage of structurally and compositionally valid structures:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>dng_metrics<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xyz_file<span class="o">=</span>generated.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--dataset_name<span class="o">=</span>mp_20
+</pre></div>
+</div>
+<p><strong>Checks</strong>:</p>
+<ul class="simple">
+<li><p>Valid atomic positions (no overlaps)</p></li>
+<li><p>Physically reasonable bond lengths</p></li>
+<li><p>Charge neutrality</p></li>
+<li><p>Positive lattice parameters</p></li>
+<li><p>Sensible density</p></li>
+</ul>
+<p>Output:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;validity_structural&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.95</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;validity_compositional&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.88</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;validity_overall&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.85</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="coverage">
+<h3>Coverage<a class="headerlink" href="#coverage" title="Link to this heading">#</a></h3>
+<p>Percentage of test set compositions covered by generated structures:</p>
+<div class="math notranslate nohighlight">
+\[\text{Coverage} = \frac{|\text{Generated Compositions} \cap \text{Test Compositions}|}{|\text{Test Compositions}|}\]</div>
+<p>Recall and Precision:</p>
+<ul class="simple">
+<li><p><strong>Recall</strong>: Coverage of test compositions</p></li>
+<li><p><strong>Precision</strong>: Fraction of generated structures with test compositions</p></li>
+</ul>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;coverage_recall&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.75</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;coverage_precision&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.68</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="diversity">
+<h3>Diversity<a class="headerlink" href="#diversity" title="Link to this heading">#</a></h3>
+<p>Measured via Wasserstein distances between distributions:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;wasserstein_density&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.15</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;wasserstein_volume_fraction&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.12</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;wasserstein_num_atoms&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.08</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;wasserstein_num_elements&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;wasserstein_coordination&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.18</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Interpretation</strong>: Lower is better (closer to training distribution)</p>
+</section>
+<section id="property-distributions">
+<h3>Property Distributions<a class="headerlink" href="#property-distributions" title="Link to this heading">#</a></h3>
+<p>Generated vs. training distributions:</p>
+<ul class="simple">
+<li><p><strong>Density</strong>: Mass density (g/cm³)</p></li>
+<li><p><strong>Volume fraction</strong>: Atomic packing fraction</p></li>
+<li><p><strong>Number of atoms</strong>: Atoms per unit cell</p></li>
+<li><p><strong>Number of elements</strong>: Unique element types</p></li>
+<li><p><strong>Coordination number</strong>: Average atomic coordination</p></li>
+</ul>
+</section>
+</section>
+<section id="validation-tools">
+<h2>Validation Tools<a class="headerlink" href="#validation-tools" title="Link to this heading">#</a></h2>
+<section id="validatoms-class">
+<h3>ValidAtoms Class<a class="headerlink" href="#validatoms-class" title="Link to this heading">#</a></h3>
+<p>Comprehensive structure validation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">omg.analysis.valid_atoms</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidAtoms</span>
+
+<span class="n">validator</span> <span class="o">=</span> <span class="n">ValidAtoms</span><span class="p">()</span>
+
+<span class="c1"># Validate single structure</span>
+<span class="n">is_valid</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_structure</span><span class="p">(</span>
+    <span class="n">species</span><span class="o">=</span><span class="n">atomic_numbers</span><span class="p">,</span>
+    <span class="n">positions</span><span class="o">=</span><span class="n">cartesian_coords</span><span class="p">,</span>
+    <span class="n">cell</span><span class="o">=</span><span class="n">lattice_matrix</span>
+<span class="p">)</span>
+
+<span class="c1"># Get detailed results</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_with_details</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;volume_check&#39;</span><span class="p">])</span>      <span class="c1"># Pass/fail</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;structure_check&#39;</span><span class="p">])</span>   <span class="c1"># Pass/fail</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;composition_check&#39;</span><span class="p">])</span> <span class="c1"># Pass/fail</span>
+</pre></div>
+</div>
+</section>
+<section id="validation-checks">
+<h3>Validation Checks<a class="headerlink" href="#validation-checks" title="Link to this heading">#</a></h3>
+<p><strong>Volume Check</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">valid</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">check_volume</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Ensures atoms have reasonable volumes (not too dense/sparse).</p>
+<p><strong>Structure Check</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">valid</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">check_structure</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">cell</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Checks for:</p>
+<ul class="simple">
+<li><p>No overlapping atoms</p></li>
+<li><p>Reasonable bond lengths</p></li>
+<li><p>Valid coordination</p></li>
+</ul>
+<p><strong>Composition Check</strong>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">valid</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">check_composition</span><span class="p">(</span><span class="n">species</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Verifies:</p>
+<ul class="simple">
+<li><p>Known element types (1 ≤ Z ≤ 118)</p></li>
+<li><p>Charge neutrality (for ionic compounds)</p></li>
+<li><p>Sensible stoichiometry</p></li>
+</ul>
+</section>
+</section>
+<section id="visualization">
+<h2>Visualization<a class="headerlink" href="#visualization" title="Link to this heading">#</a></h2>
+<section id="distribution-plots">
+<h3>Distribution Plots<a class="headerlink" href="#distribution-plots" title="Link to this heading">#</a></h3>
+<p>Compare generated to training data:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>visualize<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xyz_file<span class="o">=</span>generated.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--plot_name<span class="o">=</span>distributions.pdf
+</pre></div>
+</div>
+<p>Creates plots for:</p>
+<ul class="simple">
+<li><p>Density distributions</p></li>
+<li><p>Volume distributions</p></li>
+<li><p>Atom count distributions</p></li>
+<li><p>Element distributions</p></li>
+<li><p>Lattice parameter distributions</p></li>
+</ul>
+</section>
+<section id="rmsd-histogram">
+<h3>RMSD Histogram<a class="headerlink" href="#rmsd-histogram" title="Link to this heading">#</a></h3>
+<p>Automatically generated with CSP metrics:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>csp_metrics<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xyz_file<span class="o">=</span>generated.xyz
+<span class="c1"># Creates rmsds.pdf</span>
+</pre></div>
+</div>
+<p>Shows distribution of RMSD values for matched structures.</p>
+</section>
+</section>
+<section id="custom-analysis">
+<h2>Custom Analysis<a class="headerlink" href="#custom-analysis" title="Link to this heading">#</a></h2>
+<section id="analyzing-generated-structures">
+<h3>Analyzing Generated Structures<a class="headerlink" href="#analyzing-generated-structures" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Structure</span>
+
+<span class="c1"># Read generated structures</span>
+<span class="n">atoms_list</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s1">&#39;generated.xyz&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">atoms</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atoms_list</span><span class="p">):</span>
+    <span class="c1"># Convert to pymatgen</span>
+    <span class="n">structure</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span>
+        <span class="n">lattice</span><span class="o">=</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_cell</span><span class="p">(),</span>
+        <span class="n">species</span><span class="o">=</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_chemical_symbols</span><span class="p">(),</span>
+        <span class="n">coords</span><span class="o">=</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_scaled_positions</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Analyze</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Structure </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Formula: </span><span class="si">{</span><span class="n">structure</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">reduced_formula</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Density: </span><span class="si">{</span><span class="n">structure</span><span class="o">.</span><span class="n">density</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> g/cm³&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Volume: </span><span class="si">{</span><span class="n">structure</span><span class="o">.</span><span class="n">volume</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> Ų&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Space group: </span><span class="si">{</span><span class="n">structure</span><span class="o">.</span><span class="n">get_space_group_info</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="computing-custom-properties">
+<h3>Computing Custom Properties<a class="headerlink" href="#computing-custom-properties" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.analysis.local_env</span><span class="w"> </span><span class="kn">import</span> <span class="n">CrystalNN</span>
+
+<span class="c1"># Compute coordination numbers</span>
+<span class="n">nn</span> <span class="o">=</span> <span class="n">CrystalNN</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">site</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">structure</span><span class="p">):</span>
+    <span class="n">cn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">get_cn</span><span class="p">(</span><span class="n">structure</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Site </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: coordination = </span><span class="si">{</span><span class="n">cn</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="structural-similarity">
+<h3>Structural Similarity<a class="headerlink" href="#structural-similarity" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">omg.sampler.minimum_permutation_distance</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">compute_minimum_permutation_distance</span>
+<span class="p">)</span>
+
+<span class="c1"># Compute similarity between structures</span>
+<span class="n">mpd</span> <span class="o">=</span> <span class="n">compute_minimum_permutation_distance</span><span class="p">(</span>
+    <span class="n">pos1</span><span class="p">,</span> <span class="n">cell1</span><span class="p">,</span> <span class="n">pos2</span><span class="p">,</span> <span class="n">cell2</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Minimum Permutation Distance: </span><span class="si">{</span><span class="n">mpd</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="batch-analysis">
+<h3>Batch Analysis<a class="headerlink" href="#batch-analysis" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">atoms</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">atoms_list</span><span class="p">):</span>
+    <span class="n">structure</span> <span class="o">=</span> <span class="o">...</span>  <span class="c1"># Convert to pymatgen</span>
+    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+        <span class="s1">&#39;formula&#39;</span><span class="p">:</span> <span class="n">structure</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">reduced_formula</span><span class="p">,</span>
+        <span class="s1">&#39;density&#39;</span><span class="p">:</span> <span class="n">structure</span><span class="o">.</span><span class="n">density</span><span class="p">,</span>
+        <span class="s1">&#39;volume&#39;</span><span class="p">:</span> <span class="n">structure</span><span class="o">.</span><span class="n">volume</span><span class="p">,</span>
+        <span class="s1">&#39;n_atoms&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">structure</span><span class="p">),</span>
+        <span class="s1">&#39;n_elements&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">structure</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">)),</span>
+    <span class="p">})</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">describe</span><span class="p">())</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;analysis.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="performance-metrics">
+<h2>Performance Metrics<a class="headerlink" href="#performance-metrics" title="Link to this heading">#</a></h2>
+<section id="parallelization">
+<h3>Parallelization<a class="headerlink" href="#parallelization" title="Link to this heading">#</a></h3>
+<p>Analysis commands support parallel processing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>csp_metrics<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xyz_file<span class="o">=</span>generated.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--number_cpus<span class="o">=</span><span class="m">16</span><span class="w">  </span><span class="c1"># Use 16 CPU cores</span>
+</pre></div>
+</div>
+<p>Default: Uses all available CPUs (<code class="docutils literal notranslate"><span class="pre">os.cpu_count()</span></code>)</p>
+</section>
+<section id="processing-time">
+<h3>Processing Time<a class="headerlink" href="#processing-time" title="Link to this heading">#</a></h3>
+<p>Typical times for 10,000 structures:</p>
+<ul class="simple">
+<li><p><strong>Validation</strong>: ~5 minutes (16 CPUs)</p></li>
+<li><p><strong>CSP matching</strong>: ~10 minutes (16 CPUs)</p></li>
+<li><p><strong>DNG metrics</strong>: ~3 minutes (16 CPUs)</p></li>
+<li><p><strong>Visualization</strong>: ~1 minute</p></li>
+</ul>
+</section>
+<section id="memory-usage">
+<h3>Memory Usage<a class="headerlink" href="#memory-usage" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Validation</strong>: ~2 GB</p></li>
+<li><p><strong>CSP metrics</strong>: ~4 GB</p></li>
+<li><p><strong>DNG metrics</strong>: ~3 GB</p></li>
+</ul>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">#</a></h2>
+<ol class="arabic">
+<li><p><strong>Validate before metrics</strong>: Check structural validity first:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>csp_metrics<span class="w"> </span>--xyz_file<span class="o">=</span>generated.xyz<span class="w">  </span><span class="c1"># Includes validation</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use parallelization</strong>: Speed up analysis with multiple CPUs:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>--number_cpus<span class="o">=</span><span class="m">16</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Save intermediate results</strong>: Keep JSON outputs for later analysis</p></li>
+<li><p><strong>Compare multiple runs</strong>: Track metrics across experiments:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiments</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">exp</span><span class="si">}</span><span class="s1">/csp_metrics.json&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">))</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Visualize distributions</strong>: Always generate distribution plots:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>visualize<span class="w"> </span>--xyz_file<span class="o">=</span>generated.xyz
+</pre></div>
+</div>
+</li>
+<li><p><strong>Check initial structures</strong>: Compare <code class="docutils literal notranslate"><span class="pre">generated.xyz</span></code> and <code class="docutils literal notranslate"><span class="pre">generated_init.xyz</span></code></p></li>
+<li><p><strong>Use appropriate metrics</strong>: CSP for fixed composition, DNG for variable composition</p></li>
+</ol>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
+<section id="low-match-rate">
+<h3>Low Match Rate<a class="headerlink" href="#low-match-rate" title="Link to this heading">#</a></h3>
+<p><strong>Possible causes</strong>:</p>
+<ul class="simple">
+<li><p>Insufficient integration steps</p></li>
+<li><p>Poor model training</p></li>
+<li><p>Mismatched sampler/SI configuration</p></li>
+<li><p>Wrong tolerance parameters</p></li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Increase integration steps:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">integration_time_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2000</span>
+</pre></div>
+</div>
+</li>
+<li><p>Train longer or with more data</p></li>
+<li><p>Verify sampler matches SI type</p></li>
+<li><p>Adjust tolerance:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>csp_metrics<span class="w"> </span>--stol<span class="o">=</span><span class="m">0</span>.5<span class="w">  </span><span class="c1"># More lenient</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="low-validity">
+<h3>Low Validity<a class="headerlink" href="#low-validity" title="Link to this heading">#</a></h3>
+<p><strong>Causes</strong>:</p>
+<ul class="simple">
+<li><p>Model not converged</p></li>
+<li><p>Poor base distribution</p></li>
+<li><p>Too few integration steps</p></li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Train longer:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">max_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3000</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use informed base distributions:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">cell_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.cell_distributions.InformedLatticeDistribution</span>
+</pre></div>
+</div>
+</li>
+<li><p>Increase integration steps</p></li>
+</ol>
+</section>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="training.html"><span class="doc">Training</span></a> - Improve model performance</p></li>
+<li><p><a class="reference internal" href="generation.html"><span class="doc">Generation</span></a> - Generate structures</p></li>
+<li><p><a class="reference internal" href="../api/analysis.html"><span class="doc">Analysis</span></a> - Analysis API reference</p></li>
+<li><p><a class="reference internal" href="stochastic_interpolants.html"><span class="doc">Stochastic Interpolants</span></a> - Tune SI parameters</p></li>
+<li><p><a class="reference internal" href="../development/contributing.html"><span class="doc">Contributing</span></a> - Contributing guidelines</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="model.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Model</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="training.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Training</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#crystal-structure-prediction-metrics">Crystal Structure Prediction Metrics</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#match-rate">Match Rate</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#match-everyone-to-reference-metre">Match-Everyone-to-Reference (METRe)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#root-mean-square-displacement-rmsd">Root Mean Square Displacement (RMSD)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#corrected-rmse-crmse">Corrected RMSE (cRMSE)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#validation">Validation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#de-novo-generation-metrics"><em>De Novo</em> Generation Metrics</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#validity">Validity</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#coverage">Coverage</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#diversity">Diversity</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#property-distributions">Property Distributions</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validation-tools">Validation Tools</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#validatoms-class">ValidAtoms Class</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#validation-checks">Validation Checks</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#visualization">Visualization</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#distribution-plots">Distribution Plots</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#rmsd-histogram">RMSD Histogram</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-analysis">Custom Analysis</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#analyzing-generated-structures">Analyzing Generated Structures</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#computing-custom-properties">Computing Custom Properties</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#structural-similarity">Structural Similarity</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#batch-analysis">Batch Analysis</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#performance-metrics">Performance Metrics</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parallelization">Parallelization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#processing-time">Processing Time</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#memory-usage">Memory Usage</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">Best Practices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#low-match-rate">Low Match Rate</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#low-validity">Low Validity</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#next-steps">Next Steps</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user_guide/analysis.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1245 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>DataModule &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/datamodule';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Model" href="model.html" />
+    <link rel="prev" title="Samplers" href="sampler.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="#">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="stochastic_interpolants.html">Stochastic Interpolants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sampler.html">Samplers</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">DataModule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training.html">Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generation.html">Generation</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">DataModule</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="datamodule">
+<h1>DataModule<a class="headerlink" href="#datamodule" title="Link to this heading">#</a></h1>
+<p>The DataModule handles loading, preprocessing, and batching crystal structure data for training and generation.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>OMatG uses PyTorch Lightning’s <code class="docutils literal notranslate"><span class="pre">LightningDataModule</span></code> pattern through <code class="docutils literal notranslate"><span class="pre">OMGDataModule</span></code>, which manages:</p>
+<ul class="simple">
+<li><p>Training, validation, and prediction datasets</p></li>
+<li><p>Data loading with PyTorch DataLoaders</p></li>
+<li><p>Batching with PyTorch Geometric</p></li>
+<li><p>Optional preprocessing (Niggli reduction, lazy loading)</p></li>
+</ul>
+</section>
+<section id="data-formats">
+<h2>Data Formats<a class="headerlink" href="#data-formats" title="Link to this heading">#</a></h2>
+<p>OMatG supports three input formats:</p>
+<section id="lmdb-recommended">
+<h3>LMDB (Recommended)<a class="headerlink" href="#lmdb-recommended" title="Link to this heading">#</a></h3>
+<p>Fast binary format for large datasets:</p>
+<p><strong>Structure</strong>: Key-value pairs where each value is a pickled dict:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;pos&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>          <span class="c1"># Shape: (N, 3) Cartesian coordinates</span>
+    <span class="s1">&#39;cell&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>         <span class="c1"># Shape: (3, 3) lattice vectors</span>
+    <span class="s1">&#39;atomic_numbers&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># Shape: (N,) atomic numbers</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Advantages</strong>:</p>
+<ul class="simple">
+<li><p>Fast random access</p></li>
+<li><p>Memory-efficient with lazy loading</p></li>
+<li><p>Native OMatG format</p></li>
+</ul>
+</section>
+<section id="csv">
+<h3>CSV<a class="headerlink" href="#csv" title="Link to this heading">#</a></h3>
+<p>Text format with CIF strings:</p>
+<p><strong>Required column</strong>: <code class="docutils literal notranslate"><span class="pre">cif</span></code> containing CIF-formatted structures</p>
+<div class="highlight-csv notranslate"><div class="highlight"><pre><span></span>cif
+&quot;data_structure1\n_cell_length_a  5.0\n...&quot;
+&quot;data_structure2\n_cell_length_a  6.0\n...&quot;
+</pre></div>
+</div>
+<p><strong>Advantages</strong>:</p>
+<ul class="simple">
+<li><p>Human-readable</p></li>
+<li><p>Easy to create from existing datasets</p></li>
+<li><p>Automatically converted to LMDB for lazy loading</p></li>
+</ul>
+</section>
+<section id="parquet">
+<h3>Parquet<a class="headerlink" href="#parquet" title="Link to this heading">#</a></h3>
+<p>Columnar format from Hugging Face datasets:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Parquet files work directly</span>
+<span class="n">file_path</span><span class="p">:</span> <span class="s2">&quot;Alex-MP-20/train.parquet&quot;</span>
+</pre></div>
+</div>
+<p><strong>Advantages</strong>:</p>
+<ul class="simple">
+<li><p>Efficient for large datasets</p></li>
+<li><p>Standard format for ML datasets</p></li>
+</ul>
+</section>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">#</a></h2>
+<section id="basic-configuration">
+<h3>Basic Configuration<a class="headerlink" href="#basic-configuration" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">train_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.datamodule.StructureDataset</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/mp_20/train.lmdb&quot;</span>
+<span class="w">  </span><span class="nt">val_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.datamodule.StructureDataset</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/mp_20/val.lmdb&quot;</span>
+<span class="w">  </span><span class="nt">pred_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.datamodule.StructureDataset</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/mp_20/test.lmdb&quot;</span>
+<span class="w">  </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">  </span><span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+</pre></div>
+</div>
+</section>
+<section id="with-preprocessing">
+<h3>With Preprocessing<a class="headerlink" href="#with-preprocessing" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">train_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.datamodule.StructureDataset</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/mp_20/train.lmdb&quot;</span>
+<span class="w">      </span><span class="nt">lazy_storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">          </span><span class="c1"># Memory-efficient loading</span>
+<span class="w">      </span><span class="nt">niggli_reduce</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">         </span><span class="c1"># Standardize unit cells</span>
+<span class="w">  </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">  </span><span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">  </span><span class="nt">pin_memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                </span><span class="c1"># Faster GPU transfer</span>
+<span class="w">  </span><span class="nt">persistent_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">        </span><span class="c1"># Keep workers alive</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="dataset-options">
+<h2>Dataset Options<a class="headerlink" href="#dataset-options" title="Link to this heading">#</a></h2>
+<section id="file-path">
+<h3>file_path<a class="headerlink" href="#file-path" title="Link to this heading">#</a></h3>
+<p>Path to dataset file:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/mp_20/train.lmdb&quot;</span><span class="w">          </span><span class="c1"># Absolute or relative</span>
+<span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/absolute/path/to/dataset.csv&quot;</span><span class="w">  </span><span class="c1"># Absolute path</span>
+</pre></div>
+</div>
+<p>Relative paths are resolved relative to:</p>
+<ol class="arabic simple">
+<li><p>Current working directory</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">omg/</span></code> directory in OMatG repository</p></li>
+</ol>
+</section>
+<section id="lazy-storage">
+<h3>lazy_storage<a class="headerlink" href="#lazy-storage" title="Link to this heading">#</a></h3>
+<p>Enable lazy loading for large datasets:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">lazy_storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># Load structures on-demand</span>
+<span class="nt">lazy_storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># Load all structures into memory (default)</span>
+</pre></div>
+</div>
+<p><strong>Use when</strong>: Dataset doesn’t fit in memory</p>
+</section>
+<section id="niggli-reduce">
+<h3>niggli_reduce<a class="headerlink" href="#niggli-reduce" title="Link to this heading">#</a></h3>
+<p>Apply Niggli reduction to standardize cells:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">niggli_reduce</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># Standardize all cells</span>
+<span class="nt">niggli_reduce</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># Use cells as-is (default)</span>
+</pre></div>
+</div>
+<p><strong>Effect</strong>: Reduces cells to their unique conventional form</p>
+</section>
+</section>
+<section id="dataloader-options">
+<h2>DataLoader Options<a class="headerlink" href="#dataloader-options" title="Link to this heading">#</a></h2>
+<section id="batch-size">
+<h3>batch_size<a class="headerlink" href="#batch-size" title="Link to this heading">#</a></h3>
+<p>Number of structures per batch:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span><span class="w">   </span><span class="c1"># Default</span>
+<span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span><span class="w">   </span><span class="c1"># Larger batches (more memory, faster)</span>
+<span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span><span class="w">   </span><span class="c1"># Smaller batches (less memory, slower)</span>
+</pre></div>
+</div>
+</section>
+<section id="num-workers">
+<h3>num_workers<a class="headerlink" href="#num-workers" title="Link to this heading">#</a></h3>
+<p>Parallel data loading processes:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">   </span><span class="c1"># Single process (slow, for debugging)</span>
+<span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w">   </span><span class="c1"># 4 parallel workers (recommended)</span>
+<span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span><span class="w">   </span><span class="c1"># More workers (diminishing returns)</span>
+</pre></div>
+</div>
+<p><strong>Rule of thumb</strong>: Start with <code class="docutils literal notranslate"><span class="pre">num_workers</span> <span class="pre">=</span> <span class="pre">num_cpus</span> <span class="pre">//</span> <span class="pre">2</span></code></p>
+</section>
+<section id="pin-memory">
+<h3>pin_memory<a class="headerlink" href="#pin-memory" title="Link to this heading">#</a></h3>
+<p>Faster GPU transfer:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">pin_memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># Recommended for GPU training</span>
+<span class="nt">pin_memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># For CPU training</span>
+</pre></div>
+</div>
+</section>
+<section id="persistent-workers">
+<h3>persistent_workers<a class="headerlink" href="#persistent-workers" title="Link to this heading">#</a></h3>
+<p>Keep workers alive between epochs:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">persistent_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">   </span><span class="c1"># Faster epoch transitions</span>
+<span class="nt">persistent_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">  </span><span class="c1"># Lower memory usage</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="batch-format">
+<h2>Batch Format<a class="headerlink" href="#batch-format" title="Link to this heading">#</a></h2>
+<section id="batched-data-structure">
+<h3>Batched Data Structure<a class="headerlink" href="#batched-data-structure" title="Link to this heading">#</a></h3>
+<p>Data is batched using PyTorch Geometric’s batching:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">torch_geometric.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Data</span>
+
+<span class="n">batch</span> <span class="o">=</span> <span class="n">Data</span><span class="p">(</span>
+    <span class="n">n_atoms</span><span class="o">=...</span><span class="p">,</span>    <span class="c1"># (batch_size,) - atoms per structure</span>
+    <span class="n">batch</span><span class="o">=...</span><span class="p">,</span>      <span class="c1"># (total_atoms,) - structure index per atom</span>
+    <span class="n">species</span><span class="o">=...</span><span class="p">,</span>    <span class="c1"># (total_atoms,) - atomic numbers</span>
+    <span class="n">pos</span><span class="o">=...</span><span class="p">,</span>        <span class="c1"># (total_atoms, 3) - Cartesian positions</span>
+    <span class="n">cell</span><span class="o">=...</span><span class="p">,</span>       <span class="c1"># (batch_size, 3, 3) - lattice vectors</span>
+    <span class="n">ptr</span><span class="o">=...</span><span class="p">,</span>        <span class="c1"># (batch_size + 1,) - cumulative atom counts</span>
+    <span class="nb">property</span><span class="o">=</span><span class="p">{}</span>     <span class="c1"># dict - optional properties</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="accessing-batched-data">
+<h3>Accessing Batched Data<a class="headerlink" href="#accessing-batched-data" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get number of structures in batch</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span>
+
+<span class="c1"># Get total number of atoms</span>
+<span class="n">total_atoms</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">n_atoms</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+<span class="c1"># Get atoms for structure i</span>
+<span class="n">start_idx</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">ptr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="n">end_idx</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">ptr</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+<span class="n">atoms_i</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">species</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">]</span>
+<span class="n">positions_i</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">pos</span><span class="p">[</span><span class="n">start_idx</span><span class="p">:</span><span class="n">end_idx</span><span class="p">]</span>
+
+<span class="c1"># Get cell for structure i</span>
+<span class="n">cell_i</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">cell</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="creating-custom-datasets">
+<h2>Creating Custom Datasets<a class="headerlink" href="#creating-custom-datasets" title="Link to this heading">#</a></h2>
+<section id="from-cif-files">
+<h3>From CIF Files<a class="headerlink" href="#from-cif-files" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Structure</span>
+
+<span class="c1"># Read CIF files</span>
+<span class="n">structures</span> <span class="o">=</span> <span class="p">[</span><span class="n">Structure</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">cif_files</span><span class="p">]</span>
+
+<span class="c1"># Create CSV</span>
+<span class="n">cifs</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;cif&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">structures</span><span class="p">]</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;cif&#39;</span><span class="p">:</span> <span class="n">cifs</span><span class="p">})</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;my_dataset.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="from-pymatgen-structures">
+<h3>From Pymatgen Structures<a class="headerlink" href="#from-pymatgen-structures" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">lmdb</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Structure</span>
+
+<span class="c1"># Create LMDB database</span>
+<span class="n">env</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;my_dataset.lmdb&#39;</span><span class="p">,</span> <span class="n">map_size</span><span class="o">=</span><span class="mi">1099511627776</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">structure</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">structures</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;pos&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">structure</span><span class="o">.</span><span class="n">cart_coords</span><span class="p">),</span>
+            <span class="s1">&#39;cell&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">structure</span><span class="o">.</span><span class="n">lattice</span><span class="o">.</span><span class="n">matrix</span><span class="p">),</span>
+            <span class="s1">&#39;atomic_numbers&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">Z</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">structure</span><span class="o">.</span><span class="n">species</span><span class="p">]),</span>
+        <span class="p">}</span>
+        <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+<span class="n">env</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="from-ase-atoms">
+<h3>From ASE Atoms<a class="headerlink" href="#from-ase-atoms" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">lmdb</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span>
+
+<span class="n">atoms_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">read</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">xyz_files</span><span class="p">]</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;my_dataset.lmdb&#39;</span><span class="p">,</span> <span class="n">map_size</span><span class="o">=</span><span class="mi">1099511627776</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">atoms</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atoms_list</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;pos&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()),</span>
+            <span class="s1">&#39;cell&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()</span><span class="o">.</span><span class="n">array</span><span class="p">),</span>
+            <span class="s1">&#39;atomic_numbers&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">()),</span>
+        <span class="p">}</span>
+        <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+<span class="n">env</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="data-splits">
+<h2>Data Splits<a class="headerlink" href="#data-splits" title="Link to this heading">#</a></h2>
+<section id="creating-splits">
+<h3>Creating Splits<a class="headerlink" href="#creating-splits" title="Link to this heading">#</a></h3>
+<p>Split a dataset into train/val/test:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">lmdb</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">split_lmdb</span><span class="p">(</span><span class="n">input_path</span><span class="p">,</span> <span class="n">train_ratio</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">val_ratio</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+    <span class="c1"># Read all data</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">input_path</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+        <span class="n">cursor</span> <span class="o">=</span> <span class="n">txn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cursor</span><span class="p">]</span>
+
+    <span class="c1"># Split</span>
+    <span class="n">n_train</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">*</span> <span class="n">train_ratio</span><span class="p">)</span>
+    <span class="n">n_val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">*</span> <span class="n">val_ratio</span><span class="p">)</span>
+
+    <span class="n">train_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="n">n_train</span><span class="p">]</span>
+    <span class="n">val_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">n_train</span><span class="p">:</span><span class="n">n_train</span> <span class="o">+</span> <span class="n">n_val</span><span class="p">]</span>
+    <span class="n">test_data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">n_train</span> <span class="o">+</span> <span class="n">n_val</span><span class="p">:]</span>
+
+    <span class="c1"># Write splits</span>
+    <span class="k">for</span> <span class="n">split_data</span><span class="p">,</span> <span class="n">split_name</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="s1">&#39;train&#39;</span><span class="p">),</span> <span class="p">(</span><span class="n">val_data</span><span class="p">,</span> <span class="s1">&#39;val&#39;</span><span class="p">),</span> <span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">)</span>
+    <span class="p">]:</span>
+        <span class="n">split_env</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">split_name</span><span class="si">}</span><span class="s1">.lmdb&#39;</span><span class="p">,</span> <span class="n">map_size</span><span class="o">=</span><span class="mi">1099511627776</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">split_env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">split_data</span><span class="p">:</span>
+                <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="n">split_env</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="polymorph-aware-splits">
+<h3>Polymorph-Aware Splits<a class="headerlink" href="#polymorph-aware-splits" title="Link to this heading">#</a></h3>
+<p>Keep polymorphs together:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Composition</span>
+
+<span class="c1"># Group by composition</span>
+<span class="n">composition_groups</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">structure</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">structures</span><span class="p">):</span>
+    <span class="n">comp</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">composition</span><span class="o">.</span><span class="n">reduced_formula</span>
+    <span class="n">composition_groups</span><span class="p">[</span><span class="n">comp</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+
+<span class="c1"># Split compositions (not structures)</span>
+<span class="n">compositions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">composition_groups</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="c1"># ... split compositions, then assign structures</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="data-validation">
+<h2>Data Validation<a class="headerlink" href="#data-validation" title="Link to this heading">#</a></h2>
+<section id="check-dataset">
+<h3>Check Dataset<a class="headerlink" href="#check-dataset" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">omg.datamodule</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructureDataset</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">StructureDataset</span><span class="p">(</span><span class="s2">&quot;data/mp_20/train.lmdb&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of structures: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elements present: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">get_elements</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Check first structure</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Atoms: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">species</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Species: </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">species</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cell shape: </span><span class="si">{</span><span class="n">data</span><span class="o">.</span><span class="n">cell</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="validate-structures">
+<h3>Validate Structures<a class="headerlink" href="#validate-structures" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">omg.analysis.valid_atoms</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidAtoms</span>
+
+<span class="n">validator</span> <span class="o">=</span> <span class="n">ValidAtoms</span><span class="p">()</span>
+
+<span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
+    <span class="n">is_valid</span> <span class="o">=</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_structure</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">cell</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_valid</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid structure found&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">#</a></h2>
+<ol class="arabic">
+<li><p><strong>Use LMDB for large datasets</strong>: Faster and more memory-efficient</p></li>
+<li><p><strong>Enable lazy loading</strong>: For datasets that don’t fit in memory:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">lazy_storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Set appropriate num_workers</strong>: Start with 4, adjust based on CPU count</p></li>
+<li><p><strong>Use pin_memory for GPU</strong>: Faster data transfer:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">pin_memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Enable persistent_workers</strong>: Reduces overhead between epochs:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">persistent_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Validate data</strong>: Check structures before training:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;from omg.datamodule import StructureDataset; </span><span class="se">\</span>
+<span class="s2">           d = StructureDataset(&#39;data.lmdb&#39;); print(len(d))&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>Preprocess consistently</strong>: Apply same preprocessing to all splits</p></li>
+<li><p><strong>Monitor memory usage</strong>: Adjust batch_size if OOM errors occur</p></li>
+</ol>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
+<section id="oom-out-of-memory">
+<h3>OOM (Out of Memory)<a class="headerlink" href="#oom-out-of-memory" title="Link to this heading">#</a></h3>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Reduce batch size:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span><span class="w">  </span><span class="c1"># Instead of 32</span>
+</pre></div>
+</div>
+</li>
+<li><p>Enable lazy loading:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">lazy_storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><p>Reduce num_workers:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="slow-data-loading">
+<h3>Slow Data Loading<a class="headerlink" href="#slow-data-loading" title="Link to this heading">#</a></h3>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Increase num_workers:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+</pre></div>
+</div>
+</li>
+<li><p>Enable persistent_workers:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">persistent_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use LMDB instead of CSV</p></li>
+<li><p>Use SSD instead of HDD</p></li>
+</ol>
+</section>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="model.html"><span class="doc">Model</span></a> - Configure model architecture</p></li>
+<li><p><a class="reference internal" href="training.html"><span class="doc">Training</span></a> - Train your model</p></li>
+<li><p><a class="reference internal" href="../getting_started/datasets.html"><span class="doc">Datasets</span></a> - Available datasets</p></li>
+<li><p><a class="reference internal" href="../api/datamodule.html"><span class="doc">DataModule</span></a> - DataModule API reference</p></li>
+<li><p><a class="reference internal" href="../development/contributing.html"><span class="doc">Contributing</span></a> - Contributing guidelines</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="sampler.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Samplers</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="model.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Model</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-formats">Data Formats</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#lmdb-recommended">LMDB (Recommended)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#csv">CSV</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parquet">Parquet</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#basic-configuration">Basic Configuration</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#with-preprocessing">With Preprocessing</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dataset-options">Dataset Options</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#file-path">file_path</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#lazy-storage">lazy_storage</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#niggli-reduce">niggli_reduce</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dataloader-options">DataLoader Options</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#batch-size">batch_size</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#num-workers">num_workers</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pin-memory">pin_memory</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#persistent-workers">persistent_workers</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#batch-format">Batch Format</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#batched-data-structure">Batched Data Structure</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#accessing-batched-data">Accessing Batched Data</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-custom-datasets">Creating Custom Datasets</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-cif-files">From CIF Files</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-pymatgen-structures">From Pymatgen Structures</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-ase-atoms">From ASE Atoms</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-splits">Data Splits</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-splits">Creating Splits</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#polymorph-aware-splits">Polymorph-Aware Splits</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-validation">Data Validation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#check-dataset">Check Dataset</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#validate-structures">Validate Structures</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">Best Practices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#oom-out-of-memory">OOM (Out of Memory)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#slow-data-loading">Slow Data Loading</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#next-steps">Next Steps</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user_guide/datamodule.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

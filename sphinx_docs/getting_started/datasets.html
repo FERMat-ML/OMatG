@@ -1,0 +1,1086 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Datasets &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'getting_started/datasets';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="User Guide" href="../user_guide/index.html" />
+    <link rel="prev" title="Quick Start" href="quickstart.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Getting Started</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Datasets</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="datasets">
+<h1>Datasets<a class="headerlink" href="#datasets" title="Link to this heading">#</a></h1>
+<p>OMatG supports multiple datasets for training and evaluation. This guide covers included datasets,
+downloadable datasets, and data formats.</p>
+<section id="included-datasets">
+<h2>Included Datasets<a class="headerlink" href="#included-datasets" title="Link to this heading">#</a></h2>
+<p>Several standard datasets are included in the repository under <code class="docutils literal notranslate"><span class="pre">omg/data/</span></code>:</p>
+<section id="mp-20">
+<h3>MP-20<a class="headerlink" href="#mp-20" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Size</strong>: 45,229 structures</p></li>
+<li><p><strong>Source</strong>: <a class="reference external" href="https://materialsproject.org/">Materials Project</a></p></li>
+<li><p><strong>Characteristics</strong>: Maximum 20 atoms per structure</p></li>
+<li><p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">omg/data/mp_20/</span></code></p></li>
+<li><p><strong>Use case</strong>: General crystal structure modeling</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span><span class="p">:</span>
+  <span class="n">train_dataset</span><span class="p">:</span>
+    <span class="n">class_path</span><span class="p">:</span> <span class="n">omg</span><span class="o">.</span><span class="n">datamodule</span><span class="o">.</span><span class="n">StructureDataset</span>
+    <span class="n">init_args</span><span class="p">:</span>
+      <span class="n">file_path</span><span class="p">:</span> <span class="s2">&quot;data/mp_20/train.lmdb&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="mpts-52">
+<h3>MPTS-52<a class="headerlink" href="#mpts-52" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Size</strong>: 40,476 structures</p></li>
+<li><p><strong>Source</strong>: Chronological split of Materials Project</p></li>
+<li><p><strong>Characteristics</strong>: Up to 52 atoms per structure</p></li>
+<li><p><strong>Reference</strong>: <a class="reference external" href="https://joss.theoj.org/papers/10.21105/joss.05618">MatBench Discovery</a></p></li>
+<li><p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">omg/data/mpts_52/</span></code></p></li>
+<li><p><strong>Use case</strong>: Temporal generalization testing</p></li>
+</ul>
+</section>
+<section id="perov-5">
+<h3>Perov-5<a class="headerlink" href="#perov-5" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Size</strong>: 18,928 structures</p></li>
+<li><p><strong>Source</strong>: <a class="reference external" href="https://pubs.rsc.org/en/content/articlelanding/2012/ee/c2ee22341d">Perovskite dataset</a></p></li>
+<li><p><strong>Characteristics</strong>: All structures have 5 atoms (ABX₃ formula)</p></li>
+<li><p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">omg/data/perov_5/</span></code></p></li>
+<li><p><strong>Use case</strong>: Perovskite-specific modeling</p></li>
+</ul>
+</section>
+<section id="carbon-24">
+<h3>Carbon-24<a class="headerlink" href="#carbon-24" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Size</strong>: 10,153 structures</p></li>
+<li><p><strong>Characteristics</strong>: Pure carbon, up to 24 atoms</p></li>
+<li><p><strong>Source</strong>: <a class="reference external" href="https://arxiv.org/abs/2110.06197">Carbon allotropes</a></p></li>
+<li><p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">omg/data/carbon_24/</span></code></p></li>
+<li><p><strong>Use case</strong>: Single-element structure exploration</p></li>
+</ul>
+</section>
+</section>
+<section id="benchmark-datasets">
+<h2>Benchmark Datasets<a class="headerlink" href="#benchmark-datasets" title="Link to this heading">#</a></h2>
+<p>New benchmark datasets from the NeurIPS 2025 paper:</p>
+<section id="polymorph-split-datasets">
+<h3>Polymorph-Split Datasets<a class="headerlink" href="#polymorph-split-datasets" title="Link to this heading">#</a></h3>
+<p>Datasets split such that polymorphs (same composition, different structure) are in the same split:</p>
+<ul class="simple">
+<li><p><strong>Perov-5-polymorph-split</strong>: <code class="docutils literal notranslate"><span class="pre">omg/data/perov_5_ps/</span></code></p></li>
+<li><p><strong>MP-20-polymorph-split</strong>: <code class="docutils literal notranslate"><span class="pre">omg/data/mp_20_ps/</span></code></p></li>
+</ul>
+<p>These ensure fair evaluation by preventing test set “leakage” through polymorphs.</p>
+</section>
+<section id="carbon-24-unique-variants">
+<h3>Carbon-24-Unique Variants<a class="headerlink" href="#carbon-24-unique-variants" title="Link to this heading">#</a></h3>
+<p>Duplicate-pruned versions of Carbon-24:</p>
+<ul class="simple">
+<li><p><strong>Carbon-24-unique</strong>: 4,250 unique structures (random split)</p></li>
+<li><p><strong>Carbon-24-unique-N-split</strong>: Split by atom count</p>
+<ul>
+<li><p>Low-to-high: Train 6-10 atoms, val 12-14, test 16-24</p></li>
+<li><p>High-to-low: Train 10-24 atoms, val 8, test 6</p></li>
+</ul>
+</li>
+<li><p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">omg/data/carbon_24_unique/</span></code></p></li>
+</ul>
+</section>
+<section id="overfitting-test-datasets">
+<h3>Overfitting Test Datasets<a class="headerlink" href="#overfitting-test-datasets" title="Link to this heading">#</a></h3>
+<p>Small datasets for testing symmetry handling:</p>
+<ul class="simple">
+<li><p><strong>Carbon-X</strong>: 480 duplicates, varying only fractional coordinates</p></li>
+<li><p><strong>Carbon-NXL</strong>: 353 duplicates, varying coordinates, cell shape, and atom count</p></li>
+<li><p><strong>Location</strong>: <code class="docutils literal notranslate"><span class="pre">omg/data/carbon_24_unique/overfitting_datasets/</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="downloadable-datasets">
+<h2>Downloadable Datasets<a class="headerlink" href="#downloadable-datasets" title="Link to this heading">#</a></h2>
+<p>Large datasets available on <a class="reference external" href="https://huggingface.co/OMatG/datasets">Hugging Face</a>:</p>
+<section id="listing-available-datasets">
+<h3>Listing Available Datasets<a class="headerlink" href="#listing-available-datasets" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg_load<span class="w"> </span>--list
+</pre></div>
+</div>
+</section>
+<section id="downloading-datasets">
+<h3>Downloading Datasets<a class="headerlink" href="#downloading-datasets" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Download a specific dataset</span>
+omg_load<span class="w"> </span>Alex-MP-20_Polymorph_Split
+
+<span class="c1"># Downloads to ./Alex-MP-20_Polymorph_Split/</span>
+</pre></div>
+</div>
+</section>
+<section id="available-downloads">
+<h3>Available Downloads<a class="headerlink" href="#available-downloads" title="Link to this heading">#</a></h3>
+<section id="alex-mp-20">
+<h4>Alex-MP-20<a class="headerlink" href="#alex-mp-20" title="Link to this heading">#</a></h4>
+<ul class="simple">
+<li><p><strong>Size</strong>: 675,204 structures</p></li>
+<li><p><strong>Sources</strong>: Alexandria + MP-20</p></li>
+<li><p><strong>Reference</strong>: <a class="reference external" href="https://www.nature.com/articles/s41586-025-08628-5">Consolidated dataset</a></p></li>
+<li><p><strong>Note</strong>: 10% held out for test set (differs from MatterGen split)</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg_load<span class="w"> </span>Alex-MP-20
+</pre></div>
+</div>
+</section>
+<section id="alex-mp-20-polymorph-split">
+<h4>Alex-MP-20-Polymorph-Split<a class="headerlink" href="#alex-mp-20-polymorph-split" title="Link to this heading">#</a></h4>
+<p>Polymorph-aware split of Alex-MP-20:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg_load<span class="w"> </span>Alex-MP-20_Polymorph_Split
+</pre></div>
+</div>
+</section>
+<section id="carbon-24-unique-with-enantiomorphs">
+<h4>Carbon-24-Unique-With-Enantiomorphs<a class="headerlink" href="#carbon-24-unique-with-enantiomorphs" title="Link to this heading">#</a></h4>
+<ul class="simple">
+<li><p><strong>Size</strong>: 4,330 structures</p></li>
+<li><p><strong>Feature</strong>: Enantiomorph pairs labeled and retained</p></li>
+<li><p><strong>Note</strong>: PyMatgen’s StructureMatcher cannot distinguish chiral pairs</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg_load<span class="w"> </span>Carbon-24-Unique-With-Enantiomorphs
+</pre></div>
+</div>
+</section>
+<section id="carbon-enantiomorphs">
+<h4>Carbon-Enantiomorphs<a class="headerlink" href="#carbon-enantiomorphs" title="Link to this heading">#</a></h4>
+<ul class="simple">
+<li><p><strong>Size</strong>: 160 chiral structures (80 pairs)</p></li>
+<li><p><strong>Use case</strong>: Testing chiral structure generation</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg_load<span class="w"> </span>Carbon-Enantiomorphs
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="data-formats">
+<h2>Data Formats<a class="headerlink" href="#data-formats" title="Link to this heading">#</a></h2>
+<section id="lmdb-format">
+<h3>LMDB Format<a class="headerlink" href="#lmdb-format" title="Link to this heading">#</a></h3>
+<p>OMatG’s native format. Each record contains:</p>
+<p><strong>Key</strong>: Encoded string (arbitrary identifier)</p>
+<p><strong>Value</strong>: Pickled dictionary with:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;pos&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>      <span class="c1"># Shape: (N, 3) - Cartesian coordinates</span>
+    <span class="s1">&#39;cell&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>     <span class="c1"># Shape: (3, 3) - Lattice vectors</span>
+    <span class="s1">&#39;atomic_numbers&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># Shape: (N,) - Atomic numbers</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="csv-format">
+<h3>CSV Format<a class="headerlink" href="#csv-format" title="Link to this heading">#</a></h3>
+<p>CSV files with a <code class="docutils literal notranslate"><span class="pre">cif</span></code> column containing CIF-formatted structures:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span><span class="p">:</span>
+  <span class="n">train_dataset</span><span class="p">:</span>
+    <span class="n">class_path</span><span class="p">:</span> <span class="n">omg</span><span class="o">.</span><span class="n">datamodule</span><span class="o">.</span><span class="n">StructureDataset</span>
+    <span class="n">init_args</span><span class="p">:</span>
+      <span class="n">file_path</span><span class="p">:</span> <span class="s2">&quot;data/my_structures.csv&quot;</span>
+</pre></div>
+</div>
+<p>The dataset automatically parses CIF strings to extract cell, positions, and atomic numbers.</p>
+</section>
+<section id="parquet-format">
+<h3>Parquet Format<a class="headerlink" href="#parquet-format" title="Link to this heading">#</a></h3>
+<p>Datasets from Hugging Face are in Parquet format, directly usable:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">data</span><span class="p">:</span>
+  <span class="n">train_dataset</span><span class="p">:</span>
+    <span class="n">class_path</span><span class="p">:</span> <span class="n">omg</span><span class="o">.</span><span class="n">datamodule</span><span class="o">.</span><span class="n">StructureDataset</span>
+    <span class="n">init_args</span><span class="p">:</span>
+      <span class="n">file_path</span><span class="p">:</span> <span class="s2">&quot;Alex-MP-20/train.parquet&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="lazy-loading">
+<h2>Lazy Loading<a class="headerlink" href="#lazy-loading" title="Link to this heading">#</a></h2>
+<p>For large datasets, use lazy loading to reduce memory usage:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">train_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.datamodule.StructureDataset</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/large_dataset.lmdb&quot;</span>
+<span class="w">      </span><span class="nt">lazy_storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>CSV files are automatically converted to LMDB for fast lazy access.</p>
+</section>
+<section id="data-preprocessing">
+<h2>Data Preprocessing<a class="headerlink" href="#data-preprocessing" title="Link to this heading">#</a></h2>
+<section id="niggli-reduction">
+<h3>Niggli Reduction<a class="headerlink" href="#niggli-reduction" title="Link to this heading">#</a></h3>
+<p>Apply Niggli reduction to standardize unit cells:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">train_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.datamodule.StructureDataset</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/mp_20/train.lmdb&quot;</span>
+<span class="w">      </span><span class="nt">niggli_reduce</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="creating-custom-datasets">
+<h2>Creating Custom Datasets<a class="headerlink" href="#creating-custom-datasets" title="Link to this heading">#</a></h2>
+<section id="from-cif-files">
+<h3>From CIF Files<a class="headerlink" href="#from-cif-files" title="Link to this heading">#</a></h3>
+<p>Create a CSV with a <code class="docutils literal notranslate"><span class="pre">cif</span></code> column:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Structure</span>
+
+<span class="n">structures</span> <span class="o">=</span> <span class="p">[</span><span class="n">Structure</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">cif_files</span><span class="p">]</span>
+<span class="n">cifs</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;cif&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">structures</span><span class="p">]</span>
+
+<span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span><span class="s1">&#39;cif&#39;</span><span class="p">:</span> <span class="n">cifs</span><span class="p">})</span>
+<span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="s1">&#39;my_dataset.csv&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="from-ase-atoms">
+<h3>From ASE Atoms<a class="headerlink" href="#from-ase-atoms" title="Link to this heading">#</a></h3>
+<p>Convert ASE Atoms to OMatG format:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">lmdb</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+
+<span class="n">atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s1">&#39;structure.cif&#39;</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;pos&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()),</span>
+    <span class="s1">&#39;cell&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()</span><span class="o">.</span><span class="n">array</span><span class="p">),</span>
+    <span class="s1">&#39;atomic_numbers&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">()),</span>
+<span class="p">}</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;my_dataset.lmdb&#39;</span><span class="p">,</span> <span class="n">map_size</span><span class="o">=</span><span class="mi">1099511627776</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+    <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+<span class="n">env</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="batch-data-handling">
+<h2>Batch Data Handling<a class="headerlink" href="#batch-data-handling" title="Link to this heading">#</a></h2>
+<p>Data is batched using PyTorch Geometric’s batching:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Batched data attributes</span>
+<span class="n">batch</span><span class="o">.</span><span class="n">n_atoms</span>       <span class="c1"># (batch_size,) - atoms per structure</span>
+<span class="n">batch</span><span class="o">.</span><span class="n">batch</span>         <span class="c1"># (total_atoms,) - structure index per atom</span>
+<span class="n">batch</span><span class="o">.</span><span class="n">species</span>       <span class="c1"># (total_atoms,) - atomic numbers</span>
+<span class="n">batch</span><span class="o">.</span><span class="n">pos</span>           <span class="c1"># (total_atoms, 3) - atomic positions</span>
+<span class="n">batch</span><span class="o">.</span><span class="n">cell</span>          <span class="c1"># (batch_size, 3, 3) - lattice vectors</span>
+<span class="n">batch</span><span class="o">.</span><span class="n">ptr</span>           <span class="c1"># (batch_size + 1,) - index boundaries</span>
+<span class="n">batch</span><span class="o">.</span><span class="n">property</span>      <span class="c1"># dict - additional properties</span>
+</pre></div>
+</div>
+<section id="configuring-dataloaders">
+<h3>Configuring DataLoaders<a class="headerlink" href="#configuring-dataloaders" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">  </span><span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w">           </span><span class="c1"># Parallel data loading</span>
+<span class="w">  </span><span class="nt">pin_memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">         </span><span class="c1"># Faster GPU transfer</span>
+<span class="w">  </span><span class="nt">persistent_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w"> </span><span class="c1"># Keep workers alive between epochs</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="dataset-statistics">
+<h2>Dataset Statistics<a class="headerlink" href="#dataset-statistics" title="Link to this heading">#</a></h2>
+<p>View dataset statistics:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">omg.datamodule</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructureDataset</span>
+
+<span class="n">dataset</span> <span class="o">=</span> <span class="n">StructureDataset</span><span class="p">(</span><span class="s2">&quot;data/mp_20/train.lmdb&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of structures: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elements: </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="n">get_elements</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Max atoms: </span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">species</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../user_guide/datamodule.html"><span class="doc">DataModule</span></a> - Deep dive into data handling</p></li>
+<li><p><a class="reference internal" href="../user_guide/training.html"><span class="doc">Training</span></a> - Train models on your data</p></li>
+<li><p><a class="reference internal" href="../api/datamodule.html"><span class="doc">DataModule</span></a> - DataModule API reference</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="quickstart.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Quick Start</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../user_guide/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">User Guide</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#included-datasets">Included Datasets</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mp-20">MP-20</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mpts-52">MPTS-52</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#perov-5">Perov-5</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#carbon-24">Carbon-24</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#benchmark-datasets">Benchmark Datasets</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#polymorph-split-datasets">Polymorph-Split Datasets</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#carbon-24-unique-variants">Carbon-24-Unique Variants</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#overfitting-test-datasets">Overfitting Test Datasets</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#downloadable-datasets">Downloadable Datasets</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#listing-available-datasets">Listing Available Datasets</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#downloading-datasets">Downloading Datasets</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#available-downloads">Available Downloads</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#alex-mp-20">Alex-MP-20</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#alex-mp-20-polymorph-split">Alex-MP-20-Polymorph-Split</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#carbon-24-unique-with-enantiomorphs">Carbon-24-Unique-With-Enantiomorphs</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#carbon-enantiomorphs">Carbon-Enantiomorphs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-formats">Data Formats</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#lmdb-format">LMDB Format</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#csv-format">CSV Format</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parquet-format">Parquet Format</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#lazy-loading">Lazy Loading</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#data-preprocessing">Data Preprocessing</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#niggli-reduction">Niggli Reduction</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-custom-datasets">Creating Custom Datasets</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-cif-files">From CIF Files</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-ase-atoms">From ASE Atoms</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#batch-data-handling">Batch Data Handling</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#configuring-dataloaders">Configuring DataLoaders</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dataset-statistics">Dataset Statistics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#next-steps">Next Steps</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/getting_started/datasets.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

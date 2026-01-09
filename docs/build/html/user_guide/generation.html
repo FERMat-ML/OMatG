@@ -1,0 +1,1323 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Generation &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/generation';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API Reference" href="../api/index.html" />
+    <link rel="prev" title="Training" href="training.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="#">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="stochastic_interpolants.html">Stochastic Interpolants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sampler.html">Samplers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datamodule.html">DataModule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training.html">Training</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Generation</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Generation</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="generation">
+<h1>Generation<a class="headerlink" href="#generation" title="Link to this heading">#</a></h1>
+<p>This guide covers generating crystal structures with trained OMatG models.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>OMatG can generate structures in two modes:</p>
+<ol class="arabic simple">
+<li><p><strong>Crystal Structure Prediction (CSP)</strong>: Generate structures for given compositions</p></li>
+<li><p><strong>*De Novo* Generation (DNG)</strong>: Generate novel structures without composition constraints</p></li>
+</ol>
+</section>
+<section id="basic-generation">
+<h2>Basic Generation<a class="headerlink" href="#basic-generation" title="Link to this heading">#</a></h2>
+<section id="from-checkpoint">
+<h3>From Checkpoint<a class="headerlink" href="#from-checkpoint" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>best_model.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.generation_xyz_filename<span class="o">=</span>generated.xyz
+</pre></div>
+</div>
+<p>This generates:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">generated.xyz</span></code>: Final generated structures</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">generated_init.xyz</span></code>: Initial random structures (before integration)</p></li>
+</ul>
+</section>
+<section id="override-config">
+<h3>Override Config<a class="headerlink" href="#override-config" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>best_model.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.generation_xyz_filename<span class="o">=</span>generated.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--data.batch_size<span class="o">=</span><span class="m">64</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.si.init_args.integration_time_steps<span class="o">=</span><span class="m">2000</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="crystal-structure-prediction">
+<h2>Crystal Structure Prediction<a class="headerlink" href="#crystal-structure-prediction" title="Link to this heading">#</a></h2>
+<p>Predict structures for specific compositions:</p>
+<section id="step-1-create-composition-file">
+<h3>Step 1: Create Composition File<a class="headerlink" href="#step-1-create-composition-file" title="Link to this heading">#</a></h3>
+<p>Single composition:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>create_compositions<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--compositions<span class="o">=</span><span class="s1">&#39;LiMn2O4&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--lmdb_file<span class="o">=</span>targets.lmdb
+</pre></div>
+</div>
+<p>Multiple compositions:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>create_compositions<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--compositions<span class="o">=</span><span class="s1">&#39;[LiMn2O4, GaTe, NaCl, CuO]&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--lmdb_file<span class="o">=</span>targets.lmdb
+</pre></div>
+</div>
+<p>Multiple structures per composition:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>create_compositions<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--compositions<span class="o">=</span><span class="s1">&#39;LiMn2O4&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--lmdb_file<span class="o">=</span>targets.lmdb<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--repeats<span class="o">=</span><span class="m">10</span><span class="w">  </span><span class="c1"># Generate 10 structures for this composition</span>
+</pre></div>
+</div>
+</section>
+<section id="step-2-generate-structures">
+<h3>Step 2: Generate Structures<a class="headerlink" href="#step-2-generate-structures" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>csp_config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>csp_model.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--data.pred_dataset.init_args.file_path<span class="o">=</span>targets.lmdb<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.generation_xyz_filename<span class="o">=</span>predicted.xyz
+</pre></div>
+</div>
+<p>Requirements:</p>
+<ul class="simple">
+<li><p>Use CSP model (species fixed with <code class="docutils literal notranslate"><span class="pre">SingleStochasticInterpolantIdentity</span></code>)</p></li>
+<li><p>Model trained on datasets containing the target elements</p></li>
+<li><p>Compatible sampler (<code class="docutils literal notranslate"><span class="pre">MirrorSpecies</span></code> for species)</p></li>
+</ul>
+</section>
+</section>
+<section id="de-novo-generation">
+<h2><em>De Novo</em> Generation<a class="headerlink" href="#de-novo-generation" title="Link to this heading">#</a></h2>
+<p>Generate novel structures:</p>
+<section id="from-test-set">
+<h3>From Test Set<a class="headerlink" href="#from-test-set" title="Link to this heading">#</a></h3>
+<p>Generate one structure per test sample:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>dng_config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>dng_model.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.generation_xyz_filename<span class="o">=</span>novel_structures.xyz
+</pre></div>
+</div>
+<p>The prediction dataset in <code class="docutils literal notranslate"><span class="pre">dng_config.yaml</span></code> determines how many structures are generated.</p>
+</section>
+<section id="custom-number-of-structures">
+<h3>Custom Number of Structures<a class="headerlink" href="#custom-number-of-structures" title="Link to this heading">#</a></h3>
+<p>Create dummy dataset:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>create_compositions<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>dng_config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--compositions<span class="o">=</span><span class="s1">&#39;[H1]&#39;</span><span class="w"> </span><span class="se">\ </span><span class="w"> </span><span class="c1"># Dummy composition (will be replaced)</span>
+<span class="w">    </span>--lmdb_file<span class="o">=</span>dummy.lmdb<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--repeats<span class="o">=</span><span class="m">1000</span><span class="w">  </span><span class="c1"># Generate 1000 structures</span>
+</pre></div>
+</div>
+<p>Then generate:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>dng_config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>dng_model.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--data.pred_dataset.init_args.file_path<span class="o">=</span>dummy.lmdb<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.generation_xyz_filename<span class="o">=</span>novel_structures.xyz
+</pre></div>
+</div>
+</section>
+</section>
+<section id="generation-parameters">
+<h2>Generation Parameters<a class="headerlink" href="#generation-parameters" title="Link to this heading">#</a></h2>
+<section id="integration-steps">
+<h3>Integration Steps<a class="headerlink" href="#integration-steps" title="Link to this heading">#</a></h3>
+<p>Control generation quality:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>model.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.generation_xyz_filename<span class="o">=</span>output.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.si.init_args.integration_time_steps<span class="o">=</span><span class="m">2000</span>
+</pre></div>
+</div>
+<p><strong>Trade-off</strong>:</p>
+<ul class="simple">
+<li><p>More steps = higher quality, slower</p></li>
+<li><p>Fewer steps = lower quality, faster</p></li>
+</ul>
+<p><strong>Recommendations</strong>:</p>
+<ul class="simple">
+<li><p>Fast preview: 500 steps</p></li>
+<li><p>Default: 1000 steps</p></li>
+<li><p>High quality: 2000-5000 steps</p></li>
+</ul>
+</section>
+<section id="batch-size">
+<h3>Batch Size<a class="headerlink" href="#batch-size" title="Link to this heading">#</a></h3>
+<p>Generate multiple structures simultaneously:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--data.batch_size<span class="o">=</span><span class="m">128</span>
+</pre></div>
+</div>
+<p><strong>Considerations</strong>:</p>
+<ul class="simple">
+<li><p>Larger batch = faster total time</p></li>
+<li><p>Limited by GPU memory</p></li>
+<li><p>No effect on quality</p></li>
+</ul>
+</section>
+<section id="random-seed">
+<h3>Random Seed<a class="headerlink" href="#random-seed" title="Link to this heading">#</a></h3>
+<p>For reproducible generation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>model.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.generation_xyz_filename<span class="o">=</span>output.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed_everything<span class="o">=</span><span class="m">42</span>
+</pre></div>
+</div>
+</section>
+<section id="differential-equation">
+<h3>Differential Equation<a class="headerlink" href="#differential-equation" title="Link to this heading">#</a></h3>
+<p>Choose between ODE (deterministic) and SDE (stochastic):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># In config.yaml</span>
+<span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">si</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">stochastic_interpolants</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">differential_equation_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ODE&quot;</span><span class="w">  </span><span class="c1"># Deterministic (default)</span>
+<span class="w">            </span><span class="c1"># differential_equation_type: &quot;SDE&quot;  # Stochastic</span>
+</pre></div>
+</div>
+<p><strong>SDE vs ODE</strong>:</p>
+<ul class="simple">
+<li><p>ODE: Same seed → same output</p></li>
+<li><p>SDE: More diverse outputs</p></li>
+<li><p>ODE: Generally faster</p></li>
+</ul>
+</section>
+</section>
+<section id="output-formats">
+<h2>Output Formats<a class="headerlink" href="#output-formats" title="Link to this heading">#</a></h2>
+<section id="xyz-format">
+<h3>XYZ Format<a class="headerlink" href="#xyz-format" title="Link to this heading">#</a></h3>
+<p>Default output format:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Structure with comment line</span>
+<span class="m">32</span>
+<span class="nv">Lattice</span><span class="o">=</span><span class="s2">&quot;10.0 0.0 0.0 0.0 10.0 0.0 0.0 0.0 10.0&quot;</span><span class="w"> </span><span class="nv">Properties</span><span class="o">=</span>species:S:1:pos:R:3
+Li<span class="w"> </span><span class="m">0</span>.0<span class="w"> </span><span class="m">0</span>.0<span class="w"> </span><span class="m">0</span>.0
+...
+</pre></div>
+</div>
+</section>
+<section id="cif-format">
+<h3>CIF Format<a class="headerlink" href="#cif-format" title="Link to this heading">#</a></h3>
+<p>Convert to CIF:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+
+<span class="n">atoms</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s1">&#39;generated.xyz&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atoms</span><span class="p">):</span>
+    <span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;structure_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.cif&#39;</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="pymatgen-structures">
+<h3>Pymatgen Structures<a class="headerlink" href="#pymatgen-structures" title="Link to this heading">#</a></h3>
+<p>Convert to Pymatgen:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.io.ase</span><span class="w"> </span><span class="kn">import</span> <span class="n">AseAtomsAdaptor</span>
+
+<span class="n">atoms_list</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s1">&#39;generated.xyz&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+<span class="n">adaptor</span> <span class="o">=</span> <span class="n">AseAtomsAdaptor</span><span class="p">()</span>
+
+<span class="n">structures</span> <span class="o">=</span> <span class="p">[</span><span class="n">adaptor</span><span class="o">.</span><span class="n">get_structure</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">atoms_list</span><span class="p">]</span>
+
+<span class="c1"># Save as CIF</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">structures</span><span class="p">):</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;structure_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.cif&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="batch-generation">
+<h2>Batch Generation<a class="headerlink" href="#batch-generation" title="Link to this heading">#</a></h2>
+<section id="generate-large-datasets">
+<h3>Generate Large Datasets<a class="headerlink" href="#generate-large-datasets" title="Link to this heading">#</a></h3>
+<p>Script for generating many structures:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;Generate large batches of structures.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+
+<span class="c1"># Configuration</span>
+<span class="n">config</span> <span class="o">=</span> <span class="s2">&quot;dng_config.yaml&quot;</span>
+<span class="n">checkpoint</span> <span class="o">=</span> <span class="s2">&quot;dng_model.ckpt&quot;</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">num_batches</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_batches</span><span class="p">):</span>
+    <span class="n">output_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;batch_</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">03d</span><span class="si">}</span><span class="s2">.xyz&quot;</span>
+
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;omg&quot;</span><span class="p">,</span> <span class="s2">&quot;predict&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;--config=</span><span class="si">{</span><span class="n">config</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;--ckpt_path=</span><span class="si">{</span><span class="n">checkpoint</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;--model.generation_xyz_filename=</span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;--data.batch_size=</span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">&quot;--seed_everything=</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>  <span class="c1"># Different seed per batch</span>
+    <span class="p">]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generating batch </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">num_batches</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated </span><span class="si">{</span><span class="n">num_batches</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">batch_size</span><span class="si">}</span><span class="s2"> structures total&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="parallel-generation">
+<h3>Parallel Generation<a class="headerlink" href="#parallel-generation" title="Link to this heading">#</a></h3>
+<p>Generate on multiple GPUs:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># GPU 0</span>
+<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span><span class="w"> </span>omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>model.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.generation_xyz_filename<span class="o">=</span>batch_0.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed_everything<span class="o">=</span><span class="m">0</span><span class="w"> </span><span class="p">&amp;</span>
+
+<span class="c1"># GPU 1</span>
+<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>model.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.generation_xyz_filename<span class="o">=</span>batch_1.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed_everything<span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="p">&amp;</span>
+
+<span class="nb">wait</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="post-processing">
+<h2>Post-Processing<a class="headerlink" href="#post-processing" title="Link to this heading">#</a></h2>
+<section id="filtering-structures">
+<h3>Filtering Structures<a class="headerlink" href="#filtering-structures" title="Link to this heading">#</a></h3>
+<p>Remove invalid structures:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.analysis.valid_atoms</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidAtoms</span>
+
+<span class="n">validator</span> <span class="o">=</span> <span class="n">ValidAtoms</span><span class="p">()</span>
+<span class="n">atoms_list</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s1">&#39;generated.xyz&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+
+<span class="n">valid_atoms</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">atoms</span> <span class="ow">in</span> <span class="n">atoms_list</span><span class="p">:</span>
+    <span class="n">species</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">()</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()</span><span class="o">.</span><span class="n">array</span>
+
+    <span class="k">if</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_structure</span><span class="p">(</span><span class="n">species</span><span class="p">,</span> <span class="n">positions</span><span class="p">,</span> <span class="n">cell</span><span class="p">):</span>
+        <span class="n">valid_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+
+<span class="n">write</span><span class="p">(</span><span class="s1">&#39;valid_structures.xyz&#39;</span><span class="p">,</span> <span class="n">valid_atoms</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Kept </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">valid_atoms</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">atoms_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> structures&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="deduplication">
+<h3>Deduplication<a class="headerlink" href="#deduplication" title="Link to this heading">#</a></h3>
+<p>Remove duplicate structures:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.analysis.structure_matcher</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructureMatcher</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.io.ase</span><span class="w"> </span><span class="kn">import</span> <span class="n">AseAtomsAdaptor</span>
+
+<span class="n">atoms_list</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s1">&#39;generated.xyz&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+<span class="n">adaptor</span> <span class="o">=</span> <span class="n">AseAtomsAdaptor</span><span class="p">()</span>
+<span class="n">structures</span> <span class="o">=</span> <span class="p">[</span><span class="n">adaptor</span><span class="o">.</span><span class="n">get_structure</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">atoms_list</span><span class="p">]</span>
+
+<span class="n">matcher</span> <span class="o">=</span> <span class="n">StructureMatcher</span><span class="p">(</span><span class="n">ltol</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">stol</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">angle_tol</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+
+<span class="n">unique_structures</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">structures</span><span class="p">:</span>
+    <span class="n">is_duplicate</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">unique_structures</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">matcher</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">u</span><span class="p">):</span>
+            <span class="n">is_duplicate</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">break</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_duplicate</span><span class="p">:</span>
+        <span class="n">unique_structures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unique: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">unique_structures</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">structures</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="relaxation">
+<h3>Relaxation<a class="headerlink" href="#relaxation" title="Link to this heading">#</a></h3>
+<p>Relax generated structures with ASE:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">read</span><span class="p">,</span> <span class="n">write</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ase.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">BFGS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ase.calculators.emt</span><span class="w"> </span><span class="kn">import</span> <span class="n">EMT</span>  <span class="c1"># Replace with real calculator</span>
+
+<span class="n">atoms_list</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="s1">&#39;generated.xyz&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="s1">&#39;:&#39;</span><span class="p">)</span>
+<span class="n">relaxed</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">atoms</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atoms_list</span><span class="p">):</span>
+    <span class="n">atoms</span><span class="o">.</span><span class="n">calc</span> <span class="o">=</span> <span class="n">EMT</span><span class="p">()</span>  <span class="c1"># Use VASP, GPAW, etc. in practice</span>
+    <span class="n">opt</span> <span class="o">=</span> <span class="n">BFGS</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">trajectory</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;opt_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">.traj&#39;</span><span class="p">)</span>
+    <span class="n">opt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">fmax</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+    <span class="n">relaxed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+
+<span class="n">write</span><span class="p">(</span><span class="s1">&#39;relaxed_structures.xyz&#39;</span><span class="p">,</span> <span class="n">relaxed</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="analysis">
+<h2>Analysis<a class="headerlink" href="#analysis" title="Link to this heading">#</a></h2>
+<section id="immediate-evaluation">
+<h3>Immediate Evaluation<a class="headerlink" href="#immediate-evaluation" title="Link to this heading">#</a></h3>
+<p>Evaluate right after generation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Generate</span>
+omg<span class="w"> </span>predict<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>model.ckpt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model.generation_xyz_filename<span class="o">=</span>generated.xyz
+
+<span class="c1"># Evaluate CSP</span>
+omg<span class="w"> </span>csp_metrics<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xyz_file<span class="o">=</span>generated.xyz
+
+<span class="c1"># Or evaluate DNG</span>
+omg<span class="w"> </span>dng_metrics<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xyz_file<span class="o">=</span>generated.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--dataset_name<span class="o">=</span>mp_20
+</pre></div>
+</div>
+</section>
+<section id="visualization">
+<h3>Visualization<a class="headerlink" href="#visualization" title="Link to this heading">#</a></h3>
+<p>Compare distributions:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>visualize<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--xyz_file<span class="o">=</span>generated.xyz<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--plot_name<span class="o">=</span>distributions.pdf
+</pre></div>
+</div>
+</section>
+</section>
+<section id="tips-best-practices">
+<h2>Tips &amp; Best Practices<a class="headerlink" href="#tips-best-practices" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Start with defaults</strong>: Use 1000 integration steps</p></li>
+<li><p><strong>Validate first</strong>: Check a small batch before generating many</p></li>
+<li><p><strong>Save initial structures</strong>: Keep <code class="docutils literal notranslate"><span class="pre">*_init.xyz</span></code> for debugging</p></li>
+<li><p><strong>Use appropriate batch size</strong>: Balance speed and memory</p></li>
+<li><p><strong>Set random seeds</strong>: For reproducibility</p></li>
+<li><p><strong>Monitor GPU memory</strong>: Adjust batch size if needed</p></li>
+<li><p><strong>Filter invalid structures</strong>: Post-process with validation</p></li>
+<li><p><strong>Deduplicate</strong>: Remove repeated structures</p></li>
+<li><p><strong>Relax with DFT</strong>: For property predictions</p></li>
+<li><p><strong>Generate extras</strong>: Plan for invalid/duplicate structures</p></li>
+</ol>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
+<section id="low-quality-structures">
+<h3>Low Quality Structures<a class="headerlink" href="#low-quality-structures" title="Link to this heading">#</a></h3>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Increase integration steps:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>--model.si.init_args.integration_time_steps<span class="o">=</span><span class="m">2000</span>
+</pre></div>
+</div>
+</li>
+<li><p>Check model training convergence</p></li>
+<li><p>Verify sampler matches SI type</p></li>
+<li><p>Use correct checkpoint for task (CSP vs DNG)</p></li>
+</ol>
+</section>
+<section id="out-of-memory">
+<h3>Out of Memory<a class="headerlink" href="#out-of-memory" title="Link to this heading">#</a></h3>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Reduce batch size:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>--data.batch_size<span class="o">=</span><span class="m">16</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use mixed precision:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;16-mixed&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Generate in smaller batches</p></li>
+</ol>
+</section>
+<section id="wrong-compositions-csp">
+<h3>Wrong Compositions (CSP)<a class="headerlink" href="#wrong-compositions-csp" title="Link to this heading">#</a></h3>
+<p><strong>Problem</strong>: Generated structures have different composition than target</p>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Verify CSP config:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">stochastic_interpolants</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SingleStochasticInterpolantIdentity</span><span class="w">  </span><span class="c1"># For species</span>
+</pre></div>
+</div>
+</li>
+<li><p>Check sampler:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">species_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">MirrorSpecies</span><span class="w">  </span><span class="c1"># Not MaskSpecies</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use CSP checkpoint, not DNG checkpoint</p></li>
+</ol>
+</section>
+<section id="slow-generation">
+<h3>Slow Generation<a class="headerlink" href="#slow-generation" title="Link to this heading">#</a></h3>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Reduce integration steps:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>--model.si.init_args.integration_time_steps<span class="o">=</span><span class="m">500</span>
+</pre></div>
+</div>
+</li>
+<li><p>Increase batch size:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>--data.batch_size<span class="o">=</span><span class="m">128</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use ODE instead of SDE:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">differential_equation_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ODE&quot;</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+</section>
+<section id="advanced-topics">
+<h2>Advanced Topics<a class="headerlink" href="#advanced-topics" title="Link to this heading">#</a></h2>
+<section id="conditional-generation">
+<h3>Conditional Generation<a class="headerlink" href="#conditional-generation" title="Link to this heading">#</a></h3>
+<p>Future feature - condition on properties:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Planned feature</span>
+<span class="n">omg</span> <span class="n">predict</span> \
+    <span class="o">--</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">yaml</span> \
+    <span class="o">--</span><span class="n">ckpt_path</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">ckpt</span> \
+    <span class="o">--</span><span class="n">model</span><span class="o">.</span><span class="n">generation_xyz_filename</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">xyz</span> \
+    <span class="o">--</span><span class="n">condition_on_property</span><span class="o">=</span><span class="n">band_gap</span> \
+    <span class="o">--</span><span class="n">property_value</span><span class="o">=</span><span class="mf">2.0</span>
+</pre></div>
+</div>
+</section>
+<section id="trajectory-saving">
+<h3>Trajectory Saving<a class="headerlink" href="#trajectory-saving" title="Link to this heading">#</a></h3>
+<p>Save intermediate structures during generation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Modify generation code to save trajectory</span>
+<span class="c1"># See omg_lightning.py for implementation details</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="analysis.html"><span class="doc">Analysis</span></a> - Evaluate generated structures</p></li>
+<li><p><a class="reference internal" href="../getting_started/quickstart.html"><span class="doc">Quick Start</span></a> - Quick start guide</p></li>
+<li><p><a class="reference internal" href="stochastic_interpolants.html"><span class="doc">Stochastic Interpolants</span></a> - Tune SI parameters</p></li>
+<li><p><a class="reference internal" href="../api/training.html"><span class="doc">Training</span></a> - API reference</p></li>
+<li><p><a class="reference internal" href="../development/contributing.html"><span class="doc">Contributing</span></a> - Contributing guidelines</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="training.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Training</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../api/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API Reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#basic-generation">Basic Generation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-checkpoint">From Checkpoint</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#override-config">Override Config</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#crystal-structure-prediction">Crystal Structure Prediction</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-create-composition-file">Step 1: Create Composition File</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-generate-structures">Step 2: Generate Structures</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#de-novo-generation"><em>De Novo</em> Generation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-test-set">From Test Set</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-number-of-structures">Custom Number of Structures</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generation-parameters">Generation Parameters</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-steps">Integration Steps</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#batch-size">Batch Size</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#random-seed">Random Seed</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#differential-equation">Differential Equation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#output-formats">Output Formats</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#xyz-format">XYZ Format</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cif-format">CIF Format</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pymatgen-structures">Pymatgen Structures</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#batch-generation">Batch Generation</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#generate-large-datasets">Generate Large Datasets</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parallel-generation">Parallel Generation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#post-processing">Post-Processing</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#filtering-structures">Filtering Structures</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deduplication">Deduplication</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#relaxation">Relaxation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#analysis">Analysis</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#immediate-evaluation">Immediate Evaluation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#visualization">Visualization</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tips-best-practices">Tips &amp; Best Practices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#low-quality-structures">Low Quality Structures</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#out-of-memory">Out of Memory</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#wrong-compositions-csp">Wrong Compositions (CSP)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#slow-generation">Slow Generation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-topics">Advanced Topics</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conditional-generation">Conditional Generation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trajectory-saving">Trajectory Saving</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#next-steps">Next Steps</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user_guide/generation.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

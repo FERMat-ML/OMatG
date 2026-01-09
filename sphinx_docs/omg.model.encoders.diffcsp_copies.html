@@ -1,0 +1,924 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>omg.model.encoders.diffcsp_copies module &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=872021ae"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'omg.model.encoders.diffcsp_copies';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="omg.model.encoders.html">omg.model.encoders package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="omg.model.encoders.cspnet_full.html">omg.model.encoders.cspnet_full module</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">omg.model.encoders.diffcsp_copies module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omg.model.encoders.encoder.html">omg.model.encoders.encoder module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="omg.model.heads.html">omg.model.heads package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.model.heads.head.html">omg.model.heads.head module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omg.model.heads.pass_through.html">omg.model.heads.pass_through module</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="omg.model.model.html">omg.model.model module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="omg.model.model_utils.html">omg.model.model_utils module</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">omg.model.encoders.diffcsp_copies module</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-omg.model.encoders.diffcsp_copies">
+<span id="omg-model-encoders-diffcsp-copies-module"></span><h1>omg.model.encoders.diffcsp_copies module<a class="headerlink" href="#module-omg.model.encoders.diffcsp_copies" title="Link to this heading">#</a></h1>
+<p>Functions and classes copied from diffcsp repository: <a class="github reference external" href="https://github.com/jiaor17/DiffCSP/tree/main">jiaor17/DiffCSP</a></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.CSPLayer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">omg.model.encoders.diffcsp_copies.</span></span><span class="sig-name descname"><span class="pre">CSPLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">act_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">SiLU()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dis_emb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#CSPLayer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.CSPLayer" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
+<p>Message passing layer for cspnet.</p>
+<p>Copied from diffcsp: <a class="github reference external" href="https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/pl_modules/cspnet.py">jiaor17/DiffCSP</a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.CSPLayer.edge_model">
+<span class="sig-name descname"><span class="pre">edge_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge2graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac_diff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#CSPLayer.edge_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.CSPLayer.edge_model" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.CSPLayer.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge2graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac_diff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#CSPLayer.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.CSPLayer.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.CSPLayer.node_model">
+<span class="sig-name descname"><span class="pre">node_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#CSPLayer.node_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.CSPLayer.node_model" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.CSPNet">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">omg.model.encoders.diffcsp_copies.</span></span><span class="sig-name descname"><span class="pre">CSPNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_atoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">act_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'silu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dis_emb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'sin'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_freqs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cutoff</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_neighbors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ln</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smooth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred_scalar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#CSPNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.CSPNet" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
+<p>Copied from diffcsp: <a class="github reference external" href="https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/pl_modules/cspnet.py">jiaor17/DiffCSP</a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.CSPNet.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_types</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_atoms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node2graph</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#CSPNet.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.CSPNet.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.CSPNet.gen_edges">
+<span class="sig-name descname"><span class="pre">gen_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_atoms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frac_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node2graph</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#CSPNet.gen_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.CSPNet.gen_edges" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.CSPNet.reorder_symmetric_edges">
+<span class="sig-name descname"><span class="pre">reorder_symmetric_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_offsets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_vector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#CSPNet.reorder_symmetric_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.CSPNet.reorder_symmetric_edges" title="Link to this definition">#</a></dt>
+<dd><p>Reorder edges to make finding counter-directional edges easier.</p>
+<p>Some edges are only present in one direction in the data,
+since every atom has a maximum number of neighbors. Since we only use i-&gt;j
+edges here, we lose some j-&gt;i edges and add others by
+making it symmetric.
+We could fix this by merging edge_index with its counter-edges,
+including the cell_offsets, and then running torch.unique.
+But this does not seem worth it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.CSPNet.select_symmetric_edges">
+<span class="sig-name descname"><span class="pre">select_symmetric_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reorder_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inverse_neg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#CSPNet.select_symmetric_edges"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.CSPNet.select_symmetric_edges" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.SinusoidsEmbedding">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">omg.model.encoders.diffcsp_copies.</span></span><span class="sig-name descname"><span class="pre">SinusoidsEmbedding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_frequencies</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#SinusoidsEmbedding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.SinusoidsEmbedding" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.9)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
+<p>Copied from diffcsp: <a class="github reference external" href="https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/pl_modules/cspnet.py">jiaor17/DiffCSP</a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.SinusoidsEmbedding.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#SinusoidsEmbedding.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.SinusoidsEmbedding.forward" title="Link to this definition">#</a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.frac_to_cart_coords">
+<span class="sig-prename descclassname"><span class="pre">omg.model.encoders.diffcsp_copies.</span></span><span class="sig-name descname"><span class="pre">frac_to_cart_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">frac_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lengths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_atoms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regularized</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#frac_to_cart_coords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.frac_to_cart_coords" title="Link to this definition">#</a></dt>
+<dd><p>Copied from diffcsp: <a class="github reference external" href="https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py">jiaor17/DiffCSP</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.get_max_neighbors_mask">
+<span class="sig-prename descclassname"><span class="pre">omg.model.encoders.diffcsp_copies.</span></span><span class="sig-name descname"><span class="pre">get_max_neighbors_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">natoms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atom_distance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors_threshold</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#get_max_neighbors_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.get_max_neighbors_mask" title="Link to this definition">#</a></dt>
+<dd><p>Give a mask that filters out edges so that each atom has at most
+<cite>max_num_neighbors_threshold</cite> neighbors.
+Assumes that <cite>index</cite> is sorted.</p>
+<p>Copied from diffcsp: <a class="github reference external" href="https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py">jiaor17/DiffCSP</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.get_pbc_distances">
+<span class="sig-prename descclassname"><span class="pre">omg.model.encoders.diffcsp_copies.</span></span><span class="sig-name descname"><span class="pre">get_pbc_distances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lengths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to_jimages</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_atoms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_bonds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coord_is_cart</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_offsets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_distance_vec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#get_pbc_distances"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.get_pbc_distances" title="Link to this definition">#</a></dt>
+<dd><p>Copied from diffcsp: <a class="github reference external" href="https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py">jiaor17/DiffCSP</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.lattice_params_to_matrix_torch">
+<span class="sig-prename descclassname"><span class="pre">omg.model.encoders.diffcsp_copies.</span></span><span class="sig-name descname"><span class="pre">lattice_params_to_matrix_torch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lengths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#lattice_params_to_matrix_torch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.lattice_params_to_matrix_torch" title="Link to this definition">#</a></dt>
+<dd><p>Batched torch version to compute lattice matrix from params.</p>
+<p>Copied from diffcsp: <a class="github reference external" href="https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py">jiaor17/DiffCSP</a></p>
+<p>lengths: torch.Tensor of shape (N, 3), unit A
+angles: torch.Tensor of shape (N, 3), unit degree</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.radius_graph_pbc">
+<span class="sig-prename descclassname"><span class="pre">omg.model.encoders.diffcsp_copies.</span></span><span class="sig-name descname"><span class="pre">radius_graph_pbc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lengths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">natoms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_num_neighbors_threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lattices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#radius_graph_pbc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.radius_graph_pbc" title="Link to this definition">#</a></dt>
+<dd><p>Copied from diffcsp: <a class="github reference external" href="https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py">jiaor17/DiffCSP</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="omg.model.encoders.diffcsp_copies.repeat_blocks">
+<span class="sig-prename descclassname"><span class="pre">omg.model.encoders.diffcsp_copies.</span></span><span class="sig-name descname"><span class="pre">repeat_blocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sizes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeats</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous_indexing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_inc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repeat_inc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/omg/model/encoders/diffcsp_copies.html#repeat_blocks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#omg.model.encoders.diffcsp_copies.repeat_blocks" title="Link to this definition">#</a></dt>
+<dd><p>Repeat blocks of indices.</p>
+<p>Adapted from <a class="reference external" href="https://stackoverflow.com/questions/51154989/numpy-vectorized-function-to-repeat-blocks-of-consecutive-elements">https://stackoverflow.com/questions/51154989/numpy-vectorized-function-to-repeat-blocks-of-consecutive-elements</a>
+Copied from diffcsp: <a class="github reference external" href="https://github.com/jiaor17/DiffCSP/blob/main/diffcsp/common/data_utils.py">jiaor17/DiffCSP</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>continuous_indexing</strong> – Whether to keep increasing the index after each block</p></li>
+<li><p><strong>start_idx</strong> – Starting index</p></li>
+<li><p><strong>block_inc</strong> – Number to increment by after each block,
+either global or per block. Shape: len(sizes) - 1</p></li>
+<li><p><strong>repeat_inc</strong> – Number to increment by after each repetition,
+either global or per block</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>sizes = [1,3,2] ; repeats = [3,2,3] ; continuous_indexing = False
+Return: [0 0 0  0 1 2 0 1 2  0 1 0 1 0 1]
+sizes = [1,3,2] ; repeats = [3,2,3] ; continuous_indexing = True
+Return: [0 0 0  1 2 3 1 2 3  4 5 4 5 4 5]
+sizes = [1,3,2] ; repeats = [3,2,3] ; continuous_indexing = True ;
+repeat_inc = 4
+Return: [0 4 8  1 2 3 5 6 7  4 5 8 9 12 13]
+sizes = [1,3,2] ; repeats = [3,2,3] ; continuous_indexing = True ;
+start_idx = 5
+Return: [5 5 5  6 7 8 6 7 8  9 10 9 10 9 10]
+sizes = [1,3,2] ; repeats = [3,2,3] ; continuous_indexing = True ;
+block_inc = 1
+Return: [0 0 0  2 3 4 2 3 4  6 7 6 7 6 7]
+sizes = [0,3,2] ; repeats = [3,2,3] ; continuous_indexing = True
+Return: [0 1 2 0 1 2  3 4 3 4 3 4]
+sizes = [2,3,2] ; repeats = [2,0,2] ; continuous_indexing = True
+Return: [0 1 0 1  5 6 5 6]</p>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.CSPLayer"><code class="docutils literal notranslate"><span class="pre">CSPLayer</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.CSPLayer.edge_model"><code class="docutils literal notranslate"><span class="pre">CSPLayer.edge_model()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.CSPLayer.forward"><code class="docutils literal notranslate"><span class="pre">CSPLayer.forward()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.CSPLayer.node_model"><code class="docutils literal notranslate"><span class="pre">CSPLayer.node_model()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.CSPNet"><code class="docutils literal notranslate"><span class="pre">CSPNet</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.CSPNet.forward"><code class="docutils literal notranslate"><span class="pre">CSPNet.forward()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.CSPNet.gen_edges"><code class="docutils literal notranslate"><span class="pre">CSPNet.gen_edges()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.CSPNet.reorder_symmetric_edges"><code class="docutils literal notranslate"><span class="pre">CSPNet.reorder_symmetric_edges()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.CSPNet.select_symmetric_edges"><code class="docutils literal notranslate"><span class="pre">CSPNet.select_symmetric_edges()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.SinusoidsEmbedding"><code class="docutils literal notranslate"><span class="pre">SinusoidsEmbedding</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.SinusoidsEmbedding.forward"><code class="docutils literal notranslate"><span class="pre">SinusoidsEmbedding.forward()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.frac_to_cart_coords"><code class="docutils literal notranslate"><span class="pre">frac_to_cart_coords()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.get_max_neighbors_mask"><code class="docutils literal notranslate"><span class="pre">get_max_neighbors_mask()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.get_pbc_distances"><code class="docutils literal notranslate"><span class="pre">get_pbc_distances()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.lattice_params_to_matrix_torch"><code class="docutils literal notranslate"><span class="pre">lattice_params_to_matrix_torch()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.radius_graph_pbc"><code class="docutils literal notranslate"><span class="pre">radius_graph_pbc()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#omg.model.encoders.diffcsp_copies.repeat_blocks"><code class="docutils literal notranslate"><span class="pre">repeat_blocks()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/omg.model.encoders.diffcsp_copies.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

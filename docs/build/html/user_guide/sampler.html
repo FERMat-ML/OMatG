@@ -1,0 +1,1136 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Samplers &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/sampler';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="DataModule" href="datamodule.html" />
+    <link rel="prev" title="Stochastic Interpolants" href="stochastic_interpolants.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="#">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="stochastic_interpolants.html">Stochastic Interpolants</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Samplers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datamodule.html">DataModule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training.html">Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generation.html">Generation</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Samplers</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="samplers">
+<h1>Samplers<a class="headerlink" href="#samplers" title="Link to this heading">#</a></h1>
+<p>Samplers define base distributions for generating initial random structures. They must match the stochastic interpolants used in your model.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>OMatG samplers generate random initial structures (<span class="math notranslate nohighlight">\(x_0\)</span>) that are evolved to data samples (<span class="math notranslate nohighlight">\(x_1\)</span>) through stochastic interpolants. The sampler must be compatible with the chosen SI:</p>
+<ul class="simple">
+<li><p><strong>SI with arbitrary base</strong> → flexible sampler choice</p></li>
+<li><p><strong>One-sided SI</strong> → must use Gaussian sampler</p></li>
+<li><p><strong>Identity SI</strong> → must use mirror sampler</p></li>
+<li><p><strong>Discrete flow matching (mask)</strong> → must use mask sampler</p></li>
+<li><p><strong>Discrete flow matching (uniform)</strong> → must use uniform sampler</p></li>
+</ul>
+</section>
+<section id="sampler-architecture">
+<h2>Sampler Architecture<a class="headerlink" href="#sampler-architecture" title="Link to this heading">#</a></h2>
+<section id="independent-sampler">
+<h3>Independent Sampler<a class="headerlink" href="#independent-sampler" title="Link to this heading">#</a></h3>
+<p>The main sampler class combines three independent distributions:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">sampler</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.IndependentSampler</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">species_distribution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w">  </span><span class="c1"># For atomic species</span>
+<span class="w">      </span><span class="nt">pos_distribution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w">      </span><span class="c1"># For positions</span>
+<span class="w">      </span><span class="nt">cell_distribution</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w">     </span><span class="c1"># For lattice vectors</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="position-distributions">
+<h2>Position Distributions<a class="headerlink" href="#position-distributions" title="Link to this heading">#</a></h2>
+<section id="uniformpositiondistribution">
+<h3>UniformPositionDistribution<a class="headerlink" href="#uniformpositiondistribution" title="Link to this heading">#</a></h3>
+<p>Samples fractional coordinates uniformly in <span class="math notranslate nohighlight">\([0,1)^3\)</span>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">pos_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.position_distributions.UniformPositionDistribution</span>
+</pre></div>
+</div>
+<p><strong>Use with</strong>: <code class="docutils literal notranslate"><span class="pre">PeriodicLinearInterpolant</span></code></p>
+</section>
+<section id="normalpositiondistribution">
+<h3>NormalPositionDistribution<a class="headerlink" href="#normalpositiondistribution" title="Link to this heading">#</a></h3>
+<p>Samples from standard normal distribution:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">pos_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.position_distributions.NormalPositionDistribution</span>
+</pre></div>
+</div>
+<p><strong>Use with</strong>: One-sided SI (<code class="docutils literal notranslate"><span class="pre">SingleStochasticInterpolantOS</span></code>)</p>
+</section>
+<section id="mirrorpositions">
+<h3>MirrorPositions<a class="headerlink" href="#mirrorpositions" title="Link to this heading">#</a></h3>
+<p>Copies positions from data (for CSP):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">pos_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.position_distributions.MirrorPositions</span>
+</pre></div>
+</div>
+<p><strong>Use with</strong>: <code class="docutils literal notranslate"><span class="pre">SingleStochasticInterpolantIdentity</span></code></p>
+</section>
+</section>
+<section id="cell-distributions">
+<h2>Cell Distributions<a class="headerlink" href="#cell-distributions" title="Link to this heading">#</a></h2>
+<section id="informedlatticedistribution">
+<h3>InformedLatticeDistribution<a class="headerlink" href="#informedlatticedistribution" title="Link to this heading">#</a></h3>
+<p>Samples from dataset statistics (recommended):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">cell_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.cell_distributions.InformedLatticeDistribution</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dataset_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mp_20</span><span class="w">  </span><span class="c1"># or: perov_5, carbon_24, mpts_52</span>
+</pre></div>
+</div>
+<p>This uses precomputed lattice statistics from the specified dataset, providing realistic initial cells.</p>
+<p>Available datasets:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mp_20</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">perov_5</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">carbon_24</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mpts_52</span></code></p></li>
+</ul>
+</section>
+<section id="uniformlatticedistribution">
+<h3>UniformLatticeDistribution<a class="headerlink" href="#uniformlatticedistribution" title="Link to this heading">#</a></h3>
+<p>Samples lattice parameters uniformly:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">cell_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.cell_distributions.UniformLatticeDistribution</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">min_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.0</span>
+<span class="w">    </span><span class="nt">max_length</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">15.0</span>
+<span class="w">    </span><span class="nt">min_angle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60.0</span>
+<span class="w">    </span><span class="nt">max_angle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">120.0</span>
+</pre></div>
+</div>
+</section>
+<section id="normallatticedistribution">
+<h3>NormalLatticeDistribution<a class="headerlink" href="#normallatticedistribution" title="Link to this heading">#</a></h3>
+<p>Samples from normal distribution:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">cell_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.cell_distributions.NormalLatticeDistribution</span>
+</pre></div>
+</div>
+<p><strong>Use with</strong>: One-sided SI</p>
+</section>
+<section id="mirrorcell">
+<h3>MirrorCell<a class="headerlink" href="#mirrorcell" title="Link to this heading">#</a></h3>
+<p>Copies cell from data (for CSP):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">cell_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.cell_distributions.MirrorCell</span>
+</pre></div>
+</div>
+<p><strong>Use with</strong>: <code class="docutils literal notranslate"><span class="pre">SingleStochasticInterpolantIdentity</span></code></p>
+</section>
+</section>
+<section id="species-distributions">
+<h2>Species Distributions<a class="headerlink" href="#species-distributions" title="Link to this heading">#</a></h2>
+<section id="maskspecies">
+<h3>MaskSpecies<a class="headerlink" href="#maskspecies" title="Link to this heading">#</a></h3>
+<p>All atoms masked (for DNG):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">species_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.species_distributions.MaskSpecies</span>
+</pre></div>
+</div>
+<p><strong>Use with</strong>: <code class="docutils literal notranslate"><span class="pre">DiscreteFlowMatchingMask</span></code></p>
+<p><strong>Mask token</strong>: Uses atomic number 0 to represent masked atoms</p>
+</section>
+<section id="uniformspeciesdistribution">
+<h3>UniformSpeciesDistribution<a class="headerlink" href="#uniformspeciesdistribution" title="Link to this heading">#</a></h3>
+<p>Uniform over element types (for DNG):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">species_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.species_distributions.UniformSpeciesDistribution</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">elements</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">6</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">7</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">8</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># H, C, N, O</span>
+</pre></div>
+</div>
+<p><strong>Use with</strong>: <code class="docutils literal notranslate"><span class="pre">DiscreteFlowMatchingUniform</span></code></p>
+</section>
+<section id="mirrorspecies">
+<h3>MirrorSpecies<a class="headerlink" href="#mirrorspecies" title="Link to this heading">#</a></h3>
+<p>Copies species from data (for CSP):</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">species_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.species_distributions.MirrorSpecies</span>
+</pre></div>
+</div>
+<p><strong>Use with</strong>: <code class="docutils literal notranslate"><span class="pre">SingleStochasticInterpolantIdentity</span></code></p>
+</section>
+</section>
+<section id="configuration-examples">
+<h2>Configuration Examples<a class="headerlink" href="#configuration-examples" title="Link to this heading">#</a></h2>
+<section id="csp-configuration">
+<h3>CSP Configuration<a class="headerlink" href="#csp-configuration" title="Link to this heading">#</a></h3>
+<p>Crystal structure prediction with fixed composition:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">sampler</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.IndependentSampler</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">species_distribution</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.species_distributions.MirrorSpecies</span>
+<span class="w">      </span><span class="nt">pos_distribution</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.position_distributions.UniformPositionDistribution</span>
+<span class="w">      </span><span class="nt">cell_distribution</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.cell_distributions.InformedLatticeDistribution</span>
+<span class="w">        </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">dataset_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mp_20</span>
+</pre></div>
+</div>
+</section>
+<section id="dng-configuration">
+<h3>DNG Configuration<a class="headerlink" href="#dng-configuration" title="Link to this heading">#</a></h3>
+<p><em>De novo</em> generation with masked species:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">sampler</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.IndependentSampler</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">species_distribution</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.species_distributions.MaskSpecies</span>
+<span class="w">      </span><span class="nt">pos_distribution</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.position_distributions.UniformPositionDistribution</span>
+<span class="w">      </span><span class="nt">cell_distribution</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.cell_distributions.InformedLatticeDistribution</span>
+<span class="w">        </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">dataset_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mp_20</span>
+</pre></div>
+</div>
+</section>
+<section id="one-sided-si-configuration">
+<h3>One-Sided SI Configuration<a class="headerlink" href="#one-sided-si-configuration" title="Link to this heading">#</a></h3>
+<p>Using one-sided stochastic interpolants:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">sampler</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.IndependentSampler</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">species_distribution</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.species_distributions.MaskSpecies</span>
+<span class="w">      </span><span class="nt">pos_distribution</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.position_distributions.NormalPositionDistribution</span>
+<span class="w">      </span><span class="nt">cell_distribution</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.cell_distributions.NormalLatticeDistribution</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="custom-distributions">
+<h2>Custom Distributions<a class="headerlink" href="#custom-distributions" title="Link to this heading">#</a></h2>
+<p>Create custom distributions by subclassing base classes:</p>
+<section id="position-distribution">
+<h3>Position Distribution<a class="headerlink" href="#position-distribution" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">omg.sampler.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">PositionDistribution</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyPositionDistribution</span><span class="p">(</span><span class="n">PositionDistribution</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="c1"># Return (n_atoms, 3) tensor</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="cell-distribution">
+<h3>Cell Distribution<a class="headerlink" href="#cell-distribution" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">omg.sampler.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">CellDistribution</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyCellDistribution</span><span class="p">(</span><span class="n">CellDistribution</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span>
+        <span class="c1"># Return (batch_size, 3, 3) tensor</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="species-distribution">
+<h3>Species Distribution<a class="headerlink" href="#species-distribution" title="Link to this heading">#</a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">omg.sampler.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpeciesDistribution</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MySpeciesDistribution</span><span class="p">(</span><span class="n">SpeciesDistribution</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">n_atoms</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="c1"># Return (n_atoms,) tensor of atomic numbers</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">119</span><span class="p">,</span> <span class="p">(</span><span class="n">n_atoms</span><span class="p">,))</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="advanced-features">
+<h2>Advanced Features<a class="headerlink" href="#advanced-features" title="Link to this heading">#</a></h2>
+<section id="minimum-permutation-distance">
+<h3>Minimum Permutation Distance<a class="headerlink" href="#minimum-permutation-distance" title="Link to this heading">#</a></h3>
+<p>Ensure sampled positions are well-separated:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">omg.sampler.minimum_permutation_distance</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">compute_minimum_permutation_distance</span>
+<span class="p">)</span>
+
+<span class="c1"># Compute MPD between structures</span>
+<span class="n">mpd</span> <span class="o">=</span> <span class="n">compute_minimum_permutation_distance</span><span class="p">(</span><span class="n">pos1</span><span class="p">,</span> <span class="n">cell1</span><span class="p">,</span> <span class="n">pos2</span><span class="p">,</span> <span class="n">cell2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is useful for:</p>
+<ul class="simple">
+<li><p>Validating generated structures</p></li>
+<li><p>Computing structural similarity</p></li>
+<li><p>Filtering duplicate structures</p></li>
+</ul>
+</section>
+<section id="conditional-sampling">
+<h3>Conditional Sampling<a class="headerlink" href="#conditional-sampling" title="Link to this heading">#</a></h3>
+<p>Condition generation on properties:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Future feature - conditioning on formation energy, band gap, etc.</span>
+<span class="c1"># Currently, use composition constraints for CSP</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">#</a></h2>
+<ol class="arabic">
+<li><p><strong>Match sampler to SI</strong>: Ensure compatibility between base distribution and interpolant</p></li>
+<li><p><strong>Use informed distributions</strong>: <code class="docutils literal notranslate"><span class="pre">InformedLatticeDistribution</span></code> gives better initial guesses</p></li>
+<li><p><strong>Dataset-specific sampling</strong>: Use statistics from your training dataset:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">cell_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.cell_distributions.InformedLatticeDistribution</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dataset_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_dataset</span><span class="w">  </span><span class="c1"># Must match training data</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>CSP best practices</strong>:</p>
+<ul class="simple">
+<li><p>Always use <code class="docutils literal notranslate"><span class="pre">MirrorSpecies</span></code> to keep composition fixed</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">UniformPositionDistribution</span></code> for coordinates</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">InformedLatticeDistribution</span></code> for realistic cells</p></li>
+</ul>
+</li>
+<li><p><strong>DNG best practices</strong>:</p>
+<ul class="simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">MaskSpecies</span></code> or <code class="docutils literal notranslate"><span class="pre">UniformSpeciesDistribution</span></code></p></li>
+<li><p>Start with uniform position distribution</p></li>
+<li><p>Use informed lattice distribution for physical relevance</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
+<section id="incompatible-sampler-and-si">
+<h3>Incompatible Sampler and SI<a class="headerlink" href="#incompatible-sampler-and-si" title="Link to this heading">#</a></h3>
+<p><strong>Error</strong>: Generated structures have incorrect format</p>
+<p><strong>Solution</strong>: Check SI and sampler compatibility:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># This is WRONG:</span>
+<span class="nt">stochastic_interpolants</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SingleStochasticInterpolantIdentity</span><span class="w">  </span><span class="c1"># Mirror required</span>
+<span class="nt">sampler</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">species_distribution</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">MaskSpecies</span><span class="w">  </span><span class="c1"># Incompatible!</span>
+
+<span class="c1"># This is CORRECT:</span>
+<span class="nt">stochastic_interpolants</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">SingleStochasticInterpolantIdentity</span>
+<span class="nt">sampler</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">species_distribution</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">MirrorSpecies</span><span class="w">  </span><span class="c1"># Compatible</span>
+</pre></div>
+</div>
+</section>
+<section id="poor-initial-structures">
+<h3>Poor Initial Structures<a class="headerlink" href="#poor-initial-structures" title="Link to this heading">#</a></h3>
+<p><strong>Problem</strong>: Slow convergence or low quality</p>
+<p><strong>Solution</strong>: Use informed distributions:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">cell_distribution</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.sampler.cell_distributions.InformedLatticeDistribution</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dataset_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mp_20</span><span class="w">  </span><span class="c1"># Use dataset statistics</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="stochastic_interpolants.html"><span class="doc">Stochastic Interpolants</span></a> - Configure SI to match sampler</p></li>
+<li><p><a class="reference internal" href="datamodule.html"><span class="doc">DataModule</span></a> - Prepare training data</p></li>
+<li><p><a class="reference internal" href="training.html"><span class="doc">Training</span></a> - Train your model</p></li>
+<li><p><a class="reference internal" href="../api/sampler.html"><span class="doc">Sampler</span></a> - Sampler API reference</p></li>
+<li><p><a class="reference internal" href="../development/contributing.html"><span class="doc">Contributing</span></a> - Contributing guidelines</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="stochastic_interpolants.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Stochastic Interpolants</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="datamodule.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">DataModule</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sampler-architecture">Sampler Architecture</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#independent-sampler">Independent Sampler</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#position-distributions">Position Distributions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#uniformpositiondistribution">UniformPositionDistribution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#normalpositiondistribution">NormalPositionDistribution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mirrorpositions">MirrorPositions</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cell-distributions">Cell Distributions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#informedlatticedistribution">InformedLatticeDistribution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#uniformlatticedistribution">UniformLatticeDistribution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#normallatticedistribution">NormalLatticeDistribution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mirrorcell">MirrorCell</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#species-distributions">Species Distributions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#maskspecies">MaskSpecies</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#uniformspeciesdistribution">UniformSpeciesDistribution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#mirrorspecies">MirrorSpecies</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration-examples">Configuration Examples</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#csp-configuration">CSP Configuration</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#dng-configuration">DNG Configuration</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#one-sided-si-configuration">One-Sided SI Configuration</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-distributions">Custom Distributions</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#position-distribution">Position Distribution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cell-distribution">Cell Distribution</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#species-distribution">Species Distribution</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-features">Advanced Features</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#minimum-permutation-distance">Minimum Permutation Distance</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#conditional-sampling">Conditional Sampling</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">Best Practices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#incompatible-sampler-and-si">Incompatible Sampler and SI</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#poor-initial-structures">Poor Initial Structures</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#next-steps">Next Steps</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user_guide/sampler.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

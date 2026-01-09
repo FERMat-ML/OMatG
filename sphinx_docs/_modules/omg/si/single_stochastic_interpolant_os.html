@@ -1,0 +1,1246 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>omg.si.single_stochastic_interpolant_os &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/omg/si/single_stochastic_interpolant_os';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">omg.si.single_stochastic_interpolant_os</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for omg.si.single_stochastic_interpolant_os</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch_scatter</span><span class="w"> </span><span class="kn">import</span> <span class="n">scatter_mean</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdiffeq</span><span class="w"> </span><span class="kn">import</span> <span class="n">odeint</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchsde</span><span class="w"> </span><span class="kn">import</span> <span class="n">sdeint</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">Corrector</span><span class="p">,</span> <span class="n">Epsilon</span><span class="p">,</span> <span class="n">Interpolant</span><span class="p">,</span> <span class="n">StochasticInterpolant</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.interpolants</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScoreBasedDiffusionModelInterpolantVP</span><span class="p">,</span> <span class="n">ScoreBasedDiffusionModelInterpolantVE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.single_stochastic_interpolant</span><span class="w"> </span><span class="kn">import</span> <span class="n">DifferentialEquationType</span>
+
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SingleStochasticInterpolantOS</span><span class="p">(</span><span class="n">StochasticInterpolant</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    One-sided stochastic interpolant x_t = alpha(t) * x_0 + beta(t) * x_1 between points x_0 and x_1 from two</span>
+<span class="sd">    distributions p_0 and p_1 at times t based on interpolating functions alpha(t) and beta(t) with</span>
+<span class="sd">    alpha(0) = beta(1) = 1 and alpha(1) = beta(0) = 0. In this class, x_0 is assumed to be a Gaussian random variable in</span>
+<span class="sd">    which case the effect of the latent variable z in the SingleStochasticInterpolant class can be merged with x_0.</span>
+
+<span class="sd">    The stochastic interpolant can either use an ordinary differential equation (ODE) or a stochastic differential</span>
+<span class="sd">    equation during inference. If an SDE is used, one should additionally provide an epsilon function epsilon(t).</span>
+
+<span class="sd">    The ODE is integrated using the torchdiffeq library and the SDE is integrated using the torchsde library.</span>
+
+<span class="sd">    In principle, one only needs to learn the denoiser for one-sided interpolants because the velocity field can derived</span>
+<span class="sd">    from it (see Eq. (6.7) in the SI paper). However, the resulting velocity field is singular (though with a finite</span>
+<span class="sd">    mean) which is why it might still be useful to learn the velocity field.</span>
+
+<span class="sd">    :param interpolant:</span>
+<span class="sd">        Interpolant I(t, x_0, x_1) = alpha(t) * x_0 + beta(t) * x_1 between points from two distributions p_0 and p_1 at</span>
+<span class="sd">        times t.</span>
+<span class="sd">    :type interpolant: Interpolant</span>
+<span class="sd">    :param epsilon:</span>
+<span class="sd">        Optional epsilon function epsilon(t) for the stochastic differential equation.</span>
+<span class="sd">        Should only be provided if the differential equation type is SDE.</span>
+<span class="sd">    :type epsilon: Optional[Epsilon]</span>
+<span class="sd">    :param differential_equation_type:</span>
+<span class="sd">        Type of differential equation to use for inference.</span>
+<span class="sd">    :type differential_equation_type: DifferentialEquationType</span>
+<span class="sd">    :param integrator_kwargs: Optional keyword arguments for the odeint function of torchdiffeq (see</span>
+<span class="sd">        https://github.com/rtqichen/torchdiffeq/blob/master/README.md) or the sdeint function of torchsde (see</span>
+<span class="sd">        https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md#keyword-arguments-of-sdeint).</span>
+<span class="sd">    :type integrator_kwargs: Optional[dict]</span>
+<span class="sd">    :param correct_center_of_mass_motion:</span>
+<span class="sd">        TODO: Do we also want to do that during integration?</span>
+<span class="sd">        Whether to correct the center-of-mass motion to zero before computing the loss.</span>
+<span class="sd">        This might be useful because the translational invariant model cannot predict the center-of-mass motion.</span>
+<span class="sd">        This is the approach chosen by FlowMM.</span>
+<span class="sd">        Defaults to False.</span>
+<span class="sd">    :type correct_center_of_mass_motion: bool</span>
+<span class="sd">    :param predict_velocity:</span>
+<span class="sd">        Whether to compute the loss for the velocity field.</span>
+<span class="sd">        Defaults to True.</span>
+<span class="sd">    :type predict_velocity: bool</span>
+<span class="sd">    :param velocity_annealing_factor:</span>
+<span class="sd">        During inference, the predicted velocity fields b at time are multiplied by (1 + velocity_annealing_factor * t).</span>
+<span class="sd">        A velocity annealing factor of 0.0 corresponds to no annealing.</span>
+<span class="sd">        Should only be set if predict_velocity is True.</span>
+<span class="sd">        Defaults to None.</span>
+<span class="sd">    :type velocity_annealing_factor: Optional[float]</span>
+
+<span class="sd">    :raises ValueError:</span>
+<span class="sd">        If epsilon is provided for ODEs or not provided for SDEs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.__init__">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interpolant</span><span class="p">:</span> <span class="n">Interpolant</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Epsilon</span><span class="p">],</span> <span class="n">differential_equation_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                 <span class="n">integrator_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">correct_center_of_mass_motion</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">predict_velocity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">velocity_annealing_factor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct stochastic interpolant.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span> <span class="o">=</span> <span class="n">interpolant</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_differential_equation_type</span> <span class="o">=</span> <span class="n">differential_equation_type</span>
+        <span class="c1"># Corrector that needs to be applied to the points x_t during integration.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">get_corrector</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_differential_equation_type</span> <span class="o">=</span> <span class="n">DifferentialEquationType</span><span class="p">[</span><span class="n">differential_equation_type</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown differential equation type f</span><span class="si">{</span><span class="n">differential_equation_type</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_differential_equation_type</span> <span class="o">==</span> <span class="n">DifferentialEquationType</span><span class="o">.</span><span class="n">ODE</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ode_loss</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ode_integrate</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Epsilon function should not be provided for ODEs.&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_differential_equation_type</span> <span class="o">==</span> <span class="n">DifferentialEquationType</span><span class="o">.</span><span class="n">SDE</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sde_loss</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">integrate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sde_integrate</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Epsilon function should be provided for SDEs.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_integrator_kwargs</span> <span class="o">=</span> <span class="n">integrator_kwargs</span> <span class="k">if</span> <span class="n">integrator_kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_correct_center_of_mass_motion</span> <span class="o">=</span> <span class="n">correct_center_of_mass_motion</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_predict_velocity</span> <span class="o">=</span> <span class="n">predict_velocity</span>
+        <span class="c1"># This is also true for the PeriodicScoreBasedDiffusionModelInterpolantVP and</span>
+        <span class="c1"># PeriodicScoreBasedDiffusionModelInterpolantVE.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_antithetic</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="p">,</span>
+                                          <span class="p">(</span><span class="n">ScoreBasedDiffusionModelInterpolantVP</span><span class="p">,</span>
+                                           <span class="n">ScoreBasedDiffusionModelInterpolantVE</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="o">=</span> <span class="n">velocity_annealing_factor</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_velocity</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Velocity annealing factor should only be set if predict_velocity is True.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_velocity</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="o">=</span> <span class="mf">0.0</span></div>
+
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.interpolate">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.interpolate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                    <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stochastically interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Points from p_0.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Points from p_1.</span>
+<span class="sd">        :type x_1: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Stochastically interpolated points x_t, random variables z used for interpolation.</span>
+<span class="sd">        :rtype: tuple[torch.Tensor, torch.Tensor]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">x_0</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">x_1</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># Output is already corrected.</span>
+        <span class="n">interpolate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+        <span class="c1"># x_0 takes the role of the random variable z.</span>
+        <span class="k">return</span> <span class="n">interpolate</span><span class="p">,</span> <span class="n">x_0</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.loss_keys">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.loss_keys">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loss_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the keys of the losses returned by the loss function.</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Keys of the losses.</span>
+<span class="sd">        :rtype: Iterable[str]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_velocity</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="s2">&quot;loss_b&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_differential_equation_type</span> <span class="o">==</span> <span class="n">DifferentialEquationType</span><span class="o">.</span><span class="n">SDE</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="s2">&quot;loss_z&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="s2">&quot;loss_z&quot;</span></div>
+
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.loss">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.loss">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+             <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the losses for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and</span>
+<span class="sd">        p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.</span>
+
+<span class="sd">        If predict_velocity was set to True on initialization, the loss of the velocity fields is returned with the key</span>
+<span class="sd">        &#39;loss_b&#39;. For the SDE case, an additional loss for the denoisers is returned with the keys &#39;loss_z&#39;. If</span>
+<span class="sd">        predict_velocity was set to False on initialization, only the loss of the denoiser is returned with the key</span>
+<span class="sd">        &#39;loss_z&#39;.</span>
+
+<span class="sd">        This method is only defined here to define all methods of the abstract base class. The actual loss method is</span>
+<span class="sd">        either _ode_loss or _sde_loss, which are chosen based on the type of differential equation (self._de_type).</span>
+
+<span class="sd">        :param model_function:</span>
+<span class="sd">            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.</span>
+<span class="sd">        :type model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]</span>
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Points from p_0.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Points from p_1.</span>
+<span class="sd">        :type x_1: torch.Tensor</span>
+<span class="sd">        :param x_t:</span>
+<span class="sd">            Stochastically interpolated points x_t.</span>
+<span class="sd">        :type x_t: torch.Tensor</span>
+<span class="sd">        :param z:</span>
+<span class="sd">            Random variable z that was used for the stochastic interpolation to get the model prediction.</span>
+<span class="sd">        :type z: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Losses.</span>
+<span class="sd">        :rtype: Dict[str, torch.Tensor]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ode_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+                  <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                  <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the losses for the ODE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and</span>
+<span class="sd">        p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.</span>
+
+<span class="sd">        If predict_velocity was set to True on initialization, only the loss of the velocity fields is returned with the</span>
+<span class="sd">        key &#39;loss_b&#39;. If predict_velocity was set to False on initialization, only the loss of the denoiser is returned</span>
+<span class="sd">        with the key &#39;loss_z&#39;.</span>
+
+<span class="sd">        :param model_function:</span>
+<span class="sd">            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.</span>
+<span class="sd">        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]</span>
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Points from p_0.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Points from p_1.</span>
+<span class="sd">        :type x_1: torch.Tensor</span>
+<span class="sd">        :param x_t:</span>
+<span class="sd">            Stochastically interpolated points x_t.</span>
+<span class="sd">        :type x_t: torch.Tensor</span>
+<span class="sd">        :param z:</span>
+<span class="sd">            Random variable z that was used for the stochastic interpolation to get the model prediction.</span>
+<span class="sd">        :type z: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Losses.</span>
+<span class="sd">        :rtype: Dict[str, torch.Tensor]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">x_0</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">x_1</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">x_0</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_velocity</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_antithetic</span><span class="p">:</span>
+                <span class="n">x_t_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">x_t</span><span class="p">,</span> <span class="n">x_t_p</span><span class="p">)</span>
+                <span class="n">x_t_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">-</span><span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+                <span class="n">expected_velocity_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate_derivative</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+                <span class="n">expected_velocity_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate_derivative</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">-</span><span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_correct_center_of_mass_motion</span><span class="p">:</span>
+                    <span class="c1"># scatter_mean is used to compute the mean velocity for every configuration.</span>
+                    <span class="c1"># index_select is used to replicate the mean velocity for every atom in the configuration.</span>
+                    <span class="c1"># We don&#39;t need to worry about periodic boundary conditions in the corrector here, since the tangent</span>
+                    <span class="c1"># space is Euclidean.</span>
+                    <span class="c1"># After this correction, it is true that</span>
+                    <span class="c1"># expected_velocity_p = corr(expected_velocity_without_gamma) + corr(gamma_derivative * z),</span>
+                    <span class="c1"># expected_velocity_m = corr(expected_velocity_without_gamma) - corr(gamma_derivative * z),</span>
+                    <span class="c1"># where corr is the correction to the center of mass motion.</span>
+                    <span class="n">mean_velocity_p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">scatter_mean</span><span class="p">(</span><span class="n">expected_velocity_p</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                                                         <span class="mi">0</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">)</span>
+                    <span class="n">expected_velocity_p</span> <span class="o">=</span> <span class="n">expected_velocity_p</span> <span class="o">-</span> <span class="n">mean_velocity_p</span>
+                    <span class="n">mean_velocity_m</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">scatter_mean</span><span class="p">(</span><span class="n">expected_velocity_m</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                                                         <span class="mi">0</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">)</span>
+                    <span class="n">expected_velocity_m</span> <span class="o">=</span> <span class="n">expected_velocity_m</span> <span class="o">-</span> <span class="n">mean_velocity_m</span>
+                <span class="n">pred_b_p</span> <span class="o">=</span> <span class="n">model_function</span><span class="p">(</span><span class="n">x_t_p</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">pred_b_m</span> <span class="o">=</span> <span class="n">model_function</span><span class="p">(</span><span class="n">x_t_m</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss_b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b_p</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b_m</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+                                   <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b_p</span> <span class="o">*</span> <span class="n">expected_velocity_p</span><span class="p">)</span>
+                                   <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b_m</span> <span class="o">*</span> <span class="n">expected_velocity_m</span><span class="p">))}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">expected_velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate_derivative</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+                <span class="n">pred_b</span> <span class="o">=</span> <span class="n">model_function</span><span class="p">(</span><span class="n">x_t</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_correct_center_of_mass_motion</span><span class="p">:</span>
+                    <span class="c1"># scatter_mean is used to compute the mean velocity for every configuration.</span>
+                    <span class="c1"># index_select is used to replicate the mean velocity for every atom in the configuration.</span>
+                    <span class="n">mean_velocity</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">scatter_mean</span><span class="p">(</span><span class="n">expected_velocity</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                                                       <span class="mi">0</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">)</span>
+                    <span class="n">expected_velocity</span> <span class="o">=</span> <span class="n">expected_velocity</span> <span class="o">-</span> <span class="n">mean_velocity</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss_b&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b</span> <span class="o">*</span> <span class="n">expected_velocity</span><span class="p">)}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">x_0</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+            <span class="n">pred_z</span> <span class="o">=</span> <span class="n">model_function</span><span class="p">(</span><span class="n">x_t</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss_z&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_z</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_z</span> <span class="o">*</span> <span class="n">z</span><span class="p">)}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sde_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+                  <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                  <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the losses for the SDE stochastic interpolant between points x_0 and x_1 from two distributions p_0 and</span>
+<span class="sd">        p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.</span>
+
+<span class="sd">        If predict_velocity was set to True on initialization, the loss of the velocity fields is returned with the</span>
+<span class="sd">        key &#39;loss_b&#39;. The loss of the denoiser is always returned with the key &#39;loss_z&#39;.</span>
+
+<span class="sd">        :param model_function:</span>
+<span class="sd">            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.</span>
+<span class="sd">        :type model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]</span>
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Points from p_0.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Points from p_1.</span>
+<span class="sd">        :type x_1: torch.Tensor</span>
+<span class="sd">        :param x_t:</span>
+<span class="sd">            Stochastically interpolated points x_t.</span>
+<span class="sd">        :type x_t: torch.Tensor</span>
+<span class="sd">        :param z:</span>
+<span class="sd">            Random variable z that was used for the stochastic interpolation to get the model prediction.</span>
+<span class="sd">        :type z: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Losses.</span>
+<span class="sd">        :rtype: Dict[str, torch.Tensor]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">x_0</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+        <span class="n">pred_b</span><span class="p">,</span> <span class="n">pred_z</span> <span class="o">=</span> <span class="n">model_function</span><span class="p">(</span><span class="n">x_t</span><span class="p">)</span>
+        <span class="n">loss_z</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_z</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_z</span> <span class="o">*</span> <span class="n">z</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_velocity</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_antithetic</span><span class="p">:</span>
+                <span class="n">x_t_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">x_t</span><span class="p">,</span> <span class="n">x_t_p</span><span class="p">)</span>
+                <span class="n">x_t_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">-</span><span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+                <span class="n">expected_velocity_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate_derivative</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+                <span class="n">expected_velocity_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate_derivative</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="o">-</span><span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_correct_center_of_mass_motion</span><span class="p">:</span>
+                    <span class="c1"># scatter_mean is used to compute the mean velocity for every configuration.</span>
+                    <span class="c1"># index_select is used to replicate the mean velocity for every atom in the configuration.</span>
+                    <span class="c1"># We don&#39;t need to worry about periodic boundary conditions in the corrector here, since the tangent</span>
+                    <span class="c1"># space is Euclidean.</span>
+                    <span class="c1"># After this correction, it is true that</span>
+                    <span class="c1"># expected_velocity_p = corr(expected_velocity_without_gamma) + corr(gamma_derivative * z),</span>
+                    <span class="c1"># expected_velocity_m = corr(expected_velocity_without_gamma) - corr(gamma_derivative * z),</span>
+                    <span class="c1"># where corr is the correction to the center of mass motion.</span>
+                    <span class="n">mean_velocity_p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">scatter_mean</span><span class="p">(</span><span class="n">expected_velocity_p</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                                                         <span class="mi">0</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">)</span>
+                    <span class="n">expected_velocity_p</span> <span class="o">=</span> <span class="n">expected_velocity_p</span> <span class="o">-</span> <span class="n">mean_velocity_p</span>
+                    <span class="n">mean_velocity_m</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">scatter_mean</span><span class="p">(</span><span class="n">expected_velocity_m</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                                                         <span class="mi">0</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">)</span>
+                    <span class="n">expected_velocity_m</span> <span class="o">=</span> <span class="n">expected_velocity_m</span> <span class="o">-</span> <span class="n">mean_velocity_m</span>
+                <span class="n">pred_b_p</span> <span class="o">=</span> <span class="n">pred_b</span>
+                <span class="n">pred_b_m</span> <span class="o">=</span> <span class="n">model_function</span><span class="p">(</span><span class="n">x_t_m</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss_b&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b_p</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b_m</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+                                   <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b_p</span> <span class="o">*</span> <span class="n">expected_velocity_p</span><span class="p">)</span>
+                                   <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b_m</span> <span class="o">*</span> <span class="n">expected_velocity_m</span><span class="p">)),</span>
+                        <span class="s2">&quot;loss_z&quot;</span><span class="p">:</span> <span class="n">loss_z</span><span class="p">}</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">expected_velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">interpolate_derivative</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_correct_center_of_mass_motion</span><span class="p">:</span>
+                    <span class="c1"># scatter_mean is used to compute the mean velocity for every configuration.</span>
+                    <span class="c1"># index_select is used to replicate the mean velocity for every atom in the configuration.</span>
+                    <span class="n">mean_velocity</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="n">scatter_mean</span><span class="p">(</span><span class="n">expected_velocity</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                                                       <span class="mi">0</span><span class="p">,</span> <span class="n">batch_indices</span><span class="p">)</span>
+                    <span class="n">expected_velocity</span> <span class="o">=</span> <span class="n">expected_velocity</span> <span class="o">-</span> <span class="n">mean_velocity</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss_b&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">pred_b</span> <span class="o">*</span> <span class="n">expected_velocity</span><span class="p">),</span>
+                        <span class="s2">&quot;loss_z&quot;</span><span class="p">:</span> <span class="n">loss_z</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss_z&quot;</span><span class="p">:</span> <span class="n">loss_z</span><span class="p">}</span>
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.integrate">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.integrate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+                  <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                  <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Integrate the current positions x_t at the given time for the given time step based on the velocity fields b and</span>
+<span class="sd">        the denoisers eta returned by the model function.</span>
+
+<span class="sd">        This method is only defined here to define all methods of the abstract base class. The actual loss method is</span>
+<span class="sd">        either _ode_integrate or _sde_integrate, which are chosen based on the type of differential equation</span>
+<span class="sd">        (self._de_type).</span>
+
+<span class="sd">        :param model_function:</span>
+<span class="sd">            Model function returning the velocity fields b and the denoisers eta given the current times t and positions</span>
+<span class="sd">            x_t.</span>
+<span class="sd">        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]</span>
+<span class="sd">        :param x_t:</span>
+<span class="sd">            Current positions.</span>
+<span class="sd">        :type x_t: torch.Tensor</span>
+<span class="sd">        :param time:</span>
+<span class="sd">            Initial time (0-dimensional torch tensor).</span>
+<span class="sd">        :type time: torch.Tensor</span>
+<span class="sd">        :param time_step:</span>
+<span class="sd">            Time step (0-dimensional torch tensor).</span>
+<span class="sd">        :type time_step: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Integrated position.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ode_integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+                       <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                       <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Integrate the ODE for the current positions x_t at the given time for the given time step based on the velocity</span>
+<span class="sd">        fields b and the denoisers eta returned by the model function.</span>
+
+<span class="sd">        :param model_function:</span>
+<span class="sd">            Model function returning the velocity fields b and the denoisers eta given the current times t and positions</span>
+<span class="sd">            x_t.</span>
+<span class="sd">        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]</span>
+<span class="sd">        :param x_t:</span>
+<span class="sd">            Current positions.</span>
+<span class="sd">        :type x_t: torch.Tensor</span>
+<span class="sd">        :param time:</span>
+<span class="sd">            Initial time (0-dimensional torch tensor).</span>
+<span class="sd">        :type time: torch.Tensor</span>
+<span class="sd">        :param time_step:</span>
+<span class="sd">            Time step (0-dimensional torch tensor).</span>
+<span class="sd">        :type time_step: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Integrated position.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_velocity</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">odefunc</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+                                    <span class="o">*</span> <span class="n">model_function</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">x</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">odefunc</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+                <span class="n">x_corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="n">model_function</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_corr</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">t1</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">alpha_dot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">z</span><span class="p">)</span>
+                <span class="n">t2</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">beta_dot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+                      <span class="o">*</span> <span class="p">(</span><span class="n">x_corr</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">alpha</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">z</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">t1</span> <span class="o">+</span> <span class="n">t2</span>
+
+        <span class="n">t_span</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">time</span><span class="p">,</span> <span class="n">time</span> <span class="o">+</span> <span class="n">time_step</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">x_t</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">x_t_new</span> <span class="o">=</span> <span class="n">odeint</span><span class="p">(</span><span class="n">odefunc</span><span class="p">,</span> <span class="n">x_t</span><span class="p">,</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_integrator_kwargs</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">x_t_new</span><span class="p">)</span>
+
+    <span class="c1"># Modify wrapper for use in SDE integrator</span>
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.SDE">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDE">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">SDE</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_func</span><span class="p">,</span> <span class="n">corrector</span><span class="p">,</span> <span class="n">interpolant</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">original_x_shape</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_model_func</span> <span class="o">=</span> <span class="n">model_func</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span> <span class="o">=</span> <span class="n">corrector</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span> <span class="o">=</span> <span class="n">interpolant</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_original_x_shape</span> <span class="o">=</span> <span class="n">original_x_shape</span>
+            <span class="c1"># Required for torchsde.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sde_type</span> <span class="o">=</span> <span class="s2">&quot;ito&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">noise_type</span> <span class="o">=</span> <span class="s2">&quot;diagonal&quot;</span>
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.SDE.f">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDE.f">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+            <span class="c1"># Because of the noise, the x should be corrected when it is passed to the model.</span>
+            <span class="n">new_x_shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">x_corr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_original_x_shape</span><span class="p">))</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_func</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">x_corr</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">t1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">alpha_dot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">z</span>
+            <span class="n">t2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">beta_dot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_corr</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">alpha</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">z</span><span class="p">)</span>
+            <span class="n">t3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span><span class="o">.</span><span class="n">epsilon</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">alpha</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">z</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">t1</span> <span class="o">+</span> <span class="n">t2</span> <span class="o">-</span> <span class="n">t3</span>
+            <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">new_x_shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.SDE.g">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDE.g">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">g</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span><span class="o">.</span><span class="n">epsilon</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.SDEPredictVelocity">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDEPredictVelocity">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">SDEPredictVelocity</span><span class="p">(</span><span class="n">SDE</span><span class="p">):</span>
+        <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_func</span><span class="p">,</span> <span class="n">corrector</span><span class="p">,</span> <span class="n">interpolant</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="n">original_x_shape</span><span class="p">,</span> <span class="n">velocity_annealing_factor</span><span class="p">):</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model_func</span><span class="o">=</span><span class="n">model_func</span><span class="p">,</span> <span class="n">corrector</span><span class="o">=</span><span class="n">corrector</span><span class="p">,</span> <span class="n">interpolant</span><span class="o">=</span><span class="n">interpolant</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">,</span>
+                             <span class="n">original_x_shape</span><span class="o">=</span><span class="n">original_x_shape</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="o">=</span> <span class="n">velocity_annealing_factor</span>
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.SDEPredictVelocity.f">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDEPredictVelocity.f">[docs]</a>
+        <span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+            <span class="c1"># Because of the noise, the x should be corrected when it is passed to the model.</span>
+            <span class="n">new_x_shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_func</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_original_x_shape</span><span class="p">)))</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="p">((</span><span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">preds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                   <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span><span class="o">.</span><span class="n">epsilon</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="o">.</span><span class="n">alpha</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="o">*</span> <span class="n">preds</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">new_x_shape</span><span class="p">)</span></div>
+</div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sde_integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+                       <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                       <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Integrate the SDE for the current positions x_t at the given time for the given time step based on the velocity</span>
+<span class="sd">        fields b and the denoisers eta returned by the model function.</span>
+
+<span class="sd">        :param model_function:</span>
+<span class="sd">            Model function returning the velocity fields b and the denoisers eta given the current times t and positions</span>
+<span class="sd">            x_t.</span>
+<span class="sd">        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]</span>
+<span class="sd">        :param x_t:</span>
+<span class="sd">            Current positions.</span>
+<span class="sd">        :type x_t: torch.Tensor</span>
+<span class="sd">        :param time:</span>
+<span class="sd">            Initial time (0-dimensional torch tensor).</span>
+<span class="sd">        :type time: torch.Tensor</span>
+<span class="sd">        :param time_step:</span>
+<span class="sd">            Time step (0-dimensional torch tensor).</span>
+<span class="sd">        :type time_step: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Integrated position.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># SDE Integrator</span>
+        <span class="n">original_shape</span> <span class="o">=</span> <span class="n">x_t</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_velocity</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">sde</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SDEPredictVelocity</span><span class="p">(</span><span class="n">model_func</span><span class="o">=</span><span class="n">model_function</span><span class="p">,</span> <span class="n">corrector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span><span class="p">,</span>
+                                          <span class="n">interpolant</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span><span class="p">,</span>
+                                          <span class="n">original_x_shape</span><span class="o">=</span><span class="n">original_shape</span><span class="p">,</span>
+                                          <span class="n">velocity_annealing_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_velocity_annealing_factor</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="n">sde</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SDE</span><span class="p">(</span><span class="n">model_func</span><span class="o">=</span><span class="n">model_function</span><span class="p">,</span> <span class="n">corrector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span><span class="p">,</span> <span class="n">interpolant</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_interpolant</span><span class="p">,</span>
+                           <span class="n">epsilon</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_epsilon</span><span class="p">,</span> <span class="n">original_x_shape</span><span class="o">=</span><span class="n">original_shape</span><span class="p">)</span>
+        <span class="n">t_span</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">time</span><span class="p">,</span> <span class="n">time</span> <span class="o">+</span> <span class="n">time_step</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">x_t</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="c1"># Diagonal noise in torchsde expects a tensor of shape (batch_size, state_size).</span>
+            <span class="c1"># See https://github.com/google-research/torchsde/blob/master/DOCUMENTATION.md.</span>
+            <span class="c1"># Since every configuration in the batch can have a different number of atoms, such a reshape is generally</span>
+            <span class="c1"># not possible. Therefore, we keep the first dimension as the batch size and flatten the rest.</span>
+            <span class="c1"># This should not matter for the integration, as the noise is diagonal. Every noise term is independent and</span>
+            <span class="c1"># affects only on state-size dimension.</span>
+            <span class="n">x_t_new</span> <span class="o">=</span> <span class="n">sdeint</span><span class="p">(</span><span class="n">sde</span><span class="p">,</span> <span class="n">x_t</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">original_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">t_span</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_integrator_kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">x_t_new</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">original_shape</span><span class="p">))</span>
+
+<div class="viewcode-block" id="SingleStochasticInterpolantOS.get_corrector">
+<a class="viewcode-back" href="../../../omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.get_corrector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_corrector</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Corrector</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the corrector implied by the stochastic interpolant (for instance, a corrector that considers periodic</span>
+<span class="sd">        boundary conditions).</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">           Corrector.</span>
+<span class="sd">        :rtype: Corrector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_corrector</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

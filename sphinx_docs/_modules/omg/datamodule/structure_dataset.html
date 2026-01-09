@@ -1,0 +1,1607 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>omg.datamodule.structure_dataset &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/omg/datamodule/structure_dataset';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">omg.datamodule.structure_dataset</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for omg.datamodule.structure_dataset</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">files</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ase.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">write</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">lmdb</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyarrow.parquet</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pq</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.analysis.structure_matcher</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructureMatcher</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pymatgen.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">Structure</span> <span class="k">as</span> <span class="n">PymatgenStructure</span><span class="p">,</span> <span class="n">Lattice</span> <span class="k">as</span> <span class="n">PymatgenLattice</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.datamodule.structure</span><span class="w"> </span><span class="kn">import</span> <span class="n">Structure</span>
+
+
+<div class="viewcode-block" id="StructureDataset">
+<a class="viewcode-back" href="../../../omg.datamodule.structure_dataset.html#omg.datamodule.structure_dataset.StructureDataset">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StructureDataset</span><span class="p">(</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dataset for reading crystalline structures from several file formats.</span>
+
+<span class="sd">    This dataset optionally allows for lazy reading of the structures. In this case, it reads the structures lazily from</span>
+<span class="sd">    a file when they are requested. This is achieved with the help of the LMDB database format, which allows for</span>
+<span class="sd">    efficient key-value storage and retrieval.</span>
+
+<span class="sd">    If lazy_storage is set to False, all structures are read from the file during initialization and stored in memory.</span>
+<span class="sd">    If lazy_storage is set to True, only the structure keys in the LMDB database are stored in memory, and the</span>
+<span class="sd">    structures are read from the LMDB file when they are requested via the __getitem__ method.</span>
+
+<span class="sd">    The supported file formats for reading crystalline structures are LMDB, CSV, and Parquet. The specific format is</span>
+<span class="sd">    inferred from the file extension.</span>
+
+<span class="sd">    The _from_lmdb, _from_csv, and _from_parquet methods are used to read the structures from the respective file</span>
+<span class="sd">    formats on initialization of this class. If lazy_storage is set to True, the _from_lmdb method also serves as a</span>
+<span class="sd">    test case for the LMDB reading functionality.</span>
+
+<span class="sd">    Since preprocessing CSV files can be costly, the _from_csv method reads structures from a CSV file containing CIF</span>
+<span class="sd">    strings and converts them to the LMDB format for efficient future access. The created LMDB cache file will also be</span>
+<span class="sd">    used for reading structures lazily if lazy_storage is set to True. The LMDB cache file is created in the same</span>
+<span class="sd">    directory as the CSV file and is named based on the hash of the CSV file and the preprocessing options used. If the</span>
+<span class="sd">    cache file already exists, it is used directly instead of creating a new one.</span>
+
+<span class="sd">    Likewise, since preprocessing Parquet files can be costly, the _from_parquet method reads structures from a Parquet</span>
+<span class="sd">    file and converts them to the LMDB format for efficient future access and lazy storage.</span>
+
+<span class="sd">    The _from_lmdb, _from_csv, and _from_parquet methods document the expected file contents for their respective file</span>
+<span class="sd">    types in more detail.</span>
+
+<span class="sd">    This class also provides methods to save all the structures in LMDB or xyz format.</span>
+
+<span class="sd">    The returned structures can optionally be converted to fractional coordinates and Niggli reduced.</span>
+
+<span class="sd">    :param file_path:</span>
+<span class="sd">        Path to the file containing the structures.</span>
+<span class="sd">        This can either be an absolute path, a relative path to the current working directory, or a relative path within</span>
+<span class="sd">        the omg package.</span>
+<span class="sd">        Supported formats are .lmdb, .csv, and .parquet.</span>
+<span class="sd">    :type file_path: str</span>
+<span class="sd">    :param property_keys:</span>
+<span class="sd">        An optional sequence of property keys that should be read from the file and stored within the structures.</span>
+<span class="sd">        Defaults to None.</span>
+<span class="sd">    :type property_keys: Optional[Sequence[str]]</span>
+<span class="sd">    :param floating_point_precision:</span>
+<span class="sd">        Floating point precision to use for the structures. Can be one of &quot;64-true&quot;, &quot;64&quot;, &quot;32-true&quot;, &quot;32&quot;,</span>
+<span class="sd">        &quot;16-true&quot;, &quot;16&quot;, &quot;bf16-true&quot;, &quot;bf16&quot;, &quot;transformer-engine-float16&quot;, or &quot;transformer-engine&quot;.</span>
+<span class="sd">        Defaults to &quot;64-true&quot;.</span>
+<span class="sd">    :type floating_point_precision: Union[int, str, None]</span>
+<span class="sd">    :param lazy_storage:</span>
+<span class="sd">        Whether to read the structures lazily from a LMDB file when they are requested.</span>
+<span class="sd">        Defaults to True.</span>
+<span class="sd">    :type lazy_storage: bool</span>
+<span class="sd">    :param convert_to_fractional:</span>
+<span class="sd">        Whether to convert the atomic positions to fractional coordinates in the returned structures.</span>
+<span class="sd">        Defaults to True.</span>
+<span class="sd">    :type convert_to_fractional: bool</span>
+<span class="sd">    :param niggli_reduce:</span>
+<span class="sd">        Whether to apply a Niggli reduction to the returned structures.</span>
+<span class="sd">        Defaults to False.</span>
+<span class="sd">    :type niggli_reduce: bool</span>
+<span class="sd">    :param cdvae_preprocessing:</span>
+<span class="sd">        Whether to preprocess the structures to match the conventions used in CDVAE when reading from CSV files.</span>
+<span class="sd">        When reading from LMDB files, this option is ignored.</span>
+<span class="sd">        This applies the Niggli reduction of PyMatgen.</span>
+<span class="sd">        Defaults to None.</span>
+<span class="sd">    :type cdvae_preprocessing: Optional[bool]</span>
+<span class="sd">    :param mattergen_preprocessing:</span>
+<span class="sd">        Whether to preprocess the structures to match the conventions used in MatterGen when reading from CSV files.</span>
+<span class="sd">        When reading from LMDB files, this option is ignored.</span>
+<span class="sd">        This applies the primitive cell extraction followed by the Niggli reduction of PyMatgen.</span>
+<span class="sd">        Defaults to None.</span>
+<span class="sd">    :type mattergen_preprocessing: Optional[bool]</span>
+
+<span class="sd">    :raises KeyError:</span>
+<span class="sd">        If any of the property keys are not found in the structure properties.</span>
+<span class="sd">        If reserved property keys are used (i.e., &quot;cell&quot;, &quot;pos&quot;, &quot;atomic_numbers&quot;, &quot;file_path&quot;, &quot;file_key&quot;, or</span>
+<span class="sd">        &quot;identifier&quot;).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StructureDataset.__init__">
+<a class="viewcode-back" href="../../../omg.datamodule.structure_dataset.html#omg.datamodule.structure_dataset.StructureDataset.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">property_keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">floating_point_precision</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;64-true&quot;</span><span class="p">,</span> <span class="n">lazy_storage</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">convert_to_fractional</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">niggli_reduce</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">cdvae_preprocessing</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">mattergen_preprocessing</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor for the StructureDataset class.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_torch_precision</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_torch_precision</span><span class="p">(</span><span class="n">floating_point_precision</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_property_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">property_keys</span><span class="p">)</span> <span class="k">if</span> <span class="n">property_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_property_keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">prop</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cell&quot;</span><span class="p">,</span> <span class="s2">&quot;pos&quot;</span><span class="p">,</span> <span class="s2">&quot;atomic_numbers&quot;</span><span class="p">,</span> <span class="s2">&quot;file_path&quot;</span><span class="p">,</span> <span class="s2">&quot;file_key&quot;</span><span class="p">,</span> <span class="s2">&quot;identifier&quot;</span><span class="p">,</span> <span class="s2">&quot;ids&quot;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Property key &#39;</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">&#39; is reserved and cannot be used as a property key.&quot;</span><span class="p">)</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">existing_file_path</span> <span class="o">=</span> <span class="n">file_path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Try to use the data from the omg package.</span>
+            <span class="c1"># noinspection PyTypeChecker</span>
+            <span class="n">existing_file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">files</span><span class="p">(</span><span class="s2">&quot;omg&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">existing_file_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;File path </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2"> neither exists on its own or within the omg package.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.lmdb&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cdvae_preprocessing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">mattergen_preprocessing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;CDVAE and MatterGen preprocessing options are ignored when reading from LMDB files.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_file_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_structures</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_lmdb</span><span class="p">(</span>
+                <span class="n">existing_file_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_property_keys</span><span class="p">,</span> <span class="n">return_structures</span><span class="o">=</span><span class="ow">not</span> <span class="n">lazy_storage</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.parquet&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cdvae_preprocessing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">mattergen_preprocessing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;CDVAE and MatterGen preprocessing options are ignored when reading from LMDB files.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_file_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_structures</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_parquet</span><span class="p">(</span>
+                <span class="n">existing_file_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_property_keys</span><span class="p">,</span> <span class="n">return_structures</span><span class="o">=</span><span class="ow">not</span> <span class="n">lazy_storage</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">path</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.csv&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">cdvae_preprocessing</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">mattergen_preprocessing</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;When reading from CSV files, both cdvae_preprocessing and mattergen_preprocessing &quot;</span>
+                                 <span class="s2">&quot;options must be specified.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_file_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_structures</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_from_csv</span><span class="p">(</span>
+                <span class="n">existing_file_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_property_keys</span><span class="p">,</span> <span class="n">return_structures</span><span class="o">=</span><span class="ow">not</span> <span class="n">lazy_storage</span><span class="p">,</span>
+                <span class="n">cdvae_preprocessing</span><span class="o">=</span><span class="n">cdvae_preprocessing</span><span class="p">,</span> <span class="n">mattergen_preprocessing</span><span class="o">=</span><span class="n">mattergen_preprocessing</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported file format: </span><span class="si">{</span><span class="n">path</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">. Supported formats are .lmdb and .csv.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_number_structures</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_structures</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_structures</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lazy_storage</span> <span class="o">=</span> <span class="n">lazy_storage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_fractional</span> <span class="o">=</span> <span class="n">convert_to_fractional</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_niggli_reduce</span> <span class="o">=</span> <span class="n">niggli_reduce</span>
+
+        <span class="c1"># Preprocess structures if not using lazy storage.</span>
+        <span class="c1"># If using lazy storage, preprocessing will be done when the structures are read.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lazy_storage</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">structure</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_structures</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Processing structures&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot; structures&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_niggli_reduce</span><span class="p">:</span>
+                    <span class="n">structure</span><span class="o">.</span><span class="n">niggli_reduce</span><span class="p">()</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_fractional</span><span class="p">:</span>
+                    <span class="n">structure</span><span class="o">.</span><span class="n">convert_to_fractional</span><span class="p">()</span>
+                <span class="n">structure</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_torch_precision</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lazy_storage</span><span class="p">:</span>
+            <span class="c1"># Read structures lazily from this file.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_env</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">Environment</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_path</span><span class="p">),</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lock</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">readahead</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                         <span class="n">meminit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_env</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_torch_precision</span><span class="p">(</span><span class="n">floating_point_precision</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;64-true&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the torch precision based on the given floating point precision.</span>
+
+<span class="sd">        :param floating_point_precision:</span>
+<span class="sd">            Floating point precision to use. Can be one of &quot;64-true&quot;, &quot;64&quot;, &quot;32-true&quot;, &quot;32&quot;, &quot;16-true&quot;, &quot;16&quot;,</span>
+<span class="sd">            &quot;bf16-true&quot;, &quot;bf16&quot;, &quot;transformer-engine-float16&quot;, or &quot;transformer-engine&quot;.</span>
+<span class="sd">        :type floating_point_precision: Union[int, str, None]</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            The corresponding torch dtype.</span>
+<span class="sd">        :rtype: torch.dtype</span>
+
+<span class="sd">        :raises ValueError:</span>
+<span class="sd">            If the given floating point precision is not recognized.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;64-true&quot;</span> <span class="ow">or</span> <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;64&quot;</span> <span class="ow">or</span> <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="mi">64</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">float64</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">floating_point_precision</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;32-true&quot;</span> <span class="ow">or</span>
+              <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;32&quot;</span> <span class="ow">or</span> <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="mi">32</span> <span class="ow">or</span>
+              <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;16-mixed&quot;</span> <span class="ow">or</span> <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;bf16-mixed&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;16-true&quot;</span> <span class="ow">or</span> <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;16&quot;</span> <span class="ow">or</span>
+              <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="mi">16</span> <span class="ow">or</span> <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;transformer-engine-float16&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;bf16-true&quot;</span> <span class="ow">or</span> <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;bf16&quot;</span> <span class="ow">or</span>
+              <span class="n">floating_point_precision</span> <span class="o">==</span> <span class="s2">&quot;transformer-engine&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown floating point precision: </span><span class="si">{</span><span class="n">floating_point_precision</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_file_hash</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sha256&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the hash of a file using the specified algorithm.</span>
+
+<span class="sd">        Possible algorithms are those supported by hashlib.file_digest, i.e., typically &quot;md5&quot;, &quot;sha1&quot;, &quot;sha224&quot;,</span>
+<span class="sd">        &quot;sha256&quot;, &quot;sha384&quot;, &quot;sha512&quot;, &quot;sha3_224&quot;, &quot;sha3_256&quot;, &quot;sha3_384&quot;, &quot;sha3_512&quot;, &quot;shake_128&quot;, &quot;shake_256&quot;,</span>
+<span class="sd">        &quot;blake2b&quot;, and &quot;blake2s&quot;.</span>
+
+<span class="sd">        :param file_path:</span>
+<span class="sd">            Path to the file.</span>
+<span class="sd">        :type file_path: Path</span>
+<span class="sd">        :param algorithm:</span>
+<span class="sd">            Hashing algorithm to use. Defaults to &quot;sha256&quot;.</span>
+<span class="sd">        :type algorithm: str</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            The hexadecimal digest of the file hash.</span>
+<span class="sd">        :rtype: str</span>
+
+<span class="sd">        :raises ValueError:</span>
+<span class="sd">            If the specified algorithm is not supported.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">algorithm</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">algorithms_available</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported hashing algorithm: </span><span class="si">{</span><span class="n">algorithm</span><span class="si">}</span><span class="s2">. &quot;</span>
+                             <span class="sa">f</span><span class="s2">&quot;Supported algorithms are: </span><span class="si">{</span><span class="n">hashlib</span><span class="o">.</span><span class="n">algorithms_available</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">digest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">file_digest</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">digest</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_from_lmdb</span><span class="p">(</span><span class="n">existing_lmdb_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">property_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                   <span class="n">return_structures</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Structure</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check proper format of the LMDB file for crystalline structures, and return its path and the structures or</span>
+<span class="sd">        their keys within the LMDB file.</span>
+
+<span class="sd">        The keys in the LMDB file are expected to be bytes.</span>
+
+<span class="sd">        Each key (record) in the LMDB file is expected to contain a pickled dictionary with at least the following keys</span>
+<span class="sd">        to represent a structure with N atoms:</span>
+<span class="sd">        - &quot;cell&quot;: A 3x3 torch.Tensor of the lattice vectors.</span>
+<span class="sd">                  The [i, j]-th element is the jth Cartesian coordinate of the ith unit vector.</span>
+<span class="sd">        - &quot;pos&quot;: A Nx3 torch.Tensor of Cartesian atomic positions.</span>
+<span class="sd">        - &quot;atomic_numbers&quot;: A torch tensor of N integers giving the atomic numbers of the atoms.</span>
+
+<span class="sd">        The metadata of each structure will contain the following keys:</span>
+<span class="sd">        - &quot;file_path&quot;: The path to the LMDB file from which the structure was loaded.</span>
+<span class="sd">        - &quot;file_key&quot;: The key in the LMDB file corresponding to the structure.</span>
+<span class="sd">        - &quot;identifier&quot;: If &quot;ids&quot; or &quot;identifier&quot; is present in the LMDB record, it will be stored here. This is usually</span>
+<span class="sd">                        a unique identifier of the structure, e.g., from Materials Project.</span>
+
+<span class="sd">        It is possible to read additional property keys from the LMDB file into the structures by specifying them in the</span>
+<span class="sd">        property_keys parameter. These keys will be read from the LMDB record and stored in the property_dict of the</span>
+<span class="sd">        structure.</span>
+
+<span class="sd">        In order to verify the correctness of the LMDB file, this method reads all records and checks for the presence</span>
+<span class="sd">        and correct types of the required keys. If return_structures is set to True, the created structures are</span>
+<span class="sd">        returned. If return_structures is set to False, only the keys of the structures in the LMDB file are returned.</span>
+
+<span class="sd">        :param existing_lmdb_path:</span>
+<span class="sd">            Path to the LMDB file.</span>
+<span class="sd">        :type existing_lmdb_path: Path</span>
+<span class="sd">        :param property_keys:</span>
+<span class="sd">            A sequence of property keys that are read from the LMDB file and stored within the structures.</span>
+<span class="sd">        :type property_keys: Sequence[str]</span>
+<span class="sd">        :param return_structures:</span>
+<span class="sd">            Whether to return the structures read from the LMDB file.</span>
+<span class="sd">        :type return_structures: bool</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            The path of the LMDB file.</span>
+<span class="sd">            The structures in the LMDB file if return_structures is True, otherwise the keys of the structures.</span>
+<span class="sd">        :rtype: tuple[Path, Union[list[Structure], list[bytes]]]</span>
+
+<span class="sd">        :raises TypeError:</span>
+<span class="sd">            If any of the required keys have incorrect types in the LMDB records.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">structures</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="p">(</span><span class="n">lmdb</span><span class="o">.</span><span class="n">Environment</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">existing_lmdb_path</span><span class="p">),</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lock</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">env</span><span class="p">,</span>
+              <span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">()</span> <span class="k">as</span> <span class="n">txn</span><span class="p">):</span>
+            <span class="n">number_structures</span> <span class="o">=</span> <span class="n">txn</span><span class="o">.</span><span class="n">stat</span><span class="p">()[</span><span class="s2">&quot;entries&quot;</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">enc_key</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">txn</span><span class="o">.</span><span class="n">cursor</span><span class="p">(),</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Loading </span><span class="si">{</span><span class="n">existing_lmdb_path</span><span class="si">}</span><span class="s2"> data&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot; structures&quot;</span><span class="p">,</span>
+                                      <span class="n">total</span><span class="o">=</span><span class="n">number_structures</span><span class="p">):</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">enc_key</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+                <span class="n">lmdb_structure</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="s2">&quot;cell&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lmdb_structure</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file does not contain &#39;cell&#39;.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s2">&quot;cell&quot;</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file has &#39;cell&#39; of type &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s1">&#39;cell&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">, expected torch.Tensor.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s2">&quot;cell&quot;</span><span class="p">]):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file has &#39;cell&#39; of &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;dtype </span><span class="si">{</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s1">&#39;cell&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, expected floating point dtype.&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="s2">&quot;atomic_numbers&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lmdb_structure</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file does not contain &#39;atomic_numbers&#39;.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s2">&quot;atomic_numbers&quot;</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file has &#39;atomic_numbers&#39; of type &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s1">&#39;atomic_numbers&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">, expected torch.Tensor.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">lmdb_structure</span><span class="p">[</span><span class="s2">&quot;atomic_numbers&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file has &#39;atomic_numbers&#39; of dtype &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s1">&#39;atomic_numbers&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, expected torch.int64 or torch.int32.&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="s2">&quot;pos&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lmdb_structure</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file does not contain &#39;pos&#39;.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file has &#39;pos&#39; of type &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s1">&#39;pos&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">, expected torch.Tensor.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s2">&quot;pos&quot;</span><span class="p">]):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file has &#39;pos&#39; of dtype &quot;</span>
+                                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">lmdb_structure</span><span class="p">[</span><span class="s1">&#39;pos&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">, expected floating point dtype.&quot;</span><span class="p">)</span>
+
+                <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;file_path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">existing_lmdb_path</span><span class="p">),</span> <span class="s2">&quot;file_key&quot;</span><span class="p">:</span> <span class="n">key</span><span class="p">}</span>
+                <span class="k">if</span> <span class="s2">&quot;ids&quot;</span> <span class="ow">in</span> <span class="n">lmdb_structure</span> <span class="ow">and</span> <span class="s2">&quot;identifier&quot;</span> <span class="ow">in</span> <span class="n">lmdb_structure</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file contains both &#39;ids&#39; and &#39;identifier&#39;. Only one of &quot;</span>
+                                   <span class="sa">f</span><span class="s2">&quot;these should be present.&quot;</span><span class="p">)</span>
+                <span class="c1"># Included for backwards compatibility.</span>
+                <span class="k">if</span> <span class="s2">&quot;ids&quot;</span> <span class="ow">in</span> <span class="n">lmdb_structure</span><span class="p">:</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lmdb_structure</span><span class="p">[</span><span class="s2">&quot;ids&quot;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s2">&quot;identifier&quot;</span> <span class="ow">in</span> <span class="n">lmdb_structure</span><span class="p">:</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lmdb_structure</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span>
+
+                <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">property_keys</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">prop</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">lmdb_structure</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> in the lmdb file does not contain &#39;</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
+                                       <span class="sa">f</span><span class="s2">&quot;Available keys are </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Test whether the structure can be created.</span>
+                <span class="n">structure</span> <span class="o">=</span> <span class="n">Structure</span><span class="o">.</span><span class="n">from_dictionary</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">,</span> <span class="n">property_keys</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">pos_is_fractional</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">return_structures</span><span class="p">:</span>
+                    <span class="n">structures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">structure</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">structures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">enc_key</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">existing_lmdb_path</span><span class="p">,</span> <span class="n">structures</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_from_csv</span><span class="p">(</span><span class="n">existing_csv_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">property_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">return_structures</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+                  <span class="n">cdvae_preprocessing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                  <span class="n">mattergen_preprocessing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Structure</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check proper format of the CSV file for crystalline structures, convert to LMDB, and return the LMDB path and</span>
+<span class="sd">        the structures or their keys within the LMDB file.</span>
+
+<span class="sd">        The CSV file is expected to contain a &quot;cif&quot; column with the CIF representation of the structures. This will be</span>
+<span class="sd">        used to infer the cell, atomic numbers, and positions of the structures.</span>
+
+<span class="sd">        The metadata of each structure will contain the following keys:</span>
+<span class="sd">        - &quot;file_path&quot;: The path to the cache LMDB file in which the structures are stored (see below).</span>
+<span class="sd">        - &quot;file_key&quot;: The index in the LMDB file corresponding to the structure.</span>
+<span class="sd">        - &quot;identifier&quot;: If a &quot;material_id&quot; column is present in the CSV file, it will be stored here. This is usually a</span>
+<span class="sd">                        unique identifier of the structure, e.g., from Materials Project.</span>
+
+<span class="sd">        It is possible to read additional property keys from the CSV file into the structures by specifying them in the</span>
+<span class="sd">        property_keys parameter. These keys will be read from the CSV file and stored in the property_dict of the</span>
+<span class="sd">        structure.</span>
+
+<span class="sd">        The structures from the CSV files can optionally be preprocessed to match the conventions used in CDVAE (that</span>
+<span class="sd">        are also used in DiffCSP and FlowMM) or MatterGen.</span>
+
+<span class="sd">        The structures are converted to the LMDB format for efficient access. The LMDB cache file is created in the same</span>
+<span class="sd">        directory as the CSV file and is named based on the hash of the CSV file and the preprocessing options used.</span>
+<span class="sd">        If the cache file already exists, it is used directly instead of creating a new one.</span>
+
+<span class="sd">        In order to verify the correctness of the CSV file, this method reads all records and checks for the presence</span>
+<span class="sd">        and correct types of the required keys. If return_structures is set to True, the created structures are</span>
+<span class="sd">        returned. If return_structures is set to False, only the keys of the structures in the LMDB file are returned.</span>
+
+<span class="sd">        :param existing_csv_path:</span>
+<span class="sd">            Path to the CSV file.</span>
+<span class="sd">        :type existing_csv_path: Path</span>
+<span class="sd">        :param property_keys:</span>
+<span class="sd">            A sequence of property keys that are read from the CSV file and stored within the structures.</span>
+<span class="sd">        :type property_keys: Sequence[str]</span>
+<span class="sd">        :param return_structures:</span>
+<span class="sd">            Whether to return the structures read from the CSV file.</span>
+<span class="sd">        :type return_structures: bool</span>
+<span class="sd">        :param cdvae_preprocessing:</span>
+<span class="sd">            Whether to preprocess the structures to match the conventions used in CDVAE.</span>
+<span class="sd">            This applies the Niggli reduction of PyMatgen.</span>
+<span class="sd">            Defaults to True.</span>
+<span class="sd">        :type cdvae_preprocessing: bool</span>
+<span class="sd">        :param mattergen_preprocessing:</span>
+<span class="sd">            Whether to preprocess the structures to match the conventions used in MatterGen.</span>
+<span class="sd">            This applies the primitive cell extraction followed by the Niggli reduction of PyMatgen.</span>
+<span class="sd">            Defaults to False.</span>
+<span class="sd">        :type mattergen_preprocessing: bool</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            The path of the LMDB file.</span>
+<span class="sd">            The structures in the LMDB file if return_structures is True, otherwise the keys of the structures.</span>
+<span class="sd">        :rtype: tuple[Path, Union[list[Structure], list[bytes]]]</span>
+
+<span class="sd">        :raises ValueError:</span>
+<span class="sd">            If both cdvae_preprocessing and mattergen_preprocessing are enabled at the same time.</span>
+<span class="sd">        :raises KeyError:</span>
+<span class="sd">            If any of the required keys are missing in the CSV records.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">cdvae_preprocessing</span> <span class="ow">and</span> <span class="n">mattergen_preprocessing</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;CDVAE and MatterGen preprocessing cannot both be enabled at the same time.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Find or create cache file.</span>
+        <span class="c1"># The cache file is identified by the hash of the CSV file and the preprocessing options.</span>
+        <span class="n">file_hash</span> <span class="o">=</span> <span class="n">StructureDataset</span><span class="o">.</span><span class="n">_compute_file_hash</span><span class="p">(</span><span class="n">existing_csv_path</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;sha256&quot;</span><span class="p">)</span>
+        <span class="n">cache_parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">file_hash</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">cdvae_preprocessing</span><span class="p">:</span>
+            <span class="n">cache_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;cdvae&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mattergen_preprocessing</span><span class="p">:</span>
+            <span class="n">cache_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;mattergen&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">property_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">property_keys</span><span class="p">):</span>
+                <span class="n">cache_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prop</span><span class="p">)</span>
+        <span class="n">cache_identifier</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cache_parts</span><span class="p">)</span>
+        <span class="n">cache_file</span> <span class="o">=</span> <span class="n">existing_csv_path</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;.csv.</span><span class="si">{</span><span class="n">cache_identifier</span><span class="si">}</span><span class="s2">.lmdb&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">cache_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">StructureDataset</span><span class="o">.</span><span class="n">_from_lmdb</span><span class="p">(</span><span class="n">cache_file</span><span class="p">,</span> <span class="n">property_keys</span><span class="p">,</span> <span class="n">return_structures</span><span class="p">)</span>
+
+        <span class="c1"># Check for correct columns.</span>
+        <span class="n">csv_columns</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">existing_csv_path</span><span class="p">,</span> <span class="n">nrows</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">columns</span>
+        <span class="k">if</span> <span class="s2">&quot;cif&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">csv_columns</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CSV file does not contain &#39;cif&#39; column.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">property_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">property_keys</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">prop</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">csv_columns</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CSV file does not contain &#39;</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">&#39; column. &quot;</span>
+                                   <span class="sa">f</span><span class="s2">&quot;Available columns are </span><span class="si">{</span><span class="p">[</span><span class="n">c</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">csv_columns</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Make sure to only read one row at a time to avoid reading the entire file into memory.</span>
+        <span class="n">csv_structures</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">existing_csv_path</span><span class="p">,</span> <span class="n">chunksize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">number_structures</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">changed_structures</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">structures</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="p">(</span><span class="n">lmdb</span><span class="o">.</span><span class="n">Environment</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cache_file</span><span class="p">),</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">map_size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e12</span><span class="p">),</span> <span class="n">lock</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">env</span><span class="p">,</span>
+              <span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">structure_index</span><span class="p">,</span> <span class="n">structure_chunk</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">csv_structures</span><span class="p">),</span>
+                                                         <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Loading </span><span class="si">{</span><span class="n">existing_csv_path</span><span class="si">}</span><span class="s2"> data&quot;</span><span class="p">,</span>
+                                                         <span class="n">unit</span><span class="o">=</span><span class="s2">&quot; structures&quot;</span><span class="p">):</span>
+                <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+                    <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+                    <span class="n">pymatgen_structure</span> <span class="o">=</span> <span class="n">PymatgenStructure</span><span class="o">.</span><span class="n">from_str</span><span class="p">(</span><span class="n">structure_chunk</span><span class="p">[</span><span class="s2">&quot;cif&quot;</span><span class="p">][</span><span class="n">structure_index</span><span class="p">],</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;cif&quot;</span><span class="p">)</span>
+
+                <span class="c1"># See https://github.com/txie-93/cdvae/blob/main/cdvae/common/data_utils.py.</span>
+                <span class="c1"># Configurations at https://github.com/txie-93/cdvae/tree/main/conf/data are such that niggli=True and</span>
+                <span class="c1"># primitive=False.</span>
+                <span class="k">if</span> <span class="n">cdvae_preprocessing</span><span class="p">:</span>
+                    <span class="n">cdvae_structure</span> <span class="o">=</span> <span class="n">pymatgen_structure</span><span class="o">.</span><span class="n">get_reduced_structure</span><span class="p">()</span>
+                    <span class="c1"># This rotates the lattice but since we use fractional coordinates, it doesn&#39;t really matter.</span>
+                    <span class="n">cdvae_structure</span> <span class="o">=</span> <span class="n">PymatgenStructure</span><span class="p">(</span>
+                        <span class="n">lattice</span><span class="o">=</span><span class="n">PymatgenLattice</span><span class="o">.</span><span class="n">from_parameters</span><span class="p">(</span><span class="o">*</span><span class="n">cdvae_structure</span><span class="o">.</span><span class="n">lattice</span><span class="o">.</span><span class="n">parameters</span><span class="p">),</span>
+                        <span class="n">species</span><span class="o">=</span><span class="n">cdvae_structure</span><span class="o">.</span><span class="n">species</span><span class="p">,</span>
+                        <span class="n">coords</span><span class="o">=</span><span class="n">cdvae_structure</span><span class="o">.</span><span class="n">frac_coords</span><span class="p">,</span>
+                        <span class="n">coords_are_cartesian</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="c1"># Verify that the structures match.</span>
+                    <span class="k">if</span> <span class="n">StructureMatcher</span><span class="p">(</span><span class="n">ltol</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">angle_tol</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">stol</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">get_rms_dist</span><span class="p">(</span>
+                            <span class="n">cdvae_structure</span><span class="p">,</span> <span class="n">pymatgen_structure</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">changed_structures</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">pymatgen_structure</span> <span class="o">=</span> <span class="n">cdvae_structure</span>
+
+                <span class="c1"># See https://github.com/microsoft/mattergen/blob/main/mattergen/common/data/dataset.py.</span>
+                <span class="k">if</span> <span class="n">mattergen_preprocessing</span><span class="p">:</span>
+                    <span class="c1"># Note that this is also effectively called when one passes primitive=True to from_str.</span>
+                    <span class="n">mattergen_structure</span> <span class="o">=</span> <span class="n">pymatgen_structure</span><span class="o">.</span><span class="n">get_primitive_structure</span><span class="p">()</span>
+                    <span class="n">mattergen_structure</span> <span class="o">=</span> <span class="n">mattergen_structure</span><span class="o">.</span><span class="n">get_reduced_structure</span><span class="p">()</span>
+                    <span class="c1"># Verify that the structures match.</span>
+                    <span class="k">if</span> <span class="n">StructureMatcher</span><span class="p">(</span><span class="n">ltol</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">angle_tol</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">stol</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">get_rms_dist</span><span class="p">(</span>
+                            <span class="n">mattergen_structure</span><span class="p">,</span> <span class="n">pymatgen_structure</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">changed_structures</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">pymatgen_structure</span> <span class="o">=</span> <span class="n">mattergen_structure</span>
+
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">pymatgen_structure</span><span class="o">.</span><span class="n">cart_coords</span><span class="p">)</span>
+                <span class="n">cell</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">pymatgen_structure</span><span class="o">.</span><span class="n">lattice</span><span class="o">.</span><span class="n">matrix</span><span class="p">)</span>
+                <span class="n">atomic_numbers</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">pymatgen_structure</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+                <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;file_path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">cache_file</span><span class="p">),</span> <span class="s2">&quot;file_key&quot;</span><span class="p">:</span> <span class="n">structure_index</span><span class="p">}</span>
+                <span class="k">if</span> <span class="s2">&quot;material_id&quot;</span> <span class="ow">in</span> <span class="n">csv_columns</span><span class="p">:</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">structure_chunk</span><span class="p">[</span><span class="s2">&quot;material_id&quot;</span><span class="p">][</span><span class="n">structure_index</span><span class="p">]</span>
+
+                <span class="n">property_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">property_keys</span><span class="p">:</span>
+                    <span class="n">property_dict</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">structure_chunk</span><span class="p">[</span><span class="n">prop</span><span class="p">][</span><span class="n">structure_index</span><span class="p">])</span>
+
+                <span class="n">structure</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span> <span class="n">atomic_numbers</span><span class="o">=</span><span class="n">atomic_numbers</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">property_dict</span><span class="o">=</span><span class="n">property_dict</span><span class="p">,</span>
+                                      <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">pos_is_fractional</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">structure_key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">structure_index</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">return_structures</span><span class="p">:</span>
+                    <span class="n">structures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">structure</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">structures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">structure_key</span><span class="p">)</span>
+
+                <span class="c1"># to_dictionary always returns Cartesian positions.</span>
+                <span class="n">lmdb_structure</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">to_dictionary</span><span class="p">()</span>
+                <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">structure_key</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">))</span>
+
+                <span class="n">number_structures</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">changed_structures</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">changed_structures</span><span class="si">}</span><span class="s2"> structures were changed during preprocessing.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cache_file</span><span class="p">,</span> <span class="n">structures</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_from_parquet</span><span class="p">(</span><span class="n">existing_parquet_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">property_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                      <span class="n">return_structures</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Structure</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check proper format of the Parquet file for crystalline structures, convert to LMDB, and return the LMDB path</span>
+<span class="sd">        and the structures or their keys within the LMDB file.</span>
+
+<span class="sd">        The Parquet file is expected to contain the following columns to represent a structure with N atoms:</span>
+<span class="sd">        - &quot;cell&quot;: 3x3 array-like of the lattice vectors.</span>
+<span class="sd">                  The [i, j]-th element is the jth Cartesian coordinate of the ith unit vector.</span>
+<span class="sd">        - &quot;positions&quot;: Nx3 array-like of Cartesian atomic positions.</span>
+<span class="sd">        - &quot;atomic_numbers&quot;: array-like of N integers giving the atomic numbers of the atoms.</span>
+
+<span class="sd">         The metadata of each structure will contain the following keys:</span>
+<span class="sd">        - &quot;file_path&quot;: The path to the cache LMDB file from in which the structures are stores (see below).</span>
+<span class="sd">        - &quot;file_key&quot;: The index in the LMDB file corresponding to the structure.</span>
+<span class="sd">        - &quot;identifier&quot;: If an &quot;ids&quot; or &quot;identifier&quot; column is present in the Parquet file, it will be stored here. This</span>
+<span class="sd">                        is usually a unique identifier of the structure, e.g., from Materials Project.</span>
+
+<span class="sd">        It is possible to read additional property keys from the Parquet file into the structures by specifying them in</span>
+<span class="sd">        the property_keys parameter. These keys will be read from the Parquet file and stored in the property_dict of</span>
+<span class="sd">        the structure.</span>
+
+<span class="sd">        The structures are converted to the LMDB format for efficient access. The LMDB cache file is created in the same</span>
+<span class="sd">        directory as the Parquet file and is named based on the hash of the Parquet file. If the cache file already</span>
+<span class="sd">        exists, it is used directly instead of creating a new one.</span>
+
+<span class="sd">        In order to verify the correctness of the Parquet file, this method reads all rows and checks for the presence</span>
+<span class="sd">        and correct types of the required keys. If return_structures is set to True, the created structures are</span>
+<span class="sd">        returned. If return_structures is set to False, only the keys of the structures in the LMDB file are returned.</span>
+
+<span class="sd">        :param existing_parquet_path:</span>
+<span class="sd">            Path to the Parquet file.</span>
+<span class="sd">        :type existing_parquet_path: Path</span>
+<span class="sd">        :param property_keys:</span>
+<span class="sd">            A sequence of property keys that are read from the CSV file and stored within the structures.</span>
+<span class="sd">        :type property_keys: Sequence[str]</span>
+<span class="sd">        :param return_structures:</span>
+<span class="sd">            Whether to return the structures read from the CSV file.</span>
+<span class="sd">        :type return_structures: bool</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            The path of the LMDB file.</span>
+<span class="sd">            The structures in the LMDB file if return_structures is True, otherwise the keys of the structures.</span>
+<span class="sd">        :rtype: tuple[Path, Union[list[Structure], list[bytes]]]</span>
+
+<span class="sd">        :raises KeyError:</span>
+<span class="sd">            If any of the required keys are missing in the Parquet records.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_hash</span> <span class="o">=</span> <span class="n">StructureDataset</span><span class="o">.</span><span class="n">_compute_file_hash</span><span class="p">(</span><span class="n">existing_parquet_path</span><span class="p">,</span> <span class="n">algorithm</span><span class="o">=</span><span class="s2">&quot;sha256&quot;</span><span class="p">)</span>
+        <span class="n">cache_file</span> <span class="o">=</span> <span class="n">existing_parquet_path</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;.parquet.</span><span class="si">{</span><span class="n">file_hash</span><span class="si">}</span><span class="s2">.lmdb&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">cache_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">StructureDataset</span><span class="o">.</span><span class="n">_from_lmdb</span><span class="p">(</span><span class="n">cache_file</span><span class="p">,</span> <span class="n">property_keys</span><span class="p">,</span> <span class="n">return_structures</span><span class="p">)</span>
+
+        <span class="n">structures</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">with</span> <span class="p">(</span><span class="n">pq</span><span class="o">.</span><span class="n">ParquetFile</span><span class="p">(</span><span class="n">existing_parquet_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">parquet_file</span><span class="p">,</span>
+              <span class="n">lmdb</span><span class="o">.</span><span class="n">Environment</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">cache_file</span><span class="p">),</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">map_size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e12</span><span class="p">),</span> <span class="n">lock</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">env</span><span class="p">,</span>
+              <span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">):</span>
+            <span class="c1"># Check for correct columns.</span>
+            <span class="n">schemas</span> <span class="o">=</span> <span class="n">parquet_file</span><span class="o">.</span><span class="n">schema_arrow</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">schemas</span><span class="p">]</span>
+            <span class="k">if</span> <span class="s2">&quot;positions&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parquet file does not contain &#39;positions&#39; column.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;cell&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parquet file does not contain &#39;cell&#39; column.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">&quot;atomic_numbers&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parquet file does not contain &#39;atomic_numbers&#39; column.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">property_keys</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">property_keys</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">prop</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parquet file does not contain &#39;</span><span class="si">{</span><span class="n">prop</span><span class="si">}</span><span class="s2">&#39; column. &quot;</span>
+                                       <span class="sa">f</span><span class="s2">&quot;Available columns are </span><span class="si">{</span><span class="n">columns</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Make sure to only read one row at a time to avoid reading the entire file into memory.</span>
+            <span class="n">number_structures</span> <span class="o">=</span> <span class="n">parquet_file</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">num_rows</span>
+            <span class="k">for</span> <span class="n">batch_index</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="n">parquet_file</span><span class="o">.</span><span class="n">iter_batches</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span> <span class="n">total</span><span class="o">=</span><span class="n">number_structures</span><span class="p">):</span>
+                <span class="c1"># noinspection PyUnresolvedReferences</span>
+                <span class="n">df</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="n">atomic_numbers</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;atomic_numbers&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">))</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">atomic_numbers</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="k">assert</span> <span class="n">pos</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">atomic_numbers</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="n">cell</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;cell&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+                <span class="k">assert</span> <span class="n">cell</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+                <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;file_path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">cache_file</span><span class="p">),</span> <span class="s2">&quot;file_key&quot;</span><span class="p">:</span> <span class="n">batch_index</span><span class="p">}</span>
+                <span class="k">if</span> <span class="s2">&quot;ids&quot;</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;ids&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s2">&quot;identifier&quot;</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="s2">&quot;material_id&quot;</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;material_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">property_dict</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">property_keys</span><span class="p">:</span>
+                    <span class="n">property_dict</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="n">structure</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">cell</span><span class="o">=</span><span class="n">cell</span><span class="p">,</span> <span class="n">atomic_numbers</span><span class="o">=</span><span class="n">atomic_numbers</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">property_dict</span><span class="o">=</span><span class="n">property_dict</span><span class="p">,</span>
+                                      <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">pos_is_fractional</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">structure_key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">batch_index</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">return_structures</span><span class="p">:</span>
+                    <span class="n">structures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">structure</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">structures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">structure_key</span><span class="p">)</span>
+
+                <span class="c1"># to_dictionary always returns Cartesian positions.</span>
+                <span class="n">lmdb_structure</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">to_dictionary</span><span class="p">()</span>
+                <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">structure_key</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">))</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">structures</span><span class="p">)</span> <span class="o">==</span> <span class="n">number_structures</span>
+        <span class="k">return</span> <span class="n">cache_file</span><span class="p">,</span> <span class="n">structures</span>
+
+<div class="viewcode-block" id="StructureDataset.to_lmdb">
+<a class="viewcode-back" href="../../../omg.datamodule.structure_dataset.html#omg.datamodule.structure_dataset.StructureDataset.to_lmdb">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_lmdb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lmdb_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save the structures to an LMDB file.</span>
+
+<span class="sd">        :param lmdb_path:</span>
+<span class="sd">            Path to the LMDB file.</span>
+<span class="sd">        :type lmdb_path: Path</span>
+
+<span class="sd">        :raises FileExistsError:</span>
+<span class="sd">            If the LMDB file already exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">lmdb_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LMDB path </span><span class="si">{</span><span class="n">lmdb_path</span><span class="si">}</span><span class="s2"> already exists.&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="p">(</span><span class="n">lmdb</span><span class="o">.</span><span class="n">Environment</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">lmdb_path</span><span class="p">),</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">map_size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e12</span><span class="p">),</span> <span class="n">lock</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">env</span><span class="p">,</span>
+              <span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_number_structures</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Saving structures to </span><span class="si">{</span><span class="n">lmdb_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="n">unit</span><span class="o">=</span><span class="s2">&quot; structures&quot;</span><span class="p">):</span>
+                <span class="n">structure</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                <span class="c1"># to_dictionary always returns Cartesian positions.</span>
+                <span class="n">lmdb_structure</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">to_dictionary</span><span class="p">()</span>
+                <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="StructureDataset.to_xyz">
+<a class="viewcode-back" href="../../../omg.datamodule.structure_dataset.html#omg.datamodule.structure_dataset.StructureDataset.to_xyz">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_xyz</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xyz_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save the structures to an XYZ file.</span>
+
+<span class="sd">        :param xyz_path:</span>
+<span class="sd">            Path to the XYZ file.</span>
+<span class="sd">        :type xyz_path: Path</span>
+
+<span class="sd">        :raises FileExistsError:</span>
+<span class="sd">            If the XYZ file already exists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">xyz_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">FileExistsError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;XYZ path </span><span class="si">{</span><span class="n">xyz_path</span><span class="si">}</span><span class="s2"> already exists.&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_number_structures</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Saving structures to </span><span class="si">{</span><span class="n">xyz_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot; structures&quot;</span><span class="p">):</span>
+            <span class="n">structure</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">atoms</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">get_ase_atoms</span><span class="p">()</span>
+            <span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">xyz_path</span><span class="p">),</span> <span class="n">atoms</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;extxyz&quot;</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number of structures within the dataset.</span>
+
+<span class="sd">        This method is required to make the dataset compatible with PyTorch dataloaders.</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            The number of structures within the dataset.</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_structures</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Structure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the structure at the given index, either from lazy storage or from memory.</span>
+
+<span class="sd">        :param idx:</span>
+<span class="sd">            Index of the structure to return.</span>
+<span class="sd">        :type idx: int</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            The structure at the given index.</span>
+<span class="sd">        :rtype: Structure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lazy_storage</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_getitem_lazy</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_structures</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_getitem_lazy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Structure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the structure at the given index using lazy storage.</span>
+
+<span class="sd">        The structure is read lazily from the LMDB file of this class.</span>
+
+<span class="sd">        This method is only used if lazy_storage is set to True during initialization of this class. Otherwise,</span>
+<span class="sd">        the __getitem__ method returns structures directly from the in-memory self._structures list.</span>
+
+<span class="sd">        Each record (key) in the LMDB file is expected to contain a pickled dictionary with at least the following keys</span>
+<span class="sd">        to represent a structure with N atoms:</span>
+<span class="sd">        - &quot;cell&quot;: A 3x3 torch.Tensor of the lattice vectors.</span>
+<span class="sd">                  The [i, j]-th element is the jth Cartesian coordinate of the ith unit vector.</span>
+<span class="sd">        - &quot;pos&quot;: A Nx3 torch.Tensor of atomic positions.</span>
+<span class="sd">        - &quot;atomic_numbers&quot;: A torch tensor of N integers giving the atomic numbers of the atoms.</span>
+
+<span class="sd">        The metadata of each structure will contain the following keys:</span>
+<span class="sd">        - &quot;file_path&quot;: The path to the LMDB file from which the structure was loaded.</span>
+<span class="sd">        - &quot;file_key&quot;: The key in the LMDB file corresponding to the structure.</span>
+<span class="sd">        - &quot;identifier&quot;: If &quot;ids&quot; or &quot;identifier&quot; is present in the LMDB record, it will be stored here. This is usually</span>
+<span class="sd">                        a unique identifier of the structure, e.g., from Materials Project.</span>
+
+<span class="sd">        Additionally, the property keys will be read from the LMDB record and stored in the property_dict of the</span>
+<span class="sd">        structure.</span>
+
+<span class="sd">        :param idx:</span>
+<span class="sd">            Index of the structure to return.</span>
+<span class="sd">        :type idx: int</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            The structure at the given index.</span>
+<span class="sd">        :rtype: Structure</span>
+
+<span class="sd">        :raises IndexError:</span>
+<span class="sd">            If the given index is out of bounds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_number_structures</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Index </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2"> out of bounds for dataset of size </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_number_structures</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Read structure from LMDB file.</span>
+        <span class="n">structure_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_structures</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+            <span class="n">lmdb_structure</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">txn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">structure_idx</span><span class="p">))</span>
+
+        <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;file_path&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_path</span><span class="p">),</span> <span class="s2">&quot;file_key&quot;</span><span class="p">:</span> <span class="n">idx</span><span class="p">}</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="s2">&quot;ids&quot;</span> <span class="ow">in</span> <span class="n">lmdb_structure</span> <span class="ow">and</span> <span class="s2">&quot;identifier&quot;</span> <span class="ow">in</span> <span class="n">lmdb_structure</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;ids&quot;</span> <span class="ow">in</span> <span class="n">lmdb_structure</span><span class="p">:</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lmdb_structure</span><span class="p">[</span><span class="s2">&quot;ids&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">&quot;identifier&quot;</span> <span class="ow">in</span> <span class="n">lmdb_structure</span><span class="p">:</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lmdb_structure</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span>
+
+        <span class="n">structure</span> <span class="o">=</span> <span class="n">Structure</span><span class="o">.</span><span class="n">from_dictionary</span><span class="p">(</span><span class="n">lmdb_structure</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_property_keys</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">pos_is_fractional</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_niggli_reduce</span><span class="p">:</span>
+            <span class="n">structure</span><span class="o">.</span><span class="n">niggli_reduce</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_fractional</span><span class="p">:</span>
+            <span class="n">structure</span><span class="o">.</span><span class="n">convert_to_fractional</span><span class="p">()</span>
+        <span class="n">structure</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_torch_precision</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">structure</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the state of the object for pickling.</span>
+
+<span class="sd">        This method removes the LMDB environment from the state to avoid pickling issues. This is required for</span>
+<span class="sd">        dataloaders with multiple workers.</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            The state of the object.</span>
+<span class="sd">        :rtype: dict[str, Any]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># Remove the LMDB environment from the state to avoid pickling issues.</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;_env&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">state</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__setstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set the state of the object from pickling.</span>
+
+<span class="sd">        This method restores the LMDB environment from the state after unpickling. This is required for dataloaders</span>
+<span class="sd">        with multiple workers.</span>
+
+<span class="sd">        :param state:</span>
+<span class="sd">            The state of the object.</span>
+<span class="sd">        :type state: dict[str, Any]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lazy_storage</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_env</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">Environment</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_file_path</span><span class="p">),</span> <span class="n">subdir</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lock</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_env</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Close the LMDB environment when the object is deleted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_env&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_env&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="OverfittingDataset">
+<a class="viewcode-back" href="../../../omg.datamodule.structure_dataset.html#omg.datamodule.structure_dataset.OverfittingDataset">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OverfittingDataset</span><span class="p">(</span><span class="n">StructureDataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dataset that always returns the same crystalline structure from a file.</span>
+
+<span class="sd">    This dataset is useful for overfitting tests. It expects the same LMDB or CSV file formats as StructureDataset.</span>
+
+<span class="sd">    :param file_path:</span>
+<span class="sd">        Path to the file containing the structures.</span>
+<span class="sd">        This can either be an absolute path, a relative path to the current working directory, or a relative path within</span>
+<span class="sd">        the omg package.</span>
+<span class="sd">        Supported formats are .lmdb and .csv.</span>
+<span class="sd">    :type file_path: str</span>
+<span class="sd">    :param structure_index:</span>
+<span class="sd">        Index of the structure in the LMDB file to always return.</span>
+<span class="sd">        Defaults to 0.</span>
+<span class="sd">    :type structure_index: int</span>
+<span class="sd">    :param property_keys:</span>
+<span class="sd">        An optional sequence of property keys that are read from the LMDB file and stored within the</span>
+<span class="sd">        structures.</span>
+<span class="sd">        Defaults to None.</span>
+<span class="sd">    :type property_keys: Optional[Sequence[str]]</span>
+<span class="sd">    :param floating_point_precision:</span>
+<span class="sd">        Floating point precision to use in the structures. Can be one of &quot;64-true&quot;, &quot;64&quot;, &quot;32-true&quot;, &quot;32&quot;, &quot;16-true&quot;,</span>
+<span class="sd">        &quot;16&quot;, &quot;bf16-true&quot;, &quot;bf16&quot;, &quot;transformer-engine-float16&quot;, or &quot;transformer-engine&quot;.</span>
+<span class="sd">        Defaults to &quot;64-true&quot;.</span>
+<span class="sd">    :type floating_point_precision: Union[int, str, None]</span>
+<span class="sd">    :param parser_kwargs:</span>
+<span class="sd">        Additional keyword arguments to pass to the specific file format parser methods.</span>
+<span class="sd">    :type parser_kwargs: Any</span>
+
+<span class="sd">    :raises KeyError:</span>
+<span class="sd">        If the structure_index is out of bounds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="OverfittingDataset.__init__">
+<a class="viewcode-back" href="../../../omg.datamodule.structure_dataset.html#omg.datamodule.structure_dataset.OverfittingDataset.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">structure_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">property_keys</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">floating_point_precision</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;64-true&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">parser_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor for the OverfittingDataset class.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">file_path</span><span class="p">,</span> <span class="n">property_keys</span><span class="o">=</span><span class="n">property_keys</span><span class="p">,</span>
+                         <span class="n">floating_point_precision</span><span class="o">=</span><span class="n">floating_point_precision</span><span class="p">,</span> <span class="o">**</span><span class="n">parser_kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">structure_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid structure index </span><span class="si">{</span><span class="n">structure_index</span><span class="si">}</span><span class="s2">, &quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;possible values are 0 to </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_structure_index</span> <span class="o">=</span> <span class="n">structure_index</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Structure</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the structure at the given index.</span>
+
+<span class="sd">        This method ignores the given index and always returns the same structure.</span>
+
+<span class="sd">        :param idx:</span>
+<span class="sd">            Index of the structure to return.</span>
+<span class="sd">        :type idx: int</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            The structure at the given index.</span>
+<span class="sd">        :rtype: Structure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_structure_index</span><span class="p">)</span></div>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">dataset_parquet</span> <span class="o">=</span> <span class="n">StructureDataset</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">&quot;data/Alex-MP-20_Polymorph_Split/test.parquet&quot;</span><span class="p">,</span> <span class="n">lazy_storage</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                       <span class="n">niggli_reduce</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">convert_to_fractional</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">dataset_lmdb</span> <span class="o">=</span> <span class="n">StructureDataset</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">&quot;data/alex_mp_20/test.lmdb&quot;</span><span class="p">,</span> <span class="n">lazy_storage</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">niggli_reduce</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                    <span class="n">convert_to_fractional</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">parquet</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">dataset_parquet</span><span class="p">):</span>
+        <span class="n">lmdbs</span> <span class="o">=</span> <span class="p">[</span><span class="n">lmdb</span> <span class="k">for</span> <span class="n">lmdb</span> <span class="ow">in</span> <span class="n">dataset_lmdb</span> <span class="k">if</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">parquet</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lmdbs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">lmdbs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="n">lmdb</span> <span class="o">=</span> <span class="n">lmdbs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">ca</span> <span class="o">==</span> <span class="n">la</span> <span class="k">for</span> <span class="n">ca</span><span class="p">,</span> <span class="n">la</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">parquet</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">,</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">))</span>
+            <span class="n">csv_structure</span> <span class="o">=</span> <span class="n">parquet</span><span class="o">.</span><span class="n">get_pymatgen_structure</span><span class="p">()</span>
+            <span class="n">lmdb_structure</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">get_pymatgen_structure</span><span class="p">()</span>
+            <span class="n">sm</span> <span class="o">=</span> <span class="n">StructureMatcher</span><span class="p">(</span><span class="n">ltol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">angle_tol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">stol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">get_rms_dist</span><span class="p">(</span><span class="n">csv_structure</span><span class="p">,</span> <span class="n">lmdb_structure</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">res</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">found</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Found:&quot;</span><span class="p">,</span> <span class="n">found</span><span class="p">)</span>
+
+    <span class="n">store</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">lazy</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">suffix</span> <span class="o">=</span> <span class="s2">&quot;lazy_second_frac&quot;</span> <span class="k">if</span> <span class="n">lazy</span> <span class="k">else</span> <span class="s2">&quot;eager_second_frac&quot;</span>
+    <span class="n">dataset_csv</span> <span class="o">=</span> <span class="n">StructureDataset</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">&quot;data/mp_20/test.csv&quot;</span><span class="p">,</span> <span class="n">lazy_storage</span><span class="o">=</span><span class="n">lazy</span><span class="p">,</span> <span class="n">cdvae_preprocessing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                   <span class="n">mattergen_preprocessing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">niggli_reduce</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">convert_to_fractional</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">dataset_csv_cdvae</span> <span class="o">=</span> <span class="n">StructureDataset</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">&quot;data/mp_20/test.csv&quot;</span><span class="p">,</span> <span class="n">lazy_storage</span><span class="o">=</span><span class="n">lazy</span><span class="p">,</span> <span class="n">cdvae_preprocessing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                         <span class="n">mattergen_preprocessing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">niggli_reduce</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">convert_to_fractional</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">dataset_csv_mattergen</span> <span class="o">=</span> <span class="n">StructureDataset</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">&quot;data/mp_20/test.csv&quot;</span><span class="p">,</span> <span class="n">lazy_storage</span><span class="o">=</span><span class="n">lazy</span><span class="p">,</span>
+                                             <span class="n">cdvae_preprocessing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">mattergen_preprocessing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                             <span class="n">niggli_reduce</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">convert_to_fractional</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">dataset_lmdb</span> <span class="o">=</span> <span class="n">StructureDataset</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">&quot;data/mp_20/test.lmdb&quot;</span><span class="p">,</span> <span class="n">lazy_storage</span><span class="o">=</span><span class="n">lazy</span><span class="p">,</span> <span class="n">niggli_reduce</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                    <span class="n">convert_to_fractional</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">overfitting</span> <span class="o">=</span> <span class="n">OverfittingDataset</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">&quot;data/mp_20/test.lmdb&quot;</span><span class="p">,</span> <span class="n">lazy_storage</span><span class="o">=</span><span class="n">lazy</span><span class="p">,</span> <span class="n">structure_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                     <span class="n">niggli_reduce</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">convert_to_fractional</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">store</span><span class="p">:</span>
+        <span class="n">dataset_csv</span><span class="o">.</span><span class="n">to_xyz</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;csv_test_</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.xyz&quot;</span><span class="p">))</span>
+        <span class="n">dataset_csv_mattergen</span><span class="o">.</span><span class="n">to_xyz</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mattergen_test_</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.xyz&quot;</span><span class="p">))</span>
+        <span class="n">dataset_csv_cdvae</span><span class="o">.</span><span class="n">to_xyz</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;cdvae_test_</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.xyz&quot;</span><span class="p">))</span>
+        <span class="n">dataset_lmdb</span><span class="o">.</span><span class="n">to_xyz</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;lmdb_test_</span><span class="si">{</span><span class="n">suffix</span><span class="si">}</span><span class="s2">.xyz&quot;</span><span class="p">))</span>
+
+    <span class="c1"># noinspection PyTypeChecker</span>
+    <span class="k">for</span> <span class="n">csv</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">dataset_csv</span><span class="p">):</span>
+        <span class="n">lmdbs</span> <span class="o">=</span> <span class="p">[</span><span class="n">lmdb</span> <span class="k">for</span> <span class="n">lmdb</span> <span class="ow">in</span> <span class="n">dataset_lmdb</span> <span class="k">if</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">csv</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]]</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">lmdbs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">lmdb</span> <span class="o">=</span> <span class="n">lmdbs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">ca</span> <span class="o">==</span> <span class="n">la</span> <span class="k">for</span> <span class="n">ca</span><span class="p">,</span> <span class="n">la</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">csv</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">,</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">))</span>
+        <span class="n">csv_structure</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">get_pymatgen_structure</span><span class="p">()</span>
+        <span class="n">lmdb_structure</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">get_pymatgen_structure</span><span class="p">()</span>
+        <span class="n">sm</span> <span class="o">=</span> <span class="n">StructureMatcher</span><span class="p">(</span><span class="n">ltol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">angle_tol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">stol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">get_rms_dist</span><span class="p">(</span><span class="n">csv_structure</span><span class="p">,</span> <span class="n">lmdb_structure</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">res</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="c1"># noinspection PyTypeChecker</span>
+    <span class="k">for</span> <span class="n">csv</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">dataset_csv_cdvae</span><span class="p">):</span>
+        <span class="n">lmdbs</span> <span class="o">=</span> <span class="p">[</span><span class="n">lmdb</span> <span class="k">for</span> <span class="n">lmdb</span> <span class="ow">in</span> <span class="n">dataset_lmdb</span> <span class="k">if</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">csv</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;identifier&quot;</span><span class="p">]]</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">lmdbs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">lmdb</span> <span class="o">=</span> <span class="n">lmdbs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">ca</span> <span class="o">==</span> <span class="n">la</span> <span class="k">for</span> <span class="n">ca</span><span class="p">,</span> <span class="n">la</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">csv</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">,</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">atomic_numbers</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">csv</span><span class="o">.</span><span class="n">cell</span><span class="p">,</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">cell</span><span class="p">)</span>
+        <span class="n">csv_structure</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">get_pymatgen_structure</span><span class="p">()</span>
+        <span class="n">lmdb_structure</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">get_pymatgen_structure</span><span class="p">()</span>
+        <span class="n">sm</span> <span class="o">=</span> <span class="n">StructureMatcher</span><span class="p">(</span><span class="n">ltol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">angle_tol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">stol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">sm</span><span class="o">.</span><span class="n">get_rms_dist</span><span class="p">(</span><span class="n">csv_structure</span><span class="p">,</span> <span class="n">lmdb_structure</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">res</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

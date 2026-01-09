@@ -1,0 +1,752 @@
+Running Sphinx v8.2.3
+loading translations [en]... done
+making output directory... done
+loading intersphinx inventory 'python' from https://docs.python.org/3/objects.inv ...
+loading intersphinx inventory 'numpy' from https://numpy.org/doc/stable/objects.inv ...
+loading intersphinx inventory 'torch' from https://pytorch.org/docs/stable/objects.inv ...
+loading intersphinx inventory 'pytorch_lightning' from https://lightning.ai/docs/pytorch/stable/objects.inv ...
+intersphinx inventory has moved: https://pytorch.org/docs/stable/objects.inv -> https://docs.pytorch.org/docs/stable/objects.inv
+[autosummary] generating autosummary for: api/analysis.rst, api/datamodule.rst, api/generated/omg.analysis.valid_atoms.ValidAtoms.rst, api/generated/omg.datamodule.omg_data.OMGData.rst, api/generated/omg.datamodule.omg_datamodule.OMGDataModule.rst, api/generated/omg.datamodule.structure.Structure.rst, api/generated/omg.datamodule.structure_dataset.StructureDataset.rst, api/generated/omg.main.main.rst, api/generated/omg.model.encoders.cspnet_full.CSPNetFull.rst, api/generated/omg.model.encoders.encoder.Encoder.rst, ..., omg.si.tau.rst, omg.utils.rst, user_guide/analysis.rst, user_guide/datamodule.rst, user_guide/generation.rst, user_guide/index.rst, user_guide/model.rst, user_guide/sampler.rst, user_guide/stochastic_interpolants.rst, user_guide/training.rst
+WARNING: [autosummary] failed to import omg.sampler.minimum_permutation_distance.compute_minimum_permutation_distance.
+Possible hints:
+* AttributeError: module 'omg.sampler.minimum_permutation_distance' has no attribute '__path__'
+* AttributeError: module 'omg.sampler.minimum_permutation_distance' has no attribute 'compute_minimum_permutation_distance'
+* ImportError: 
+WARNING: [autosummary] failed to import omg.si.abstracts.Integrator.
+Possible hints:
+* AttributeError: module 'omg.si.abstracts' has no attribute 'Integrator'
+* AttributeError: module 'omg.si.abstracts' has no attribute '__path__'
+* ImportError: 
+WARNING: [autosummary] failed to import omg.si.gamma.Gamma.
+Possible hints:
+* AttributeError: module 'omg.si.gamma' has no attribute '__path__'
+* ImportError: 
+* AttributeError: module 'omg.si.gamma' has no attribute 'Gamma'
+WARNING: [autosummary] failed to import omg.si.gamma.GammaConstant.
+Possible hints:
+* AttributeError: module 'omg.si.gamma' has no attribute '__path__'
+* AttributeError: module 'omg.si.gamma' has no attribute 'GammaConstant'
+* ImportError: 
+WARNING: [autosummary] failed to import omg.si.gamma.GammaCosine.
+Possible hints:
+* AttributeError: module 'omg.si.gamma' has no attribute '__path__'
+* AttributeError: module 'omg.si.gamma' has no attribute 'GammaCosine'
+* ImportError: 
+WARNING: [autosummary] failed to import omg.si.gamma.GammaLinear.
+Possible hints:
+* AttributeError: module 'omg.si.gamma' has no attribute '__path__'
+* AttributeError: module 'omg.si.gamma' has no attribute 'GammaLinear'
+* ImportError: 
+WARNING: [autosummary] failed to import omg.si.interpolants.Alpha.
+Possible hints:
+* AttributeError: module 'omg.si.interpolants' has no attribute '__path__'
+* AttributeError: module 'omg.si.interpolants' has no attribute 'Alpha'
+* ImportError: 
+WARNING: [autosummary] failed to import omg.si.interpolants.Beta.
+Possible hints:
+* AttributeError: module 'omg.si.interpolants' has no attribute 'Beta'
+* AttributeError: module 'omg.si.interpolants' has no attribute '__path__'
+* ImportError: 
+WARNING: [autosummary] failed to import omg.si.interpolants.EncDecInterpolant.
+Possible hints:
+* AttributeError: module 'omg.si.interpolants' has no attribute '__path__'
+* AttributeError: module 'omg.si.interpolants' has no attribute 'EncDecInterpolant'
+* ImportError: 
+WARNING: [autosummary] failed to import omg.si.interpolants.PeriodicEncDecInterpolant.
+Possible hints:
+* AttributeError: module 'omg.si.interpolants' has no attribute '__path__'
+* AttributeError: module 'omg.si.interpolants' has no attribute 'PeriodicEncDecInterpolant'
+* ImportError: 
+[autosummary] generating autosummary for: /home/gpwolfe/OMatG/docs/source/api/generated/omg.omg_cli.OMGCLI.rst, /home/gpwolfe/OMatG/docs/source/api/generated/omg.omg_lightning.OMGLightning.rst, /home/gpwolfe/OMatG/docs/source/api/generated/omg.sampler.cell_distributions.NormalCellDistribution.rst, /home/gpwolfe/OMatG/docs/source/api/generated/omg.sampler.position_distributions.MirrorPosition.rst, /home/gpwolfe/OMatG/docs/source/api/generated/omg.sampler.species_distributions.MaskSpeciesDistribution.rst
+building [mo]: targets for 0 po files that are out of date
+writing output... 
+building [html]: targets for 112 source files that are out of date
+updating environment: [new config] 117 added, 0 changed, 0 removed
+reading sources... [  1%] api/analysis
+reading sources... [  2%] api/datamodule
+reading sources... [  3%] api/generated/omg.analysis.valid_atoms.ValidAtoms
+reading sources... [  3%] api/generated/omg.datamodule.omg_data.OMGData
+reading sources... [  4%] api/generated/omg.datamodule.omg_datamodule.OMGDataModule
+reading sources... [  5%] api/generated/omg.datamodule.structure.Structure
+reading sources... [  6%] api/generated/omg.datamodule.structure_dataset.StructureDataset
+reading sources... [  7%] api/generated/omg.main.main
+reading sources... [  8%] api/generated/omg.model.encoders.cspnet_full.CSPNetFull
+reading sources... [  9%] api/generated/omg.model.encoders.encoder.Encoder
+reading sources... [  9%] api/generated/omg.model.heads.head.Head
+reading sources... [ 10%] api/generated/omg.model.heads.pass_through.PassThrough
+reading sources... [ 11%] api/generated/omg.model.model.Model
+reading sources... [ 12%] api/generated/omg.model.model_utils.SinusoidalTimeEmbeddings
+reading sources... [ 13%] api/generated/omg.omg_cli.OMGCLI
+reading sources... [ 14%] api/generated/omg.omg_lightning.OMGLightning
+reading sources... [ 15%] api/generated/omg.omg_trainer.OMGTrainer
+reading sources... [ 15%] api/generated/omg.sampler.abstracts.CellDistribution
+reading sources... [ 16%] api/generated/omg.sampler.abstracts.PositionDistribution
+reading sources... [ 17%] api/generated/omg.sampler.abstracts.SpeciesDistribution
+reading sources... [ 18%] api/generated/omg.sampler.cell_distributions.InformedLatticeDistribution
+reading sources... [ 19%] api/generated/omg.sampler.cell_distributions.MirrorCell
+reading sources... [ 20%] api/generated/omg.sampler.cell_distributions.NormalCellDistribution
+reading sources... [ 21%] api/generated/omg.sampler.independent_sampler.IndependentSampler
+reading sources... [ 21%] api/generated/omg.sampler.position_distributions.MirrorPosition
+reading sources... [ 22%] api/generated/omg.sampler.position_distributions.NormalPositionDistribution
+reading sources... [ 23%] api/generated/omg.sampler.position_distributions.UniformPositionDistribution
+reading sources... [ 24%] api/generated/omg.sampler.sampler.Sampler
+reading sources... [ 25%] api/generated/omg.sampler.species_distributions.MaskSpeciesDistribution
+reading sources... [ 26%] api/generated/omg.sampler.species_distributions.MirrorSpecies
+reading sources... [ 26%] api/generated/omg.sampler.species_distributions.UniformSpeciesDistribution
+reading sources... [ 27%] api/generated/omg.si.abstracts.StochasticInterpolant
+reading sources... [ 28%] api/generated/omg.si.corrector.Corrector
+reading sources... [ 29%] api/generated/omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask
+reading sources... [ 30%] api/generated/omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform
+reading sources... [ 31%] api/generated/omg.si.epsilon.Epsilon
+reading sources... [ 32%] api/generated/omg.si.interpolants.Interpolant
+reading sources... [ 32%] api/generated/omg.si.interpolants.LinearInterpolant
+reading sources... [ 33%] api/generated/omg.si.interpolants.PeriodicLinearInterpolant
+reading sources... [ 34%] api/generated/omg.si.interpolants.PeriodicTrigonometricInterpolant
+reading sources... [ 35%] api/generated/omg.si.interpolants.TrigonometricInterpolant
+reading sources... [ 36%] api/generated/omg.si.sigma.Sigma
+reading sources... [ 37%] api/generated/omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
+reading sources... [ 38%] api/generated/omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity
+reading sources... [ 38%] api/generated/omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS
+reading sources... [ 39%] api/generated/omg.si.stochastic_interpolants.StochasticInterpolants
+reading sources... [ 40%] api/generated/omg.si.tau.Tau
+reading sources... [ 41%] api/generated/omg.utils
+reading sources... [ 42%] api/index
+reading sources... [ 43%] api/model
+reading sources... [ 44%] api/sampler
+reading sources... [ 44%] api/si
+reading sources... [ 45%] api/training
+reading sources... [ 46%] development/contributing
+reading sources... [ 47%] development/index
+reading sources... [ 48%] getting_started/datasets
+reading sources... [ 49%] getting_started/index
+reading sources... [ 50%] getting_started/installation
+reading sources... [ 50%] getting_started/quickstart
+reading sources... [ 51%] index
+reading sources... [ 52%] modules
+reading sources... [ 53%] omg
+reading sources... [ 54%] omg.analysis
+reading sources... [ 55%] omg.analysis.analysis
+reading sources... [ 56%] omg.analysis.valid_atoms
+reading sources... [ 56%] omg.datamodule
+reading sources... [ 57%] omg.datamodule.omg_data
+reading sources... [ 58%] omg.datamodule.omg_datamodule
+reading sources... [ 59%] omg.datamodule.omg_dataset
+reading sources... [ 60%] omg.datamodule.structure
+reading sources... [ 61%] omg.datamodule.structure_dataset
+reading sources... [ 62%] omg.globals
+reading sources... [ 62%] omg.main
+reading sources... [ 63%] omg.model
+reading sources... [ 64%] omg.model.encoders
+reading sources... [ 65%] omg.model.encoders.cspnet_full
+reading sources... [ 66%] omg.model.encoders.diffcsp_copies
+reading sources... [ 67%] omg.model.encoders.encoder
+reading sources... [ 68%] omg.model.heads
+reading sources... [ 68%] omg.model.heads.head
+reading sources... [ 69%] omg.model.heads.pass_through
+reading sources... [ 70%] omg.model.model
+reading sources... [ 71%] omg.model.model_utils
+reading sources... [ 72%] omg.omg_cli
+reading sources... [ 73%] omg.omg_lightning
+reading sources... [ 74%] omg.omg_trainer
+reading sources... [ 74%] omg.sampler
+reading sources... [ 75%] omg.sampler.abstracts
+reading sources... [ 76%] omg.sampler.cell_distributions
+reading sources... [ 77%] omg.sampler.independent_sampler
+reading sources... [ 78%] omg.sampler.minimum_permutation_distance
+reading sources... [ 79%] omg.sampler.position_distributions
+reading sources... [ 79%] omg.sampler.sampler
+reading sources... [ 80%] omg.sampler.species_distributions
+reading sources... [ 81%] omg.si
+reading sources... [ 82%] omg.si.abstracts
+reading sources... [ 83%] omg.si.corrector
+reading sources... [ 84%] omg.si.discrete_flow_matching_mask
+reading sources... [ 85%] omg.si.discrete_flow_matching_uniform
+reading sources... [ 85%] omg.si.epsilon
+reading sources... [ 86%] omg.si.gamma
+reading sources... [ 87%] omg.si.interpolants
+reading sources... [ 88%] omg.si.sigma
+reading sources... [ 89%] omg.si.single_stochastic_interpolant
+reading sources... [ 90%] omg.si.single_stochastic_interpolant_identity
+reading sources... [ 91%] omg.si.single_stochastic_interpolant_os
+reading sources... [ 91%] omg.si.stochastic_interpolants
+reading sources... [ 92%] omg.si.tau
+reading sources... [ 93%] omg.utils
+reading sources... [ 94%] user_guide/analysis
+reading sources... [ 95%] user_guide/datamodule
+reading sources... [ 96%] user_guide/generation
+reading sources... [ 97%] user_guide/index
+reading sources... [ 97%] user_guide/model
+reading sources... [ 98%] user_guide/sampler
+reading sources... [ 99%] user_guide/stochastic_interpolants
+reading sources... [100%] user_guide/training
+
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.__init__:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.__init__, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/omg_data.py:docstring of omg.datamodule.omg_data.OMGData:1: WARNING: duplicate object description of omg.datamodule.omg_data.OMGData, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/omg_data.py:docstring of omg.datamodule.omg_data.OMGData.__init__:1: WARNING: duplicate object description of omg.datamodule.omg_data.OMGData.__init__, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/omg_datamodule.py:docstring of omg.datamodule.omg_datamodule.OMGDataModule:1: WARNING: duplicate object description of omg.datamodule.omg_datamodule.OMGDataModule, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/omg_datamodule.py:docstring of omg.datamodule.omg_datamodule.OMGDataModule.__init__:1: WARNING: duplicate object description of omg.datamodule.omg_datamodule.OMGDataModule.__init__, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure:1: WARNING: duplicate object description of omg.datamodule.structure.Structure, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.__init__:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.__init__, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure_dataset.py:docstring of omg.datamodule.structure_dataset.StructureDataset:1: WARNING: duplicate object description of omg.datamodule.structure_dataset.StructureDataset, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure_dataset.py:docstring of omg.datamodule.structure_dataset.StructureDataset.__init__:1: WARNING: duplicate object description of omg.datamodule.structure_dataset.StructureDataset.__init__, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning:22: ERROR: Unexpected indentation. [docutils]
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning:23: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils]
+/home/gpwolfe/OMatG/omg/model/model.py:docstring of omg.model.model.Model:1: WARNING: duplicate object description of omg.model.model.Model, other instance in api/generated/omg.model.model.Model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/encoders/cspnet_full.py:docstring of omg.model.encoders.cspnet_full.CSPNetFull:1: WARNING: duplicate object description of omg.model.encoders.cspnet_full.CSPNetFull, other instance in api/generated/omg.model.encoders.cspnet_full.CSPNetFull, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/heads/pass_through.py:docstring of omg.model.heads.pass_through.PassThrough:1: WARNING: duplicate object description of omg.model.heads.pass_through.PassThrough, other instance in api/generated/omg.model.heads.pass_through.PassThrough, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/model_utils.py:docstring of omg.model.model_utils.SinusoidalTimeEmbeddings:1: WARNING: duplicate object description of omg.model.model_utils.SinusoidalTimeEmbeddings, other instance in api/generated/omg.model.model_utils.SinusoidalTimeEmbeddings, use :no-index: for one of them
+/home/gpwolfe/OMatG/docs/source/api/sampler.rst:85: WARNING: autosummary: failed to import compute_minimum_permutation_distance.
+Possible hints:
+* AttributeError: module 'omg.sampler.minimum_permutation_distance' has no attribute '__path__'
+* ModuleNotFoundError: No module named 'compute_minimum_permutation_distance'
+* ValueError: not enough values to unpack (expected 2, got 1)
+* AttributeError: module 'omg.sampler.minimum_permutation_distance' has no attribute 'compute_minimum_permutation_distance'
+* KeyError: 'compute_minimum_permutation_distance'
+/home/gpwolfe/OMatG/omg/sampler/independent_sampler.py:docstring of omg.sampler.independent_sampler.IndependentSampler:1: WARNING: duplicate object description of omg.sampler.independent_sampler.IndependentSampler, other instance in api/generated/omg.sampler.independent_sampler.IndependentSampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/independent_sampler.py:docstring of omg.sampler.independent_sampler.IndependentSampler.__init__:1: WARNING: duplicate object description of omg.sampler.independent_sampler.IndependentSampler.__init__, other instance in api/generated/omg.sampler.independent_sampler.IndependentSampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.UniformPositionDistribution:1: WARNING: duplicate object description of omg.sampler.position_distributions.UniformPositionDistribution, other instance in api/generated/omg.sampler.position_distributions.UniformPositionDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.UniformPositionDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.position_distributions.UniformPositionDistribution.__init__, other instance in api/generated/omg.sampler.position_distributions.UniformPositionDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.NormalPositionDistribution:1: WARNING: duplicate object description of omg.sampler.position_distributions.NormalPositionDistribution, other instance in api/generated/omg.sampler.position_distributions.NormalPositionDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.NormalPositionDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.position_distributions.NormalPositionDistribution.__init__, other instance in api/generated/omg.sampler.position_distributions.NormalPositionDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.MirrorPosition:1: WARNING: duplicate object description of omg.sampler.position_distributions.MirrorPosition, other instance in api/generated/omg.sampler.position_distributions.MirrorPosition, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.MirrorPosition.__init__:1: WARNING: duplicate object description of omg.sampler.position_distributions.MirrorPosition.__init__, other instance in api/generated/omg.sampler.position_distributions.MirrorPosition, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.InformedLatticeDistribution:1: WARNING: duplicate object description of omg.sampler.cell_distributions.InformedLatticeDistribution, other instance in api/generated/omg.sampler.cell_distributions.InformedLatticeDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.InformedLatticeDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.cell_distributions.InformedLatticeDistribution.__init__, other instance in api/generated/omg.sampler.cell_distributions.InformedLatticeDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.NormalCellDistribution:1: WARNING: duplicate object description of omg.sampler.cell_distributions.NormalCellDistribution, other instance in api/generated/omg.sampler.cell_distributions.NormalCellDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.NormalCellDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.cell_distributions.NormalCellDistribution.__init__, other instance in api/generated/omg.sampler.cell_distributions.NormalCellDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.MirrorCell:1: WARNING: duplicate object description of omg.sampler.cell_distributions.MirrorCell, other instance in api/generated/omg.sampler.cell_distributions.MirrorCell, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.MirrorCell.__init__:1: WARNING: duplicate object description of omg.sampler.cell_distributions.MirrorCell.__init__, other instance in api/generated/omg.sampler.cell_distributions.MirrorCell, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.MaskSpeciesDistribution:1: WARNING: duplicate object description of omg.sampler.species_distributions.MaskSpeciesDistribution, other instance in api/generated/omg.sampler.species_distributions.MaskSpeciesDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.MaskSpeciesDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.species_distributions.MaskSpeciesDistribution.__init__, other instance in api/generated/omg.sampler.species_distributions.MaskSpeciesDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.UniformSpeciesDistribution:1: WARNING: duplicate object description of omg.sampler.species_distributions.UniformSpeciesDistribution, other instance in api/generated/omg.sampler.species_distributions.UniformSpeciesDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.UniformSpeciesDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.species_distributions.UniformSpeciesDistribution.__init__, other instance in api/generated/omg.sampler.species_distributions.UniformSpeciesDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.MirrorSpecies:1: WARNING: duplicate object description of omg.sampler.species_distributions.MirrorSpecies, other instance in api/generated/omg.sampler.species_distributions.MirrorSpecies, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.MirrorSpecies.__init__:1: WARNING: duplicate object description of omg.sampler.species_distributions.MirrorSpecies.__init__, other instance in api/generated/omg.sampler.species_distributions.MirrorSpecies, use :no-index: for one of them
+/home/gpwolfe/OMatG/docs/source/api/si.rst:1: WARNING: Title overline too short.
+
+======================
+Stochastic Interpolants
+====================== [docutils]
+/home/gpwolfe/OMatG/docs/source/api/si.rst:37: WARNING: autosummary: failed to import abstracts.Integrator.
+Possible hints:
+* ImportError: 
+* AttributeError: module 'omg.si.abstracts' has no attribute 'Integrator'
+* AttributeError: module 'omg.si.abstracts' has no attribute '__path__'
+* KeyError: 'abstracts'
+* ModuleNotFoundError: No module named 'abstracts'
+/home/gpwolfe/OMatG/docs/source/api/si.rst:49: WARNING: autosummary: failed to import EncDecInterpolant.
+Possible hints:
+* AttributeError: module 'omg.si.interpolants' has no attribute 'EncDecInterpolant'
+* KeyError: 'EncDecInterpolant'
+* AttributeError: module 'omg.si.interpolants' has no attribute '__path__'
+* ModuleNotFoundError: No module named 'EncDecInterpolant'
+* ValueError: not enough values to unpack (expected 2, got 1)
+/home/gpwolfe/OMatG/docs/source/api/si.rst:49: WARNING: autosummary: failed to import PeriodicEncDecInterpolant.
+Possible hints:
+* ModuleNotFoundError: No module named 'PeriodicEncDecInterpolant'
+* AttributeError: module 'omg.si.interpolants' has no attribute 'PeriodicEncDecInterpolant'
+* AttributeError: module 'omg.si.interpolants' has no attribute '__path__'
+* ValueError: not enough values to unpack (expected 2, got 1)
+* KeyError: 'PeriodicEncDecInterpolant'
+/home/gpwolfe/OMatG/docs/source/api/si.rst:69: WARNING: autosummary: failed to import Alpha.
+Possible hints:
+* KeyError: 'Alpha'
+* AttributeError: module 'omg.si.interpolants' has no attribute 'Alpha'
+* ModuleNotFoundError: No module named 'Alpha'
+* AttributeError: module 'omg.si.interpolants' has no attribute '__path__'
+* ValueError: not enough values to unpack (expected 2, got 1)
+/home/gpwolfe/OMatG/docs/source/api/si.rst:69: WARNING: autosummary: failed to import Beta.
+Possible hints:
+* AttributeError: module 'omg.si.interpolants' has no attribute 'Beta'
+* ModuleNotFoundError: No module named 'Beta'
+* AttributeError: module 'omg.si.interpolants' has no attribute '__path__'
+* ValueError: not enough values to unpack (expected 2, got 1)
+* KeyError: 'Beta'
+/home/gpwolfe/OMatG/docs/source/api/si.rst:81: WARNING: autosummary: failed to import Gamma.
+Possible hints:
+* KeyError: 'Gamma'
+* AttributeError: module 'omg.si.gamma' has no attribute '__path__'
+* ValueError: not enough values to unpack (expected 2, got 1)
+* ModuleNotFoundError: No module named 'Gamma'
+* AttributeError: module 'omg.si.gamma' has no attribute 'Gamma'
+/home/gpwolfe/OMatG/docs/source/api/si.rst:81: WARNING: autosummary: failed to import GammaConstant.
+Possible hints:
+* AttributeError: module 'omg.si.gamma' has no attribute '__path__'
+* AttributeError: module 'omg.si.gamma' has no attribute 'GammaConstant'
+* ValueError: not enough values to unpack (expected 2, got 1)
+* KeyError: 'GammaConstant'
+* ModuleNotFoundError: No module named 'GammaConstant'
+/home/gpwolfe/OMatG/docs/source/api/si.rst:81: WARNING: autosummary: failed to import GammaLinear.
+Possible hints:
+* AttributeError: module 'omg.si.gamma' has no attribute 'GammaLinear'
+* ModuleNotFoundError: No module named 'GammaLinear'
+* AttributeError: module 'omg.si.gamma' has no attribute '__path__'
+* KeyError: 'GammaLinear'
+* ValueError: not enough values to unpack (expected 2, got 1)
+/home/gpwolfe/OMatG/docs/source/api/si.rst:81: WARNING: autosummary: failed to import GammaCosine.
+Possible hints:
+* AttributeError: module 'omg.si.gamma' has no attribute 'GammaCosine'
+* AttributeError: module 'omg.si.gamma' has no attribute '__path__'
+* ModuleNotFoundError: No module named 'GammaCosine'
+* ValueError: not enough values to unpack (expected 2, got 1)
+* KeyError: 'GammaCosine'
+/home/gpwolfe/OMatG/omg/si/stochastic_interpolants.py:docstring of omg.si.stochastic_interpolants.StochasticInterpolants:1: WARNING: duplicate object description of omg.si.stochastic_interpolants.StochasticInterpolants, other instance in api/generated/omg.si.stochastic_interpolants.StochasticInterpolants, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/stochastic_interpolants.py:docstring of omg.si.stochastic_interpolants.StochasticInterpolants.__init__:1: WARNING: duplicate object description of omg.si.stochastic_interpolants.StochasticInterpolants.__init__, other instance in api/generated/omg.si.stochastic_interpolants.StochasticInterpolants, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant, other instance in api/generated/omg.si.single_stochastic_interpolant.SingleStochasticInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.__init__:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.__init__, other instance in api/generated/omg.si.single_stochastic_interpolant.SingleStochasticInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS, other instance in api/generated/omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.__init__:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.__init__, other instance in api/generated/omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_identity.py:docstring of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity, other instance in api/generated/omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_identity.py:docstring of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.__init__:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.__init__, other instance in api/generated/omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_mask.py:docstring of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask, other instance in api/generated/omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_mask.py:docstring of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.__init__:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.__init__, other instance in api/generated/omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_uniform.py:docstring of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform, other instance in api/generated/omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_uniform.py:docstring of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.__init__:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.__init__, other instance in api/generated/omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning, other instance in api/generated/omg.omg_lightning.OMGLightning, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning:22: ERROR: Unexpected indentation. [docutils]
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning:23: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils]
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.__init__:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.__init__, other instance in api/generated/omg.omg_lightning.OMGLightning, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer:1: WARNING: duplicate object description of omg.omg_trainer.OMGTrainer, other instance in api/generated/omg.omg_trainer.OMGTrainer, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer.__init__:1: WARNING: duplicate object description of omg.omg_trainer.OMGTrainer.__init__, other instance in api/generated/omg.omg_trainer.OMGTrainer, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer.visualize:13: ERROR: Unexpected indentation. [docutils]
+/home/gpwolfe/OMatG/omg/main.py:docstring of omg.main.main:1: WARNING: duplicate object description of omg.main.main, other instance in api/generated/omg.main.main, use :no-index: for one of them
+WARNING: autodoc: failed to import function 'cli' from module 'omg.omg_cli'; the following exception was raised:
+Traceback (most recent call last):
+  File "/home/gpwolfe/OMatG/omg311/lib/python3.11/site-packages/sphinx/util/inspect.py", line 461, in safe_getattr
+    return getattr(obj, name, *defargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'omg.omg_cli' has no attribute 'cli'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/gpwolfe/OMatG/omg311/lib/python3.11/site-packages/sphinx/ext/autodoc/importer.py", line 288, in import_object
+    obj = attrgetter(obj, mangled_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gpwolfe/OMatG/omg311/lib/python3.11/site-packages/sphinx/ext/autodoc/__init__.py", line 384, in get_attr
+    return autodoc_attrgetter(obj, name, *defargs, registry=self.env._registry)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gpwolfe/OMatG/omg311/lib/python3.11/site-packages/sphinx/ext/autodoc/__init__.py", line 3149, in autodoc_attrgetter
+    return safe_getattr(obj, name, *defargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/gpwolfe/OMatG/omg311/lib/python3.11/site-packages/sphinx/util/inspect.py", line 477, in safe_getattr
+    raise AttributeError(name) from exc
+AttributeError: cli
+ [autodoc.import_object]
+/home/gpwolfe/OMatG/docs/source/modules.rst:4: ERROR: Error in "toctree" directive:
+invalid option block.
+
+.. toctree::
+   :maxdepth: 4
+   omg [docutils]
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms, other instance in api/generated/omg.analysis.valid_atoms.ValidAtoms, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.__init__:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.__init__, other instance in api/generated/omg.analysis.valid_atoms.ValidAtoms, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.atoms:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.atoms, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.composition_fingerprint:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.composition_fingerprint, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.composition_valid:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.composition_valid, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.fingerprint_valid:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.fingerprint_valid, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.get_valid_atoms:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.get_valid_atoms, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.structure:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.structure, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.structure_fingerprint:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.structure_fingerprint, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.structure_valid:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.structure_valid, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.valid:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.valid, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/analysis/valid_atoms.py:docstring of omg.analysis.valid_atoms.ValidAtoms.volume_valid:1: WARNING: duplicate object description of omg.analysis.valid_atoms.ValidAtoms.volume_valid, other instance in api/analysis, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/omg_data.py:docstring of omg.datamodule.omg_data.OMGData:1: WARNING: duplicate object description of omg.datamodule.omg_data.OMGData, other instance in api/generated/omg.datamodule.omg_data.OMGData, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/omg_data.py:docstring of omg.datamodule.omg_data.OMGData.__init__:1: WARNING: duplicate object description of omg.datamodule.omg_data.OMGData.__init__, other instance in api/generated/omg.datamodule.omg_data.OMGData, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/omg_datamodule.py:docstring of omg.datamodule.omg_datamodule.OMGDataModule:1: WARNING: duplicate object description of omg.datamodule.omg_datamodule.OMGDataModule, other instance in api/generated/omg.datamodule.omg_datamodule.OMGDataModule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/omg_datamodule.py:docstring of omg.datamodule.omg_datamodule.OMGDataModule.__init__:1: WARNING: duplicate object description of omg.datamodule.omg_datamodule.OMGDataModule.__init__, other instance in api/generated/omg.datamodule.omg_datamodule.OMGDataModule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure:1: WARNING: duplicate object description of omg.datamodule.structure.Structure, other instance in api/generated/omg.datamodule.structure.Structure, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.__init__:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.__init__, other instance in api/generated/omg.datamodule.structure.Structure, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.atomic_numbers:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.atomic_numbers, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.cell:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.cell, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.convert_to_cartesian:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.convert_to_cartesian, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.convert_to_fractional:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.convert_to_fractional, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.from_dictionary:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.from_dictionary, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.get_ase_atoms:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.get_ase_atoms, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.get_pymatgen_structure:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.get_pymatgen_structure, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.metadata:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.metadata, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.niggli_reduce:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.niggli_reduce, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.pos:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.pos, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.pos_is_fractional:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.pos_is_fractional, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.property_dict:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.property_dict, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.symbols:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.symbols, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.to:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.to, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure.py:docstring of omg.datamodule.structure.Structure.to_dictionary:1: WARNING: duplicate object description of omg.datamodule.structure.Structure.to_dictionary, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure_dataset.py:docstring of omg.datamodule.structure_dataset.StructureDataset:1: WARNING: duplicate object description of omg.datamodule.structure_dataset.StructureDataset, other instance in api/generated/omg.datamodule.structure_dataset.StructureDataset, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure_dataset.py:docstring of omg.datamodule.structure_dataset.StructureDataset.__init__:1: WARNING: duplicate object description of omg.datamodule.structure_dataset.StructureDataset.__init__, other instance in api/generated/omg.datamodule.structure_dataset.StructureDataset, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure_dataset.py:docstring of omg.datamodule.structure_dataset.StructureDataset.to_lmdb:1: WARNING: duplicate object description of omg.datamodule.structure_dataset.StructureDataset.to_lmdb, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/datamodule/structure_dataset.py:docstring of omg.datamodule.structure_dataset.StructureDataset.to_xyz:1: WARNING: duplicate object description of omg.datamodule.structure_dataset.StructureDataset.to_xyz, other instance in api/datamodule, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/main.py:docstring of omg.main.main:1: WARNING: duplicate object description of omg.main.main, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/encoders/cspnet_full.py:docstring of omg.model.encoders.cspnet_full.CSPNetFull:1: WARNING: duplicate object description of omg.model.encoders.cspnet_full.CSPNetFull, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/encoders/cspnet_full.py:docstring of omg.model.encoders.cspnet_full.CSPNetFull.enable_masked_species:1: WARNING: duplicate object description of omg.model.encoders.cspnet_full.CSPNetFull.enable_masked_species, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/encoders/cspnet_full.py:docstring of omg.model.encoders.cspnet_full.CSPNetFull.training:1: WARNING: duplicate object description of omg.model.encoders.cspnet_full.CSPNetFull.training, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/encoders/encoder.py:docstring of omg.model.encoders.encoder.Encoder:1: WARNING: duplicate object description of omg.model.encoders.encoder.Encoder, other instance in api/generated/omg.model.encoders.encoder.Encoder, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/heads/head.py:docstring of omg.model.heads.head.Head:1: WARNING: duplicate object description of omg.model.heads.head.Head, other instance in api/generated/omg.model.heads.head.Head, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/heads/pass_through.py:docstring of omg.model.heads.pass_through.PassThrough:1: WARNING: duplicate object description of omg.model.heads.pass_through.PassThrough, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/heads/pass_through.py:docstring of omg.model.heads.pass_through.PassThrough.enable_masked_species:1: WARNING: duplicate object description of omg.model.heads.pass_through.PassThrough.enable_masked_species, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/heads/pass_through.py:docstring of omg.model.heads.pass_through.PassThrough.forward:1: WARNING: duplicate object description of omg.model.heads.pass_through.PassThrough.forward, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/heads/pass_through.py:docstring of omg.model.heads.pass_through.PassThrough.training:1: WARNING: duplicate object description of omg.model.heads.pass_through.PassThrough.training, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/model.py:docstring of omg.model.model.Model:1: WARNING: duplicate object description of omg.model.model.Model, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/model.py:docstring of omg.model.model.Model.enable_masked_species:1: WARNING: duplicate object description of omg.model.model.Model.enable_masked_species, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/model.py:docstring of omg.model.model.Model.forward:1: WARNING: duplicate object description of omg.model.model.Model.forward, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/model.py:docstring of omg.model.model.Model.training:1: WARNING: duplicate object description of omg.model.model.Model.training, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/model_utils.py:docstring of omg.model.model_utils.SinusoidalTimeEmbeddings:1: WARNING: duplicate object description of omg.model.model_utils.SinusoidalTimeEmbeddings, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/model_utils.py:docstring of omg.model.model_utils.SinusoidalTimeEmbeddings.forward:1: WARNING: duplicate object description of omg.model.model_utils.SinusoidalTimeEmbeddings.forward, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/model/model_utils.py:docstring of omg.model.model_utils.SinusoidalTimeEmbeddings.training:1: WARNING: duplicate object description of omg.model.model_utils.SinusoidalTimeEmbeddings.training, other instance in api/model, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_cli.py:docstring of omg.omg_cli.OMGCLI:1: WARNING: duplicate object description of omg.omg_cli.OMGCLI, other instance in api/generated/omg.omg_cli.OMGCLI, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_cli.py:docstring of omg.omg_cli.OMGCLI.__init__:1: WARNING: duplicate object description of omg.omg_cli.OMGCLI.__init__, other instance in api/generated/omg.omg_cli.OMGCLI, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning:22: ERROR: Unexpected indentation. [docutils]
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning:23: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils]
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.ValidationMetric:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.ValidationMetric, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.ValidationMetric.DNG_EVAL:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.ValidationMetric.DNG_EVAL, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.ValidationMetric.LOSS:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.ValidationMetric.LOSS, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.ValidationMetric.MATCH_RATE:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.ValidationMetric.MATCH_RATE, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.__init__:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.__init__, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.allow_zero_length_dataloader_with_multiple_devices:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.allow_zero_length_dataloader_with_multiple_devices, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.on_validation_epoch_end:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.on_validation_epoch_end, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.on_validation_epoch_start:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.on_validation_epoch_start, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.predict_step:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.predict_step, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.prepare_data_per_node:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.prepare_data_per_node, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.training:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.training, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.training_step:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.training_step, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_lightning.py:docstring of omg.omg_lightning.OMGLightning.validation_step:1: WARNING: duplicate object description of omg.omg_lightning.OMGLightning.validation_step, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer:1: WARNING: duplicate object description of omg.omg_trainer.OMGTrainer, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer.__init__:1: WARNING: duplicate object description of omg.omg_trainer.OMGTrainer.__init__, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer.create_compositions:1: WARNING: duplicate object description of omg.omg_trainer.OMGTrainer.create_compositions, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer.csp_metrics:1: WARNING: duplicate object description of omg.omg_trainer.OMGTrainer.csp_metrics, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer.dng_metrics:1: WARNING: duplicate object description of omg.omg_trainer.OMGTrainer.dng_metrics, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer.fit_lattice:1: WARNING: duplicate object description of omg.omg_trainer.OMGTrainer.fit_lattice, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer.visualize:1: WARNING: duplicate object description of omg.omg_trainer.OMGTrainer.visualize, other instance in api/training, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/omg_trainer.py:docstring of omg.omg_trainer.OMGTrainer.visualize:13: ERROR: Unexpected indentation. [docutils]
+/home/gpwolfe/OMatG/omg/sampler/abstracts.py:docstring of omg.sampler.abstracts.CellDistribution:1: WARNING: duplicate object description of omg.sampler.abstracts.CellDistribution, other instance in api/generated/omg.sampler.abstracts.CellDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/abstracts.py:docstring of omg.sampler.abstracts.CellDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.abstracts.CellDistribution.__init__, other instance in api/generated/omg.sampler.abstracts.CellDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/abstracts.py:docstring of omg.sampler.abstracts.PositionDistribution:1: WARNING: duplicate object description of omg.sampler.abstracts.PositionDistribution, other instance in api/generated/omg.sampler.abstracts.PositionDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/abstracts.py:docstring of omg.sampler.abstracts.PositionDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.abstracts.PositionDistribution.__init__, other instance in api/generated/omg.sampler.abstracts.PositionDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/abstracts.py:docstring of omg.sampler.abstracts.SpeciesDistribution:1: WARNING: duplicate object description of omg.sampler.abstracts.SpeciesDistribution, other instance in api/generated/omg.sampler.abstracts.SpeciesDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/abstracts.py:docstring of omg.sampler.abstracts.SpeciesDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.abstracts.SpeciesDistribution.__init__, other instance in api/generated/omg.sampler.abstracts.SpeciesDistribution, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.InformedLatticeDistribution:1: WARNING: duplicate object description of omg.sampler.cell_distributions.InformedLatticeDistribution, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.InformedLatticeDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.cell_distributions.InformedLatticeDistribution.__init__, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.MirrorCell:1: WARNING: duplicate object description of omg.sampler.cell_distributions.MirrorCell, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.MirrorCell.__init__:1: WARNING: duplicate object description of omg.sampler.cell_distributions.MirrorCell.__init__, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.NormalCellDistribution:1: WARNING: duplicate object description of omg.sampler.cell_distributions.NormalCellDistribution, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/cell_distributions.py:docstring of omg.sampler.cell_distributions.NormalCellDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.cell_distributions.NormalCellDistribution.__init__, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/independent_sampler.py:docstring of omg.sampler.independent_sampler.IndependentSampler:1: WARNING: duplicate object description of omg.sampler.independent_sampler.IndependentSampler, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/independent_sampler.py:docstring of omg.sampler.independent_sampler.IndependentSampler.__init__:1: WARNING: duplicate object description of omg.sampler.independent_sampler.IndependentSampler.__init__, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/independent_sampler.py:docstring of omg.sampler.independent_sampler.IndependentSampler.sample_p_0:1: WARNING: duplicate object description of omg.sampler.independent_sampler.IndependentSampler.sample_p_0, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.MirrorPosition:1: WARNING: duplicate object description of omg.sampler.position_distributions.MirrorPosition, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.MirrorPosition.__init__:1: WARNING: duplicate object description of omg.sampler.position_distributions.MirrorPosition.__init__, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.NormalPositionDistribution:1: WARNING: duplicate object description of omg.sampler.position_distributions.NormalPositionDistribution, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.NormalPositionDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.position_distributions.NormalPositionDistribution.__init__, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.UniformPositionDistribution:1: WARNING: duplicate object description of omg.sampler.position_distributions.UniformPositionDistribution, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/position_distributions.py:docstring of omg.sampler.position_distributions.UniformPositionDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.position_distributions.UniformPositionDistribution.__init__, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/sampler.py:docstring of omg.sampler.sampler.Sampler:1: WARNING: duplicate object description of omg.sampler.sampler.Sampler, other instance in api/generated/omg.sampler.sampler.Sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/sampler.py:docstring of omg.sampler.sampler.Sampler.__init__:1: WARNING: duplicate object description of omg.sampler.sampler.Sampler.__init__, other instance in api/generated/omg.sampler.sampler.Sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.MaskSpeciesDistribution:1: WARNING: duplicate object description of omg.sampler.species_distributions.MaskSpeciesDistribution, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.MaskSpeciesDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.species_distributions.MaskSpeciesDistribution.__init__, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.MirrorSpecies:1: WARNING: duplicate object description of omg.sampler.species_distributions.MirrorSpecies, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.MirrorSpecies.__init__:1: WARNING: duplicate object description of omg.sampler.species_distributions.MirrorSpecies.__init__, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.UniformSpeciesDistribution:1: WARNING: duplicate object description of omg.sampler.species_distributions.UniformSpeciesDistribution, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/sampler/species_distributions.py:docstring of omg.sampler.species_distributions.UniformSpeciesDistribution.__init__:1: WARNING: duplicate object description of omg.sampler.species_distributions.UniformSpeciesDistribution.__init__, other instance in api/sampler, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/abstracts.py:docstring of omg.si.abstracts.StochasticInterpolant:1: WARNING: duplicate object description of omg.si.abstracts.StochasticInterpolant, other instance in api/generated/omg.si.abstracts.StochasticInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_mask.py:docstring of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_mask.py:docstring of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.__init__:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.__init__, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_mask.py:docstring of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.integrate:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.integrate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_mask.py:docstring of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.interpolate:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.interpolate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_mask.py:docstring of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.loss:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.loss, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_mask.py:docstring of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.loss_keys:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.loss_keys, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_mask.py:docstring of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.uses_masked_species:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.uses_masked_species, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_uniform.py:docstring of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_uniform.py:docstring of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.__init__:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.__init__, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_uniform.py:docstring of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.integrate:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.integrate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_uniform.py:docstring of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.interpolate:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.interpolate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_uniform.py:docstring of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.loss:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.loss, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_uniform.py:docstring of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.loss_keys:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.loss_keys, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/discrete_flow_matching_uniform.py:docstring of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.uses_masked_species:1: WARNING: duplicate object description of omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform.uses_masked_species, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.EncoderDecoderInterpolant:3: ERROR: Unexpected indentation. [docutils]
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.EncoderDecoderInterpolant:4: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils]
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.LinearInterpolant:1: WARNING: duplicate object description of omg.si.interpolants.LinearInterpolant, other instance in api/generated/omg.si.interpolants.LinearInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.LinearInterpolant.__init__:1: WARNING: duplicate object description of omg.si.interpolants.LinearInterpolant.__init__, other instance in api/generated/omg.si.interpolants.LinearInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.PeriodicEncoderDecoderInterpolant:3: ERROR: Unexpected indentation. [docutils]
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.PeriodicEncoderDecoderInterpolant:4: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils]
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.PeriodicLinearInterpolant:1: WARNING: duplicate object description of omg.si.interpolants.PeriodicLinearInterpolant, other instance in api/generated/omg.si.interpolants.PeriodicLinearInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.PeriodicLinearInterpolant.__init__:1: WARNING: duplicate object description of omg.si.interpolants.PeriodicLinearInterpolant.__init__, other instance in api/generated/omg.si.interpolants.PeriodicLinearInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.PeriodicTrigonometricInterpolant:1: WARNING: duplicate object description of omg.si.interpolants.PeriodicTrigonometricInterpolant, other instance in api/generated/omg.si.interpolants.PeriodicTrigonometricInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.PeriodicTrigonometricInterpolant.__init__:1: WARNING: duplicate object description of omg.si.interpolants.PeriodicTrigonometricInterpolant.__init__, other instance in api/generated/omg.si.interpolants.PeriodicTrigonometricInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.TrigonometricInterpolant:1: WARNING: duplicate object description of omg.si.interpolants.TrigonometricInterpolant, other instance in api/generated/omg.si.interpolants.TrigonometricInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/interpolants.py:docstring of omg.si.interpolants.TrigonometricInterpolant.__init__:1: WARNING: duplicate object description of omg.si.interpolants.TrigonometricInterpolant.__init__, other instance in api/generated/omg.si.interpolants.TrigonometricInterpolant, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.SDE:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.SDE, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.SDE.f:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.SDE.f, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.SDE.g:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.SDE.g, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.__init__:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.__init__, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.get_corrector:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.get_corrector, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.integrate:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.integrate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.interpolate:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.interpolate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.loss:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.loss, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant.py:docstring of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.loss_keys:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.loss_keys, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_identity.py:docstring of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_identity.py:docstring of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.__init__:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.__init__, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_identity.py:docstring of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.get_corrector:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.get_corrector, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_identity.py:docstring of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.integrate:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.integrate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_identity.py:docstring of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.interpolate:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.interpolate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_identity.py:docstring of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.loss:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.loss, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_identity.py:docstring of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.loss_keys:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.loss_keys, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_identity.py:docstring of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.uses_masked_species:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity.uses_masked_species, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDE:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDE, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDE.f:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDE.f, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDE.g:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDE.g, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDEPredictVelocity:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDEPredictVelocity, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDEPredictVelocity.f:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.SDEPredictVelocity.f, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.__init__:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.__init__, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.get_corrector:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.get_corrector, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.integrate:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.integrate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.interpolate:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.interpolate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.loss:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.loss, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/single_stochastic_interpolant_os.py:docstring of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.loss_keys:1: WARNING: duplicate object description of omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.loss_keys, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/stochastic_interpolants.py:docstring of omg.si.stochastic_interpolants.StochasticInterpolants:1: WARNING: duplicate object description of omg.si.stochastic_interpolants.StochasticInterpolants, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/stochastic_interpolants.py:docstring of omg.si.stochastic_interpolants.StochasticInterpolants.__init__:1: WARNING: duplicate object description of omg.si.stochastic_interpolants.StochasticInterpolants.__init__, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/stochastic_interpolants.py:docstring of omg.si.stochastic_interpolants.StochasticInterpolants.get_stochastic_interpolant:1: WARNING: duplicate object description of omg.si.stochastic_interpolants.StochasticInterpolants.get_stochastic_interpolant, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/stochastic_interpolants.py:docstring of omg.si.stochastic_interpolants.StochasticInterpolants.integrate:1: WARNING: duplicate object description of omg.si.stochastic_interpolants.StochasticInterpolants.integrate, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/stochastic_interpolants.py:docstring of omg.si.stochastic_interpolants.StochasticInterpolants.loss_keys:1: WARNING: duplicate object description of omg.si.stochastic_interpolants.StochasticInterpolants.loss_keys, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/si/stochastic_interpolants.py:docstring of omg.si.stochastic_interpolants.StochasticInterpolants.losses:1: WARNING: duplicate object description of omg.si.stochastic_interpolants.StochasticInterpolants.losses, other instance in api/si, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/utils.py:docstring of omg.utils:1: WARNING: duplicate object description of omg.utils, other instance in api/generated/omg.utils, use :no-index: for one of them
+/home/gpwolfe/OMatG/omg/utils.py:docstring of omg.utils.StandardScaler:3: ERROR: Unexpected indentation. [docutils]
+/home/gpwolfe/OMatG/omg/utils.py:docstring of omg.utils.StandardScaler:4: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils]
+looking for now-outdated files... none found
+pickling environment... done
+checking consistency... /home/gpwolfe/OMatG/docs/source/modules.rst: WARNING: document isn't included in any toctree [toc.not_included]
+/home/gpwolfe/OMatG/docs/source/omg.rst: WARNING: document isn't included in any toctree [toc.not_included]
+/home/gpwolfe/OMatG/docs/source/api/analysis.rst: document is referenced in multiple toctrees: ['api/index', 'index'], selecting: index <- api/analysis
+/home/gpwolfe/OMatG/docs/source/api/datamodule.rst: document is referenced in multiple toctrees: ['api/index', 'index'], selecting: index <- api/datamodule
+/home/gpwolfe/OMatG/docs/source/api/model.rst: document is referenced in multiple toctrees: ['api/index', 'index'], selecting: index <- api/model
+/home/gpwolfe/OMatG/docs/source/api/sampler.rst: document is referenced in multiple toctrees: ['api/index', 'index'], selecting: index <- api/sampler
+/home/gpwolfe/OMatG/docs/source/api/si.rst: document is referenced in multiple toctrees: ['api/index', 'index'], selecting: index <- api/si
+/home/gpwolfe/OMatG/docs/source/api/training.rst: document is referenced in multiple toctrees: ['api/index', 'index'], selecting: index <- api/training
+/home/gpwolfe/OMatG/docs/source/development/contributing.rst: document is referenced in multiple toctrees: ['development/index', 'index'], selecting: index <- development/contributing
+/home/gpwolfe/OMatG/docs/source/getting_started/datasets.rst: document is referenced in multiple toctrees: ['getting_started/index', 'index'], selecting: index <- getting_started/datasets
+/home/gpwolfe/OMatG/docs/source/getting_started/installation.rst: document is referenced in multiple toctrees: ['getting_started/index', 'index'], selecting: index <- getting_started/installation
+/home/gpwolfe/OMatG/docs/source/getting_started/quickstart.rst: document is referenced in multiple toctrees: ['getting_started/index', 'index'], selecting: index <- getting_started/quickstart
+/home/gpwolfe/OMatG/docs/source/user_guide/analysis.rst: document is referenced in multiple toctrees: ['index', 'user_guide/index'], selecting: user_guide/index <- user_guide/analysis
+/home/gpwolfe/OMatG/docs/source/user_guide/datamodule.rst: document is referenced in multiple toctrees: ['index', 'user_guide/index'], selecting: user_guide/index <- user_guide/datamodule
+/home/gpwolfe/OMatG/docs/source/user_guide/generation.rst: document is referenced in multiple toctrees: ['index', 'user_guide/index'], selecting: user_guide/index <- user_guide/generation
+/home/gpwolfe/OMatG/docs/source/user_guide/model.rst: document is referenced in multiple toctrees: ['index', 'user_guide/index'], selecting: user_guide/index <- user_guide/model
+/home/gpwolfe/OMatG/docs/source/user_guide/sampler.rst: document is referenced in multiple toctrees: ['index', 'user_guide/index'], selecting: user_guide/index <- user_guide/sampler
+/home/gpwolfe/OMatG/docs/source/user_guide/stochastic_interpolants.rst: document is referenced in multiple toctrees: ['index', 'user_guide/index'], selecting: user_guide/index <- user_guide/stochastic_interpolants
+/home/gpwolfe/OMatG/docs/source/user_guide/training.rst: document is referenced in multiple toctrees: ['index', 'user_guide/index'], selecting: user_guide/index <- user_guide/training
+done
+preparing documents... done
+copying assets... 
+copying static files... 
+Writing evaluated template result to /home/gpwolfe/OMatG/docs/build/html/_static/documentation_options.js
+Writing evaluated template result to /home/gpwolfe/OMatG/docs/build/html/_static/language_data.js
+Writing evaluated template result to /home/gpwolfe/OMatG/docs/build/html/_static/basic.css
+Writing evaluated template result to /home/gpwolfe/OMatG/docs/build/html/_static/copybutton.js
+copying static files: done
+copying extra files... 
+copying extra files: done
+copying assets: done
+writing output... [  1%] api/analysis
+writing output... [  2%] api/datamodule
+writing output... [  3%] api/generated/omg.analysis.valid_atoms.ValidAtoms
+writing output... [  3%] api/generated/omg.datamodule.omg_data.OMGData
+writing output... [  4%] api/generated/omg.datamodule.omg_datamodule.OMGDataModule
+writing output... [  5%] api/generated/omg.datamodule.structure.Structure
+writing output... [  6%] api/generated/omg.datamodule.structure_dataset.StructureDataset
+writing output... [  7%] api/generated/omg.main.main
+writing output... [  8%] api/generated/omg.model.encoders.cspnet_full.CSPNetFull
+writing output... [  9%] api/generated/omg.model.encoders.encoder.Encoder
+writing output... [  9%] api/generated/omg.model.heads.head.Head
+writing output... [ 10%] api/generated/omg.model.heads.pass_through.PassThrough
+writing output... [ 11%] api/generated/omg.model.model.Model
+writing output... [ 12%] api/generated/omg.model.model_utils.SinusoidalTimeEmbeddings
+writing output... [ 13%] api/generated/omg.omg_cli.OMGCLI
+writing output... [ 14%] api/generated/omg.omg_lightning.OMGLightning
+writing output... [ 15%] api/generated/omg.omg_trainer.OMGTrainer
+writing output... [ 15%] api/generated/omg.sampler.abstracts.CellDistribution
+writing output... [ 16%] api/generated/omg.sampler.abstracts.PositionDistribution
+writing output... [ 17%] api/generated/omg.sampler.abstracts.SpeciesDistribution
+writing output... [ 18%] api/generated/omg.sampler.cell_distributions.InformedLatticeDistribution
+writing output... [ 19%] api/generated/omg.sampler.cell_distributions.MirrorCell
+writing output... [ 20%] api/generated/omg.sampler.cell_distributions.NormalCellDistribution
+writing output... [ 21%] api/generated/omg.sampler.independent_sampler.IndependentSampler
+writing output... [ 21%] api/generated/omg.sampler.position_distributions.MirrorPosition
+writing output... [ 22%] api/generated/omg.sampler.position_distributions.NormalPositionDistribution
+writing output... [ 23%] api/generated/omg.sampler.position_distributions.UniformPositionDistribution
+writing output... [ 24%] api/generated/omg.sampler.sampler.Sampler
+writing output... [ 25%] api/generated/omg.sampler.species_distributions.MaskSpeciesDistribution
+writing output... [ 26%] api/generated/omg.sampler.species_distributions.MirrorSpecies
+writing output... [ 26%] api/generated/omg.sampler.species_distributions.UniformSpeciesDistribution
+writing output... [ 27%] api/generated/omg.si.abstracts.StochasticInterpolant
+writing output... [ 28%] api/generated/omg.si.corrector.Corrector
+writing output... [ 29%] api/generated/omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask
+writing output... [ 30%] api/generated/omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform
+writing output... [ 31%] api/generated/omg.si.epsilon.Epsilon
+writing output... [ 32%] api/generated/omg.si.interpolants.Interpolant
+writing output... [ 32%] api/generated/omg.si.interpolants.LinearInterpolant
+writing output... [ 33%] api/generated/omg.si.interpolants.PeriodicLinearInterpolant
+writing output... [ 34%] api/generated/omg.si.interpolants.PeriodicTrigonometricInterpolant
+writing output... [ 35%] api/generated/omg.si.interpolants.TrigonometricInterpolant
+writing output... [ 36%] api/generated/omg.si.sigma.Sigma
+writing output... [ 37%] api/generated/omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
+writing output... [ 38%] api/generated/omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity
+writing output... [ 38%] api/generated/omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS
+writing output... [ 39%] api/generated/omg.si.stochastic_interpolants.StochasticInterpolants
+writing output... [ 40%] api/generated/omg.si.tau.Tau
+writing output... [ 41%] api/generated/omg.utils
+writing output... [ 42%] api/index
+writing output... [ 43%] api/model
+writing output... [ 44%] api/sampler
+writing output... [ 44%] api/si
+writing output... [ 45%] api/training
+writing output... [ 46%] development/contributing
+writing output... [ 47%] development/index
+writing output... [ 48%] getting_started/datasets
+writing output... [ 49%] getting_started/index
+writing output... [ 50%] getting_started/installation
+writing output... [ 50%] getting_started/quickstart
+writing output... [ 51%] index
+writing output... [ 52%] modules
+writing output... [ 53%] omg
+writing output... [ 54%] omg.analysis
+writing output... [ 55%] omg.analysis.analysis
+writing output... [ 56%] omg.analysis.valid_atoms
+writing output... [ 56%] omg.datamodule
+writing output... [ 57%] omg.datamodule.omg_data
+writing output... [ 58%] omg.datamodule.omg_datamodule
+writing output... [ 59%] omg.datamodule.omg_dataset
+writing output... [ 60%] omg.datamodule.structure
+writing output... [ 61%] omg.datamodule.structure_dataset
+writing output... [ 62%] omg.globals
+writing output... [ 62%] omg.main
+writing output... [ 63%] omg.model
+writing output... [ 64%] omg.model.encoders
+writing output... [ 65%] omg.model.encoders.cspnet_full
+writing output... [ 66%] omg.model.encoders.diffcsp_copies
+writing output... [ 67%] omg.model.encoders.encoder
+writing output... [ 68%] omg.model.heads
+writing output... [ 68%] omg.model.heads.head
+writing output... [ 69%] omg.model.heads.pass_through
+writing output... [ 70%] omg.model.model
+writing output... [ 71%] omg.model.model_utils
+writing output... [ 72%] omg.omg_cli
+writing output... [ 73%] omg.omg_lightning
+writing output... [ 74%] omg.omg_trainer
+writing output... [ 74%] omg.sampler
+writing output... [ 75%] omg.sampler.abstracts
+writing output... [ 76%] omg.sampler.cell_distributions
+writing output... [ 77%] omg.sampler.independent_sampler
+writing output... [ 78%] omg.sampler.minimum_permutation_distance
+writing output... [ 79%] omg.sampler.position_distributions
+writing output... [ 79%] omg.sampler.sampler
+writing output... [ 80%] omg.sampler.species_distributions
+writing output... [ 81%] omg.si
+writing output... [ 82%] omg.si.abstracts
+writing output... [ 83%] omg.si.corrector
+writing output... [ 84%] omg.si.discrete_flow_matching_mask
+writing output... [ 85%] omg.si.discrete_flow_matching_uniform
+writing output... [ 85%] omg.si.epsilon
+writing output... [ 86%] omg.si.gamma
+writing output... [ 87%] omg.si.interpolants
+writing output... [ 88%] omg.si.sigma
+writing output... [ 89%] omg.si.single_stochastic_interpolant
+writing output... [ 90%] omg.si.single_stochastic_interpolant_identity
+writing output... [ 91%] omg.si.single_stochastic_interpolant_os
+writing output... [ 91%] omg.si.stochastic_interpolants
+writing output... [ 92%] omg.si.tau
+writing output... [ 93%] omg.utils
+writing output... [ 94%] user_guide/analysis
+writing output... [ 95%] user_guide/datamodule
+writing output... [ 96%] user_guide/generation
+writing output... [ 97%] user_guide/index
+writing output... [ 97%] user_guide/model
+writing output... [ 98%] user_guide/sampler
+writing output... [ 99%] user_guide/stochastic_interpolants
+writing output... [100%] user_guide/training
+
+/home/gpwolfe/OMatG/docs/source/api/datamodule.rst:159: WARNING: Pygments lexer name 'csv' is not known [misc.highlighting_failure]
+/home/gpwolfe/OMatG/docs/source/api/generated/omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.rst:2: WARNING: more than one target found for cross-reference 'Interpolant': omg.si.interpolants.Interpolant, omg.si.abstracts.Interpolant [ref.python]
+/home/gpwolfe/OMatG/docs/source/api/generated/omg.si.single_stochastic_interpolant.SingleStochasticInterpolant.rst:2: WARNING: more than one target found for cross-reference 'Epsilon': omg.si.epsilon.Epsilon, omg.si.abstracts.Epsilon [ref.python]
+/home/gpwolfe/OMatG/docs/source/api/generated/omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.rst:2: WARNING: more than one target found for cross-reference 'Interpolant': omg.si.interpolants.Interpolant, omg.si.abstracts.Interpolant [ref.python]
+/home/gpwolfe/OMatG/docs/source/api/generated/omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS.rst:2: WARNING: more than one target found for cross-reference 'Epsilon': omg.si.epsilon.Epsilon, omg.si.abstracts.Epsilon [ref.python]
+/home/gpwolfe/OMatG/docs/source/api/si.rst:146: WARNING: more than one target found for cross-reference 'Interpolant': omg.si.interpolants.Interpolant, omg.si.abstracts.Interpolant [ref.python]
+/home/gpwolfe/OMatG/docs/source/api/si.rst:146: WARNING: more than one target found for cross-reference 'Epsilon': omg.si.epsilon.Epsilon, omg.si.abstracts.Epsilon [ref.python]
+/home/gpwolfe/OMatG/docs/source/api/si.rst:146: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/api/si.rst:154: WARNING: more than one target found for cross-reference 'Interpolant': omg.si.interpolants.Interpolant, omg.si.abstracts.Interpolant [ref.python]
+/home/gpwolfe/OMatG/docs/source/api/si.rst:154: WARNING: more than one target found for cross-reference 'Epsilon': omg.si.epsilon.Epsilon, omg.si.abstracts.Epsilon [ref.python]
+/home/gpwolfe/OMatG/docs/source/api/si.rst:154: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/api/si.rst:162: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.sampler.minimum_permutation_distance.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Sigma': omg.si.sigma.Sigma, omg.si.abstracts.Sigma [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Tau': omg.si.tau.Tau, omg.si.abstracts.Tau [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Sigma': omg.si.sigma.Sigma, omg.si.abstracts.Sigma [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Tau': omg.si.tau.Tau, omg.si.abstracts.Tau [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.interpolants.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.single_stochastic_interpolant.rst:2: WARNING: more than one target found for cross-reference 'Interpolant': omg.si.interpolants.Interpolant, omg.si.abstracts.Interpolant [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.single_stochastic_interpolant.rst:2: WARNING: more than one target found for cross-reference 'Epsilon': omg.si.epsilon.Epsilon, omg.si.abstracts.Epsilon [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.single_stochastic_interpolant.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.single_stochastic_interpolant_identity.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.single_stochastic_interpolant_os.rst:2: WARNING: more than one target found for cross-reference 'Interpolant': omg.si.interpolants.Interpolant, omg.si.abstracts.Interpolant [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.single_stochastic_interpolant_os.rst:2: WARNING: more than one target found for cross-reference 'Epsilon': omg.si.epsilon.Epsilon, omg.si.abstracts.Epsilon [ref.python]
+/home/gpwolfe/OMatG/docs/source/omg.si.single_stochastic_interpolant_os.rst:2: WARNING: more than one target found for cross-reference 'Corrector': omg.si.corrector.Corrector, omg.si.abstracts.Corrector [ref.python]
+/home/gpwolfe/OMatG/docs/source/user_guide/datamodule.rst:50: WARNING: Pygments lexer name 'csv' is not known [misc.highlighting_failure]
+generating indices... genindex py-modindex done
+highlighting module code... [  3%] omg.analysis.analysis
+highlighting module code... [  5%] omg.analysis.valid_atoms
+highlighting module code... [  8%] omg.datamodule.omg_data
+highlighting module code... [ 10%] omg.datamodule.omg_datamodule
+highlighting module code... [ 13%] omg.datamodule.omg_dataset
+highlighting module code... [ 15%] omg.datamodule.structure
+highlighting module code... [ 18%] omg.datamodule.structure_dataset
+highlighting module code... [ 21%] omg.main
+highlighting module code... [ 23%] omg.model.encoders.cspnet_full
+highlighting module code... [ 26%] omg.model.encoders.diffcsp_copies
+highlighting module code... [ 28%] omg.model.encoders.encoder
+highlighting module code... [ 31%] omg.model.heads.head
+highlighting module code... [ 33%] omg.model.heads.pass_through
+highlighting module code... [ 36%] omg.model.model
+highlighting module code... [ 38%] omg.model.model_utils
+highlighting module code... [ 41%] omg.omg_cli
+highlighting module code... [ 44%] omg.omg_lightning
+highlighting module code... [ 46%] omg.omg_trainer
+highlighting module code... [ 49%] omg.sampler.abstracts
+highlighting module code... [ 51%] omg.sampler.cell_distributions
+highlighting module code... [ 54%] omg.sampler.independent_sampler
+highlighting module code... [ 56%] omg.sampler.minimum_permutation_distance
+highlighting module code... [ 59%] omg.sampler.position_distributions
+highlighting module code... [ 62%] omg.sampler.sampler
+highlighting module code... [ 64%] omg.sampler.species_distributions
+highlighting module code... [ 67%] omg.si.abstracts
+highlighting module code... [ 69%] omg.si.corrector
+highlighting module code... [ 72%] omg.si.discrete_flow_matching_mask
+highlighting module code... [ 74%] omg.si.discrete_flow_matching_uniform
+highlighting module code... [ 77%] omg.si.epsilon
+highlighting module code... [ 79%] omg.si.gamma
+highlighting module code... [ 82%] omg.si.interpolants
+highlighting module code... [ 85%] omg.si.sigma
+highlighting module code... [ 87%] omg.si.single_stochastic_interpolant
+highlighting module code... [ 90%] omg.si.single_stochastic_interpolant_identity
+highlighting module code... [ 92%] omg.si.single_stochastic_interpolant_os
+highlighting module code... [ 95%] omg.si.stochastic_interpolants
+highlighting module code... [ 97%] omg.si.tau
+highlighting module code... [100%] omg.utils
+
+writing additional pages... search done
+dumping search index in English (code: en)... done
+dumping object inventory... done
+build succeeded, 293 warnings.
+
+The HTML pages are in build/html.

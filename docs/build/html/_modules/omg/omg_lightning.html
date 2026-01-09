@@ -1,0 +1,1138 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>omg.omg_lightning &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/omg/omg_lightning';</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">omg.omg_lightning</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for omg.omg_lightning</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">auto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ase</span><span class="w"> </span><span class="kn">import</span> <span class="n">Atoms</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">lightning</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">wasserstein_distance</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_coordination_numbers</span><span class="p">,</span> <span class="n">get_cov</span><span class="p">,</span> <span class="n">match_rmsds</span><span class="p">,</span> <span class="n">ValidAtoms</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.datamodule</span><span class="w"> </span><span class="kn">import</span> <span class="n">OMGData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.globals</span><span class="w"> </span><span class="kn">import</span> <span class="n">SMALL_TIME</span><span class="p">,</span> <span class="n">BIG_TIME</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.model.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.sampler.minimum_permutation_distance</span><span class="w"> </span><span class="kn">import</span> <span class="n">correct_for_minimum_permutation_distance</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.sampler.sampler</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sampler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.si.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">StochasticInterpolantSpecies</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.si.stochastic_interpolants</span><span class="w"> </span><span class="kn">import</span> <span class="n">StochasticInterpolants</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.si.single_stochastic_interpolant_identity</span><span class="w"> </span><span class="kn">import</span> <span class="n">SingleStochasticInterpolantIdentity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">xyz_saver</span>
+
+
+<div class="viewcode-block" id="OMGLightning">
+<a class="viewcode-back" href="../../omg.omg_lightning.html#omg.omg_lightning.OMGLightning">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">OMGLightning</span><span class="p">(</span><span class="n">lightning</span><span class="o">.</span><span class="n">LightningModule</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Lightning module of OMatG which defines the model and training logic.</span>
+
+<span class="sd">    This class contains the stochastic interpolants for the atomic positions (&quot;pos&quot; data field in</span>
+<span class="sd">    torch_geometric.data.Data instances), the cell vectors (&quot;cell&quot; data field), and the atomic numbers (&quot;species&quot; data</span>
+<span class="sd">    field) of the materials structures.</span>
+
+<span class="sd">    This class contains the base distribution for each data field by using a sampling method for each data</span>
+<span class="sd">    field of a sampler class.</span>
+
+<span class="sd">    The underlying model is trained to predict the stochastic interpolants for these data fields at a sampled time t,</span>
+<span class="sd">    which is sampled (uniformly or with a Sobol sequence) from the interval [SMALL_TIME, BIG_TIME]. During training,</span>
+<span class="sd">    the stochastic interpolants interpolate between a data sample and a sample from the base distribution. Optionally,</span>
+<span class="sd">    the sample from the base distribution can be permuted to minimize the fractional-coordinate distance between the</span>
+<span class="sd">    data sample and the sample from the base distribution.</span>
+
+<span class="sd">    The stochastic interpolants compute a set of losses that all have different loss keys. This class combines these</span>
+<span class="sd">    losses by weighting them with relative costs that are provided as a dictionary mapping the loss keys to the</span>
+<span class="sd">    relative costs. The sum of the relative costs must be 1.</span>
+
+<span class="sd">    This class allows for three different validation modes:</span>
+<span class="sd">    - &quot;loss&quot;: Only the validation loss on the validation dataset is computed as the sum of the weighted losses and</span>
+<span class="sd">              logged as &quot;val_loss_total&quot;.</span>
+<span class="sd">    - &quot;match_rate&quot;: A structure is generated for each composition in the validation dataset, and the match rate and</span>
+<span class="sd">                    average root-mean-square distance between matched structures are logged. This validation mode</span>
+<span class="sd">                    requires that the stochastic interpolant for the species keeps them unchanged so that the model</span>
+<span class="sd">                    works in crystal-structure prediction mode. This validation mode is slow so it should not be run on</span>
+<span class="sd">                    every epoch.</span>
+<span class="sd">    - &quot;dng_eval&quot;: A structure is generated for each number of atoms in the validation dataset, and the de-novo</span>
+<span class="sd">                  generation metrics are logged. Additionally, an averaged metric is logged as &quot;dng_eval&quot;. This</span>
+<span class="sd">                  validation mode is slow so it should not be run on every epoch.</span>
+
+<span class="sd">    :param si:</span>
+<span class="sd">        Collection of stochastic interpolants used for training and generation/prediction.</span>
+<span class="sd">    :type si: StochasticInterpolants</span>
+<span class="sd">    :param sampler:</span>
+<span class="sd">        Sampler used to sample initial structures from the base distribution based on data samples.</span>
+<span class="sd">    :type sampler: Sampler</span>
+<span class="sd">    :param model:</span>
+<span class="sd">        Model architecture used for training and generation/prediction.</span>
+<span class="sd">    :type model: Model</span>
+<span class="sd">    :param relative_si_costs:</span>
+<span class="sd">        Relative costs for the stochastic interpolants used in the loss function.</span>
+<span class="sd">    :type relative_si_costs: Dict[str, float]</span>
+<span class="sd">    :param use_min_perm_dist:</span>
+<span class="sd">        Whether to use the minimum permutation distance coupling during training.</span>
+<span class="sd">        Defaults to False.</span>
+<span class="sd">    :type use_min_perm_dist: bool</span>
+<span class="sd">    :param generation_xyz_filename:</span>
+<span class="sd">        If not None, the filename to which the generated structures will be saved in XYZ format during prediction.</span>
+<span class="sd">        If None, the filename will be generated based on the current time.</span>
+<span class="sd">        Defaults to None.</span>
+<span class="sd">    :type generation_xyz_filename: Optional[str]</span>
+<span class="sd">    :param sobol_time:</span>
+<span class="sd">        Whether to use Sobol sampling for the time variable t.</span>
+<span class="sd">        If False, uniform sampling is used.</span>
+<span class="sd">        Defaults to False.</span>
+<span class="sd">    :type sobol_time: bool</span>
+<span class="sd">    :param float_32_matmul_precision:</span>
+<span class="sd">        Precision for float32 matrix multiplication in torch (see</span>
+<span class="sd">        https://docs.pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html).</span>
+<span class="sd">        Possible values are &quot;medium&quot;, &quot;high&quot;, and &quot;highest&quot;.</span>
+<span class="sd">        Defaults to &quot;medium&quot;.</span>
+<span class="sd">    :type float_32_matmul_precision: str</span>
+<span class="sd">    :param validation_mode:</span>
+<span class="sd">        The mode for validation metrics. Possible values are &quot;loss&quot;, &quot;match_rate&quot;, and &quot;dng_eval&quot;.</span>
+<span class="sd">        Defaults to &quot;loss&quot;.</span>
+<span class="sd">    :type validation_mode: str</span>
+<span class="sd">    :param dataset_name:</span>
+<span class="sd">        The name of the dataset used for training and validation.</span>
+<span class="sd">        This is only relevant if validation_mode is &quot;dng_eval&quot;.</span>
+<span class="sd">        Possible values are &quot;mp_20&quot;, &quot;carbon_24&quot;, &quot;perov_5&quot;, &quot;mpts_52&quot;, and &quot;alex_mp_20&quot;.</span>
+<span class="sd">        Defaults to &quot;mp_20&quot;.</span>
+<span class="sd">    :type dataset_name: str</span>
+<span class="sd">    :param number_cpus:</span>
+<span class="sd">        The number of CPUs to use for parallel processing during validation and matching.</span>
+<span class="sd">        This is only relevant if validation_mode is &quot;match_rate&quot; or &quot;dng_eval&quot;.</span>
+<span class="sd">        Defaults to 12.</span>
+<span class="sd">    :type number_cpus: int</span>
+
+<span class="sd">    :raises ValueError:</span>
+<span class="sd">        If the interpolant for the species is not of type StochasticInterpolantSpecies.</span>
+<span class="sd">        If the relative costs do not sum to 1.</span>
+<span class="sd">        If any cost is negative.</span>
+<span class="sd">        If the relative costs do not contain all loss keys from the stochastic interpolants or vice versa.</span>
+<span class="sd">        If the validation mode is not one of &quot;loss&quot;, &quot;match_rate&quot;, or &quot;dng_eval&quot;.</span>
+<span class="sd">        If the species stochastic interpolant is not of type SingleStochasticInterpolantIdentity when</span>
+<span class="sd">        validation_mode is &quot;match_rate&quot;.</span>
+<span class="sd">        If the dataset_name is not one of &quot;mp_20&quot;, &quot;carbon_24&quot;, &quot;perov_5&quot;, &quot;mpts_52&quot;, or &quot;alex_mp_20&quot;.</span>
+<span class="sd">        If the number of CPUs is less than 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="OMGLightning.ValidationMetric">
+<a class="viewcode-back" href="../../omg.omg_lightning.html#omg.omg_lightning.OMGLightning.ValidationMetric">[docs]</a>
+    <span class="k">class</span><span class="w"> </span><span class="nc">ValidationMetric</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enum for the possible types of reported validation metrics.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">LOSS</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ordinary loss.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">MATCH_RATE</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Match rate for the CSP task.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">DNG_EVAL</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluation for the DNG task.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="OMGLightning.__init__">
+<a class="viewcode-back" href="../../omg.omg_lightning.html#omg.omg_lightning.OMGLightning.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">si</span><span class="p">:</span> <span class="n">StochasticInterpolants</span><span class="p">,</span> <span class="n">sampler</span><span class="p">:</span> <span class="n">Sampler</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span>
+                 <span class="n">relative_si_costs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">use_min_perm_dist</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">generation_xyz_filename</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sobol_time</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">float_32_matmul_precision</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="n">validation_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;loss&quot;</span><span class="p">,</span>
+                 <span class="n">dataset_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mp_20&quot;</span><span class="p">,</span> <span class="n">number_cpus</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor of the OMGLightning class.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">si</span> <span class="o">=</span> <span class="n">si</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">sampler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_min_perm_dist</span> <span class="o">=</span> <span class="n">use_min_perm_dist</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_min_perm_dist</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pos_corrector</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">si</span><span class="o">.</span><span class="n">get_stochastic_interpolant</span><span class="p">(</span><span class="s2">&quot;pos&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get_corrector</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pos_corrector</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">species_stochastic_interpolant</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">si</span><span class="o">.</span><span class="n">get_stochastic_interpolant</span><span class="p">(</span><span class="s2">&quot;species&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">species_stochastic_interpolant</span><span class="p">,</span> <span class="n">StochasticInterpolantSpecies</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Species stochastic interpolant must be of type StochasticInterpolantSpecies.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">species_stochastic_interpolant</span><span class="o">.</span><span class="n">uses_masked_species</span><span class="p">():</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">enable_masked_species</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">cost</span> <span class="o">&gt;=</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">cost</span> <span class="ow">in</span> <span class="n">relative_si_costs</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All cost factors must be non-negative.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">cost</span> <span class="k">for</span> <span class="n">cost</span> <span class="ow">in</span> <span class="n">relative_si_costs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The sum of all cost factors should be equal to 1.&quot;</span><span class="p">)</span>
+        <span class="n">si_loss_keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">si</span><span class="o">.</span><span class="n">loss_keys</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">relative_si_costs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">si_loss_keys</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loss key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> not found in the stochastic interpolants.&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">si_loss_keys</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">relative_si_costs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loss key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> not found in the costs.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_relative_si_costs</span> <span class="o">=</span> <span class="n">relative_si_costs</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sobol_time</span><span class="p">:</span>
+            <span class="c1"># Don&#39;t sample between 0 and 1 because the gamma function may diverge as t -&gt; 0 or t -&gt; 1, which</span>
+            <span class="c1"># may result in NaN losses during training if t was to close to 0 or 1 (especially at 32-true precision).</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time_sampler</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">BIG_TIME</span> <span class="o">-</span> <span class="n">SMALL_TIME</span><span class="p">)</span> <span class="o">+</span> <span class="n">SMALL_TIME</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Don&#39;t sample between 0 and 1 because the gamma function may diverge as t -&gt; 0 or t -&gt; 1, which</span>
+            <span class="c1"># may result in NaN losses during training if t was to close to 0 or 1 (especially at 32-true precision).</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time_sampler</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">quasirandom</span><span class="o">.</span><span class="n">SobolEngine</span><span class="p">(</span><span class="n">dimension</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">scramble</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+                          <span class="o">*</span> <span class="p">(</span><span class="n">BIG_TIME</span> <span class="o">-</span> <span class="n">SMALL_TIME</span><span class="p">)</span> <span class="o">+</span> <span class="n">SMALL_TIME</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generation_xyz_filename</span> <span class="o">=</span> <span class="n">generation_xyz_filename</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validation_metric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ValidationMetric</span><span class="p">[</span><span class="n">validation_mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()]</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown validation metric f</span><span class="si">{</span><span class="n">validation_mode</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation_metric</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ValidationMetric</span><span class="o">.</span><span class="n">MATCH_RATE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">species_stochastic_interpolant</span><span class="p">,</span> <span class="n">SingleStochasticInterpolantIdentity</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Species stochastic interpolant must be of type SingleStochasticInterpolantIdentity &quot;</span>
+                                 <span class="s2">&quot;for match rate validation.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span> <span class="o">=</span> <span class="n">dataset_name</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;mp_20&quot;</span><span class="p">,</span> <span class="s2">&quot;carbon_24&quot;</span><span class="p">,</span> <span class="s2">&quot;perov_5&quot;</span><span class="p">,</span> <span class="s2">&quot;mpts_52&quot;</span><span class="p">,</span> <span class="s2">&quot;alex_mp_20&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dataset </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span><span class="si">}</span><span class="s2"> not supported.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">number_cpus</span> <span class="o">=</span> <span class="n">number_cpus</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_cpus</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Number of CPUs </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">number_cpus</span><span class="si">}</span><span class="s2"> must be &gt;= 1.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Possible values are &quot;medium&quot;, &quot;high&quot;, and &quot;highest&quot;.</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">set_float32_matmul_precision</span><span class="p">(</span><span class="n">float_32_matmul_precision</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_atoms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generated_atoms</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="OMGLightning.training_step">
+<a class="viewcode-back" href="../../omg.omg_lightning.html#omg.omg_lightning.OMGLightning.training_step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">OMGData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs one training step given a batch of structures x_1 from the training dataset.</span>
+
+<span class="sd">        This method samples the initial structures x_0 from the base distribution using the sampler, possibly</span>
+<span class="sd">        permutes the initial structures to minimize the permutational distance, samples times t for each structure,</span>
+<span class="sd">        computes the stochastic interpolants, and computes the losses based on the model predictions for the velocity</span>
+<span class="sd">        fields and denoisers at sampled times t. The total loss is computed as the weighted sum of the individual</span>
+<span class="sd">        losses using the provided relative costs.</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Loss from training step.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x_0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">sample_p_0</span><span class="p">(</span><span class="n">x_1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="c1"># Minimize permutational distance between clusters.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_min_perm_dist</span><span class="p">:</span>
+            <span class="c1"># Don&#39;t switch species to allow for crystal-structure prediction.</span>
+            <span class="n">correct_for_minimum_permutation_distance</span><span class="p">(</span><span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pos_corrector</span><span class="p">,</span> <span class="n">switch_species</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Sample t for each structure.</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_sampler</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_1</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="n">losses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">si</span><span class="o">.</span><span class="n">losses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+
+        <span class="n">total_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">loss_key</span> <span class="ow">in</span> <span class="n">losses</span><span class="p">:</span>
+            <span class="n">losses</span><span class="p">[</span><span class="n">loss_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relative_si_costs</span><span class="p">[</span><span class="n">loss_key</span><span class="p">]</span> <span class="o">*</span> <span class="n">losses</span><span class="p">[</span><span class="n">loss_key</span><span class="p">]</span>
+            <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">losses</span><span class="p">[</span><span class="n">loss_key</span><span class="p">]</span>
+
+        <span class="k">assert</span> <span class="s2">&quot;loss_total&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">losses</span>
+        <span class="n">losses</span><span class="p">[</span><span class="s2">&quot;loss_total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_loss</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_dict</span><span class="p">(</span>
+            <span class="n">losses</span><span class="p">,</span>
+            <span class="n">on_step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">x_1</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">total_loss</span></div>
+
+
+<div class="viewcode-block" id="OMGLightning.on_validation_epoch_start">
+<a class="viewcode-back" href="../../omg.omg_lightning.html#omg.omg_lightning.OMGLightning.on_validation_epoch_start">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_validation_epoch_start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called at the start of the validation epoch to reset the lists of reference and generated atoms.</span>
+
+<span class="sd">        These lists are used to store the reference structures from the validation dataset and the generated</span>
+<span class="sd">        structures during validation, which are later used for computing the match rate or de-novo generation</span>
+<span class="sd">        metrics at the end of the validation epoch.</span>
+
+<span class="sd">        This is only relevant if the validation metric is set to &quot;match_rate&quot; or &quot;dng_eval&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_atoms</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">generated_atoms</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="OMGLightning.validation_step">
+<a class="viewcode-back" href="../../omg.omg_lightning.html#omg.omg_lightning.OMGLightning.validation_step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validation_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">OMGData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs one validation step given a batch of structures x_1 from the validation dataset.</span>
+
+<span class="sd">        This method samples the initial structures x_0 from the base distribution using the sampler, possibly</span>
+<span class="sd">        permutes the initial structures to minimize the permutational distance, samples times t for each</span>
+<span class="sd">        structure, computes the stochastic interpolants, and computes the losses based on the model predictions for the</span>
+<span class="sd">        velocity fields and denoisers at sampled times t. The total loss is computed as the weighted sum of the</span>
+<span class="sd">        individual losses using the provided relative costs.</span>
+
+<span class="sd">        If the validation metric is set to &quot;match_rate&quot; or &quot;dng_eval&quot;, it also generates structures and stores them</span>
+<span class="sd">        in the `self.generated_atoms` list, and stores the reference structures from the validation dataset</span>
+<span class="sd">        in the `self.reference_atoms` list for later evaluation at the end of the validation epoch.</span>
+
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Batch of structures from the validation dataset.</span>
+<span class="sd">        :type x_1: OMGData</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_1</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span>
+        <span class="n">x_0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">sample_p_0</span><span class="p">(</span><span class="n">x_1</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validation_metric</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ValidationMetric</span><span class="o">.</span><span class="n">MATCH_RATE</span>
+                <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation_metric</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ValidationMetric</span><span class="o">.</span><span class="n">DNG_EVAL</span><span class="p">):</span>
+            <span class="c1"># Prevent moving x_1 to cpu because it&#39;s needed below.</span>
+            <span class="n">x_1_cpu</span> <span class="o">=</span> <span class="n">x_1</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
+                <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">x_1_cpu</span><span class="o">.</span><span class="n">ptr</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">x_1_cpu</span><span class="o">.</span><span class="n">ptr</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">reference_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">Atoms</span><span class="p">(</span><span class="n">numbers</span><span class="o">=</span><span class="n">x_1_cpu</span><span class="o">.</span><span class="n">species</span><span class="p">[</span><span class="n">lower</span><span class="p">:</span><span class="n">upper</span><span class="p">],</span> <span class="n">scaled_positions</span><span class="o">=</span><span class="n">x_1_cpu</span><span class="o">.</span><span class="n">pos</span><span class="p">[</span><span class="n">lower</span><span class="p">:</span><span class="n">upper</span><span class="p">,</span> <span class="p">:],</span>
+                          <span class="n">cell</span><span class="o">=</span><span class="n">x_1_cpu</span><span class="o">.</span><span class="n">cell</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">pbc</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+
+            <span class="n">gen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">si</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">x_0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">save_intermediate</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">gen</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">gen</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span> <span class="o">==</span> <span class="n">batch_size</span>
+            <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">gen</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">,</span> <span class="n">x_1_cpu</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">gen</span><span class="o">.</span><span class="n">ptr</span><span class="p">,</span> <span class="n">x_1_cpu</span><span class="o">.</span><span class="n">ptr</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">):</span>
+                <span class="n">lower</span><span class="p">,</span> <span class="n">upper</span> <span class="o">=</span> <span class="n">gen</span><span class="o">.</span><span class="n">ptr</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">gen</span><span class="o">.</span><span class="n">ptr</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">generated_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">Atoms</span><span class="p">(</span><span class="n">numbers</span><span class="o">=</span><span class="n">gen</span><span class="o">.</span><span class="n">species</span><span class="p">[</span><span class="n">lower</span><span class="p">:</span><span class="n">upper</span><span class="p">],</span> <span class="n">scaled_positions</span><span class="o">=</span><span class="n">gen</span><span class="o">.</span><span class="n">pos</span><span class="p">[</span><span class="n">lower</span><span class="p">:</span><span class="n">upper</span><span class="p">,</span> <span class="p">:],</span>
+                          <span class="n">cell</span><span class="o">=</span><span class="n">gen</span><span class="o">.</span><span class="n">cell</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">pbc</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation_metric</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ValidationMetric</span><span class="o">.</span><span class="n">LOSS</span>
+
+        <span class="c1"># Minimize permutational distance between clusters. Should be done after integrating.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_min_perm_dist</span><span class="p">:</span>
+            <span class="c1"># Don&#39;t switch species to allow for crystal-structure prediction.</span>
+            <span class="n">correct_for_minimum_permutation_distance</span><span class="p">(</span><span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pos_corrector</span><span class="p">,</span> <span class="n">switch_species</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="c1"># Sample t for each structure.</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_sampler</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_1</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="n">losses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">si</span><span class="o">.</span><span class="n">losses</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x_0</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+
+        <span class="n">total_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="c1"># Force creation of copy of keys because dictionary will be changed in iteration.</span>
+        <span class="k">for</span> <span class="n">loss_key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">losses</span><span class="p">):</span>
+            <span class="n">losses</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;val_</span><span class="si">{</span><span class="n">loss_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relative_si_costs</span><span class="p">[</span><span class="n">loss_key</span><span class="p">]</span> <span class="o">*</span> <span class="n">losses</span><span class="p">[</span><span class="n">loss_key</span><span class="p">]</span>
+            <span class="n">total_loss</span> <span class="o">+=</span> <span class="n">losses</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;val_</span><span class="si">{</span><span class="n">loss_key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+            <span class="n">losses</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">loss_key</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="s2">&quot;loss_total&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">losses</span>
+        <span class="n">losses</span><span class="p">[</span><span class="s2">&quot;val_loss_total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_loss</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_dict</span><span class="p">(</span>
+            <span class="n">losses</span><span class="p">,</span>
+            <span class="n">on_step</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">total_loss</span></div>
+
+
+<div class="viewcode-block" id="OMGLightning.on_validation_epoch_end">
+<a class="viewcode-back" href="../../omg.omg_lightning.html#omg.omg_lightning.OMGLightning.on_validation_epoch_end">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_validation_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called at the end of the validation epoch to compute and log the validation metrics.</span>
+
+<span class="sd">        This method computes the match rate or de-novo generation metrics based on the generated structures</span>
+<span class="sd">        and the reference structures from the validation dataset, depending on the validation metric set during</span>
+<span class="sd">        initialization. It logs the computed metrics, such as match rate, mean RMSD, valid rate, Wasserstein</span>
+<span class="sd">        distances for density, n-arity, and coordination numbers, and coverage (for mp_20, carbon_24, and perov_5</span>
+<span class="sd">        datasets), as well as the average of these metrics.</span>
+
+<span class="sd">        This is only relevant if the validation metric is set to &quot;match_rate&quot; or &quot;dng_eval&quot;.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation_metric</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ValidationMetric</span><span class="o">.</span><span class="n">MATCH_RATE</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generated_atoms</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_atoms</span><span class="p">)</span>
+            <span class="n">gen_valid_atoms</span> <span class="o">=</span> <span class="n">ValidAtoms</span><span class="o">.</span><span class="n">get_valid_atoms</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generated_atoms</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Validating generated structures&quot;</span><span class="p">,</span>
+                                                         <span class="n">skip_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">number_cpus</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">ref_valid_atoms</span> <span class="o">=</span> <span class="n">ValidAtoms</span><span class="o">.</span><span class="n">get_valid_atoms</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_atoms</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Validating reference structures&quot;</span><span class="p">,</span>
+                                                         <span class="n">skip_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">number_cpus</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">match_rate</span><span class="p">,</span> <span class="n">mean_rmsd</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">corr_rmsd</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">match_rmsds</span><span class="p">(</span>
+                <span class="n">gen_valid_atoms</span><span class="p">,</span> <span class="n">ref_valid_atoms</span><span class="p">,</span> <span class="n">ltol</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">stol</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">angle_tol</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">number_cpus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">number_cpus</span><span class="p">,</span>
+                <span class="n">enable_progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;match_rate&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">match_rate</span><span class="p">),</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;mean_rmsd&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">mean_rmsd</span><span class="p">),</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;corr_rmsd&quot;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">corr_rmsd</span><span class="p">),</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation_metric</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ValidationMetric</span><span class="o">.</span><span class="n">DNG_EVAL</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generated_atoms</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_atoms</span><span class="p">)</span>
+            <span class="n">gen_valid_atoms</span> <span class="o">=</span> <span class="n">ValidAtoms</span><span class="o">.</span><span class="n">get_valid_atoms</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generated_atoms</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Validating generated structures&quot;</span><span class="p">,</span>
+                                                         <span class="n">number_cpus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">number_cpus</span><span class="p">)</span>
+            <span class="n">ref_valid_atoms</span> <span class="o">=</span> <span class="n">ValidAtoms</span><span class="o">.</span><span class="n">get_valid_atoms</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_atoms</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Validating reference structures&quot;</span><span class="p">,</span>
+                                                         <span class="n">number_cpus</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">number_cpus</span><span class="p">)</span>
+            <span class="n">valid_rate</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">va</span><span class="o">.</span><span class="n">valid</span> <span class="k">for</span> <span class="n">va</span> <span class="ow">in</span> <span class="n">gen_valid_atoms</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">gen_valid_atoms</span><span class="p">)</span>
+
+            <span class="n">gen_densities</span> <span class="o">=</span> <span class="p">[</span><span class="n">struc</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">density</span> <span class="k">for</span> <span class="n">struc</span> <span class="ow">in</span> <span class="n">gen_valid_atoms</span><span class="p">]</span>
+            <span class="n">ref_densities</span> <span class="o">=</span> <span class="p">[</span><span class="n">struc</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">density</span> <span class="k">for</span> <span class="n">struc</span> <span class="ow">in</span> <span class="n">ref_valid_atoms</span><span class="p">]</span>
+            <span class="n">wdist_density</span> <span class="o">=</span> <span class="n">wasserstein_distance</span><span class="p">(</span><span class="n">gen_densities</span><span class="p">,</span> <span class="n">ref_densities</span><span class="p">)</span>
+            <span class="n">gen_narity</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">struc</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">species</span><span class="p">))</span> <span class="k">for</span> <span class="n">struc</span> <span class="ow">in</span> <span class="n">gen_valid_atoms</span><span class="p">]</span>
+            <span class="n">ref_narity</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">struc</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">species</span><span class="p">))</span> <span class="k">for</span> <span class="n">struc</span> <span class="ow">in</span> <span class="n">ref_valid_atoms</span><span class="p">]</span>
+            <span class="n">wdist_narity</span> <span class="o">=</span> <span class="n">wasserstein_distance</span><span class="p">(</span><span class="n">gen_narity</span><span class="p">,</span> <span class="n">ref_narity</span><span class="p">)</span>
+            <span class="n">gen_coordination_numbers</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">get_coordination_numbers</span><span class="p">(</span><span class="n">struc</span><span class="o">.</span><span class="n">atoms</span><span class="p">))</span> <span class="k">for</span> <span class="n">struc</span> <span class="ow">in</span> <span class="n">gen_valid_atoms</span><span class="p">]</span>
+            <span class="n">ref_coordination_numbers</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">get_coordination_numbers</span><span class="p">(</span><span class="n">struc</span><span class="o">.</span><span class="n">atoms</span><span class="p">))</span> <span class="k">for</span> <span class="n">struc</span> <span class="ow">in</span> <span class="n">ref_valid_atoms</span><span class="p">]</span>
+            <span class="n">wdist_coordination_numbers</span> <span class="o">=</span> <span class="n">wasserstein_distance</span><span class="p">(</span><span class="n">gen_coordination_numbers</span><span class="p">,</span> <span class="n">ref_coordination_numbers</span><span class="p">)</span>
+            <span class="n">wdist_avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">([</span><span class="n">wdist_density</span><span class="p">,</span> <span class="n">wdist_narity</span><span class="p">,</span> <span class="n">wdist_coordination_numbers</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;mp_20&quot;</span><span class="p">,</span> <span class="s2">&quot;carbon_24&quot;</span><span class="p">,</span> <span class="s2">&quot;perov_5&quot;</span><span class="p">):</span>
+                <span class="c1"># Taken from https://github.com/jiaor17/DiffCSP/blob/7121d159826efa2ba9500bf299250d96da37f146/scripts/compute_metrics.py</span>
+                <span class="n">COV_Cutoffs</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;mp_20&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;struc&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span> <span class="s2">&quot;comp&quot;</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">},</span>
+                    <span class="s2">&quot;carbon_24&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;struc&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span> <span class="s2">&quot;comp&quot;</span><span class="p">:</span> <span class="mf">4.0</span><span class="p">},</span>
+                    <span class="s2">&quot;perov_5&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;struc&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span> <span class="s2">&quot;comp&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">}</span>
+                <span class="p">}</span>
+                <span class="n">struc_cutoff</span> <span class="o">=</span> <span class="n">COV_Cutoffs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span><span class="p">][</span><span class="s2">&quot;struc&quot;</span><span class="p">]</span>
+                <span class="n">comp_cutoff</span> <span class="o">=</span> <span class="n">COV_Cutoffs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span><span class="p">][</span><span class="s2">&quot;comp&quot;</span><span class="p">]</span>
+                <span class="n">cov_precision</span><span class="p">,</span> <span class="n">cov_recall</span> <span class="o">=</span> <span class="n">get_cov</span><span class="p">(</span><span class="n">gen_valid_atoms</span><span class="p">,</span> <span class="n">ref_valid_atoms</span><span class="p">,</span> <span class="n">struc_cutoff</span><span class="p">,</span> <span class="n">comp_cutoff</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="n">cov_avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">([</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">cov_precision</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">cov_recall</span><span class="p">])</span>
+                <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;valid_rate&quot;</span><span class="p">:</span> <span class="n">valid_rate</span><span class="p">,</span>
+                    <span class="s2">&quot;wdist_density&quot;</span><span class="p">:</span> <span class="n">wdist_density</span><span class="p">,</span>
+                    <span class="s2">&quot;wdist_narity&quot;</span><span class="p">:</span> <span class="n">wdist_narity</span><span class="p">,</span>
+                    <span class="s2">&quot;wdist_coordination_numbers&quot;</span><span class="p">:</span> <span class="n">wdist_coordination_numbers</span><span class="p">,</span>
+                    <span class="s2">&quot;cov_precision&quot;</span><span class="p">:</span> <span class="n">cov_precision</span><span class="p">,</span>
+                    <span class="s2">&quot;cov_recall&quot;</span><span class="p">:</span> <span class="n">cov_recall</span><span class="p">,</span>
+                <span class="p">}</span>
+                <span class="n">dng_eval</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">([</span><span class="n">cov_avg</span><span class="p">,</span> <span class="n">wdist_avg</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">valid_rate</span><span class="p">]))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;mpts_52&quot;</span><span class="p">,</span> <span class="s2">&quot;alex_mp_20&quot;</span><span class="p">]</span>
+                <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s2">&quot;valid_rate&quot;</span><span class="p">:</span> <span class="n">valid_rate</span><span class="p">,</span>
+                    <span class="s2">&quot;wdist_density&quot;</span><span class="p">:</span> <span class="n">wdist_density</span><span class="p">,</span>
+                    <span class="s2">&quot;wdist_narity&quot;</span><span class="p">:</span> <span class="n">wdist_narity</span><span class="p">,</span>
+                    <span class="s2">&quot;wdist_coordination_numbers&quot;</span><span class="p">:</span> <span class="n">wdist_coordination_numbers</span><span class="p">,</span>
+                <span class="p">}</span>
+                <span class="n">dng_eval</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">([</span><span class="n">wdist_avg</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">valid_rate</span><span class="p">]))</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;dng_eval&quot;</span><span class="p">,</span> <span class="n">dng_eval</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_dict</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation_metric</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">ValidationMetric</span><span class="o">.</span><span class="n">LOSS</span></div>
+
+
+<div class="viewcode-block" id="OMGLightning.predict_step">
+<a class="viewcode-back" href="../../omg.omg_lightning.html#omg.omg_lightning.OMGLightning.predict_step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">OMGData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OMGData</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Performs one prediction step given a batch of structures x_1 from the prediction dataset.</span>
+
+<span class="sd">        This method samples the initial structures x_0 from the base distribution using the sampler, integrates</span>
+<span class="sd">        the stochastic interpolants to generate new structures, and saves the generated structures in XYZ format.</span>
+<span class="sd">        The initial structures are saved in a separate file with &quot;_init&quot; appended to the filename stem.</span>
+<span class="sd">        If the `generation_xyz_filename` is not set, the filename is generated based on the current time.</span>
+
+<span class="sd">        :param x:</span>
+<span class="sd">            Batch of structures from the prediction dataset.</span>
+<span class="sd">        :type x: OMGData</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Generated structures after integrating the stochastic interpolants.</span>
+<span class="sd">        :rtype: OMGData</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x_0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">sample_p_0</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">gen</span><span class="p">,</span> <span class="n">inter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">si</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">x_0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">save_intermediate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">generation_xyz_filename</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">generation_xyz_filename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                    <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">-%H%M%S&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">.xyz&quot;</span><span class="p">))</span>
+        <span class="n">init_filename</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">with_stem</span><span class="p">(</span><span class="n">filename</span><span class="o">.</span><span class="n">stem</span> <span class="o">+</span> <span class="s2">&quot;_init&quot;</span><span class="p">)</span>
+        <span class="n">xyz_saver</span><span class="p">(</span><span class="n">x_0</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span> <span class="n">init_filename</span><span class="p">)</span>
+        <span class="n">xyz_saver</span><span class="p">(</span><span class="n">gen</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">gen</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

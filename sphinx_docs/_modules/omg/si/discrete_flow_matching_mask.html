@@ -1,0 +1,901 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>omg.si.discrete_flow_matching_mask &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/omg/si/discrete_flow_matching_mask';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">omg.si.discrete_flow_matching_mask</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for omg.si.discrete_flow_matching_mask</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Categorical</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">functional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.globals</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAX_ATOM_NUM</span><span class="p">,</span> <span class="n">BIG_TIME</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.abstracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">StochasticInterpolantSpecies</span>
+
+
+<div class="viewcode-block" id="DiscreteFlowMatchingMask">
+<a class="viewcode-back" href="../../../omg.si.discrete_flow_matching_mask.html#omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DiscreteFlowMatchingMask</span><span class="p">(</span><span class="n">StochasticInterpolantSpecies</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for discrete flow matching (DFM) between categorical distributions based on https://arxiv.org/pdf/2402.04997.</span>
+
+<span class="sd">    This class is currently designed for masking base distributions p_0 for the points x_0.</span>
+
+<span class="sd">    :param noise:</span>
+<span class="sd">        Parameter scaling the noise that should be added during integration.</span>
+<span class="sd">    :type noise: float</span>
+
+<span class="sd">    :raises ValueError:</span>
+<span class="sd">        If the number of integration steps is less than or equal to 0 or the noise is less than 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DiscreteFlowMatchingMask.__init__">
+<a class="viewcode-back" href="../../../omg.si.discrete_flow_matching_mask.html#omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">noise</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct DiscreteFlowMatchingMask class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">noise</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Noise parameter must be greater than or equal to 0.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mask_index</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Real atoms start at index 1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_noise</span> <span class="o">=</span> <span class="n">noise</span></div>
+
+
+<div class="viewcode-block" id="DiscreteFlowMatchingMask.interpolate">
+<a class="viewcode-back" href="../../../omg.si.discrete_flow_matching_mask.html#omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.interpolate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                    <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t using discrete flow</span>
+<span class="sd">        matching.</span>
+
+<span class="sd">        The base points x_0 are expected to be entirely in the masked state.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Points from p_0.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Points from p_1.</span>
+<span class="sd">        :type x_1: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Interpolated points x_t, random variables z used for interpolation.</span>
+<span class="sd">        :rtype: tuple[torch.Tensor, torch.Tensor]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">x_0</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">x_1</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">x_0</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_index</span><span class="p">)</span>  <span class="c1"># Every atom should be masked in the initial state.</span>
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">x_1</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_index</span><span class="p">)</span>  <span class="c1"># No atom should be masked in the final state.</span>
+        <span class="c1"># Mask atoms based on t, see Eq. (6) in https://arxiv.org/pdf/2402.04997.</span>
+        <span class="n">x_t</span> <span class="o">=</span> <span class="n">x_0</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand_like</span><span class="p">(</span><span class="n">x_0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">t</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">t</span>
+        <span class="n">x_t</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_1</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">x_t</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x_t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DiscreteFlowMatchingMask.loss_keys">
+<a class="viewcode-back" href="../../../omg.si.discrete_flow_matching_mask.html#omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.loss_keys">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loss_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the keys of the losses returned by the loss function.</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Keys of the losses.</span>
+<span class="sd">        :rtype: Iterable[str]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">yield</span> <span class="s2">&quot;loss&quot;</span></div>
+
+
+<div class="viewcode-block" id="DiscreteFlowMatchingMask.loss">
+<a class="viewcode-back" href="../../../omg.si.discrete_flow_matching_mask.html#omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.loss">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+             <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the cross-entropy loss for the discrete flow matching between points x_0 and x_1 from two distributions</span>
+<span class="sd">        p_0 and p_1 at times t based on the model prediction for the probability distributions over the species.</span>
+
+<span class="sd">        In contrast to the other stochastic interpolants in this module, the model prediction is not the velocity fields</span>
+<span class="sd">        b and denoisers eta. Instead, only one model prediction is required. The second model prediction is ignored</span>
+<span class="sd">        in this class.</span>
+
+<span class="sd">        This class returns a single loss with the key &#39;loss&#39;.</span>
+
+<span class="sd">        Given that x_0 is of shape (sum(n_atoms),) containing the species of every atom in the batch, the model</span>
+<span class="sd">        prediction returns a tensor of shape (sum(n_atoms), MAX_ATOM_NUM) containing the probability distribution</span>
+<span class="sd">        over the species (excluding the mask with token 0) of every atom in the batch.</span>
+
+<span class="sd">        :param model_function:</span>
+<span class="sd">            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.</span>
+<span class="sd">        :type model_function: Callable[[torch.Tensor], tuple[torch.Tensor, torch.Tensor]]</span>
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Points from p_0.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Points from p_1.</span>
+<span class="sd">        :type x_1: torch.Tensor:</span>
+<span class="sd">        :param x_t:</span>
+<span class="sd">            Stochastically interpolated points x_t:</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param z:</span>
+<span class="sd">            Random variable z that was used for the stochastic interpolation to get the model prediction.</span>
+<span class="sd">        :type z: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Cross-entropy loss.</span>
+<span class="sd">        :rtype: Dict[str, torch.Tensor]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">x_0</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">x_1</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">x_0</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_index</span><span class="p">)</span>  <span class="c1"># Every atom should be masked in the initial state.</span>
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">x_1</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_index</span><span class="p">)</span>  <span class="c1"># No atom should not be masked in the final state.</span>
+        <span class="c1"># model_prediction[0][a_i, j] is the probability of atom a_i being of species j + 1.</span>
+        <span class="c1"># In order to compute the cross-entropy loss, we need to correct for the shift of the species in x_1.</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">model_function</span><span class="p">(</span><span class="n">x_t</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> 
+        <span class="k">assert</span> <span class="n">pred</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">(</span><span class="n">x_0</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">MAX_ATOM_NUM</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">functional</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">x_1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)}</span></div>
+
+
+<div class="viewcode-block" id="DiscreteFlowMatchingMask.integrate">
+<a class="viewcode-back" href="../../../omg.si.discrete_flow_matching_mask.html#omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.integrate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+                  <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                  <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Integrate the current positions x_t at the given time for the given time step based on the probability</span>
+<span class="sd">        distributions over the species.</span>
+
+<span class="sd">        In contrast to the other stochastic interpolants in this module, the model prediction is not the velocity fields</span>
+<span class="sd">        b and denoisers eta. Instead, only one model prediction is required. The second model prediction is ignored</span>
+<span class="sd">        in this class.</span>
+
+<span class="sd">        Given that x_0 is of shape (sum(n_atoms),) containing the species of every atom in the batch, the model</span>
+<span class="sd">        prediction returns a tensor of shape (sum(n_atoms), MAX_ATOM_NUM) containing the probability distribution</span>
+<span class="sd">        over the species (excluding the mask with token 0) of every atom in the batch.</span>
+
+<span class="sd">        Following https://arxiv.org/pdf/2402.04997, we construct a rate matrix R by</span>
+<span class="sd">        R(i,j|x_1) = ReLU((dp(j|x_1)/dt) - (dp(x_t|x_1)) / (S * p(x_t|x_1)),</span>
+<span class="sd">        and add noise via &quot;detailed balance&quot; rate matrices R_db (see appendix)</span>
+<span class="sd">        R_db(i,j|x_1) = eta * delta(i,x_1) + eta * delta(j, x_1) * (St + 1 - t) / (1 - t).</span>
+<span class="sd">        We adapt the code in Listing 8 in https://arxiv.org/pdf/2402.04997.</span>
+
+<span class="sd">        In addition, we discretize time instead of using a continuous time Markov process.</span>
+
+<span class="sd">        TODO: I think we should implement a continuous-time Markov process in the future.</span>
+
+<span class="sd">        TODO: We should introduce an abstract class based on the abstract functions in Listing 8. Then this should work</span>
+<span class="sd">        for arbitrary base distributions.</span>
+
+<span class="sd">        :param model_function:</span>
+<span class="sd">            Model function returning the probability distributions over the species given the current times t and</span>
+<span class="sd">            positions x_t.</span>
+<span class="sd">        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]</span>
+<span class="sd">        :param x_t:</span>
+<span class="sd">            Current positions.</span>
+<span class="sd">        :type x_t: torch.Tensor</span>
+<span class="sd">        :param time:</span>
+<span class="sd">            Initial time (0-dimensional torch tensor).</span>
+<span class="sd">        :type time: torch.Tensor</span>
+<span class="sd">        :param time_step:</span>
+<span class="sd">            Time step (0-dimensional torch tensor).</span>
+<span class="sd">        :type time_step: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Integrated position.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x_1_probs</span> <span class="o">=</span> <span class="n">functional</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">model_function</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">x_t</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Shape (sum(n_atoms), MAX_ATOM_NUM).</span>
+        <span class="n">x_1_probs</span> <span class="o">=</span> <span class="n">x_1_probs</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_ATOM_NUM</span><span class="p">))</span>
+        <span class="c1"># Sample from distribution for every of the sum(n_atoms) elements.</span>
+        <span class="c1"># Shift the atom type by one to get the real species.</span>
+        <span class="n">x_1</span> <span class="o">=</span> <span class="n">Categorical</span><span class="p">(</span><span class="n">x_1_probs</span><span class="p">)</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># Shape (sum(n_atoms),).</span>
+        <span class="c1"># Shape (sum(n_atoms),).</span>
+        <span class="n">will_unmask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">x_t</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x_t</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">time_step</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise</span> <span class="o">*</span> <span class="n">time</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">time</span><span class="p">))</span>
+        <span class="c1"># Only unmasks currently masked positions.</span>
+        <span class="n">will_unmask</span> <span class="o">=</span> <span class="n">will_unmask</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_t</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_index</span><span class="p">)</span>  <span class="c1"># Shape (sum(n_atoms),).</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">time</span> <span class="o">+</span> <span class="n">time_step</span> <span class="o">-</span> <span class="n">BIG_TIME</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">5e-3</span><span class="p">:</span>  <span class="c1"># Unmask everyone on the final step.</span>
+            <span class="n">will_unmask</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_t</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_index</span><span class="p">)</span>
+        <span class="n">will_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">x_t</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x_t</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">time_step</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise</span>  <span class="c1"># Shape (sum(n_atoms),).</span>
+        <span class="c1"># Only re-mask currently unmasked positions.</span>
+        <span class="n">will_mask</span> <span class="o">=</span> <span class="n">will_mask</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_t</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_index</span><span class="p">)</span>  <span class="c1"># Shape (sum(n_atoms),).</span>
+        <span class="n">x_t</span><span class="p">[</span><span class="n">will_unmask</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_1</span><span class="p">[</span><span class="n">will_unmask</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">time</span> <span class="o">+</span> <span class="n">time_step</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">BIG_TIME</span> <span class="o">-</span> <span class="mf">5e-3</span><span class="p">:</span>  <span class="c1"># Don&#39;t re-mask on the final step.</span>
+            <span class="n">x_t</span><span class="p">[</span><span class="n">will_mask</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mask_index</span>
+        <span class="k">return</span> <span class="n">x_t</span></div>
+
+
+<div class="viewcode-block" id="DiscreteFlowMatchingMask.uses_masked_species">
+<a class="viewcode-back" href="../../../omg.si.discrete_flow_matching_mask.html#omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.uses_masked_species">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">uses_masked_species</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Whether the stochastic interpolant uses an additional masked species.</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Whether the stochastic interpolant uses an additional masked species.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

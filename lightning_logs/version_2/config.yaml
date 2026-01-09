@@ -1,0 +1,360 @@
+# lightning.pytorch==2.5.5
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 32-true
+  logger: null
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: best_val_loss_total
+      monitor: val_loss_total
+      verbose: false
+      save_last: null
+      save_top_k: 1
+      save_on_exception: false
+      save_weights_only: true
+      mode: min
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: best_val_dng_eval
+      monitor: dng_eval
+      verbose: false
+      save_last: null
+      save_top_k: 1
+      save_on_exception: false
+      save_weights_only: true
+      mode: min
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: best_val_wdist_density
+      monitor: wdist_density
+      verbose: false
+      save_last: null
+      save_top_k: 1
+      save_on_exception: false
+      save_weights_only: true
+      mode: min
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: best_val_wdist_narity
+      monitor: wdist_narity
+      verbose: false
+      save_last: null
+      save_top_k: 1
+      save_on_exception: false
+      save_weights_only: true
+      mode: min
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: best_val_wdist_coordination_numbers
+      monitor: wdist_coordination_numbers
+      verbose: false
+      save_last: null
+      save_top_k: 1
+      save_on_exception: false
+      save_weights_only: true
+      mode: min
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: best_val_cov_precision
+      monitor: cov_precision
+      verbose: false
+      save_last: null
+      save_top_k: 1
+      save_on_exception: false
+      save_weights_only: true
+      mode: max
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: best_val_cov_recall
+      monitor: cov_recall
+      verbose: false
+      save_last: null
+      save_top_k: 1
+      save_on_exception: false
+      save_weights_only: true
+      mode: max
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: best_val_valid_rate
+      monitor: valid_rate
+      verbose: false
+      save_last: null
+      save_top_k: 1
+      save_on_exception: false
+      save_weights_only: true
+      mode: max
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      dirpath: null
+      filename: null
+      monitor: val_loss_total
+      verbose: false
+      save_last: null
+      save_top_k: -1
+      save_on_exception: false
+      save_weights_only: false
+      mode: min
+      auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: 100
+      save_on_train_epoch_end: null
+      enable_version_counter: true
+  fast_dev_run: false
+  max_epochs: 10000
+  min_epochs: null
+  max_steps: -1
+  min_steps: null
+  max_time: null
+  limit_train_batches: null
+  limit_val_batches: null
+  limit_test_batches: null
+  limit_predict_batches: null
+  overfit_batches: 0.0
+  val_check_interval: null
+  check_val_every_n_epoch: 100
+  num_sanity_val_steps: 0
+  log_every_n_steps: null
+  enable_checkpointing: null
+  enable_progress_bar: false
+  enable_model_summary: null
+  accumulate_grad_batches: 1
+  gradient_clip_val: 0.5
+  gradient_clip_algorithm: null
+  deterministic: null
+  benchmark: null
+  inference_mode: true
+  use_distributed_sampler: true
+  profiler: null
+  detect_anomaly: false
+  barebones: false
+  plugins: null
+  sync_batchnorm: false
+  reload_dataloaders_every_n_epochs: 0
+  default_root_dir: null
+  model_registry: null
+model:
+  si:
+    class_path: omg.si.StochasticInterpolants
+    init_args:
+      stochastic_interpolants:
+      - class_path: omg.si.DiscreteFlowMatchingMask
+        init_args:
+          noise: 7.080372063368751
+      - class_path: omg.si.SingleStochasticInterpolant
+        init_args:
+          interpolant:
+            class_path: omg.si.PeriodicLinearInterpolant
+          gamma: null
+          epsilon: null
+          differential_equation_type: ODE
+          integrator_kwargs:
+            method: euler
+          correct_center_of_mass_motion: true
+          velocity_annealing_factor: 13.620695525269845
+      - class_path: omg.si.SingleStochasticInterpolant
+        init_args:
+          interpolant:
+            class_path: omg.si.LinearInterpolant
+          gamma: null
+          epsilon: null
+          differential_equation_type: ODE
+          integrator_kwargs:
+            method: euler
+          correct_center_of_mass_motion: false
+          velocity_annealing_factor: 1.0679662602192312
+      data_fields:
+      - species
+      - pos
+      - cell
+      integration_time_steps: 150
+      enable_progress_bar: true
+  sampler:
+    class_path: omg.sampler.SampleFromRNG
+    init_args:
+      species_distribution:
+        class_path: omg.sampler.distributions.MaskDistribution
+        init_args:
+          token: 0
+      pos_distribution: null
+      cell_distribution:
+        class_path: omg.sampler.distributions.InformedLatticeDistribution
+        init_args:
+          dataset_name: mp_20
+      n_particle_sampler: 1
+      convert_to_fractional: true
+  model:
+    class_path: omg.model.model.Model
+    init_args:
+      encoder:
+        class_path: omg.model.encoders.cspnet_full.CSPNetFull
+        init_args:
+          hidden_dim: 512
+          latent_dim: 256
+          num_layers: 6
+          max_atoms: 100
+          act_fn: silu
+          dis_emb: sin
+          num_freqs: 128
+          edge_style: fc
+          cutoff: 7.0
+          max_neighbors: 20
+          ln: true
+          ip: true
+          pred_type: true
+          pred_scalar: false
+          am_hidden_dim: 128
+          prop_embed_dim: 32
+          prop: false
+      head:
+        class_path: omg.model.heads.pass_through.PassThrough
+      time_embedder:
+        class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+        init_args:
+          dim: 256
+      prop_embedder: null
+      property_keys: null
+  relative_si_costs:
+    species_loss: 0.021815399034596464
+    pos_loss_b: 0.9775483266595605
+    cell_loss_b: 0.0006362743058429793
+  use_min_perm_dist: true
+  generation_xyz_filename: test.xyz
+  sobol_time: false
+  float_32_matmul_precision: high
+  validation_mode: dng_eval
+  dataset_name: mp_20
+  number_cpus: 12
+data:
+  train_dataset:
+    class_path: omg.datamodule.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+          - data/mp_20/train.lmdb
+          property_keys: null
+      transform: null
+      convert_to_fractional: true
+      niggli: false
+  val_dataset:
+    class_path: omg.datamodule.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+          - data/mp_20/val.lmdb
+          property_keys: null
+      transform: null
+      convert_to_fractional: true
+      niggli: false
+  predict_dataset:
+    class_path: omg.datamodule.OMGTorchDataset
+    init_args:
+      dataset:
+        class_path: omg.datamodule.DataModule
+        init_args:
+          lmdb_paths:
+          - data/mp_20/test.lmdb
+          property_keys: null
+      transform: null
+      convert_to_fractional: true
+      niggli: false
+  batch_size: 512
+  follow_batch: null
+  exclude_keys: null
+  sampler: null
+  batch_sampler: null
+  num_workers: 0
+  pin_memory: true
+  drop_last: false
+  timeout: 0
+  worker_init_fn: null
+  multiprocessing_context: null
+  generator: null
+  prefetch_factor: null
+  persistent_workers: false
+  pin_memory_device: ''
+  in_order: true
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 0.001736512450391209
+    betas:
+    - 0.9
+    - 0.999
+    eps: 1.0e-08
+    weight_decay: 0.0
+    amsgrad: false
+    foreach: null
+    maximize: false
+    capturable: false
+    differentiable: false
+    fused: null
+    decoupled_weight_decay: false
+lr_scheduler: null
+return_predictions: null
+ckpt_path: /home/gpwolfe/OMatG/MP-20-DNG/Linear-ODE/checkpoint.ckpt

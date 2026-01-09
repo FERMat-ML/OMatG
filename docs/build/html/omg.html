@@ -1,0 +1,1008 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>omg package &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=872021ae"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=f281be69"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'omg';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">omg package</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="omg-package">
+<h1>omg package<a class="headerlink" href="#omg-package" title="Link to this heading">#</a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="omg.analysis.html">omg.analysis package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.analysis.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.analysis.analysis.html">omg.analysis.analysis module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.analysis.analysis.html#omg.analysis.analysis.get_bonds"><code class="docutils literal notranslate"><span class="pre">get_bonds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.analysis.analysis.html#omg.analysis.analysis.get_coordination_numbers"><code class="docutils literal notranslate"><span class="pre">get_coordination_numbers()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.analysis.analysis.html#omg.analysis.analysis.get_coordination_numbers_species"><code class="docutils literal notranslate"><span class="pre">get_coordination_numbers_species()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.analysis.analysis.html#omg.analysis.analysis.get_cov"><code class="docutils literal notranslate"><span class="pre">get_cov()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.analysis.analysis.html#omg.analysis.analysis.get_space_group"><code class="docutils literal notranslate"><span class="pre">get_space_group()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.analysis.analysis.html#omg.analysis.analysis.get_volume_frac"><code class="docutils literal notranslate"><span class="pre">get_volume_frac()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.analysis.analysis.html#omg.analysis.analysis.match_rmsds"><code class="docutils literal notranslate"><span class="pre">match_rmsds()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.analysis.analysis.html#omg.analysis.analysis.metre_rmsds"><code class="docutils literal notranslate"><span class="pre">metre_rmsds()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.analysis.valid_atoms.html">omg.analysis.valid_atoms module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.analysis.valid_atoms.html#omg.analysis.valid_atoms.ValidAtoms"><code class="docutils literal notranslate"><span class="pre">ValidAtoms</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="omg.analysis.html#module-omg.analysis">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="omg.datamodule.html">omg.datamodule package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.datamodule.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.datamodule.omg_data.html">omg.datamodule.omg_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.datamodule.omg_data.html#omg.datamodule.omg_data.OMGData"><code class="docutils literal notranslate"><span class="pre">OMGData</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.datamodule.omg_datamodule.html">omg.datamodule.omg_datamodule module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.datamodule.omg_datamodule.html#omg.datamodule.omg_datamodule.OMGDataModule"><code class="docutils literal notranslate"><span class="pre">OMGDataModule</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.datamodule.omg_dataset.html">omg.datamodule.omg_dataset module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.datamodule.omg_dataset.html#omg.datamodule.omg_dataset.OMGDataset"><code class="docutils literal notranslate"><span class="pre">OMGDataset</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.datamodule.structure.html">omg.datamodule.structure module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.datamodule.structure.html#omg.datamodule.structure.Structure"><code class="docutils literal notranslate"><span class="pre">Structure</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.datamodule.structure_dataset.html">omg.datamodule.structure_dataset module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.datamodule.structure_dataset.html#omg.datamodule.structure_dataset.OverfittingDataset"><code class="docutils literal notranslate"><span class="pre">OverfittingDataset</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.datamodule.structure_dataset.html#omg.datamodule.structure_dataset.StructureDataset"><code class="docutils literal notranslate"><span class="pre">StructureDataset</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="omg.datamodule.html#module-omg.datamodule">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="omg.model.html">omg.model package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.model.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.model.encoders.html">omg.model.encoders package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.model.encoders.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.model.encoders.html#module-omg.model.encoders">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.model.heads.html">omg.model.heads package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.model.heads.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.model.heads.html#module-omg.model.heads">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="omg.model.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.model.model.html">omg.model.model module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.model.model.html#omg.model.model.Model"><code class="docutils literal notranslate"><span class="pre">Model</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.model.model_utils.html">omg.model.model_utils module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.model.model_utils.html#omg.model.model_utils.AdapterModule"><code class="docutils literal notranslate"><span class="pre">AdapterModule</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.model.model_utils.html#omg.model.model_utils.SinusoidalTimeEmbeddings"><code class="docutils literal notranslate"><span class="pre">SinusoidalTimeEmbeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.model.model_utils.html#omg.model.model_utils.prop_indicator"><code class="docutils literal notranslate"><span class="pre">prop_indicator()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="omg.model.html#module-omg.model">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="omg.sampler.html">omg.sampler package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.sampler.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.sampler.abstracts.html">omg.sampler.abstracts module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.abstracts.html#omg.sampler.abstracts.CellDistribution"><code class="docutils literal notranslate"><span class="pre">CellDistribution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.abstracts.html#omg.sampler.abstracts.PositionDistribution"><code class="docutils literal notranslate"><span class="pre">PositionDistribution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.abstracts.html#omg.sampler.abstracts.SpeciesDistribution"><code class="docutils literal notranslate"><span class="pre">SpeciesDistribution</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.sampler.cell_distributions.html">omg.sampler.cell_distributions module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.cell_distributions.html#omg.sampler.cell_distributions.InformedLatticeDistribution"><code class="docutils literal notranslate"><span class="pre">InformedLatticeDistribution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.cell_distributions.html#omg.sampler.cell_distributions.MirrorCell"><code class="docutils literal notranslate"><span class="pre">MirrorCell</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.cell_distributions.html#omg.sampler.cell_distributions.NormalCellDistribution"><code class="docutils literal notranslate"><span class="pre">NormalCellDistribution</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.sampler.independent_sampler.html">omg.sampler.independent_sampler module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.independent_sampler.html#omg.sampler.independent_sampler.IndependentSampler"><code class="docutils literal notranslate"><span class="pre">IndependentSampler</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.sampler.minimum_permutation_distance.html">omg.sampler.minimum_permutation_distance module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.minimum_permutation_distance.html#omg.sampler.minimum_permutation_distance.correct_for_minimum_permutation_distance"><code class="docutils literal notranslate"><span class="pre">correct_for_minimum_permutation_distance()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.sampler.position_distributions.html">omg.sampler.position_distributions module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.position_distributions.html#omg.sampler.position_distributions.MirrorPosition"><code class="docutils literal notranslate"><span class="pre">MirrorPosition</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.position_distributions.html#omg.sampler.position_distributions.NormalPositionDistribution"><code class="docutils literal notranslate"><span class="pre">NormalPositionDistribution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.position_distributions.html#omg.sampler.position_distributions.SobolSequence"><code class="docutils literal notranslate"><span class="pre">SobolSequence</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.position_distributions.html#omg.sampler.position_distributions.UniformPositionDistribution"><code class="docutils literal notranslate"><span class="pre">UniformPositionDistribution</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.sampler.sampler.html">omg.sampler.sampler module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.sampler.html#omg.sampler.sampler.Sampler"><code class="docutils literal notranslate"><span class="pre">Sampler</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.sampler.species_distributions.html">omg.sampler.species_distributions module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.species_distributions.html#omg.sampler.species_distributions.MaskSpeciesDistribution"><code class="docutils literal notranslate"><span class="pre">MaskSpeciesDistribution</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.species_distributions.html#omg.sampler.species_distributions.MirrorSpecies"><code class="docutils literal notranslate"><span class="pre">MirrorSpecies</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.sampler.species_distributions.html#omg.sampler.species_distributions.UniformSpeciesDistribution"><code class="docutils literal notranslate"><span class="pre">UniformSpeciesDistribution</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="omg.sampler.html#module-omg.sampler">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="omg.si.html">omg.si package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.si.html#submodules">Submodules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.abstracts.html">omg.si.abstracts module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.abstracts.html#omg.si.abstracts.Corrector"><code class="docutils literal notranslate"><span class="pre">Corrector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.abstracts.html#omg.si.abstracts.Epsilon"><code class="docutils literal notranslate"><span class="pre">Epsilon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.abstracts.html#omg.si.abstracts.Interpolant"><code class="docutils literal notranslate"><span class="pre">Interpolant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.abstracts.html#omg.si.abstracts.LatentGamma"><code class="docutils literal notranslate"><span class="pre">LatentGamma</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.abstracts.html#omg.si.abstracts.Sigma"><code class="docutils literal notranslate"><span class="pre">Sigma</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolant"><code class="docutils literal notranslate"><span class="pre">StochasticInterpolant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolantSpecies"><code class="docutils literal notranslate"><span class="pre">StochasticInterpolantSpecies</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.abstracts.html#omg.si.abstracts.Tau"><code class="docutils literal notranslate"><span class="pre">Tau</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.abstracts.html#omg.si.abstracts.TimeChecker"><code class="docutils literal notranslate"><span class="pre">TimeChecker</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.corrector.html">omg.si.corrector module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.corrector.html#omg.si.corrector.IdentityCorrector"><code class="docutils literal notranslate"><span class="pre">IdentityCorrector</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.corrector.html#omg.si.corrector.PeriodicBoundaryConditionsCorrector"><code class="docutils literal notranslate"><span class="pre">PeriodicBoundaryConditionsCorrector</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.discrete_flow_matching_mask.html">omg.si.discrete_flow_matching_mask module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.discrete_flow_matching_mask.html#omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask"><code class="docutils literal notranslate"><span class="pre">DiscreteFlowMatchingMask</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.discrete_flow_matching_uniform.html">omg.si.discrete_flow_matching_uniform module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.discrete_flow_matching_uniform.html#omg.si.discrete_flow_matching_uniform.DiscreteFlowMatchingUniform"><code class="docutils literal notranslate"><span class="pre">DiscreteFlowMatchingUniform</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.epsilon.html">omg.si.epsilon module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.epsilon.html#omg.si.epsilon.ConstantEpsilon"><code class="docutils literal notranslate"><span class="pre">ConstantEpsilon</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.epsilon.html#omg.si.epsilon.VanishingEpsilon"><code class="docutils literal notranslate"><span class="pre">VanishingEpsilon</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.gamma.html">omg.si.gamma module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.gamma.html#omg.si.gamma.LatentGammaEncoderDecoder"><code class="docutils literal notranslate"><span class="pre">LatentGammaEncoderDecoder</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.gamma.html#omg.si.gamma.LatentGammaSqrt"><code class="docutils literal notranslate"><span class="pre">LatentGammaSqrt</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.interpolants.html">omg.si.interpolants module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.EncoderDecoderInterpolant"><code class="docutils literal notranslate"><span class="pre">EncoderDecoderInterpolant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.LinearInterpolant"><code class="docutils literal notranslate"><span class="pre">LinearInterpolant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.MirrorInterpolant"><code class="docutils literal notranslate"><span class="pre">MirrorInterpolant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.PeriodicEncoderDecoderInterpolant"><code class="docutils literal notranslate"><span class="pre">PeriodicEncoderDecoderInterpolant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.PeriodicLinearInterpolant"><code class="docutils literal notranslate"><span class="pre">PeriodicLinearInterpolant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.PeriodicMirrorInterpolant"><code class="docutils literal notranslate"><span class="pre">PeriodicMirrorInterpolant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.PeriodicScoreBasedDiffusionModelInterpolantVE"><code class="docutils literal notranslate"><span class="pre">PeriodicScoreBasedDiffusionModelInterpolantVE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.PeriodicScoreBasedDiffusionModelInterpolantVP"><code class="docutils literal notranslate"><span class="pre">PeriodicScoreBasedDiffusionModelInterpolantVP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.PeriodicTrigonometricInterpolant"><code class="docutils literal notranslate"><span class="pre">PeriodicTrigonometricInterpolant</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.ScoreBasedDiffusionModelInterpolantVE"><code class="docutils literal notranslate"><span class="pre">ScoreBasedDiffusionModelInterpolantVE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.ScoreBasedDiffusionModelInterpolantVP"><code class="docutils literal notranslate"><span class="pre">ScoreBasedDiffusionModelInterpolantVP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.interpolants.html#omg.si.interpolants.TrigonometricInterpolant"><code class="docutils literal notranslate"><span class="pre">TrigonometricInterpolant</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.sigma.html">omg.si.sigma module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.sigma.html#omg.si.sigma.GeometricSigma"><code class="docutils literal notranslate"><span class="pre">GeometricSigma</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.single_stochastic_interpolant.html">omg.si.single_stochastic_interpolant module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.single_stochastic_interpolant.html#omg.si.single_stochastic_interpolant.DifferentialEquationType"><code class="docutils literal notranslate"><span class="pre">DifferentialEquationType</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.single_stochastic_interpolant.html#omg.si.single_stochastic_interpolant.SingleStochasticInterpolant"><code class="docutils literal notranslate"><span class="pre">SingleStochasticInterpolant</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.single_stochastic_interpolant_identity.html">omg.si.single_stochastic_interpolant_identity module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.single_stochastic_interpolant_identity.html#omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity"><code class="docutils literal notranslate"><span class="pre">SingleStochasticInterpolantIdentity</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.single_stochastic_interpolant_os.html">omg.si.single_stochastic_interpolant_os module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.single_stochastic_interpolant_os.html#omg.si.single_stochastic_interpolant_os.SingleStochasticInterpolantOS"><code class="docutils literal notranslate"><span class="pre">SingleStochasticInterpolantOS</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.stochastic_interpolants.html">omg.si.stochastic_interpolants module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.stochastic_interpolants.html#omg.si.stochastic_interpolants.StochasticInterpolants"><code class="docutils literal notranslate"><span class="pre">StochasticInterpolants</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.si.tau.html">omg.si.tau module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.tau.html#omg.si.tau.TauConstantSchedule"><code class="docutils literal notranslate"><span class="pre">TauConstantSchedule</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.tau.html#omg.si.tau.TauCosineSchedule"><code class="docutils literal notranslate"><span class="pre">TauCosineSchedule</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.si.tau.html#omg.si.tau.TauLinearSchedule"><code class="docutils literal notranslate"><span class="pre">TauLinearSchedule</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="omg.si.html#module-omg.si">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="omg.globals.html">omg.globals module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.globals.html#omg.globals.BIG_TIME"><code class="docutils literal notranslate"><span class="pre">BIG_TIME</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="omg.globals.html#omg.globals.MAX_ATOM_NUM"><code class="docutils literal notranslate"><span class="pre">MAX_ATOM_NUM</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="omg.globals.html#omg.globals.SMALL_TIME"><code class="docutils literal notranslate"><span class="pre">SMALL_TIME</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="omg.main.html">omg.main module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.main.html#omg.main.ListDatasetsAction"><code class="docutils literal notranslate"><span class="pre">ListDatasetsAction</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="omg.main.html#omg.main.load"><code class="docutils literal notranslate"><span class="pre">load()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="omg.main.html#omg.main.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="omg.omg_cli.html">omg.omg_cli module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.omg_cli.html#omg.omg_cli.OMGCLI"><code class="docutils literal notranslate"><span class="pre">OMGCLI</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_cli.html#omg.omg_cli.OMGCLI.__init__"><code class="docutils literal notranslate"><span class="pre">OMGCLI.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_cli.html#omg.omg_cli.OMGCLI.add_arguments_to_parser"><code class="docutils literal notranslate"><span class="pre">OMGCLI.add_arguments_to_parser()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_cli.html#omg.omg_cli.OMGCLI.subcommands"><code class="docutils literal notranslate"><span class="pre">OMGCLI.subcommands()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="omg.omg_lightning.html">omg.omg_lightning module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning"><code class="docutils literal notranslate"><span class="pre">OMGLightning</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.ValidationMetric"><code class="docutils literal notranslate"><span class="pre">OMGLightning.ValidationMetric</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.ValidationMetric.DNG_EVAL"><code class="docutils literal notranslate"><span class="pre">OMGLightning.ValidationMetric.DNG_EVAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.ValidationMetric.LOSS"><code class="docutils literal notranslate"><span class="pre">OMGLightning.ValidationMetric.LOSS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.ValidationMetric.MATCH_RATE"><code class="docutils literal notranslate"><span class="pre">OMGLightning.ValidationMetric.MATCH_RATE</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.__init__"><code class="docutils literal notranslate"><span class="pre">OMGLightning.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.allow_zero_length_dataloader_with_multiple_devices"><code class="docutils literal notranslate"><span class="pre">OMGLightning.allow_zero_length_dataloader_with_multiple_devices</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.on_validation_epoch_end"><code class="docutils literal notranslate"><span class="pre">OMGLightning.on_validation_epoch_end()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.on_validation_epoch_start"><code class="docutils literal notranslate"><span class="pre">OMGLightning.on_validation_epoch_start()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.predict_step"><code class="docutils literal notranslate"><span class="pre">OMGLightning.predict_step()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.prepare_data_per_node"><code class="docutils literal notranslate"><span class="pre">OMGLightning.prepare_data_per_node</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.training"><code class="docutils literal notranslate"><span class="pre">OMGLightning.training</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.training_step"><code class="docutils literal notranslate"><span class="pre">OMGLightning.training_step()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_lightning.html#omg.omg_lightning.OMGLightning.validation_step"><code class="docutils literal notranslate"><span class="pre">OMGLightning.validation_step()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="omg.omg_trainer.html">omg.omg_trainer module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.omg_trainer.html#omg.omg_trainer.OMGTrainer"><code class="docutils literal notranslate"><span class="pre">OMGTrainer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_trainer.html#omg.omg_trainer.OMGTrainer.__init__"><code class="docutils literal notranslate"><span class="pre">OMGTrainer.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_trainer.html#omg.omg_trainer.OMGTrainer.create_compositions"><code class="docutils literal notranslate"><span class="pre">OMGTrainer.create_compositions()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_trainer.html#omg.omg_trainer.OMGTrainer.csp_metrics"><code class="docutils literal notranslate"><span class="pre">OMGTrainer.csp_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_trainer.html#omg.omg_trainer.OMGTrainer.dng_metrics"><code class="docutils literal notranslate"><span class="pre">OMGTrainer.dng_metrics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_trainer.html#omg.omg_trainer.OMGTrainer.fit_lattice"><code class="docutils literal notranslate"><span class="pre">OMGTrainer.fit_lattice()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.omg_trainer.html#omg.omg_trainer.OMGTrainer.visualize"><code class="docutils literal notranslate"><span class="pre">OMGTrainer.visualize()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="omg.utils.html">omg.utils module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="omg.utils.html#omg.utils.DataField"><code class="docutils literal notranslate"><span class="pre">DataField</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.utils.html#omg.utils.DataField.cell"><code class="docutils literal notranslate"><span class="pre">DataField.cell</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.utils.html#omg.utils.DataField.pos"><code class="docutils literal notranslate"><span class="pre">DataField.pos</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.utils.html#omg.utils.DataField.species"><code class="docutils literal notranslate"><span class="pre">DataField.species</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="omg.utils.html#omg.utils.StandardScaler"><code class="docutils literal notranslate"><span class="pre">StandardScaler</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="omg.utils.html#omg.utils.StandardScaler.__init__"><code class="docutils literal notranslate"><span class="pre">StandardScaler.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.utils.html#omg.utils.StandardScaler.fit"><code class="docutils literal notranslate"><span class="pre">StandardScaler.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.utils.html#omg.utils.StandardScaler.inverse_transform"><code class="docutils literal notranslate"><span class="pre">StandardScaler.inverse_transform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="omg.utils.html#omg.utils.StandardScaler.transform"><code class="docutils literal notranslate"><span class="pre">StandardScaler.transform()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="omg.utils.html#omg.utils.convert_ase_atoms_to_data"><code class="docutils literal notranslate"><span class="pre">convert_ase_atoms_to_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="omg.utils.html#omg.utils.reshape_t"><code class="docutils literal notranslate"><span class="pre">reshape_t()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="omg.utils.html#omg.utils.xyz_reader"><code class="docutils literal notranslate"><span class="pre">xyz_reader()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="omg.utils.html#omg.utils.xyz_saver"><code class="docutils literal notranslate"><span class="pre">xyz_saver()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="module-omg">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-omg" title="Link to this heading">#</a></h2>
+<p>Version information for the omg package.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#subpackages">Subpackages</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#submodules">Submodules</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-omg">Module contents</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/omg.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

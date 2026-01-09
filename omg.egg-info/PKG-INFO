@@ -1,0 +1,628 @@
+Metadata-Version: 2.4
+Name: omg
+Version: 1.2.1
+Requires-Python: <3.14,>=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+License-File: AUTHORS.md
+Requires-Dist: numpy~=2.3
+Requires-Dist: scipy~=1.16
+Requires-Dist: torch~=2.8
+Requires-Dist: lightning[extra]~=2.5
+Requires-Dist: jsonargparse==4.41
+Requires-Dist: torch_geometric~=2.7
+Requires-Dist: torch_scatter~=2.1
+Requires-Dist: torchdiffeq~=0.2
+Requires-Dist: torchsde~=0.2
+Requires-Dist: lmdb~=1.6
+Requires-Dist: loguru~=0.7
+Requires-Dist: ase~=3.25
+Requires-Dist: pytest~=8.4
+Requires-Dist: tqdm~=4.67
+Requires-Dist: smact~=3.1
+Requires-Dist: wandb~=0.20
+Requires-Dist: scikit-learn~=1.7
+Requires-Dist: matplotlib~=3.10
+Requires-Dist: pymatgen~=2025.6
+Requires-Dist: spglib~=2.6
+Requires-Dist: pyyaml~=6.0
+Requires-Dist: matminer~=0.9
+Requires-Dist: huggingface_hub~=1.2
+Requires-Dist: pyarrow~=22.0
+Dynamic: license-file
+
+# Open Materials Generation (OMatG)
+
+[![Static Badge](https://img.shields.io/badge/ICML_2025-OpenReview.net-811913?labelColor=222529)](https://openreview.net/forum?id=gHGrzxFujU)
+[![arXiv](https://img.shields.io/badge/arXiv-2502.02582-maroon)](https://arxiv.org/abs/2502.02582)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face%20Checkpoints-FFD21E?logo=huggingface&logoColor=000)](https://huggingface.co/OMatG)
+
+[![Static Badge](https://img.shields.io/badge/NeurIPS_2025-OpenReview.net-811913?labelColor=222529)](https://openreview.net/forum?id=ig9ujp50D4)
+[![arXiv](https://img.shields.io/badge/arXiv-2509.12178-maroon)](https://arxiv.org/abs/2509.12178)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face%20Datasets-FFD21E?logo=huggingface&logoColor=000)](https://huggingface.co/collections/colabfit/datasets-all-that-structure-matches-does-not-glitter)
+
+[![Python](https://img.shields.io/badge/python-3.11--3.13-blue?logo=python)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.8-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Lightning](https://img.shields.io/badge/-Lightning-792ee5?logo=pytorchlightning&logoColor=white)](https://github.com/Lightning-AI/lightning)
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![Static Badge](https://img.shields.io/badge/Version-1.2.1-blue)
+
+A state-of-the-art generative model for crystal structure prediction and *de novo* generation of inorganic crystals. 
+This open-source framework accompanies the [ICML 2025 paper](https://openreview.net/forum?id=gHGrzxFujU) about the 
+generative model itself (expanded version available on [arXiv](https://arxiv.org/abs/2502.02582)), and the 
+[NeurIPS 2025 paper](https://openreview.net/forum?id=ig9ujp50D4) about newly introduced benchmark metrics and datasets 
+(expanded version available on [arXiv](https://arxiv.org/abs/2509.12178)). 
+These papers should be [cited](#citing-omatg) when using OMatG or the newly introduced benchmark metrics and datasets. 
+
+#### Crystal structure prediction of GaTe:
+
+<img src="assets/csp_movie.gif" alt="csp movie" width="60%">
+
+#### *De novo* generation of Pd<sub>3</sub>Te<sub>2</sub>I<sub>3</sub>:
+
+<img src="assets/dng_movie.gif" alt="dng movie" width="60%">
+
+## Table of Contents
+
+- [Overview.](#overview)
+- [Installation.](#installation)
+- [Datasets.](#datasets)
+- [Training.](#training)
+- [Generation.](#generation)
+- [Visualization.](#visualization)
+- [Crystal Structure Prediction Metrics.](#crystal-structure-prediction-metrics)
+- [*De Novo* Generation Metrics.](#de-novo-generation-metrics)
+- [Citing OMatG.](#citing-omatg)
+
+## Overview
+
+OMatG supports two crystal generation modes:
+1. Crystal structure prediction (CSP): Here, the atomic species are fixed during generation and only the fractional 
+   coordinates and lattice vectors are adapted to yield a stable crystal structure for the given composition.
+2. *De novo* generation (DNG): At the start of the generation, all atomic species are masked or randomly sampled. 
+   During the generation process, the species change together with the lattice vectors and fractional coordinates to 
+   yield a stable crystal structure.
+
+OMatG leverages the 
+[command line interface of PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/cli/lightning_cli.html#lightning-cli) 
+for choosing the crystal generation mode, the interpolants, the dataset, and other hyperparameters. Typically, we 
+recommend to use YAML files to store configurations (and sparsely use individual command line arguments to override some 
+of the configuration parameters). This allows for easy reproducibility and sharing of configurations.
+
+The [```omg/conf_examples```](omg/conf_examples) directory contains some example configuration files. In 
+addition, we provide pretrained checkpoints of the models presented in the paper together with their configuration files
+on [Hugging Face](https://huggingface.co/OMatG).
+
+A tutorial notebook for using OMatG including short exercises is available on 
+[Kaggle](https://www.kaggle.com/code/philipphoellmer/generative-modeling-workshop-session-crystals) (solutions can be 
+found [here](https://www.kaggle.com/code/philipphoellmer/generative-modeling-workshop-session-crystals-sol)). Note that 
+this notebook is part of a more general workshop on generative modeling and thus refers to generative models for 
+fashion pieces. The relevant beginner-friendly notebook that introduces generative modeling with short coding exercises
+is also available on [Kaggle](https://www.kaggle.com/code/philipphoellmer/generative-modeling-workshop-session-fashion) 
+(with solutions [here](https://www.kaggle.com/code/philipphoellmer/generative-modeling-workshop-session-fashion-sols)).
+
+A tutorial notebook providing a crystallography primer is available on 
+[Kaggle](https://www.kaggle.com/code/mayamartirossyan/crystal-representations-primer). This primer is in particular 
+relevant for the newly introduced benchmark metrics and datasets.
+
+<details>
+<summary><b>Expand this section for a brief introduction to the theoretical background of OMatG.</b></summary>
+
+### Theoretical Background
+
+OMatG implements the [stochastic interpolants (SIs) framework](https://arxiv.org/abs/2303.08797) for the modeling and 
+generation of inorganic crystalline materials. SIs are a unifying framework for generative modeling that encompasses 
+flow-matching and diffusion-based methods as specific instances, while offering a more general and flexible approach 
+enabling the design of a broad class of novel generative models. 
+
+A stochastic interpolant $x_t = x(t, x_0, x_1, z)=\alpha(t)\,x_0 + \beta(t)\,x_1 + \gamma(t)\,z$ bridges samples $x_0$ 
+from a (trivial) base distribution to samples $x_1$ from the target data distribution. Here, $t\in[0, 1]$ represents 
+time and the random variable $z$ is drawn from a Gaussian distribution. The functional forms of $\alpha$, $\beta$, and 
+$\gamma$ are flexible, only subject to a few constraints that, amongst other things, ensure that 
+$x(t=0, x_0, x_1, z) = x_0$ and $x(t=1, x_0, x_1, z) = x_1$. 
+
+The time-dependent probability density of the stochastic process $x_t$ can be realized either *via* deterministic 
+sampling through an ordinary differential equation (ODE) or stochastic sampling through a stochastic differential 
+equation (SDE), only requiring a sample $x_0$ from the base distribution. This enables generative modeling by evolving 
+samples from the base distribution to samples from the data distribution. Here, the required velocity term 
+$b^\theta(t, x)$ for both ODE- and SDE-based sampling can be learned from data by "averaging over many paired samples 
+($x_0, x_1$)." For SDE-based sampling, an additional denoiser $z^\theta(t, x)$ can be learned likewise.
+
+The flexibility of the SI framework stems from the 
+ability to tailor the choice of interpolants and choosing between deterministic (ODE) and stochastic (SDE) sampling 
+schemes (see Fig. 1 that visualizes the tunable components of the SI framework for bridging samples from a 
+base distribution (gray particles) to samples from a target distribution (purple particles); figure taken from the 
+<a href="https://openreview.net/forum?id=gHGrzxFujU">OMatG paper</a>.). 
+
+<figure>
+    <img src="https://arxiv.org/html/2502.02582v1/x1.png" alt="stochastic interpolants" width="400">
+</figure>
+
+OMatG defines a crystalline material of $N$ atoms by its unit cell that is described by three lattice vectors 
+$\mathbf{L} \in \mathbb{R}^{3\times3}$, $N$ fractional coordinates $\mathbf{X}\in[0,1)^{3\times N}$ with periodic 
+boundary conditions, and $N$ discrete atomic species $\mathbf{A}\in\mathbb{Z}^N_{>0}$. During training an generation, 
+all three components $\{\mathbf{A}, \mathbf{X}, \mathbf{L}\}$ are considered simultaneously. The SI framework is applied
+to the continuous structural representations $\{\mathbf{X}, \mathbf{L}\}$ while the discrete atomic species $\mathbf{A}$
+are treated with [discrete flow matching](https://arxiv.org/abs/2402.04997).
+
+</details>
+
+<details>
+<summary><b>Expand this section for tips on how to set up new configuration files.</b></summary>
+
+### Configuration Files
+
+Machine-learning models implemented with PyTorch Lightning rely on three essential parts:
+
+1. `Trainer`: The training engine.
+2. `LightningDataModule`: Handles data loading and preprocessing.
+3. `LightningModule`: Defines the model and training logic.
+
+Configuration files of OMatG thus generally contain specifications for these three parts.
+
+#### Trainer
+
+OMatG uses the standard [PyTorch Lightning Trainer](https://lightning.ai/docs/pytorch/stable/common/trainer.html). Its
+parameters are specified in the `trainer` section of the configuration file, for example:
+
+```yaml
+trainer:
+  callbacks:  # List of callbacks to be used during training.
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: "best_val_loss_total"
+        save_top_k: 1
+        monitor: "val_loss_total"
+        save_weights_only: true
+  accelerator: "gpu"
+  gradient_clip_val: 0.5
+  gradient_clip_algorithm: "value"
+  num_sanity_val_steps: 0
+  precision: "32-true"
+  max_epochs: 2000
+  enable_progress_bar: true
+```
+
+Note that it is possible to initialize specialized classes in the configuration file by specifying the `class_path` and 
+`init_args`. The `init_args` dictionary contains the arguments that are passed to the constructor of the class.
+
+In addition to the trainer, one should specify the optimizer and (optionally) the learning rate scheduler in their own 
+sections: 
+
+```yaml
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 0.001
+    weight_decay: 0.01
+lr_scheduler:
+  class_path: torch.optim.lr_scheduler.CosineAnnealingLR
+  init_args:
+    T_max: 2000
+    eta_min: 1e-07
+```
+
+#### LightingDataModule
+
+The `data` section of the configuration constructs the `OMGDataModule` (see 
+[```omg/datamodule/omg_datamodule.py```](omg/datamodule/omg_datamodule.py)). It mainly expects the 
+`train_dataset`, `val_dataset`, and `pred_dataset` sections. Each of these sections should construct an 
+`StructureDataset` (see [```omg/datamodule/structure_dataset.py```](omg/datamodule/structure_dataset.py)). This can be 
+done based on [LMDB](https://lmdb.readthedocs.io/en/release/) or CSV files:
+
+```yaml
+data:
+  train_dataset:
+    class_path: omg.datamodule.StructureDataset
+    init_args:
+      file_path: "data/mp_20/train.lmdb"
+      lazy_storage: True
+      niggli_reduce: False  # Apply ASE's Niggli reduction to all structures.
+  val_dataset:
+    class_path: omg.datamodule.StructureDataset
+    init_args:
+      file_path: "data/mp_20/val.lmdb"
+      lazy_storage: True
+      niggli_reduce: False  # Apply ASE's Niggli reduction to all structures.
+  pred_dataset:
+    class_path: omg.datamodule.StructureDataset
+    init_args:
+      file_path: "data/mp_20/test.lmdb"
+      lazy_storage: True
+      niggli_reduce: False  # Apply ASE's Niggli reduction to all structures.
+  batch_size: 32
+  num_workers: 4
+  pin_memory: True
+  persistent_workers: True
+```
+
+Every record in the LMDB files should contain a crystal structure. The key of each record is assumed to be an 
+(arbitrary) encoded string, while the value is assumed to be a pickled dictionary with, at least, the following keys:
+- `pos`: A `torch.Tensor` of shape `(N, 3)` containing the Cartesian coordinates of the atoms in the crystal structure.
+- `cell`: A `torch.Tensor` of shape `(3, 3)` containing the lattice vectors of the crystal structure.
+- `atomic_numbers`: A `torch.Tensor` of shape `(N,)` containing the atomic numbers of the atoms in the crystal 
+   structure.
+
+CSV files should contain a `cif` column with the CIF representation of the structures. This will be used to infer the 
+cell, atomic numbers, and positions of the structures.
+
+For large datasets, it is possible to read the structures lazily from disk by setting `lazy_storage: True` in the
+`init_args` of the respective dataset section. In this case, the structures are only read from disk when they are
+accessed. CSV files are converted to lmdb files in this case for faster access.
+
+The `data` section can also contain additional parameters for the data loading (such as `batch_size`, `num_workers`,
+`pin_memory`, and `persistent_workers` in the above example). These parameters are passed to the underlying 
+[PyTorch `DataLoader`](https://docs.pytorch.org/docs/stable/data.html) instances.
+
+Within OMatG, the data is passed around as `torch_geometric.data.Data` instances. For a batch size of `batch_size`, 
+these instances contain the following attributes:
+- `n_atoms`: `torch.Tensor` of shape `(batch_size, )` containing the number of atoms in each configuration.
+- `batch`: `torch.Tensor` of shape `(sum(n_atoms),)` containing the index of the configuration to which each atom 
+belongs.
+- `species`: `torch.Tensor` of shape `(sum(n_atoms),)` containing the atomic numbers of the atoms in the configurations.
+- `pos`: `torch.Tensor` of shape `(sum(n_atoms), 3)` containing the atomic positions of the atoms in the configurations.
+- `cell`: `torch.Tensor` of shape `(batch_size, 3, 3)` containing the cell vectors of the configurations.
+- `ptr`: `torch.Tensor` of shape `(batch_size + 1,)` containing the indices of the first atom of each configuration in 
+the `species` and `pos` tensors.
+- `property`: dict containing the properties of the configurations.
+
+#### LightningModule
+
+The `model` section of the configuration file constructs the `OMGLightningModule` (see 
+[```omg/omg_lightning.py```](omg/omg_lightning.py)). Its arguments are documented in the class docstring.
+An example `model` section looks as follows:
+
+```yaml
+model:
+  si:  # Collection of stochastic interpolants.
+    class_path: omg.si.stochastic_interpolants.StochasticInterpolants
+    init_args:
+      stochastic_interpolants:
+        # Chemical species.
+        # The SingleStochasticInterpolantIdentity keeps the species unchanged during interpolation (CSP task).
+        # For DNG, use, e.g., omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask.
+        - class_path: omg.si.single_stochastic_interpolant_identity.SingleStochasticInterpolantIdentity
+        # Fractional coordinates.
+        - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
+          init_args:
+            # Use a periodic interpolant for fractional coordinates.
+            interpolant: omg.si.interpolants.PeriodicLinearInterpolant
+            gamma: null
+            epsilon: null
+            differential_equation_type: "ODE"
+            integrator_kwargs:
+              method: "euler"
+            velocity_annealing_factor: 10.182659004291072
+            correct_center_of_mass_motion: true
+        # Lattice vectors.
+        - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
+          init_args:
+            # Use a non-periodic interpolant for lattice vectors.
+            interpolant: omg.si.interpolants.LinearInterpolant
+            gamma: null
+            epsilon: null
+            differential_equation_type: "ODE"
+            integrator_kwargs:
+              method: "euler"
+            velocity_annealing_factor: 1.824475401606087
+            correct_center_of_mass_motion: false
+      data_fields:
+        # If the order of the data_fields changes,
+        # the order of the above StochasticInterpolant inputs must also change.
+        - "species"
+        - "pos"
+        - "cell"
+      integration_time_steps: 1000
+  relative_si_costs:
+    species_loss: 0.0
+    pos_loss_b: 0.999
+    cell_loss_b: 0.001
+  sampler:
+    class_path: omg.sampler.IndependentSampler
+    init_args:
+      pos_distribution:
+        class_path: omg.sampler.position_distributions.UniformPositionDistribution
+      cell_distribution:
+        class_path: omg.sampler.cell_distributions.InformedLatticeDistribution
+        init_args:
+          dataset_name: mp_20
+      species_distribution:
+        class_path: omg.sampler.species_distributions.MirrorSpecies
+  model:
+    class_path: omg.model.model.Model
+    init_args:
+      encoder:
+        class_path: omg.model.encoders.cspnet_full.CSPNetFull
+      head:
+        class_path: omg.model.heads.pass_through.PassThrough
+      time_embedder:
+        class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+        init_args:
+          dim: 256
+```
+
+The `si` section combines the stochastic interpolants for the `species`, `pos`, and `cell` data fields of the crystal
+structures in the [`StochasticInterpolants`](omg/si/stochastic_interpolants.py) class. 
+This class is documented in its docstring but, in a nutshell, it is a container for multiple 
+[`StochasticInterpolant`](omg/si/abstracts.py) instances. The typically used implementations of this abstract class are:
+- [`SingleStochasticInterpolant`](omg/si/single_stochastic_interpolant.py): For continuous data fields such as 
+  fractional coordinates and lattice vectors with arbitrary base distributions. The specific interpolant and its 
+  parameters are specified on initialization of this class. Every interpolant has a periodic (for fractional 
+  coordinates) and a non-periodic (for lattice vectors) version.
+- [`SingleStochasticInterpolantOS`](omg/si/single_stochastic_interpolant_os.py): For continuous data fields such as 
+ fractional coordinates and lattice vectors, but explicitly assuming a Gaussian base distribution as it implements 
+ one-sided stochastic interpolants.
+- [`SingleStochasticInterpolantIdentity`](omg/si/single_stochastic_interpolant_identity.py): For keeping the 
+  corresponding data field unchanged during interpolation and generation.
+- [`DiscreteFlowMatchingMask`](omg/si/discrete_flow_matching_mask.py): For discrete data fields such as atomic species 
+  with a completely masked base distribution.
+- [`DiscreteFlowMatchingUniform`](omg/si/discrete_flow_matching_uniform.py): For discrete data fields such as atomic 
+  species with a uniform base distribution.
+
+Every `StochasticInterpolant` in the `StochasticInterpolants` class computes losses and returns them in a 
+dictionary (see the `loss_keys` method in the respective class). The `StochasticInterpolants` class prefixes these keys 
+with the name of the corresponding data field so that the losses can be identified. The `relative_si_costs` section 
+specifies the relative weights of these losses when they are added up during training. 
+
+The `sampler` section specifies the base distributions for the positions, lattice vectors, and atomic species. Depending
+on the choice of the stochastic interpolant, one should choose the matching base distribution:
+- [`SingleStochasticInterpolant`](omg/si/single_stochastic_interpolant.py): The choice of the base distribution is 
+  arbitrary. As in the example above, we typically use a uniform distribution for the fractional coordinates and an
+  informed base distribution for the lattice vectors.
+- [`SingleStochasticInterpolantOS`](omg/si/single_stochastic_interpolant_os.py): Explicitly assumes a normal base distribution.
+- [`SingleStochasticInterpolantIdentity`](omg/si/single_stochastic_interpolant_identity.py): Explicitly assumes that
+  the training data is just taken over in the "random" sample as implemented by the mirror distributions.
+- [`DiscreteFlowMatchingMask`](omg/si/discrete_flow_matching_mask.py): Explicitly assumes fully masked samples as the
+  base distribution as implemented in the [`MaskSpeciesDistribution`](omg/sampler/species_distributions.py).
+- [`DiscreteFlowMatchingUniform`](omg/si/discrete_flow_matching_uniform.py): Explicitly assumes uniformly distributed
+  atomic species as the base distribution as implemented in the 
+  [`UniformSpeciesDistribution`](omg/sampler/species_distributions.py).
+
+The `model` section specifies the model architecture. In the above example, we just use DiffCSPNet.
+
+</details>
+
+## Installation
+
+Install the dependencies (see [pyproject.toml](pyproject.toml)) and the `omg` package itself by running 
+`pip install .` within the base directory of this repository. For editable mode (recommended for developers), use 
+`pip install -e .` instead. You can use any Python version between 3.11 and 3.13. 
+
+If the code in this repository changes, the command `pip install .` has to be executed again to also 
+change the code of the installed package. If you installed `omg` in editable mode, any changes in code are directly 
+available in the installed `omg` package.
+
+> **NOTE**: Installing PyTorch 2.8 based on the correct compute platform as described on the 
+> [PyTorch webpage](https://pytorch.org/get-started/locally/) before installing `omg` can help minimize sources of 
+> installation errors. The same applies to 
+> [PyG 2.7](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html) and 
+> [PyTorch Scatter 2.1](https://github.com/rusty1s/pytorch_scatter?tab=readme-ov-file).
+
+Installing the `omg` package as described above provides the `omg` command for training, generation, and evaluation.
+
+## Datasets
+
+### Included Datasets
+
+For convenience, we include several standard material datasets that can be used for training. They can be found as 
+LMDB files in the [```omg/data```](omg/data) directory and are described briefly below:
+
+- *MP-20*: 45,229 structures from the [Materials Project](https://pubs.aip.org/aip/apm/article/1/1/011002/119685/Commentary-The-Materials-Project-A-materials) with a maximum of 20 atoms per structure.
+- *MPTS-52*: [Chronological data split of the Materials Project](https://joss.theoj.org/papers/10.21105/joss.05618) with 40,476 structures and up to 52 atoms per 
+  structure.
+- *Perov-5*: A [perovskite dataset](https://pubs.rsc.org/en/content/articlelanding/2012/ee/c2ee22341d) containing 18,928 structures each with five atoms per structure.
+- *Carbon-24*: A [dataset](https://arxiv.org/abs/2110.06197) of 10,153 structures consisting only of carbon with up to 24 atoms per structure.
+
+We further provide the following newly cultivated datasets, most of which are included in the OMatG repository in the 
+[```omg/data```](omg/data) directory, and all of which can also be found on 
+[HuggingFace](https://huggingface.co/collections/colabfit/datasets-all-that-structure-matches-does-not-glitter):
+- *Carbon-24-unique*: The duplicate-pruned versions of *Carbon-24* containing 4,250 structures that were randomly split. 
+- *Carbon-24-unique-N-split*: The duplicate-pruned versions of *Carbon-24* that were split low-to-high so that training
+  set structures contain 6–10, validation set structures contain 12–14, and test set structures contain 16–24 atoms. 
+  Analogously, the high-to-low split has 10–24 atoms in the training set structures, 8 atoms in the validation set
+  structures, and 6 atoms in the test set structures.
+- *Perov-5-polymorph-split*, *MP-20-polymorph-split*: Polymorph-aware splits of the 
+  corresponding datasets which sequester polymorphs (different structures of the same composition) to the same split.
+  They are available in [```omg/data/perov_5_ps```](omg/data/perov_5_ps) and [```omg/data/mp_20_ps```](omg/data/mp_20_ps), respectively.
+-  Overfitting datasets for testing model handling of symmetries in 
+  [```omg/data/carbon_24_unique/overfitting_datasets```](omg/data/carbon_24_unique/overfitting_datasets): 
+    - *Carbon-X*: A dataset with 480 duplicates of a single structure from *Carbon-24* where only the fractional coordinates *X* are different.
+    - *Carbon-NXL*: A dataset with 353 duplicates of a single structure from *Carbon-24* where the fractional coordinates *X*, the number of atoms *N*, and the cell shape *L* are different.
+
+The format of the LMDB files is described in the documentation of the 
+[`StructureDataset`](omg/datamodule/structure_dataset.py) that is used to parse these files. Note that this class can 
+also read CSV files containing a `cif` column with the CIF representation of the structures (as used by CDVAE, DiffCSP, 
+FlowMM, and MatterGen).
+
+### Downloading Datasets
+
+Some datasets are not included in this repository, for example, because they are too large. These datasets can be 
+downloaded from [Hugging Face](https://huggingface.co/OMatG/datasets) in the Parquet format that can be directly used 
+in the [`StructureDataset`](omg/datamodule/structure_dataset.py). 
+
+Installing the `omg` package as described also provides the `omg_load` command for downloading OMatG datasets. This 
+command expects the name of the dataset as the sole argument and will download the dataset into a directory named 
+according to the dataset. For example, the following command downloads the `Alex-MP-20_Polymorph_Split` dataset into the 
+`Alex-MP-20_Polymorph_Split` directory within the current working directory:
+
+```bash
+omg_load Alex-MP-20_Polymorph_Split
+```
+
+The command `omg_load --list` lists all available OMatG datasets on Hugging Face:
+
+- *Alex-MP-20*: New split of a [consolidated dataset](https://www.nature.com/articles/s41586-025-08628-5) of 675,204 
+  structures of [*Alexandria*](https://arxiv.org/abs/2210.00579) and [*MP-20*](https://pubs.aip.org/aip/apm/article/1/1/011002/119685/Commentary-The-Materials-Project-A-materials) 
+  structures. In comparison to [MatterGen's](https://github.com/microsoft/mattergen) dataset, we removed 10% of the 
+  training data to create a test dataset.
+- *Alex-MP-20-polymorph-split*: Polymorph-aware split of *Alex-MP-20* which sequesters polymorphs (different structures 
+  of the same composition) to the same split.
+- *Carbon-24-unique-with-enantiomorphs*: A duplicate-pruned version of *Carbon-24* with 4,330 structures where 
+  enantiomorph pairs are treated as distinct structures and labeled. By contrast in *Carbon-24-unique*, only one of 
+  each pair is included because PyMatgen's `StructureMatcher` cannot distinguish between chiral pairs.
+- *Carbon-enantiomorphs*: A toy dataset of 160 chiral structures split into two sets, with enantiomorphic pairs of 
+  structures from *Carbon-24-unique-with-enantiomorphs* at the same index.
+
+## Training
+
+Run the following command to train OMatG from scratch based on a configuration file:
+
+```bash
+omg fit --config=<configuration_file.yaml>
+```
+
+This command will create checkpoints, log files, and cache files in the current working directory. The configuration 
+file contain paths to [lmdb files](https://lmdb.readthedocs.io/en/release/) that are used, e.g., for training. The path 
+to these data files can either be relative to the working directory, or relative to the `omg` directory within this 
+repository (that is, use `"data/mp_20/val.lmdb"` in order to use the included `mp_20` data set).
+
+If you want to include a Wandb logger with a name, add the `--trainer.logger=WandbLogger --trainer.logger.name=<name>` 
+argument. Other loggers can be found [here](https://lightning.ai/docs/pytorch/stable/extensions/logging.html).
+
+In order to restart training from a checkpoint, add the `--ckpt_path=<checkpoint_file.ckpt>` argument. 
+
+In order to seed the random number generators before training, use `--seed_everything=<seed>`.
+
+## Generation
+
+For generating new structures in an xyz file based on a trained model, run the following command:
+
+```bash
+omg predict --config=<configuration_file.yaml> --ckpt_path=<checkpoint_file.ckpt> --model.generation_xyz_filename=<xyz_file>
+```
+
+This command will generate one epoch of structures, that is, the number of generated structures is equal to the number 
+structures in the prediction dataset specified in the configuration file. 
+
+For an xyz filename `filename.xyz`, this command will also create a file `filename_init.xyz` that contains the initial
+structures that were integrated to yield the structures in `filename.xyz`. This file is required for the visualization
+below.
+
+If you want to change the batch size of the generation, you can overwrite the batch size in the configuration file with 
+the `--data.batch_size=<new_batch_size>` argument.
+
+### Crystal-Structure Prediction of Specific Compositions
+
+In order to predict crystal structures for specific compositions, the following command can be used to create an `lmdb` 
+file containing only dummy structures with the desired compositions:
+
+```bash
+omg create_compositions --config=<configuration_file.yaml> --compositions=<compositions> --lmdb_file=<lmdb_file>
+```
+
+Here, `<compositions>` is a composition string that can be understood by 
+[PyMatgen's `Composition` class](https://pymatgen.org/pymatgen.core.html) (e.g., `--compositions='LiMn3O4'`) or a list 
+thereof (e.g., `--compositions='[LiMn3O4, Ga4Te4]'`). The optional `repeats` command line argument can be used 
+to repeat each composition multiple times in the created lmdb file (e.g., for generating multiple structures per 
+composition). By default, each composition is only included once.
+
+The name of the created lmdb file is specified by `<lmdb_file>`. This lmdb file can then be used as the prediction 
+dataset in the configuration file for predicting structures with the desired compositions with the `omg predict` command 
+above (it is also possible to overwrite the prediction dataset on the command line with the 
+`--data.pred_dataset.file_path=<lmdb_file>` argument).
+
+Importantly, one should use a checkpoint of a crystal-structure-prediction model whose training set includes the 
+elements of the desired compositions in the `omg predict` command.
+
+## Visualization
+
+Run the following command to compare distributions over the generated structures to distributions over 
+the training dataset:
+
+```bash
+omg visualize --config=<configuration_file.yaml> --xyz_file=<xyz_file> --plot_name=<plot_name.pdf>
+```
+
+## Crystal Structure Prediction Metrics
+
+Run the following command to compute the metrics for the CSP task:
+
+```bash
+omg csp_metrics --config=<configuration_file.yaml> --xyz_file=<xyz_file>
+```
+
+This command computes a rate of matching structures using PyMatGen's 
+[`StructureMatcher`](https://github.com/materialsproject/pymatgen/blob/master/src/pymatgen/analysis/structure_matcher.py). 
+The metrics include the match rate between the generated structures and the structures in the prediction dataset, as 
+well as the average (normalized) root-mean square displacement between the matched structures. 
+
+By default, structures are matched at the same index in the generated dataset and the prediction dataset. Optionally, 
+the match-everyone-to-reference (`METRe`) rate can be computed instead by specifying `--metre=True`, in which case the 
+best match from all generated structures are counted with respect to each structure in the prediction dataset.
+
+Typically, non-matching generated structures are ignored for the average root-mean square displacement. This command
+also reports an average corrected root-mean square error (`cRMSE`). Here, non-matching structures are penalized with the 
+site-tolerance matching parameter `stol` of the `StructureMatcher` in the average.
+
+By default, this method first validates the generated structures and the structures in the prediction dataset
+based on volume, structure, composition, and fingerprint checks (see [`ValidAtoms`](omg/analysis/valid_atoms.py) class), 
+and calculates the match rate between the valid generated structures and the valid structures in the prediction dataset. 
+The (slow) validation can be skipped by using `skip_validation=True`.
+
+The validations and matchings are parallelized. The number of processes is determined by `os.cpu_count()`. This can 
+be changed by setting the `--number_cpus` argument (which is probably most useful in cluster environments).
+
+By default, these metrics are stored in the `csp_metrics.json` file. 
+
+This command also plots the histogram of the (uncorrected) root-mean-square distances between the matched structures in 
+the `rmsds.pdf` file. 
+
+Further arguments are documented in the `csp_metrics` method in the [`OMGTrainer`](omg/omg_trainer.py) class.
+
+## *De Novo* Generation Metrics
+
+Run the following command to compute the metrics for the *de novo* generation task:
+
+```bash
+omg dng_metrics --config=<configuration_file.yaml> --xyz_file=<xyz_file> --dataset_name=<dataset_name>
+```
+
+The metrics include validity (structural and compositional) and Wasserstein distances between distributions of density,
+volume fraction, number of atoms, number of unique elements, and average coordination number.
+In addition, if `dataset_name` is set to `mp_20`, `carbon_24`, or `perov_5`, the metrics include coverage recall and 
+precision. By default, these metrics are stored in the `dng_metrics.json` file.
+
+The validations are parallelized. The number of processes is determined by `os.cpu_count()`. This can 
+be changed by setting the `--number_cpus` argument (which is probably most useful in cluster environments).
+
+Stability related metrics can be computed, for example, with the [MatterGen codebase](https://github.com/microsoft/mattergen). 
+
+## Citing OMatG
+
+Please cite the following paper when using OMatG in your work:
+
+```bibtex
+@inproceedings{
+    hoellmer2025,
+    title={Open Materials Generation with Stochastic Interpolants},
+    author={Philipp H{\"o}llmer and Thomas Egg and Maya Martirossyan and Eric
+    Fuemmeler and Zeren Shui and Amit Gupta and Pawan Prakash and Adrian
+    Roitberg and Mingjie Liu and George Karypis and Mark Transtrum and Richard
+    Hennig and Ellad B. Tadmor and Stefano Martiniani},
+    booktitle={Forty-second International Conference on Machine Learning},
+    year={2025},
+    url={https://openreview.net/forum?id=gHGrzxFujU},
+    archivePrefix={arXiv},
+    eprint={2502.02582},
+    primaryClass={cs.LG},
+}
+```
+
+Please cite the following paper when using new benchmarks and datasets associated with OMatG:
+
+```bibtex
+@inproceedings{
+    martirossyan2025,
+    title={All that structure matches does not glitter},
+    author={Maya Martirossyan and Thomas Egg and Philipp H{\"o}llmer 
+    and George Karypis and Mark Transtrum and Adrian Roitberg 
+    and Mingjie Liu and Richard Hennig and Ellad B. Tadmor and Stefano Martiniani},
+    booktitle={Thirty-Ninth Annual Conference on Neural Information Processing Systems},
+    year={2025},
+    url={https://openreview.net/forum?id=ig9ujp50D4},
+    archivePrefix={arXiv},
+    eprint={2509.12178},
+    primaryClass={cs.LG},
+}
+```

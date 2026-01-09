@@ -1,0 +1,1438 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Training &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/training';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Generation" href="generation.html" />
+    <link rel="prev" title="Analysis" href="analysis.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="#">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="stochastic_interpolants.html">Stochastic Interpolants</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sampler.html">Samplers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datamodule.html">DataModule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="generation.html">Generation</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Training</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="training">
+<h1>Training<a class="headerlink" href="#training" title="Link to this heading">#</a></h1>
+<p>This guide covers training OMatG models from scratch.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>Training an OMatG model involves:</p>
+<ol class="arabic simple">
+<li><p>Preparing configuration file</p></li>
+<li><p>Setting up datasets</p></li>
+<li><p>Configuring trainer parameters</p></li>
+<li><p>Running training</p></li>
+<li><p>Monitoring progress</p></li>
+<li><p>Saving checkpoints</p></li>
+</ol>
+</section>
+<section id="basic-training">
+<h2>Basic Training<a class="headerlink" href="#basic-training" title="Link to this heading">#</a></h2>
+<section id="minimal-command">
+<h3>Minimal Command<a class="headerlink" href="#minimal-command" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>fit<span class="w"> </span>--config<span class="o">=</span>config.yaml
+</pre></div>
+</div>
+</section>
+<section id="with-logging">
+<h3>With Logging<a class="headerlink" href="#with-logging" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>fit<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.logger<span class="o">=</span>WandbLogger<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.logger.name<span class="o">=</span>my_experiment
+</pre></div>
+</div>
+</section>
+<section id="from-checkpoint">
+<h3>From Checkpoint<a class="headerlink" href="#from-checkpoint" title="Link to this heading">#</a></h3>
+<p>Resume interrupted training:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>fit<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ckpt_path<span class="o">=</span>last.ckpt
+</pre></div>
+</div>
+</section>
+<section id="with-random-seed">
+<h3>With Random Seed<a class="headerlink" href="#with-random-seed" title="Link to this heading">#</a></h3>
+<p>For reproducibility:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>fit<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed_everything<span class="o">=</span><span class="m">42</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading">#</a></h2>
+<section id="complete-training-config">
+<h3>Complete Training Config<a class="headerlink" href="#complete-training-config" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># Trainer configuration</span>
+<span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">accelerator</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;gpu&quot;</span>
+<span class="w">  </span><span class="nt">devices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">max_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2000</span>
+<span class="w">  </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;32-true&quot;</span>
+<span class="w">  </span><span class="nt">gradient_clip_val</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+<span class="w">  </span><span class="nt">gradient_clip_algorithm</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;value&quot;</span>
+<span class="w">  </span><span class="nt">num_sanity_val_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">  </span><span class="nt">enable_progress_bar</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">callbacks</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lightning.pytorch.callbacks.ModelCheckpoint</span>
+<span class="w">      </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;best_val_loss&quot;</span>
+<span class="w">        </span><span class="nt">save_top_k</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">        </span><span class="nt">monitor</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;val_loss_total&quot;</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;min&quot;</span>
+<span class="w">        </span><span class="nt">save_weights_only</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lightning.pytorch.callbacks.EarlyStopping</span>
+<span class="w">      </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">monitor</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;val_loss_total&quot;</span>
+<span class="w">        </span><span class="nt">patience</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;min&quot;</span>
+
+<span class="c1"># Data configuration</span>
+<span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">train_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.datamodule.StructureDataset</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/mp_20/train.lmdb&quot;</span>
+<span class="w">      </span><span class="nt">lazy_storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">val_dataset</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">omg.datamodule.StructureDataset</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;data/mp_20/val.lmdb&quot;</span>
+<span class="w">      </span><span class="nt">lazy_storage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">  </span><span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">  </span><span class="nt">pin_memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">persistent_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="c1"># Model configuration</span>
+<span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">si</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w">              </span><span class="c1"># See stochastic_interpolants guide</span>
+<span class="w">  </span><span class="nt">sampler</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w">         </span><span class="c1"># See sampler guide</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">...</span><span class="w">           </span><span class="c1"># See model guide</span>
+<span class="w">  </span><span class="nt">relative_si_costs</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">species_loss</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">    </span><span class="nt">pos_loss_b</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.999</span>
+<span class="w">    </span><span class="nt">cell_loss_b</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span>
+
+<span class="c1"># Optimizer</span>
+<span class="nt">optimizer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">torch.optim.AdamW</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span>
+<span class="w">    </span><span class="nt">weight_decay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span>
+
+<span class="c1"># Learning rate scheduler</span>
+<span class="nt">lr_scheduler</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">torch.optim.lr_scheduler.CosineAnnealingLR</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">T_max</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2000</span>
+<span class="w">    </span><span class="nt">eta_min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-7</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="trainer-parameters">
+<h2>Trainer Parameters<a class="headerlink" href="#trainer-parameters" title="Link to this heading">#</a></h2>
+<section id="hardware">
+<h3>Hardware<a class="headerlink" href="#hardware" title="Link to this heading">#</a></h3>
+<section id="gpu-training">
+<h4>GPU Training<a class="headerlink" href="#gpu-training" title="Link to this heading">#</a></h4>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">accelerator</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;gpu&quot;</span>
+<span class="w">  </span><span class="nt">devices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w">              </span><span class="c1"># Single GPU</span>
+<span class="w">  </span><span class="c1"># devices: [0, 1]       # Multi-GPU</span>
+<span class="w">  </span><span class="c1"># strategy: &quot;ddp&quot;       # Distributed data parallel</span>
+</pre></div>
+</div>
+</section>
+<section id="cpu-training">
+<h4>CPU Training<a class="headerlink" href="#cpu-training" title="Link to this heading">#</a></h4>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">accelerator</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;cpu&quot;</span>
+<span class="w">  </span><span class="nt">devices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</pre></div>
+</div>
+</section>
+<section id="mixed-precision">
+<h4>Mixed Precision<a class="headerlink" href="#mixed-precision" title="Link to this heading">#</a></h4>
+<p>Faster training with less memory:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;16-mixed&quot;</span><span class="w">   </span><span class="c1"># Mixed precision (recommended)</span>
+<span class="w">  </span><span class="c1"># precision: &quot;32-true&quot;  # Full precision</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="training-duration">
+<h3>Training Duration<a class="headerlink" href="#training-duration" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">max_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2000</span><span class="w">            </span><span class="c1"># Maximum epochs</span>
+<span class="w">  </span><span class="nt">max_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1</span><span class="w">               </span><span class="c1"># Maximum steps (-1 = unlimited)</span>
+<span class="w">  </span><span class="nt">min_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">            </span><span class="c1"># Minimum epochs</span>
+<span class="w">  </span><span class="nt">max_time</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;12:00:00&quot;</span><span class="w">        </span><span class="c1"># Maximum training time</span>
+</pre></div>
+</div>
+</section>
+<section id="validation">
+<h3>Validation<a class="headerlink" href="#validation" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">val_check_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span><span class="w">     </span><span class="c1"># Validate every epoch</span>
+<span class="w">  </span><span class="c1"># val_check_interval: 0.5   # Validate twice per epoch</span>
+<span class="w">  </span><span class="c1"># val_check_interval: 100   # Validate every 100 batches</span>
+<span class="w">  </span><span class="nt">num_sanity_val_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">     </span><span class="c1"># Sanity check steps (0 = skip)</span>
+</pre></div>
+</div>
+</section>
+<section id="gradient-management">
+<h3>Gradient Management<a class="headerlink" href="#gradient-management" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">gradient_clip_val</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+<span class="w">  </span><span class="nt">gradient_clip_algorithm</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;value&quot;</span><span class="w">  </span><span class="c1"># or &quot;norm&quot;</span>
+<span class="w">  </span><span class="nt">accumulate_grad_batches</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w">        </span><span class="c1"># Gradient accumulation</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="callbacks">
+<h2>Callbacks<a class="headerlink" href="#callbacks" title="Link to this heading">#</a></h2>
+<section id="model-checkpointing">
+<h3>Model Checkpointing<a class="headerlink" href="#model-checkpointing" title="Link to this heading">#</a></h3>
+<p>Save best models:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">callbacks</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lightning.pytorch.callbacks.ModelCheckpoint</span>
+<span class="w">      </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">dirpath</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;checkpoints&quot;</span>
+<span class="w">        </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;best-{epoch:02d}-{val_loss_total:.4f}&quot;</span>
+<span class="w">        </span><span class="nt">save_top_k</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+<span class="w">        </span><span class="nt">monitor</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;val_loss_total&quot;</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;min&quot;</span>
+<span class="w">        </span><span class="nt">save_last</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">        </span><span class="nt">save_weights_only</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">        </span><span class="nt">every_n_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</pre></div>
+</div>
+</section>
+<section id="early-stopping">
+<h3>Early Stopping<a class="headerlink" href="#early-stopping" title="Link to this heading">#</a></h3>
+<p>Stop when validation plateaus:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">callbacks</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lightning.pytorch.callbacks.EarlyStopping</span>
+<span class="w">      </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">monitor</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;val_loss_total&quot;</span>
+<span class="w">        </span><span class="nt">patience</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;min&quot;</span>
+<span class="w">        </span><span class="nt">min_delta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-4</span>
+</pre></div>
+</div>
+</section>
+<section id="learning-rate-monitor">
+<h3>Learning Rate Monitor<a class="headerlink" href="#learning-rate-monitor" title="Link to this heading">#</a></h3>
+<p>Log learning rate:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">callbacks</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lightning.pytorch.callbacks.LearningRateMonitor</span>
+<span class="w">      </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">logging_interval</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;epoch&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="logging">
+<h2>Logging<a class="headerlink" href="#logging" title="Link to this heading">#</a></h2>
+<section id="weights-biases">
+<h3>Weights &amp; Biases<a class="headerlink" href="#weights-biases" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>fit<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.logger<span class="o">=</span>WandbLogger<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.logger.name<span class="o">=</span>my_experiment<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.logger.project<span class="o">=</span>omatg
+</pre></div>
+</div>
+</section>
+<section id="tensorboard">
+<h3>TensorBoard<a class="headerlink" href="#tensorboard" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>fit<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.logger<span class="o">=</span>TensorBoardLogger<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.logger.save_dir<span class="o">=</span>logs<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.logger.name<span class="o">=</span>my_experiment
+</pre></div>
+</div>
+</section>
+<section id="csv-logger">
+<h3>CSV Logger<a class="headerlink" href="#csv-logger" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>fit<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.logger<span class="o">=</span>CSVLogger<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.logger.save_dir<span class="o">=</span>logs
+</pre></div>
+</div>
+</section>
+</section>
+<section id="monitoring-training">
+<h2>Monitoring Training<a class="headerlink" href="#monitoring-training" title="Link to this heading">#</a></h2>
+<section id="training-metrics">
+<h3>Training Metrics<a class="headerlink" href="#training-metrics" title="Link to this heading">#</a></h3>
+<p>OMatG logs:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">train_loss_total</span></code>: Total training loss</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train_loss_species</span></code>: Species prediction loss</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train_loss_pos_b</span></code>: Position velocity loss</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train_loss_cell_b</span></code>: Cell velocity loss</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">learning_rate</span></code>: Current learning rate</p></li>
+</ul>
+</section>
+<section id="validation-metrics">
+<h3>Validation Metrics<a class="headerlink" href="#validation-metrics" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">val_loss_total</span></code>: Total validation loss</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">val_loss_species</span></code>: Species validation loss</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">val_loss_pos_b</span></code>: Position velocity validation loss</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">val_loss_cell_b</span></code>: Cell velocity validation loss</p></li>
+</ul>
+</section>
+<section id="healthy-training">
+<h3>Healthy Training<a class="headerlink" href="#healthy-training" title="Link to this heading">#</a></h3>
+<p>Signs of good training:</p>
+<ul class="simple">
+<li><p>Smooth loss decrease</p></li>
+<li><p>Validation loss tracking training loss</p></li>
+<li><p>No NaN/inf values</p></li>
+<li><p>Stable learning rate</p></li>
+</ul>
+<p>Warning signs:</p>
+<ul class="simple">
+<li><p>Loss spikes</p></li>
+<li><p>Validation loss &gt;&gt; training loss (overfitting)</p></li>
+<li><p>NaN/inf losses</p></li>
+<li><p>No improvement after many epochs</p></li>
+</ul>
+</section>
+</section>
+<section id="hyperparameter-tuning">
+<h2>Hyperparameter Tuning<a class="headerlink" href="#hyperparameter-tuning" title="Link to this heading">#</a></h2>
+<section id="learning-rate">
+<h3>Learning Rate<a class="headerlink" href="#learning-rate" title="Link to this heading">#</a></h3>
+<p>Start with 1e-3, adjust if needed:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">optimizer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span><span class="w">    </span><span class="c1"># Default</span>
+<span class="w">    </span><span class="c1"># lr: 0.0001 # Lower for stability</span>
+<span class="w">    </span><span class="c1"># lr: 0.01   # Higher for faster training</span>
+</pre></div>
+</div>
+<p>Use learning rate finder:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In PyTorch Lightning</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">tuner</span><span class="o">.</span><span class="n">lr_find</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="batch-size">
+<h3>Batch Size<a class="headerlink" href="#batch-size" title="Link to this heading">#</a></h3>
+<p>Larger batch = more stable gradients:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span><span class="w">   </span><span class="c1"># Small (less memory)</span>
+<span class="w">  </span><span class="c1"># batch_size: 32   # Default</span>
+<span class="w">  </span><span class="c1"># batch_size: 64   # Large (more memory)</span>
+</pre></div>
+</div>
+</section>
+<section id="weight-decay">
+<h3>Weight Decay<a class="headerlink" href="#weight-decay" title="Link to this heading">#</a></h3>
+<p>Controls regularization:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">optimizer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">weight_decay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span><span class="w">    </span><span class="c1"># Default</span>
+<span class="w">    </span><span class="c1"># weight_decay: 0.0   # No regularization</span>
+<span class="w">    </span><span class="c1"># weight_decay: 0.1   # Strong regularization</span>
+</pre></div>
+</div>
+</section>
+<section id="loss-weights">
+<h3>Loss Weights<a class="headerlink" href="#loss-weights" title="Link to this heading">#</a></h3>
+<p>Balance component losses:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">relative_si_costs</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">species_loss</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span><span class="w">      </span><span class="c1"># CSP (fixed composition)</span>
+<span class="w">    </span><span class="nt">pos_loss_b</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.999</span><span class="w">      </span><span class="c1"># Positions dominate</span>
+<span class="w">    </span><span class="nt">cell_loss_b</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span><span class="w">     </span><span class="c1"># Small cell contribution</span>
+</pre></div>
+</div>
+<p>For DNG:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">relative_si_costs</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">species_loss</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span><span class="w">      </span><span class="c1"># Generate species</span>
+<span class="w">    </span><span class="nt">pos_loss_b</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.899</span>
+<span class="w">    </span><span class="nt">cell_loss_b</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.001</span>
+</pre></div>
+</div>
+</section>
+<section id="integration-steps">
+<h3>Integration Steps<a class="headerlink" href="#integration-steps" title="Link to this heading">#</a></h3>
+<p>More steps = slower training, better quality:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">si</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">integration_time_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span><span class="w">   </span><span class="c1"># Default</span>
+<span class="w">      </span><span class="c1"># integration_time_steps: 500  # Faster, lower quality</span>
+<span class="w">      </span><span class="c1"># integration_time_steps: 2000 # Slower, higher quality</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="multi-gpu-training">
+<h2>Multi-GPU Training<a class="headerlink" href="#multi-gpu-training" title="Link to this heading">#</a></h2>
+<section id="data-parallel">
+<h3>Data Parallel<a class="headerlink" href="#data-parallel" title="Link to this heading">#</a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>omg<span class="w"> </span>fit<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--config<span class="o">=</span>config.yaml<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.accelerator<span class="o">=</span>gpu<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.devices<span class="o">=</span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trainer.strategy<span class="o">=</span>ddp
+</pre></div>
+</div>
+</section>
+<section id="distributed-data-parallel-recommended">
+<h3>Distributed Data Parallel (Recommended)<a class="headerlink" href="#distributed-data-parallel-recommended" title="Link to this heading">#</a></h3>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">accelerator</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;gpu&quot;</span>
+<span class="w">  </span><span class="nt">devices</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ddp&quot;</span>
+<span class="w">  </span><span class="c1"># strategy: &quot;ddp_find_unused_parameters_false&quot;  # Faster variant</span>
+</pre></div>
+</div>
+<p>Tips for Multi-GPU:</p>
+<ul class="simple">
+<li><p>Increase batch size: <code class="docutils literal notranslate"><span class="pre">batch_size</span> <span class="pre">=</span> <span class="pre">base_batch_size</span> <span class="pre">*</span> <span class="pre">num_gpus</span></code></p></li>
+<li><p>Scale learning rate: <code class="docutils literal notranslate"><span class="pre">lr</span> <span class="pre">=</span> <span class="pre">base_lr</span> <span class="pre">*</span> <span class="pre">num_gpus</span></code></p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">num_workers</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="advanced-training">
+<h2>Advanced Training<a class="headerlink" href="#advanced-training" title="Link to this heading">#</a></h2>
+<section id="gradient-accumulation">
+<h3>Gradient Accumulation<a class="headerlink" href="#gradient-accumulation" title="Link to this heading">#</a></h3>
+<p>Simulate larger batches:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">accumulate_grad_batches</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span><span class="w">  </span><span class="c1"># Effective batch = batch_size * 4</span>
+</pre></div>
+</div>
+<p>Useful when GPU memory is limited.</p>
+</section>
+<section id="custom-training-loop">
+<h3>Custom Training Loop<a class="headerlink" href="#custom-training-loop" title="Link to this heading">#</a></h3>
+<p>Override training step:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">omg.omg_lightning</span><span class="w"> </span><span class="kn">import</span> <span class="n">OMGLightningModule</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomOMatG</span><span class="p">(</span><span class="n">OMGLightningModule</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
+        <span class="c1"># Custom training logic</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">training_step</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">)</span>
+        <span class="c1"># Additional processing</span>
+        <span class="k">return</span> <span class="n">loss</span>
+</pre></div>
+</div>
+</section>
+<section id="warm-restarts">
+<h3>Warm Restarts<a class="headerlink" href="#warm-restarts" title="Link to this heading">#</a></h3>
+<p>Restart learning rate schedule:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">lr_scheduler</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">torch.optim.lr_scheduler.CosineAnnealingWarmRestarts</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">T_0</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">    </span><span class="nt">T_mult</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">    </span><span class="nt">eta_min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-7</span>
+</pre></div>
+</div>
+</section>
+<section id="transfer-learning">
+<h3>Transfer Learning<a class="headerlink" href="#transfer-learning" title="Link to this heading">#</a></h3>
+<p>Load pretrained encoder:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load checkpoint</span>
+<span class="n">checkpoint</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;pretrained.ckpt&#39;</span><span class="p">)</span>
+
+<span class="c1"># Initialize model</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">OMGLightningModule</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
+<span class="c1"># Transfer encoder weights</span>
+<span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span>
+    <span class="n">checkpoint</span><span class="p">[</span><span class="s1">&#39;state_dict&#39;</span><span class="p">][</span><span class="s1">&#39;encoder&#39;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="c1"># Freeze encoder</span>
+<span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
+    <span class="n">param</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">#</a></h2>
+<section id="out-of-memory">
+<h3>Out of Memory<a class="headerlink" href="#out-of-memory" title="Link to this heading">#</a></h3>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Reduce batch size:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16</span>
+</pre></div>
+</div>
+</li>
+<li><p>Enable gradient checkpointing:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">gradient_checkpointing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use mixed precision:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;16-mixed&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Reduce model size:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">encoder</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">hidden_dim</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">128</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="nan-losses">
+<h3>NaN Losses<a class="headerlink" href="#nan-losses" title="Link to this heading">#</a></h3>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Add gradient clipping:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">gradient_clip_val</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+</pre></div>
+</div>
+</li>
+<li><p>Reduce learning rate:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">optimizer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0001</span>
+</pre></div>
+</div>
+</li>
+<li><p>Check data for NaN/inf values</p></li>
+<li><p>Use mixed precision carefully</p></li>
+</ol>
+</section>
+<section id="slow-training">
+<h3>Slow Training<a class="headerlink" href="#slow-training" title="Link to this heading">#</a></h3>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Increase batch size:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use mixed precision:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">precision</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;16-mixed&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Increase num_workers:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">num_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+</pre></div>
+</div>
+</li>
+<li><p>Enable persistent workers:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">persistent_workers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+</li>
+<li><p>Reduce integration steps:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">integration_time_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span>
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="overfitting">
+<h3>Overfitting<a class="headerlink" href="#overfitting" title="Link to this heading">#</a></h3>
+<p><strong>Solutions</strong>:</p>
+<ol class="arabic">
+<li><p>Increase weight decay:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">optimizer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">weight_decay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+</pre></div>
+</div>
+</li>
+<li><p>Add dropout:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">encoder</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">init_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">dropout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+</pre></div>
+</div>
+</li>
+<li><p>Use early stopping:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">callbacks</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">class_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lightning.pytorch.callbacks.EarlyStopping</span>
+</pre></div>
+</div>
+</li>
+<li><p>Get more training data</p></li>
+<li><p>Reduce model size</p></li>
+</ol>
+</section>
+</section>
+<section id="best-practices">
+<h2>Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Start simple</strong>: Use default configuration first</p></li>
+<li><p><strong>Monitor training</strong>: Use Weights &amp; Biases or TensorBoard</p></li>
+<li><p><strong>Save checkpoints</strong>: Keep top-k models</p></li>
+<li><p><strong>Use validation set</strong>: Monitor generalization</p></li>
+<li><p><strong>Gradient clipping</strong>: Always enable</p></li>
+<li><p><strong>Learning rate schedule</strong>: Cosine annealing works well</p></li>
+<li><p><strong>Reproducibility</strong>: Set random seed</p></li>
+<li><p><strong>Experiment tracking</strong>: Log all hyperparameters</p></li>
+<li><p><strong>Validate early</strong>: Check first few epochs</p></li>
+<li><p><strong>Hardware utilization</strong>: Use GPU and multiple workers</p></li>
+</ol>
+</section>
+<section id="example-training-script">
+<h2>Example Training Script<a class="headerlink" href="#example-training-script" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;Train OMatG model.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">omg.main</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;omg&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;fit&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--config=config.yaml&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--trainer.logger=WandbLogger&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--trainer.logger.name=my_experiment&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--seed_everything=42&quot;</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="generation.html"><span class="doc">Generation</span></a> - Generate structures with trained model</p></li>
+<li><p><a class="reference internal" href="analysis.html"><span class="doc">Analysis</span></a> - Evaluate generated structures</p></li>
+<li><p><a class="reference internal" href="../api/training.html"><span class="doc">Training</span></a> - Training API reference</p></li>
+<li><p><a class="reference internal" href="model.html"><span class="doc">Model</span></a> - Configure model architecture</p></li>
+<li><p><a class="reference internal" href="../development/contributing.html"><span class="doc">Contributing</span></a> - Contributing guidelines</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="analysis.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Analysis</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="generation.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Generation</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#basic-training">Basic Training</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#minimal-command">Minimal Command</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#with-logging">With Logging</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#from-checkpoint">From Checkpoint</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#with-random-seed">With Random Seed</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#configuration">Configuration</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#complete-training-config">Complete Training Config</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer-parameters">Trainer Parameters</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#hardware">Hardware</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu-training">GPU Training</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#cpu-training">CPU Training</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#mixed-precision">Mixed Precision</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#training-duration">Training Duration</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#validation">Validation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gradient-management">Gradient Management</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#callbacks">Callbacks</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-checkpointing">Model Checkpointing</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#early-stopping">Early Stopping</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#learning-rate-monitor">Learning Rate Monitor</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#logging">Logging</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#weights-biases">Weights &amp; Biases</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tensorboard">TensorBoard</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#csv-logger">CSV Logger</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#monitoring-training">Monitoring Training</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#training-metrics">Training Metrics</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#validation-metrics">Validation Metrics</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#healthy-training">Healthy Training</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hyperparameter-tuning">Hyperparameter Tuning</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#learning-rate">Learning Rate</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#batch-size">Batch Size</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#weight-decay">Weight Decay</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loss-weights">Loss Weights</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#integration-steps">Integration Steps</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#multi-gpu-training">Multi-GPU Training</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#data-parallel">Data Parallel</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#distributed-data-parallel-recommended">Distributed Data Parallel (Recommended)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-training">Advanced Training</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gradient-accumulation">Gradient Accumulation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-training-loop">Custom Training Loop</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#warm-restarts">Warm Restarts</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#transfer-learning">Transfer Learning</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#troubleshooting">Troubleshooting</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#out-of-memory">Out of Memory</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nan-losses">NaN Losses</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#slow-training">Slow Training</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#overfitting">Overfitting</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">Best Practices</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#example-training-script">Example Training Script</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#next-steps">Next Steps</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user_guide/training.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

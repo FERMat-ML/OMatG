@@ -1,0 +1,1278 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>omg.si.abstracts &#8212; OMatG 1.2.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=872021ae"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/omg/si/abstracts';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">OMatG</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/index.html">
+    Getting Started
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/quickstart.html">
+    Quick Start
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../getting_started/datasets.html">
+    Datasets
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/stochastic_interpolants.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/sampler.html">
+    Samplers
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide/generation.html">
+    Generation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/index.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/si.html">
+    Stochastic Interpolants
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/sampler.html">
+    Sampler
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/datamodule.html">
+    DataModule
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/model.html">
+    Model
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/analysis.html">
+    Analysis
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api/training.html">
+    Training
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../development/index.html">
+    Development
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../development/contributing.html">
+    Contributing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/FerMat-ML/OMatG" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github-square fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">omg.si.abstracts</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for omg.si.abstracts</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
+
+<div class="viewcode-block" id="TimeChecker">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.TimeChecker">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TimeChecker</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class providing a method to check that all times in a tensor are in [0,1].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_t</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that all times are in [0,1].</span>
+
+<span class="sd">        The return value can be used in an assert statement.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times to check.</span>
+<span class="sd">        :type t: torch.tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Whether all times are in [0,1].</span>
+<span class="sd">        :rtype: torch.tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">((</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">t</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">t</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="Corrector">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Corrector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Corrector</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for defining a corrector function that corrects the input x (for instance, wrapping back coordinates</span>
+<span class="sd">    to a specific cell in periodic boundary conditions).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Corrector.correct">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Corrector.correct">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">correct</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Correct the input x.</span>
+
+<span class="sd">        :param x:</span>
+<span class="sd">            Input to correct.</span>
+<span class="sd">        :type x: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Corrected input.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Corrector.unwrap">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Corrector.unwrap">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unwrap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Correct the input x_1 based on the reference input x_0 (for instance, return the image of x_1 closest to x_0 in</span>
+<span class="sd">        periodic boundary conditions).</span>
+
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Reference input.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Input to correct.</span>
+<span class="sd">        :type x_1: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Unwrapped x_1 value.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Epsilon">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Epsilon">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Epsilon</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">TimeChecker</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for defining an epsilon function epsilon(t).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Epsilon.epsilon">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Epsilon.epsilon">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">epsilon</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the epsilon function at times t.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Epsilon function epsilon(t).</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Interpolant">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Interpolant">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Interpolant</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">TimeChecker</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for defining an interpolant I(t, x_0, x_1) = alpha(t) * x_0 + beta(t) * x_1 in a stochastic</span>
+<span class="sd">    interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times t.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Interpolant.interpolate">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Interpolant.interpolate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.</span>
+
+<span class="sd">        In order to possibly allow for periodic boundary conditions, x_1 is first unwrapped based on the corrector of</span>
+<span class="sd">        this interpolant. For the identity corrector, this unwrapping does nothing. For periodic boundary conditions,</span>
+<span class="sd">        this unwrapping returns the closest image of x_1 to x_0. The interpolant is then computed based on the unwrapped</span>
+<span class="sd">        x_1 and the alpha and beta functions.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Points from p_0.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Points from p_1.</span>
+<span class="sd">        :type x_1: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Interpolated value.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_t</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">x_0prime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_corrector</span><span class="p">()</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">x_0</span><span class="p">)</span>
+        <span class="n">x_1prime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_corrector</span><span class="p">()</span><span class="o">.</span><span class="n">unwrap</span><span class="p">(</span><span class="n">x_0prime</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+        <span class="n">x_t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_0prime</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_1prime</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_corrector</span><span class="p">()</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">x_t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Interpolant.interpolate_derivative">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Interpolant.interpolate_derivative">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolate_derivative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the derivative of the interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times</span>
+<span class="sd">        t with respect to time.</span>
+
+<span class="sd">        In order to possibly allow for periodic boundary conditions, x_1 is first unwrapped based on the corrector of</span>
+<span class="sd">        this interpolant. For the identity corrector, this unwrapping does nothing. For periodic boundary conditions,</span>
+<span class="sd">        this unwrapping returns the closest image of x_1 to x_0. The interpolant derivative is then computed based on</span>
+<span class="sd">        the unwrapped x_1 and the alpha and beta functions.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Points from p_0.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Points from p_1.</span>
+<span class="sd">        :type x_1: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Derivative of the interpolant.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_t</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">x_0prime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_corrector</span><span class="p">()</span><span class="o">.</span><span class="n">correct</span><span class="p">(</span><span class="n">x_0</span><span class="p">)</span>
+        <span class="n">x_1prime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_corrector</span><span class="p">()</span><span class="o">.</span><span class="n">unwrap</span><span class="p">(</span><span class="n">x_0prime</span><span class="p">,</span> <span class="n">x_1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_dot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_0prime</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta_dot</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_1prime</span></div>
+
+
+<div class="viewcode-block" id="Interpolant.get_corrector">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Interpolant.get_corrector">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_corrector</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Corrector</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the corrector implied by the interpolant (for instance, a corrector that considers periodic boundary</span>
+<span class="sd">        conditions).</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Corrector.</span>
+<span class="sd">        :rtype: Corrector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Interpolant.alpha">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Interpolant.alpha">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">alpha</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Alpha function alpha(t) in the linear interpolant.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Values of the alpha function at the given times.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Interpolant.alpha_dot">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Interpolant.alpha_dot">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">alpha_dot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Time derivative of the alpha function in the linear interpolant.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Derivatives of the alpha function at the given times.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Interpolant.beta">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Interpolant.beta">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">beta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Beta function beta(t) in the linear interpolant.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Values of the beta function at the given times.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Interpolant.beta_dot">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Interpolant.beta_dot">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">beta_dot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Time derivative of the beta function in the linear interpolant.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Derivatives of the beta function at the given times.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LatentGamma">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.LatentGamma">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LatentGamma</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">TimeChecker</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for defining the gamma function gamma(t) in a latent variable gamma(t) * z of a stochastic</span>
+<span class="sd">    interpolant between points x_0 and x_1 from two distributions p_0 and p_1 at times t.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LatentGamma.gamma">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.LatentGamma.gamma">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gamma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the gamma function gamma(t) in the latent variable gamma(t) * z at the times t.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Gamma function gamma(t).</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="LatentGamma.gamma_derivative">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.LatentGamma.gamma_derivative">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">gamma_derivative</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the derivative of the gamma function gamma(t) in the latent variable gamma(t) * z with respect to time.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Derivative of the gamma function.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="LatentGamma.requires_antithetic">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.LatentGamma.requires_antithetic">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">requires_antithetic</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Whether the gamma function requires antithetic sampling because its derivative diverges as t -&gt; 0  or t -&gt; 1.</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Whether the gamma function requires antithetic sampling.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="StochasticInterpolant">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolant">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StochasticInterpolant</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">TimeChecker</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for defining a stochastic interpolant between points x_0 and x_1 from two distributions p_0 and</span>
+<span class="sd">    p_1 at times t.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StochasticInterpolant.interpolate">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolant.interpolate">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                    <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stochastically interpolate between points x_0 and x_1 from two distributions p_0 and p_1 at times t.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Points from p_0.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Points from p_1.</span>
+<span class="sd">        :type x_1: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Stochastically interpolated points x_t, random variables z used for interpolation.</span>
+<span class="sd">        :rtype: tuple[torch.Tensor, torch.Tensor]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="StochasticInterpolant.loss_keys">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolant.loss_keys">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loss_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the keys of the losses returned by the loss function.</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Keys of the losses.</span>
+<span class="sd">        :rtype: List[str]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="StochasticInterpolant.loss">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolant.loss">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+             <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_0</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+             <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the losses for the stochastic interpolant between points x_0 and x_1 from two distributions p_0 and</span>
+<span class="sd">        p_1 at times t based on the model prediction for the velocity fields b and the denoisers eta.</span>
+
+<span class="sd">        Since there can be several losses (say, one for the velocity field b and one for the denoiser eta), this</span>
+<span class="sd">        function returns a dictionary mapping from a loss label to the loss value.</span>
+
+<span class="sd">        :param model_function:</span>
+<span class="sd">            Model function returning the velocity fields b and the denoisers eta given the current positions x_t.</span>
+<span class="sd">        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]</span>
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+<span class="sd">        :param x_0:</span>
+<span class="sd">            Points from p_0.</span>
+<span class="sd">        :type x_0: torch.Tensor</span>
+<span class="sd">        :param x_1:</span>
+<span class="sd">            Points from p_1.</span>
+<span class="sd">        :type x_1: torch.Tensor</span>
+<span class="sd">        :param x_t:</span>
+<span class="sd">            Stochastically interpolated points x_t.</span>
+<span class="sd">        :type x_t: torch.Tensor</span>
+<span class="sd">        :param z:</span>
+<span class="sd">            Random variable z that was used for the stochastic interpolation to get the model prediction.</span>
+<span class="sd">        :type z: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Losses.</span>
+<span class="sd">        :rtype: Dict[str, torch.Tensor]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="StochasticInterpolant.integrate">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolant.integrate">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">integrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+                  <span class="n">x_t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">time</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">time_step</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                  <span class="n">batch_indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Integrate the current positions x_t at the given time for the given time step based on the velocity fields b and</span>
+<span class="sd">        the denoisers eta returned by the model function.</span>
+
+<span class="sd">        :param model_function:</span>
+<span class="sd">            Model function returning the velocity fields b and the denoisers eta given the current times t and positions</span>
+<span class="sd">            x_t.</span>
+<span class="sd">        :type model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]]</span>
+<span class="sd">        :param x_t:</span>
+<span class="sd">            Current positions.</span>
+<span class="sd">        :type x_t: torch.Tensor</span>
+<span class="sd">        :param time:</span>
+<span class="sd">            Initial time (0-dimensional torch tensor).</span>
+<span class="sd">        :type time: torch.Tensor</span>
+<span class="sd">        :param time_step:</span>
+<span class="sd">            Time step (0-dimensional torch tensor).</span>
+<span class="sd">        :type time_step: torch.Tensor</span>
+<span class="sd">        :param batch_indices:</span>
+<span class="sd">            Tensor containing the configuration index for every atom in the batch.</span>
+<span class="sd">        :type batch_indices: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Integrated position.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="StochasticInterpolant.get_corrector">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolant.get_corrector">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_corrector</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Corrector</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">       Get the corrector implied by the stochastic interpolant (for instance, a corrector that considers periodic</span>
+<span class="sd">       boundary conditions).</span>
+
+<span class="sd">       :return:</span>
+<span class="sd">           Corrector.</span>
+<span class="sd">       :rtype: Corrector</span>
+<span class="sd">       &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="StochasticInterpolantSpecies">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolantSpecies">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StochasticInterpolantSpecies</span><span class="p">(</span><span class="n">StochasticInterpolant</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for defining a stochastic interpolant between species x_0 and x_1 from two distributions p_0 and</span>
+<span class="sd">    p_1 at times t.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StochasticInterpolantSpecies.get_corrector">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolantSpecies.get_corrector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_corrector</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Corrector</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the corrector implied by the stochastic interpolant.</span>
+
+<span class="sd">        The stochastic interpolants for atom species should not define a corrector.</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Corrector.</span>
+<span class="sd">        :rtype: Corrector</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Corrector not defined for StochasticInterpolantSpecies.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="StochasticInterpolantSpecies.uses_masked_species">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.StochasticInterpolantSpecies.uses_masked_species">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">uses_masked_species</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Whether the stochastic interpolant uses an additional masked species.</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Whether the stochastic interpolant uses an additional masked species.</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Sigma">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Sigma">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Sigma</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">TimeChecker</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for defining a noise schedule sigma(s) for a one-sided variance-exploding interpolant.</span>
+
+<span class="sd">    The one-sided variance-exploding interpolant is defined as x_t = sqrt(sigma^2(1-t) - sigma^2(0)) * x_0 + x_1.</span>
+<span class="sd">    Note the inversion of time, that is, the noise sigma(s) should be smallest at s=0 and largest at s=1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Sigma.sigma">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Sigma.sigma">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sigma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the sigma function at times s.</span>
+
+<span class="sd">        :param s:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type s: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Sigma function sigma(s).</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Sigma.sigma_dot">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Sigma.sigma_dot">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sigma_dot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the derivative of the sigma function with respect to time.</span>
+
+<span class="sd">        :param s:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type s: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Derivative of the sigma function at the given times.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Tau">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Tau">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Tau</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">TimeChecker</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract class for defining the tau function tau(t) for a one-sided variance-preserving interpolant.</span>
+
+<span class="sd">    The one-sided variance-preserving interpolant is defined as x_t = sqrt(1 - tau^2(t)) * x_0 + tau(t) * x_1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Tau.tau">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Tau.tau">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tau</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluate the tau function at times t.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Tau function tau(t).</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="Tau.tau_dot">
+<a class="viewcode-back" href="../../../omg.si.abstracts.html#omg.si.abstracts.Tau.tau_dot">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tau_dot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the derivative of the tau function with respect to time.</span>
+
+<span class="sd">        :param t:</span>
+<span class="sd">            Times in [0,1].</span>
+<span class="sd">        :type t: torch.Tensor</span>
+
+<span class="sd">        :return:</span>
+<span class="sd">            Derivative of the tau function at the given times.</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2025, Philipp Höllmer, Thomas Egg, Maya Martirossyan, Eric Fuemmeler, Zeren Shui, Amit Gupta, Pawan Prakash, Adrian Roitberg, Mingjie Liu, George Karypis, Mark Transtrum, Richard Hennig, Ellad B. Tadmor, Stefano Martiniani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 8.2.3.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+  </body>
+</html>

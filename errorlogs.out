@@ -1,0 +1,32 @@
+(omg311) gpwolfe@arktos:~/OMatG$ omg visualize --config=/home/gpwolfe/OMatG/MP-20-DNG/Linear-ODE/train.yaml --xyz_file=gate.xyz --plot_name=gate_plot.pdf --model.generation_xyz_filename=gate.xyz
+/home/gpwolfe/OMatG/omg311/lib/python3.11/site-packages/lightning/fabric/utilities/seed.py:44: No seed found, seed set to 0
+Seed set to 0
+2025-11-07 06:57:18.309 | INFO     | omg.datamodule.datamodule:add_from_lmdb:866 - Reusing existing LMDB file: cache/dataset_59c848811974952f05acb4f14d068fde.lmdb
+2025-11-07 06:57:18.309 | INFO     | omg.datamodule.datamodule:add_from_lmdb:866 - Reusing existing LMDB file: cache/dataset_ad6444479f89c067691b740daf265869.lmdb
+2025-11-07 06:57:18.332 | INFO     | omg.datamodule.datamodule:add_from_lmdb:866 - Reusing existing LMDB file: cache/dataset_6a51a4c955b7cb51dfa31f8a759f45fc.lmdb
+2025-11-07 06:57:18.332 | INFO     | omg.datamodule.datamodule:add_from_lmdb:866 - Reusing existing LMDB file: cache/dataset_30b98b39ab8bd2c0f2dfa9c435d2cfc3.lmdb
+2025-11-07 06:57:18.343 | INFO     | omg.datamodule.datamodule:add_from_lmdb:866 - Reusing existing LMDB file: cache/dataset_84d8d36df9423ef3a9c5a375ca934a95.lmdb
+2025-11-07 06:57:18.343 | INFO     | omg.datamodule.datamodule:add_from_lmdb:866 - Reusing existing LMDB file: cache/dataset_840ff63454bd5363388aab325d97a5e0.lmdb
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+HPU available: False, using: 0 HPUs
+Loading test dataset: 100%|█████████████████████████████████████| 9046/9046 [00:04<00:00, 1849.73it/s]
+Number of times space group identification failed for prediction dataset: 0/9046
+Traceback (most recent call last):
+  File "/home/gpwolfe/OMatG/omg311/bin/omg", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/gpwolfe/OMatG/omg/main.py", line 10, in main
+    OMGCLI(model_class=OMGLightning, datamodule_class=OMGDataModule, trainer_class=OMGTrainer,
+  File "/home/gpwolfe/OMatG/omg/omg_cli.py", line 21, in __init__
+    super().__init__(*args, **kwargs)
+  File "/home/gpwolfe/OMatG/omg311/lib/python3.11/site-packages/lightning/pytorch/cli.py", line 414, in __init__
+    self._run_subcommand(self.subcommand)
+  File "/home/gpwolfe/OMatG/omg311/lib/python3.11/site-packages/lightning/pytorch/cli.py", line 747, in _run_subcommand
+    fn(**fn_kwargs)
+  File "/home/gpwolfe/OMatG/omg/omg_trainer.py", line 118, in visualize
+    self._plot_to_pdf(ref_atoms, init_atoms, gen_atoms, plot_name, model.use_min_perm_dist, symmetry_filename)
+  File "/home/gpwolfe/OMatG/omg/omg_trainer.py", line 327, in _plot_to_pdf
+    assert initial.pos.shape == generated.pos.shape
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

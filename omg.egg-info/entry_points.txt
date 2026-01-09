@@ -1,0 +1,3 @@
+[console_scripts]
+omg = omg.main:main
+omg_load = omg.main:load

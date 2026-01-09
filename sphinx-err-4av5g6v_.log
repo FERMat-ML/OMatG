@@ -1,0 +1,62 @@
+Versions
+========
+
+* Platform:         linux; (Linux-6.8.0-90-generic-x86_64-with-glibc2.39)
+* Python version:   3.11.4 (CPython)
+* Sphinx version:   8.2.3
+* Docutils version: 0.21.2
+* Jinja2 version:   3.1.6
+* Pygments version: 2.19.2
+
+Last Messages
+=============
+
+None.
+
+Loaded Extensions
+=================
+
+None.
+
+Traceback
+=========
+
+    Traceback (most recent call last):
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/ext/autosummary/generate.py", line 622, in generate_autosummary_docs
+        name, obj, parent, modname = import_by_name(entry.name)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/ext/autosummary/__init__.py", line 759, in import_by_name
+        raise ImportExceptionGroup('no module named %s' % ' or '.join(tried), exceptions)
+    sphinx.ext.autosummary.ImportExceptionGroup: no module named omg.main.main
+    
+    During handling of the above exception, another exception occurred:
+    
+    Traceback (most recent call last):
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/events.py", line 404, in emit
+        results.append(listener.handler(self.app, *args))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/ext/autosummary/__init__.py", line 947, in process_generate_options
+        generate_autosummary_docs(
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/ext/autosummary/generate.py", line 627, in generate_autosummary_docs
+        name, obj, parent, modname = import_ivar_by_name(entry.name)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/ext/autosummary/__init__.py", line 817, in import_ivar_by_name
+        real_name, obj, parent, modname = import_by_name(name, prefixes)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/ext/autosummary/__init__.py", line 759, in import_by_name
+        raise ImportExceptionGroup('no module named %s' % ' or '.join(tried), exceptions)
+    sphinx.ext.autosummary.ImportExceptionGroup: no module named omg.main
+    
+    The above exception was the direct cause of the following exception:
+    
+    Traceback (most recent call last):
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/cmd/build.py", line 414, in build_main
+        app = Sphinx(
+              ^^^^^^^
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/application.py", line 332, in __init__
+        self._init_builder()
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/application.py", line 414, in _init_builder
+        self.events.emit('builder-inited')
+      File "/home/gpwolfe/OMatG/venv/lib/python3.11/site-packages/sphinx/events.py", line 415, in emit
+        raise ExtensionError(
+    sphinx.errors.ExtensionError: Handler <function process_generate_options at 0x797bca9c6b60> for event 'builder-inited' threw an exception (exception: no module named omg.main)

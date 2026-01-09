@@ -1,0 +1,8 @@
+assets
+build
+cache
+docs
+lightning_logs
+omg
+omg311
+venv
