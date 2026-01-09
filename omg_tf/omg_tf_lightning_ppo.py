@@ -955,7 +955,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                          batch_size=len(batch))
 
     def validation_step(self, batch: OMGData, batch_idx: int) -> None:
-        # Sample initial structures independently.  # TODO: VALIDATE that NOISING LEAVES METRIC IN TACT?
+        # Sample initial structures independently.
         x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)
 
         x_1 = self.integrate(x_0)
