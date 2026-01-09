@@ -529,3 +529,4 @@ Next Steps
 * :doc:`generation` - Generate structures
 * :doc:`../api/model` - Model API reference
 * :doc:`stochastic_interpolants` - Configure SI framework
+* :doc:`../development/contributing` - Contributing guidelines

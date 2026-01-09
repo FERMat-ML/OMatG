@@ -692,3 +692,4 @@ Next Steps
 * :doc:`analysis` - Evaluate generated structures
 * :doc:`../api/training` - Training API reference
 * :doc:`model` - Configure model architecture
+* :doc:`../development/contributing` - Contributing guidelines

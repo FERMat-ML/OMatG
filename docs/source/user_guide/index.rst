@@ -4,7 +4,7 @@ User Guide
 
 The user guide provides in-depth explanations of OMatG's key concepts and components.
 
-.. grid:: 2 2 3 3
+.. grid:: 2 2 2 2
     :gutter: 3
 
     .. grid-item-card:: Stochastic Interpolants
@@ -37,11 +37,17 @@ The user guide provides in-depth explanations of OMatG's key concepts and compon
 
         Validation and evaluation metrics
 
-    .. grid-item-card:: Training & Generation
+    .. grid-item-card:: Training
         :link: training
         :link-type: doc
 
-        Training models and generating structures
+        Training OMatG models from scratch
+
+    .. grid-item-card:: Generation
+        :link: generation
+        :link-type: doc
+
+        Generating crystal structures with trained models
 
 Core Concepts
 =============

@@ -588,3 +588,4 @@ Next Steps
 * :doc:`../getting_started/quickstart` - Quick start guide
 * :doc:`stochastic_interpolants` - Tune SI parameters
 * :doc:`../api/training` - API reference
+* :doc:`../development/contributing` - Contributing guidelines

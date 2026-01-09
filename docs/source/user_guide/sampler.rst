@@ -394,3 +394,4 @@ Next Steps
 * :doc:`datamodule` - Prepare training data
 * :doc:`training` - Train your model
 * :doc:`../api/sampler` - Sampler API reference
+* :doc:`../development/contributing` - Contributing guidelines

@@ -506,3 +506,4 @@ Next Steps
 * :doc:`generation` - Generate structures
 * :doc:`../api/analysis` - Analysis API reference
 * :doc:`stochastic_interpolants` - Tune SI parameters
+* :doc:`../development/contributing` - Contributing guidelines

@@ -385,3 +385,4 @@ Next Steps
 * :doc:`model` - Set up neural network architectures
 * :doc:`training` - Train your model
 * :doc:`../api/si` - SI API reference
+* :doc:`../development/contributing` - Contributing guidelines

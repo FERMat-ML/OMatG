@@ -499,3 +499,4 @@ Next Steps
 * :doc:`training` - Train your model
 * :doc:`../getting_started/datasets` - Available datasets
 * :doc:`../api/datamodule` - DataModule API reference
+* :doc:`../development/contributing` - Contributing guidelines

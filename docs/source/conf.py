@@ -41,7 +41,7 @@ html_theme_options = {
     "logo": {
         "text": "OMatG",
     },
-    "show_prev_next": False,
+    "show_prev_next": True,
     "navigation_with_keys": True,
     "icon_links": [
         {
@@ -50,6 +50,8 @@ html_theme_options = {
             "url": "https://github.com/FerMat-ML/OMatG",
         }
     ],
+    "footer_start": ["copyright", "sphinx-version"],
+    "footer_end": [],
 }
 # Docstring settings
 napoleon_google_docstring = True
