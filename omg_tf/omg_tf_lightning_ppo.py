@@ -105,11 +105,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
         """
 
     def __init__(self, residual_model: Union[Model, TimeMLP], reward: Reward, noise_schedules: dict[str, NoiseSchedule],
-                 relative_costs: dict[str, float], grpo_group_size: int = 32, grpo_num_groups: int = 16,
-                 grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1,
-                 gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
-                 generation_xyz_filename: Optional[str] = None, reference_sigma: float = 1e-3,
-                 position_normalization: str = "none", residual_mode: str = "additive") -> None:
+                 relative_costs: dict[str, float], reference_noise: dict[str, float], grpo_group_size: int = 32,
+                 grpo_num_groups: int = 16, grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2,
+                 ppo_epochs: int = 1, gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
+                 generation_xyz_filename: Optional[str] = None, position_normalization: str = "none",
+                 residual_mode: str = "additive") -> None:
         """
         Constructor for OMGTFLightningPPO.
 
@@ -126,6 +126,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
             Dictionary of relative costs for each loss term (policy and regularization per field).
             Must sum to 1.0.
         :type relative_costs: dict[str, float]
+        :param reference_noise:
+            Reference sigmas per data field (e.g. {"pos": 1e-3, "cell": 1e-3}).
+        :type reference_noise: dict[str, float]
         :param grpo_group_size:
             Number of samples per GRPO group.
         :type grpo_group_size: int
@@ -150,9 +153,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :param generation_xyz_filename:
             Filename for saving generated structures during prediction.
         :type generation_xyz_filename: Optional[str]
-        :param reference_sigma:
-            Reference sigma value.
-        :type reference_sigma: float
         :param position_normalization:
             Position normalization mode for position residuals. Options:
             - "none": joint-action PPO ratio without normalization
@@ -217,9 +217,13 @@ class OMGTFLightningPPO(lightning.LightningModule):
             self.integrated_data_fields.append(DataField.pos)
             if DataField.pos.name not in noise_schedules:
                 raise ValueError("Noise schedule for position residuals must be provided when integrating positions.")
+            if DataField.pos.name not in reference_noise:
+                raise ValueError("Reference noise for position residuals must be provided when integrating positions.")
         else:
             if DataField.pos.name in noise_schedules:
                 raise ValueError("Noise schedule for position residuals provided but positions are not integrated.")
+            if DataField.pos.name in reference_noise:
+                raise ValueError("Reference noise for position residuals provided but positions are not integrated.")
         assert ((self.integrate_pos and self.pos_corrector is not None)
                 or (not self.integrate_pos and self.pos_corrector is None))
 
@@ -248,9 +252,13 @@ class OMGTFLightningPPO(lightning.LightningModule):
             self.integrated_data_fields.append(DataField.cell)
             if DataField.cell.name not in noise_schedules:
                 raise ValueError("Noise schedule for cell residuals must be provided when integrating cell.")
+            if DataField.cell.name not in reference_noise:
+                raise ValueError("Reference noise for cell residuals must be provided when integrating cell.")
         else:
             if DataField.cell.name in noise_schedules:
                 raise ValueError("Noise schedule for cell residuals provided but cell is not integrated.")
+            if DataField.cell.name in reference_noise:
+                raise ValueError("Reference noise for cell residuals provided but cell is not integrated.")
         assert ((self.integrate_cell and self.cell_corrector is not None)
                 or (not self.integrate_cell and self.cell_corrector is None))
 
@@ -261,17 +269,22 @@ class OMGTFLightningPPO(lightning.LightningModule):
         else:
             if DataField.species.name in noise_schedules:
                 raise ValueError("Noise schedule for species residuals provided but species are not integrated.")
+            if DataField.species.name in reference_noise:
+                raise ValueError("Reference noise for species residuals provided but species are not integrated.")
 
         try:
             self.noise_schedules = {DataField[key]: value for key, value in noise_schedules.items()}
         except KeyError as e:
             raise ValueError(f"Invalid data field key in noise schedules: {e}")
         # Store learnable noise schedules in ModuleDict for proper registration.
-        self.noise_schedule_modules = nn.ModuleDict()
-        for field, schedule in self.noise_schedules.items():
-            if isinstance(schedule, nn.Module):
-                assert schedule.learnable()
-                self.noise_schedule_modules[field.name] = schedule
+        noise_schedule_modules = {field.name: schedule for field, schedule in self.noise_schedules.items()
+                                  if isinstance(schedule, nn.Module)}
+        assert all(schedule.learnable() for schedule in noise_schedule_modules.values())
+        # Prevents empty ModuleList that would be printed out by Lightning.
+        if len(noise_schedule_modules) > 0:
+            self.noise_schedule_modules = nn.ModuleDict(noise_schedule_modules)
+        else:
+            self.noise_schedule_modules = None
 
         if not len(self.integrated_data_fields) > 0:
             raise ValueError("At least one of position, cell, or species must be integrated.")
@@ -345,9 +358,10 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
         self.generation_xyz_filename = generation_xyz_filename
 
-        if not reference_sigma > 0.0:
-            raise ValueError("Reference sigma must be positive.")
-        self.reference_sigma = reference_sigma
+        try:
+            self.reference_noise = {DataField[key]: value for key, value in reference_noise.items()}
+        except KeyError as e:
+            raise ValueError(f"Invalid data field key in reference noise: {e}")
 
     # noinspection PyUnresolvedReferences
     def setup(self, stage: str) -> None:
@@ -571,9 +585,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
             residual_output = self.residual_model(x_t, time)
             # Compute loss for this timestep.
             timestep_loss = torch.tensor(0.0, device=self.device)
-            sigma_ref = torch.tensor(self.reference_sigma, device=self.device)  # Scalar.
-
             if self.integrate_pos:
+                sigma_ref = torch.tensor(self.reference_noise[DataField.pos], device=self.device)  # Scalar.
                 sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
                 assert sigma.ndim == 0
 
@@ -703,6 +716,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     total_entropy_losses[DataField.pos] += entropy_loss.item()
 
             if self.integrate_cell:
+                sigma_ref = torch.tensor(self.reference_noise[DataField.cell], device=self.device)  # Scalar.
                 sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
                 assert sigma.ndim == 0
 
