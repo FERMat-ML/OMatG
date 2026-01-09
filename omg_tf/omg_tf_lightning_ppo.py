@@ -97,9 +97,10 @@ class OMGTFLightningPPO(lightning.LightningModule):
         """
         SCALE = auto()
         """
-        Multiplicative residual: v_total = (1 + res_b) * base_b.
+        Multiplicative residual: v_total = (1 + res_s) * base_b.
 
-        The residual model output is used to scale the base velocity.
+        The residual model output is a scalar scale per structure that scales the base velocity.
+        In this mode, policy noise and KL/entropy are basically defined in scale-space (scalar).
         This is useful for learning speed adjustments to the base flow.
         """
 
@@ -161,7 +162,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :param residual_mode:
             Mode for applying residual model output. Options:
             - "additive": v_total = base_b + res_b (default)
-            - "scale": v_total = (1 + res_b) * base_b
+            - "scale": v_total = (1 + res_s) * base_b
         :type residual_mode: str
         """
         super().__init__()
