@@ -56,6 +56,24 @@ generative model itself (expanded version available on `arXiv <https://arxiv.org
         Want to contribute to OMatG? See the contributing guide for how to set up
         your development environment and contribute code.
 
+    .. grid-item-card:: Theoretical background
+        :link: theoretical_background
+        :link-type: doc
+        :text-align: center
+        :class-card: sd-border-2
+
+        Learn about the stochastic interpolants framework and how OMatG uses it
+        for modeling and generation of crystalline materials.
+
+    .. grid-item-card:: How to create configuration files
+        :link: configuration_files
+        :link-type: doc
+        :text-align: center
+        :class-card: sd-border-2
+
+        Tips and guidance on setting up configuration files for training and
+        generation with OMatG.
+
 .. toctree::
    :maxdepth: 2
    :hidden:
@@ -100,3 +118,11 @@ generative model itself (expanded version available on `arXiv <https://arxiv.org
 
    development/index
    development/contributing
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Advanced Topics
+
+   theoretical_background
+   configuration_files

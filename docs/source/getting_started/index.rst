@@ -64,6 +64,12 @@ Next Steps
 3. :doc:`datasets` - Explore available training and evaluation datasets
 4. :doc:`../user_guide/index` - Learn about the framework in depth
 
+Advanced Topics
+===============
+
+* :doc:`../theoretical_background` - Deep dive into the stochastic interpolants framework
+* :doc:`../configuration_files` - Comprehensive guide to YAML configuration files
+
 .. toctree::
    :maxdepth: 2
    :hidden:

@@ -213,6 +213,11 @@ OMatG uses YAML configuration files. Here's a minimal example:
 
 See ``omg/conf_examples/`` for complete configuration examples.
 
+.. seealso::
+
+   :doc:`../configuration_files`
+      Comprehensive guide on creating and configuring YAML files for training and generation
+
 Common Options
 ==============
 

@@ -140,6 +140,11 @@ For crystal structures, this is applied to:
 * **Lattice vectors** :math:`\mathbf{L}`: Non-periodic interpolant
 * **Atomic species** :math:`\mathbf{A}`: Discrete flow matching
 
+.. seealso::
+
+   :doc:`../theoretical_background`
+      Detailed explanation of the stochastic interpolants framework and its application to crystals
+
 Configuration System
 ====================
 
@@ -171,6 +176,11 @@ OMatG uses PyTorch Lightning's CLI for configuration. YAML files specify:
        lr: 0.001
 
 See :doc:`stochastic_interpolants` for detailed configuration examples.
+
+.. seealso::
+
+   :doc:`../configuration_files`
+      Complete guide to creating and customizing configuration files
 
 Guide Contents
 ==============
