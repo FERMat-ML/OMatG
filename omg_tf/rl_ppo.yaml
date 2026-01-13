@@ -40,7 +40,7 @@ model:
     cell_policy: 0.4
     pos_regularization: 0.1
     cell_regularization: 0.1
-  position_normalization: per_atom_surrogate
+  position_normalization: none
   reference_noise:
     pos: 1e-3
     cell: 1e-3
