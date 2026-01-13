@@ -8,7 +8,7 @@ from typing import Optional
 import warnings
 from optuna.samplers import TPESampler
 from ray import init, tune
-from ray.tune.schedulers import HyperBandScheduler
+from ray.tune.schedulers import ASHAScheduler
 from ray.tune.search.optuna import OptunaSearch
 from ray.tune.search.sample import Domain
 import wandb
@@ -113,7 +113,7 @@ def tune_omg_tf(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_pa
 
     init(address="local", log_to_driver=True, _temp_dir=str(temp_dir) if temp_dir is not None else None)
     # Here max_t is in unites of the computation of the metric.
-    scheduler = HyperBandScheduler(max_t=10)
+    scheduler = ASHAScheduler(max_t=10)
     sampler = TPESampler(seed=0)
     # noinspection PyTypeChecker
     algo = OptunaSearch(sampler=sampler, metric=metric, mode=mode)
