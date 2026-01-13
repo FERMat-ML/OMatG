@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import sys
 from typing import Optional
+import warnings
 from optuna.samplers import TPESampler
 from ray import init, tune
 from ray.tune.schedulers import HyperBandScheduler
@@ -55,6 +56,10 @@ def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: 
         yaml.safe_dump(rl_config, f)
 
     try:
+        # Ignore specific warning from LightningCLI.
+        warnings.filterwarnings(
+            "ignore",
+            "LightningCLI's args parameter is intended to run from within Python like if it were from the command line.*")
         # Pass only omg arguments to OMGCLI.
         # Run the 'load' subcommand that does nothing except loading the model, the datamodule, and optionally a checkpoint.
         # Using run=False would not work because it also disables loading from checkpoints.
