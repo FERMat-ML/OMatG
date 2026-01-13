@@ -88,8 +88,6 @@ def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: 
             pass
         wandb.teardown()
 
-from torch.utils.data import DataLoader
-
 
 def tune_omg_tf(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_path: Path,
                 storage_path: Path, temp_dir: Optional[Path], project_name: str, cpus_per_trial: int,
