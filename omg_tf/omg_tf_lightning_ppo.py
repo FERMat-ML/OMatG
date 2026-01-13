@@ -124,7 +124,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :type noise_schedules: dict[str, float]
         :param relative_costs:
             Dictionary of relative costs for each loss term (policy and regularization per field).
-            Must sum to 1.0.
         :type relative_costs: dict[str, float]
         :param reference_noise:
             Reference sigmas per data field (e.g. {"pos": 1e-3, "cell": 1e-3}).
@@ -305,6 +304,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
             raise ValueError("All relative costs must be non-negative.")
         # Normalize and validate relative costs.
         sum_costs = sum(relative_costs.values())
+        if sum_costs == 0.0:
+            raise ValueError("All relative costs are zero.")
         relative_costs = {key: value / sum_costs for key, value in relative_costs.items()}
         assert abs(sum(relative_costs.values()) - 1.0) < 1e-10
         for field in self.integrated_data_fields:

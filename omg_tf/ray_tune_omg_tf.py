@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from copy import deepcopy
 import os
 from pathlib import Path
 import shutil
@@ -31,7 +32,7 @@ def yield_flattened_items(d: dict):
 
 
 def overwrite_flattened_items(original_dict: dict, flattened_updates: dict) -> dict:
-    new_dict = original_dict.copy()
+    new_dict = deepcopy(original_dict)
     for key, value in flattened_updates.items():
         assert not isinstance(value, dict)
         keys = key.split(".")
@@ -71,7 +72,8 @@ def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: 
 
         OMGTFCLI(model_class=OMGTFLightningPPO,
                  args=["fit", "--config", str(rl_config_path), "--trainer.logger", "WandbLogger",
-                       "--trainer.logger.name", context.get_trial_name(), "--trainer.logger.project", project_name])
+                       "--trainer.logger.name", context.get_trial_name(), "--trainer.logger.project", project_name,
+                       "--seed_everything", "0"])
     finally:
         # Necessary to flush stdout and stderr files.
         sys.stdout.flush()
@@ -122,7 +124,7 @@ def tune_omg_tf(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_pa
         print(f"Restoring from {restore_path}")
         tuner = tune.Tuner.restore(
             str(restore_path),
-            tune.with_resources(resources_per_trial=resources_per_trial),
+            tune.with_resources(tune_func, resources=resources_per_trial),
             resume_unfinished=True,
             restart_errored=True
         )
