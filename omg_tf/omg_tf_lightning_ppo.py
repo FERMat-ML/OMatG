@@ -303,8 +303,10 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
         if not all(cost >= 0.0 for cost in relative_costs.values()):
             raise ValueError("All relative costs must be non-negative.")
-        if not abs(sum(relative_costs.values()) - 1.0) < 1e-10:
-            raise ValueError("The sum of all cost factors should be equal to 1.")
+        # Normalize and validate relative costs.
+        sum_costs = sum(relative_costs.values())
+        relative_costs = {key: value / sum_costs for key, value in relative_costs.items()}
+        assert abs(sum(relative_costs.values()) - 1.0) < 1e-10
         for field in self.integrated_data_fields:
             if field.name + "_policy" not in relative_costs:
                 raise ValueError(f"Missing relative cost for policy of integrated data field '{field.name}'.")
