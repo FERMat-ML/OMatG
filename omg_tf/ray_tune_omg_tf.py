@@ -17,9 +17,6 @@ from omg.datamodule import OMGDataModule
 from omg.omg_cli import OMGCLI
 from omg.omg_lightning import OMGLightning
 from omg.omg_trainer import OMGTrainer
-from omg_tf.base_modules import base_modules
-from omg_tf.omg_tf_cli import OMGTFCLI
-from omg_tf.omg_tf_lightning_ppo import OMGTFLightningPPO
 
 
 def yield_flattened_items(d: dict):
@@ -48,6 +45,11 @@ def overwrite_flattened_items(original_dict: dict, flattened_updates: dict) -> d
 
 def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: Path, ckpt_path: Path,
                       project_name: str):
+    # Import here to avoid issues with global base_modules when using Ray Tune.
+    from omg_tf.base_modules import base_modules
+    from omg_tf.omg_tf_cli import OMGTFCLI
+    from omg_tf.omg_tf_lightning_ppo import OMGTFLightningPPO
+
     context = tune.get_context()
     trial_dir = context.get_storage().trial_fs_path  # Storage path for the trial.
     rl_config = overwrite_flattened_items(base_rl_config, config)
