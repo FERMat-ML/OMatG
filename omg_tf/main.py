@@ -34,8 +34,8 @@ def main():
     # Pass only omg arguments to OMGCLI.
     # Run the 'load' subcommand that does nothing except loading the model, the datamodule, and optionally a checkpoint.
     # Using run=False would not work because it also disables loading from checkpoints.
-    omg_cli = OMGCLI(model_class=OMGLightning, datamodule_class=OMGDataModule, trainer_class=OMGTrainer, run=True,
-                     args=["load"] + args[omg_index + 1:])
+    omg_cli = OMGCLI(model_class=OMGLightning, datamodule_class=OMGDataModule, trainer_class=OMGTrainer,
+                     save_config_callback=None, run=True, args=["load"] + args[omg_index + 1:])
     print("OMG model and datamodule loaded successfully.")
 
     # Move OMG model to the correct device.
@@ -52,6 +52,7 @@ def main():
 
     # Pass only omg_tf arguments.
     omg_tf_cli.OMGTFCLI(model_class=omg_tf_lightning_ppo.OMGTFLightningPPO, args=args[:omg_index],
+                        save_config_callback=None,
                         parser_kwargs={"formatter_class": argparse.RawDescriptionHelpFormatter, "description": f"""
 Open Materials Generation (OMatG) Version {__version__}
 
