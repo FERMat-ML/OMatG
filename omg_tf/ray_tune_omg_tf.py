@@ -51,7 +51,7 @@ def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: 
     from omg_tf.omg_tf_lightning_ppo import OMGTFLightningPPO
 
     context = tune.get_context()
-    trial_dir = context.get_storage().trial_fs_path  # Storage path for the trial.
+    trial_dir = context.get_trial_dir()
     rl_config = overwrite_flattened_items(base_rl_config, config)
     rl_config_path = trial_dir + "/rl_config.yaml"
     with open(rl_config_path, "w") as f:
