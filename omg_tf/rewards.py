@@ -20,8 +20,8 @@ class VolumeReward(Reward):
         """Constructor for VolumeReward."""
         super().__init__()
 
-    def compute(self, structures: Sequence[Structure],
-                stage: Reward.ComputeStage) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage,
+                enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """
         Compute rewards for a batch of structures.
 
@@ -34,6 +34,9 @@ class VolumeReward(Reward):
         :param stage:
             Stage of the reward computation. Not used in this reward function.
         :type stage: Reward.ComputeStage
+        :param enable_progress_bar:
+            Whether to enable the progress bar for this computation.
+        :type enable_progress_bar: bool
 
         :return:
             (List of rewards per structure, info dictionary).
@@ -280,8 +283,8 @@ class CRMSEReward(Reward):
 
         return min(rmses)
 
-    def compute(self, structures: Sequence[Structure],
-                stage: Reward.ComputeStage) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage,
+                enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """
         Compute rewards for a batch of structures.
 
@@ -296,6 +299,9 @@ class CRMSEReward(Reward):
         :param stage:
             Stage of the reward computation.
         :type stage: Reward.ComputeStage
+        :param enable_progress_bar:
+            Whether to enable the progress bar for this computation.
+        :type enable_progress_bar: bool
 
         :return:
             (List of rewards per structure, info dictionary).
@@ -338,11 +344,12 @@ class CRMSEReward(Reward):
             crmse_values = process_map(crmse_function, py_structures, relevant_structures_list,
                                        desc="Computing cRMSE rewards",
                                        chunksize=max(min(len(py_structures) // self._cpu_count, 100), 1),
-                                       max_workers=self._cpu_count, position=1, leave=False)
+                                       max_workers=self._cpu_count, position=1, leave=False,
+                                       disable=not enable_progress_bar)
         else:
             crmse_values = list(map(crmse_function,
                                     tqdm.tqdm(py_structures, desc="Computing cRMSE rewards", total=len(py_structures),
-                                              position=1, leave=False),
+                                              position=1, leave=False, disable=not enable_progress_bar),
                                     relevant_structures_list))
 
         return self._scale * (self._stol - np.array(crmse_values)), {"cRMSE": np.array(crmse_values)}
@@ -403,8 +410,8 @@ class CompositeRewards(Reward):
         for reward_function in self._reward_functions:
             reward_function.set_pred_dataset(pred_dataset)
 
-    def compute(self, structures: Sequence[Structure],
-                stage: Reward.ComputeStage) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage,
+                enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """
         Compute rewards for a batch of structures.
 
@@ -419,6 +426,9 @@ class CompositeRewards(Reward):
         :param stage:
             Stage of the reward computation.
         :type stage: Reward.ComputeStage
+        :param enable_progress_bar:
+            Whether to enable the progress bar for this computation.
+        :type enable_progress_bar: bool
 
         :return:
             (List of rewards per structure, info dictionary).
@@ -427,7 +437,7 @@ class CompositeRewards(Reward):
         total_rewards = np.zeros(len(structures))
         total_dict = {}
         for reward_function, weight in zip(self._reward_functions, self._weights):
-            rewards, info_dict = reward_function.compute(structures, stage)
+            rewards, info_dict = reward_function.compute(structures, stage, enable_progress_bar)
             total_rewards += weight * rewards
             for key, value in info_dict.items():
                 assert key not in total_dict

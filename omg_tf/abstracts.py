@@ -270,7 +270,8 @@ class Reward(ABC):
         pass
 
     @abstractmethod
-    def compute(self, structures: Sequence[Structure], stage: ComputeStage) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    def compute(self, structures: Sequence[Structure], stage: ComputeStage,
+                enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """
         Compute rewards for a batch of structures.
 
@@ -289,6 +290,9 @@ class Reward(ABC):
         :param stage:
             Stage of the reward computation.
         :type stage: ComputeStage
+        :param enable_progress_bar:
+            Whether to enable a progress bar during reward computation.
+        :type enable_progress_bar: bool
 
         :return:
             (List of rewards per structure, info dictionary).

@@ -109,7 +109,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                  grpo_num_groups: int = 16, grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2,
                  ppo_epochs: int = 1, gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
                  generation_xyz_filename: Optional[str] = None, position_normalization: str = "none",
-                 residual_mode: str = "additive") -> None:
+                 residual_mode: str = "additive", enable_progress_bar: bool = True) -> None:
         """
         Constructor for OMGTFLightningPPO.
 
@@ -163,6 +163,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
             - "additive": v_total = base_b + res_b (default)
             - "scale": v_total = (1 + res_s) * base_b
         :type residual_mode: str
+        :param enable_progress_bar:
+            If True, enable progress bar during training.
+        :type enable_progress_bar: bool
         """
         super().__init__()
 
@@ -366,6 +369,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
         except KeyError as e:
             raise ValueError(f"Invalid data field key in reference noise: {e}")
 
+        self.enable_progress_bar = enable_progress_bar
+
     # noinspection PyUnresolvedReferences
     def setup(self, stage: str) -> None:
         """
@@ -408,7 +413,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
         sampled_residual_effects = []
 
         # Integrate over time with residuals.
-        for t_index in trange(1, len(times), desc="Rollout with residuals", position=1, leave=False):
+        for t_index in trange(1, len(times), desc="Rollout with residuals", position=1, leave=False,
+                              disable=not self.enable_progress_bar):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             sqrt_dt = torch.sqrt(dt)
@@ -521,7 +527,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                                         pos_is_fractional=x_1.pos_is_fractional[i]))
 
         # Compute rewards for final structures.
-        rewards, info_dict = self.reward.compute(structures, Reward.ComputeStage.TRAIN)
+        rewards, info_dict = self.reward.compute(structures, Reward.ComputeStage.TRAIN,
+                                                 enable_progress_bar=self.enable_progress_bar)
         rewards = torch.tensor(rewards, dtype=self.dtype, device=self.device)
         info_dict = {key: torch.tensor(value, dtype=self.dtype, device=self.device).mean()
                      for key, value in info_dict.items()}
@@ -577,7 +584,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
         opt = self.optimizers()
         opt.zero_grad()
 
-        for t_index in trange(num_timesteps, desc="Perform PPO update", position=1, leave=False):
+        for t_index in trange(num_timesteps, desc="Perform PPO update", position=1, leave=False,
+                              disable=not self.enable_progress_bar):
             t = times[t_index]
             dt = times[t_index + 1] - times[t_index]
             sqrt_dt = torch.sqrt(dt)
@@ -840,7 +848,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
         x_t = x_0.clone()
 
         # Integrate over time with residuals.
-        for t_index in trange(1, len(times), desc="Integrating with residuals", position=1, leave=False):
+        for t_index in trange(1, len(times), desc="Integrating with residuals", position=1, leave=False,
+                              disable=not self.enable_progress_bar):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             sqrt_dt = torch.sqrt(dt)
@@ -989,7 +998,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                                         pos_is_fractional=x_1.pos_is_fractional[i]))
 
         # Compute rewards for final structures.
-        rewards, info_dict = self.reward.compute(structures, Reward.ComputeStage.VAL)
+        rewards, info_dict = self.reward.compute(structures, Reward.ComputeStage.VAL,
+                                                 enable_progress_bar=self.enable_progress_bar)
         rewards = torch.tensor(rewards, dtype=self.dtype, device=self.device)
         info_dict = {f"val_{key}": torch.tensor(value, dtype=self.dtype, device=self.device).mean()
                      for key, value in info_dict.items()}
