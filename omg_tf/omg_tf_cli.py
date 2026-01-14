@@ -1,4 +1,4 @@
-from lightning.pytorch.cli import LightningCLI
+from lightning.pytorch.cli import LightningArgumentParser, LightningCLI
 from omg_tf.base_modules import base_modules
 
 
@@ -13,3 +13,16 @@ class OMGTFCLI(LightningCLI):
         if base_modules["datamodule"] is None:
             raise ValueError("Base datamodule must be set globally before instantiating OMGTFCLI.")
         self.datamodule = base_modules["datamodule"]
+
+    def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
+        """
+        Link certain arguments in the YAML/CLI configuration so that only one of them has to be set.
+
+        See https://lightning.ai/docs/pytorch/stable/cli/lightning_cli_expert.html.
+
+        :param parser:
+            The argument parser.
+        :type parser: LightningArgumentParser
+        """
+        # TODO: If trainer.enable_progress_bar is not set, progress bar in trainer is on but model's is off.
+        parser.link_arguments("trainer.enable_progress_bar", "model.enable_progress_bar")
