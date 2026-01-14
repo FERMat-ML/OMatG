@@ -96,7 +96,7 @@ class SqrtNoiseSchedule(NoiseSchedule):
         return False
 
 
-class MLPNoiseSchedule(NoiseSchedule):
+class MLPNoiseSchedule(NoiseSchedule, nn.Module):
     """
     Noise schedule that uses an MLP to predict noise scales from time t.
 
