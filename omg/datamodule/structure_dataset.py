@@ -112,7 +112,7 @@ class StructureDataset(Dataset):
         path = Path(file_path)
 
         if path.exists():
-            existing_file_path = file_path
+            existing_file_path = path
         else:
             # Try to use the data from the omg package.
             # noinspection PyTypeChecker
