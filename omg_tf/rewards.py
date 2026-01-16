@@ -587,6 +587,7 @@ class ProbabilityMatchingCRMSEReward(CRMSEReward):
 
         # Compute probability matching adjustments per GRPO group.
         adjustments = np.zeros(len(structures))
+        coverage_rates = np.zeros(len(structures) // self._grpo_group_size)
         num_groups = len(structures) // self._grpo_group_size
 
         for group_idx in range(num_groups):
@@ -612,6 +613,11 @@ class ProbabilityMatchingCRMSEReward(CRMSEReward):
                 else:
                     unmatched_count += 1
 
+            # Coverage rate: fraction of unique polymorphs matched by at least one structure in the group.
+            polymorphs_covered = np.sum(empirical_counts > 0)
+            coverage_rate = polymorphs_covered / num_polymorphs
+            coverage_rates[group_idx] = coverage_rate
+
             # Normalize empirical counts (only over matched structures).
             matched_count = self._grpo_group_size - unmatched_count
             if matched_count > 0:
@@ -621,13 +627,17 @@ class ProbabilityMatchingCRMSEReward(CRMSEReward):
                 empirical_probs = np.zeros(num_polymorphs)
 
             # Compute per-structure adjustments.
+            # Normalize by maximum possible deviation (1 - 1/N) so that adjustments are in [-1, 1] * adjustment_scale
+            # regardless of the number of polymorphs.
+            max_deviation = 1.0 - 1.0 / num_polymorphs
             for i, idx in enumerate(group_match_indices):
                 struct_idx = start_idx + i
-                if idx >= 0 and matched_count > 0:
+                if idx >= 0 and matched_count > 0 and max_deviation > 0:
                     # Positive adjustment if under-represented, negative if over-represented.
-                    adjustments[struct_idx] = self._adjustment_scale * (reference_probs[idx] - empirical_probs[idx])
+                    adjustments[struct_idx] = (self._adjustment_scale
+                                               * (reference_probs[idx] - empirical_probs[idx]) / max_deviation)
                 else:
-                    # No match - no adjustment.
+                    # No match or only one polymorph - no adjustment.
                     adjustments[struct_idx] = 0.0
 
         total_rewards = base_rewards + adjustments
@@ -635,7 +645,8 @@ class ProbabilityMatchingCRMSEReward(CRMSEReward):
         return total_rewards, {
             "cRMSE": crmse_values,
             "prob_adjustment": adjustments,
-            "match_rate": np.array([1.0 if idx >= 0 else 0.0 for idx in match_indices])
+            "match_rate": np.array([1.0 if idx >= 0 else 0.0 for idx in match_indices]),
+            "coverage_rate": coverage_rates
         }
 
 
