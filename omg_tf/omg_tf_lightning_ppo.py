@@ -411,6 +411,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
         states = []
         old_log_probs = []
         sampled_residual_effects = []
+        pos_ratio_total = torch.tensor(0.0, device=self.device)
+        cell_ratio_total = torch.tensor(0.0, device=self.device)
 
         # Integrate over time with residuals.
         for t_index in trange(1, len(times), desc="Rollout with residuals", position=1, leave=False,
@@ -446,6 +448,14 @@ class OMGTFLightningPPO(lightning.LightningModule):
                             torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2)
                     ).sum(dim=tuple(range(1, randn.ndim)))
                     step_old_log_probs[DataField.pos] = log_probs_atoms
+                    # Norm over x, y, z.
+                    base_norm_atoms = torch.linalg.norm(base_b, dim=-1)
+                    res_norm_atoms = torch.linalg.norm(res_b, dim=-1)
+                    # Mean over atoms.
+                    base_norm_struct = scatter_mean(base_norm_atoms, x_t.batch)
+                    res_norm_struct = scatter_mean(res_norm_atoms, x_t.batch)
+                    # Mean over batch.
+                    pos_ratio_total += (res_norm_struct / (base_norm_struct + 1.0e-8)).mean()
                 else:
                     assert self.residual_mode == self.ResidualMode.SCALE
                     res_s = residual_output[DataField.pos.name + "_s"]  # Tensor of shape (batch_size,).
@@ -465,6 +475,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     # Tensor of shape (batch_size,).
                     log_prob = -0.5 * (torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2))
                     step_old_log_probs[DataField.pos] = log_prob
+                    # Mean over batch.
+                    pos_ratio_total += res_s.abs().mean()
 
                 # Euler-Maruyama update for SDE.
                 x_t.pos = self.pos_corrector.correct(x_t.pos + velocity * dt + noise * sqrt_dt)
@@ -488,6 +500,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     step_old_log_probs[DataField.cell] = -0.5 * (
                             torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2)
                     ).sum(dim=tuple(range(1, randn.ndim)))
+                    # Norm over cell dimensions.
+                    base_norm_struct = torch.linalg.norm(base_b.reshape(base_b.shape[0], -1), dim=-1)
+                    res_norm_struct = torch.linalg.norm(res_b.reshape(res_b.shape[0], -1), dim=-1)
+                    # Mean over batch.
+                    cell_ratio_total += (res_norm_struct / (base_norm_struct + 1.0e-8)).mean()
                 else:
                     assert self.residual_mode == self.ResidualMode.SCALE
                     # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
@@ -506,6 +523,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     step_old_log_probs[DataField.cell] = -0.5 * (
                             torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn.squeeze(dim=(1, 2)) ** 2)
                     )
+                    # Mean over batch.
+                    cell_ratio_total += res_s.squeeze(dim=(1, 2)).abs().mean()
 
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
@@ -532,6 +551,12 @@ class OMGTFLightningPPO(lightning.LightningModule):
         rewards = torch.tensor(rewards, dtype=self.dtype, device=self.device)
         info_dict = {key: torch.tensor(value, dtype=self.dtype, device=self.device).mean()
                      for key, value in info_dict.items()}
+        if self.integrate_pos:
+            # Average over timesteps.
+            info_dict["pos_residual_ratio"] = pos_ratio_total / (len(times) - 1)
+        if self.integrate_cell:
+            # Average over timesteps.
+            info_dict["cell_residual_ratio"] = cell_ratio_total / (len(times) - 1)
 
         # Compute GRPO advantages.
         # Partial batch possible.
