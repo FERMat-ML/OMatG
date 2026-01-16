@@ -266,7 +266,7 @@ class CRMSEReward(Reward):
 
             dist_mat = py_structure.distance_matrix
             # Pad diagonal with a large number to remove self-matches.
-            dist_mat = dist_mat + np.diag(np.ones(dist_mat.shape[0]) * (0.5 + 10.0))
+            dist_mat = dist_mat + np.diag(np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0))
             structure_valid = (dist_mat.min() >= structure_check_cutoff)
 
             # Polar sine can be measured to detect collinearity.
@@ -353,6 +353,290 @@ class CRMSEReward(Reward):
                                     relevant_structures_list))
 
         return self._scale * (self._stol - np.array(crmse_values)), {"cRMSE": np.array(crmse_values)}
+
+
+class ProbabilityMatchingCRMSEReward(CRMSEReward):
+    """
+    Reward function that combines cRMSE matching with probability matching across GRPO groups.
+
+    This reward extends CRMSEReward by adding a per-structure adjustment that encourages the empirical distribution
+    of matched polymorphs within a GRPO group to match the reference distribution in the dataset.
+
+    For each GRPO group:
+    1. Each generated structure is matched to reference structures with the same composition.
+    2. The best matching reference structure (lowest RMSE) is identified for each generated structure.
+    3. The empirical distribution of matched polymorphs within the group is computed.
+    4. Each structure's reward is adjusted based on whether its matched polymorph is over- or under-represented
+       relative to the reference distribution.
+
+    The adjustment formula for a structure matching polymorph i is:
+        adjustment = adjustment_scale * (reference_prob[i] - empirical_prob[i])
+
+    This gives positive adjustments to structures matching under-represented polymorphs and negative adjustments
+    to structures matching over-represented polymorphs.
+
+    :param grpo_group_size:
+        Number of structures per GRPO group.
+    :type grpo_group_size: int
+    :param adjustment_scale:
+        Scaling factor for the probability matching adjustment.
+        Defaults to 1.0.
+    :type adjustment_scale: float
+    :param ltol:
+        Fractional length tolerance for Pymatgen's StructureMatcher.
+        Defaults to 0.3.
+    :type ltol: float
+    :param stol:
+        Site tolerance for Pymatgen's StructureMatcher.
+        Defaults to 0.5.
+    :type stol: float
+    :param angle_tol:
+        Angle tolerance in degrees for Pymatgen's StructureMatcher.
+        Defaults to 10.0.
+    :type angle_tol: float
+    :param volume_check_cutoff:
+        Minimum volume for which to compute the RMSD normally.
+        Defaults to 0.1.
+    :type volume_check_cutoff: float
+    :param structure_check_cutoff:
+        Minimum interatomic distance cutoff.
+        Defaults to 0.5.
+    :type structure_check_cutoff: float
+    :param polar_sine_cutoff:
+        Minimum polar sine cutoff.
+        Defaults to 1.0e-3.
+    :type polar_sine_cutoff: float
+    :param scale:
+        Scaling factor for the base cRMSE reward.
+        Defaults to 1.0.
+    :type scale: float
+    :param number_cpus:
+        Number of CPUs to use for parallelization. If None, use os.cpu_count().
+        Defaults to None.
+    :type number_cpus: Optional[int]
+    """
+
+    def __init__(self, grpo_group_size: int, adjustment_scale: float = 1.0, ltol: float = 0.3, stol: float = 0.5,
+                 angle_tol: float = 10.0, scale: float = 1.0, volume_check_cutoff: float = 0.1,
+                 structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
+                 number_cpus: Optional[int] = None) -> None:
+        """Constructor for ProbabilityMatchingCRMSEReward."""
+        super().__init__(ltol=ltol, stol=stol, angle_tol=angle_tol, scale=scale,
+                         volume_check_cutoff=volume_check_cutoff, structure_check_cutoff=structure_check_cutoff,
+                         polar_sine_cutoff=polar_sine_cutoff, number_cpus=number_cpus)
+        if not grpo_group_size > 1:
+            raise ValueError("GRPO group size must be greater than 1.")
+        self._grpo_group_size = grpo_group_size
+        self._adjustment_scale = adjustment_scale
+
+    @staticmethod
+    def _compute_rmse_with_match_index(py_structure: PymatgenStructure,
+                                       reference_py_structures: Sequence[PymatgenStructure],
+                                       ltol: float, stol: float, angle_tol: float, volume_check_cutoff: float,
+                                       structure_check_cutoff: float, polar_sine_cutoff: float) -> tuple[float, int]:
+        """
+        Compute the cRMSE and return the index of the best matching reference structure.
+
+        :param py_structure:
+            Generated structure as a Pymatgen Structure.
+        :type py_structure: PymatgenStructure
+        :param reference_py_structures:
+            Sequence of reference structures with the same reduced composition.
+        :type reference_py_structures: Sequence[PymatgenStructure]
+        :param ltol:
+            Fractional length tolerance.
+        :type ltol: float
+        :param stol:
+            Site tolerance.
+        :type stol: float
+        :param angle_tol:
+            Angle tolerance in degrees.
+        :type angle_tol: float
+        :param volume_check_cutoff:
+            Minimum volume cutoff.
+        :type volume_check_cutoff: float
+        :param structure_check_cutoff:
+            Minimum interatomic distance cutoff.
+        :type structure_check_cutoff: float
+        :param polar_sine_cutoff:
+            Minimum polar sine cutoff.
+        :type polar_sine_cutoff: float
+
+        :return:
+            (cRMSE value, index of best matching reference structure or -1 if no match).
+        :rtype: tuple[float, int]
+        """
+        sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
+        # Match structures and take smallest RMSE.
+        # Use stol for non-matching structures.
+        assert len(reference_py_structures) > 0
+        rmses = []
+        for ref_index, ref_py_structure in enumerate(reference_py_structures):
+            volume_valid = (py_structure.volume >= volume_check_cutoff)
+
+            dist_mat = py_structure.distance_matrix
+            # Pad diagonal with a large number to remove self-matches.
+            dist_mat = dist_mat + np.diag(np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0))
+            structure_valid = (dist_mat.min() >= structure_check_cutoff)
+
+            polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+            polar_sine_valid = (polar_sine >= polar_sine_cutoff)
+
+            if volume_valid and structure_valid and polar_sine_valid:
+                res = sm.get_rms_dist(py_structure, ref_py_structure)
+            else:
+                res = None
+
+            assert res is None or res[0] <= stol
+            # Use -1 as match index if no match found.
+            rmses.append((stol, -1) if res is None else (res[0], ref_index))
+
+        return min(rmses)
+
+    def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage,
+                enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        """
+        Compute rewards with probability matching adjustment for GRPO groups.
+
+        The reward is computed as:
+            reward = scale * (stol - cRMSE) + adjustment_scale * (reference_prob - empirical_prob)
+
+        where reference_prob and empirical_prob refer to the matched polymorph within each GRPO group.
+
+        :param structures:
+            Sequence of Structure objects representing generated structures.
+        :type structures: Sequence[Structure]
+        :param stage:
+            Stage of the reward computation.
+        :type stage: Reward.ComputeStage
+        :param enable_progress_bar:
+            Whether to enable the progress bar for this computation.
+        :type enable_progress_bar: bool
+
+        :return:
+            (List of rewards per structure, info dictionary).
+        :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
+        """
+        if stage == Reward.ComputeStage.TRAIN:
+            reduced_composition_map = self._train_reduced_composition_map
+            if reduced_composition_map is None:
+                raise RuntimeError("Training dataset not set. Call set_train_dataset before compute.")
+        elif stage == Reward.ComputeStage.VAL:
+            reduced_composition_map = self._val_reduced_composition_map
+            if reduced_composition_map is None:
+                raise RuntimeError("Validation dataset not set. Call set_val_dataset before compute.")
+        else:
+            assert stage == Reward.ComputeStage.PRED
+            reduced_composition_map = self._pred_reduced_composition_map
+            if reduced_composition_map is None:
+                raise RuntimeError("Prediction dataset not set. Call set_pred_dataset before compute.")
+
+        # Verify batch size is compatible with GRPO group size.
+        if len(structures) % self._grpo_group_size != 0:
+            raise ValueError(f"Number of structures ({len(structures)}) must be divisible by "
+                             f"GRPO group size ({self._grpo_group_size}).")
+
+        # Check matching compositions.
+        for grpo_group_index in range(len(structures) // self._grpo_group_size):
+            start_idx = grpo_group_index * self._grpo_group_size
+            end_idx = (grpo_group_index + 1) * self._grpo_group_size
+            group_slice = slice(start_idx, end_idx)
+            group_structures = structures[group_slice]
+            # Atomic numbers should match exactly
+            first_numbers = group_structures[0].atomic_numbers
+            for structure in group_structures[1:]:
+                assert structure.atomic_numbers == first_numbers
+
+        # Convert structures to pymatgen structures.
+        py_structures = []
+        relevant_structures_list = []
+        for structure in structures:
+            py_structure = structure.get_pymatgen_structure()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=UserWarning)
+                reduced_composition = py_structure.composition.reduced_composition
+            py_structures.append(py_structure)
+            assert (reduced_composition in reduced_composition_map
+                    and len(reduced_composition_map[reduced_composition]) > 0)
+            relevant_structures_list.append(reduced_composition_map[reduced_composition])
+
+        # Compute cRMSE and match indices.
+        crmse_function = partial(self._compute_rmse_with_match_index, ltol=self._ltol, stol=self._stol,
+                                 angle_tol=self._angle_tol, volume_check_cutoff=self._volume_check_cutoff,
+                                 structure_check_cutoff=self._structure_check_cutoff,
+                                 polar_sine_cutoff=self._polar_sine_cutoff)
+
+        if self._cpu_count > 1:
+            results = process_map(crmse_function, py_structures, relevant_structures_list,
+                                  desc="Computing cRMSE rewards",
+                                  chunksize=max(min(len(py_structures) // self._cpu_count, 100), 1),
+                                  max_workers=self._cpu_count, position=1, leave=False,
+                                  disable=not enable_progress_bar)
+        else:
+            results = list(map(crmse_function,
+                               tqdm.tqdm(py_structures, desc="Computing cRMSE rewards",
+                                         total=len(py_structures), position=1, leave=False,
+                                         disable=not enable_progress_bar),
+                               relevant_structures_list))
+
+        crmse_values = np.array([r[0] for r in results])
+        match_indices = [r[1] for r in results]
+
+        # Compute base cRMSE rewards.
+        base_rewards = self._scale * (self._stol - crmse_values)
+
+        # Compute probability matching adjustments per GRPO group.
+        adjustments = np.zeros(len(structures))
+        num_groups = len(structures) // self._grpo_group_size
+
+        for group_idx in range(num_groups):
+            start_idx = group_idx * self._grpo_group_size
+            end_idx = (group_idx + 1) * self._grpo_group_size
+            group_slice = slice(start_idx, end_idx)
+
+            group_match_indices = match_indices[group_slice]
+            group_relevant_structures = relevant_structures_list[start_idx]
+            # Same for all in group.
+            assert all(group_relevant_structures is relevant_structures_list[i] for i in range(start_idx, end_idx))
+            num_polymorphs = len(group_relevant_structures)
+
+            # Reference distribution: uniform over polymorphs (each polymorph counted once in reference).
+            reference_probs = np.ones(num_polymorphs) / num_polymorphs
+
+            # Empirical distribution: count how many times each polymorph was matched.
+            empirical_counts = np.zeros(num_polymorphs)
+            unmatched_count = 0
+            for idx in group_match_indices:
+                if idx >= 0:
+                    empirical_counts[idx] += 1
+                else:
+                    unmatched_count += 1
+
+            # Normalize empirical counts (only over matched structures).
+            matched_count = self._grpo_group_size - unmatched_count
+            if matched_count > 0:
+                empirical_probs = empirical_counts / matched_count
+            else:
+                # No matches at all - no adjustment possible.
+                empirical_probs = np.zeros(num_polymorphs)
+
+            # Compute per-structure adjustments.
+            for i, idx in enumerate(group_match_indices):
+                struct_idx = start_idx + i
+                if idx >= 0 and matched_count > 0:
+                    # Positive adjustment if under-represented, negative if over-represented.
+                    adjustments[struct_idx] = self._adjustment_scale * (reference_probs[idx] - empirical_probs[idx])
+                else:
+                    # No match - no adjustment.
+                    adjustments[struct_idx] = 0.0
+
+        total_rewards = base_rewards + adjustments
+
+        return total_rewards, {
+            "cRMSE": crmse_values,
+            "prob_adjustment": adjustments,
+            "match_rate": np.array([1.0 if idx >= 0 else 0.0 for idx in match_indices])
+        }
 
 
 class CompositeRewards(Reward):
