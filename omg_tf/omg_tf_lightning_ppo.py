@@ -29,6 +29,8 @@ class TrajectoryData:
     sampled_residual_effects: list[dict[DataField, torch.Tensor]]
     # List of old log probabilities at each timestep per field.
     old_log_probs: list[dict[DataField, torch.Tensor]]
+    # List of base model outputs at each timestep (only necessary for full mode).
+    base_model_outputs: list[dict[DataField, torch.Tensor]]
     # Rewards for final structures.
     rewards: torch.Tensor
     # Advantages for final structures.
@@ -89,6 +91,10 @@ class OMGTFLightningPPO(lightning.LightningModule):
         Enumeration of residual application modes.
         """
 
+        FULL = auto()
+        """
+        Full residual: v_total = res_b.
+        """
         ADDITIVE = auto()
         """
         Additive residual: v_total = base_b + res_b.
@@ -185,8 +191,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
         try:
             self.residual_mode = self.ResidualMode[residual_mode.upper()]
         except KeyError:
-            raise ValueError(f"Invalid residual mode '{residual_mode}'. Must be 'additive' or 'scale'.")
-        if self.residual_mode == self.ResidualMode.ADDITIVE:
+            raise ValueError(f"Invalid residual mode '{residual_mode}'. Must be 'full', 'additive' or 'scale'.")
+        if self.residual_mode == self.ResidualMode.FULL:
+            if not isinstance(self.residual_model, Model):
+                raise ValueError("Full residual mode requires residual model to be of type Model.")
+        elif self.residual_mode == self.ResidualMode.ADDITIVE:
             if not isinstance(self.residual_model, Model):
                 raise ValueError("Additive residual mode requires residual model to be of type Model.")
         else:
@@ -300,8 +309,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
             raise ValueError(f"Invalid position normalization: {position_normalization}")
         if normalization != self.PositionNormalization.NONE and DataField.pos not in self.integrated_data_fields:
             raise ValueError("Position normalization requires position to be an integrated field.")
-        if normalization != self.PositionNormalization.NONE and self.residual_mode != self.ResidualMode.ADDITIVE:
-            raise ValueError("Position normalization is only supported for additive residual mode.")
+        if normalization != self.PositionNormalization.NONE and self.residual_mode == self.ResidualMode.SCALE:
+            raise ValueError("Position normalization is not supported for scale residual mode.")
         self.position_normalization = normalization
 
         if not all(cost >= 0.0 for cost in relative_costs.values()):
@@ -414,6 +423,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         states = []
         old_log_probs = []
         sampled_residual_effects = []
+        base_model_outputs = []
         pos_ratio_total = torch.tensor(0.0, device=self.device)
         cell_ratio_total = torch.tensor(0.0, device=self.device)
 
@@ -424,29 +434,38 @@ class OMGTFLightningPPO(lightning.LightningModule):
             dt = times[t_index] - times[t_index - 1]
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
+            # Even in full mode we need the base model output for KL regularization.
             base_model_output = base_model(x_t, time)
             residual_output = self.residual_model(x_t, time)
 
             states.append(x_t.clone())
             step_sampled_residual_effects = {}
             step_old_log_probs = {}
+            step_base_model_outputs = {}
 
             if self.integrate_pos:
                 base_b = base_model_output[DataField.pos.name + "_b"]
                 sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
                 assert sigma.ndim == 0
 
-                if self.residual_mode == self.ResidualMode.ADDITIVE:
-                    res_b = residual_output[DataField.pos.name + "_b"]
-                    assert res_b.shape == base_b.shape
-                    velocity = base_b + res_b
+                if self.residual_mode == self.ResidualMode.FULL or self.residual_mode == self.ResidualMode.ADDITIVE:
+                    if self.residual_mode == self.ResidualMode.FULL:
+                        velocity = residual_output[DataField.pos.name + "_b"]
+                        assert velocity.shape == base_b.shape
+                        res_b = velocity - base_b
+                        step_base_model_outputs[DataField.pos] = base_b
+                    else:
+                        assert self.residual_mode == self.ResidualMode.ADDITIVE
+                        res_b = residual_output[DataField.pos.name + "_b"]
+                        assert res_b.shape == base_b.shape
+                        velocity = base_b + res_b
                     randn = torch.randn_like(res_b)
                     noise = sigma * randn
                     # Store deviation effect for PPO update: res_b * dt + noise * sqrt(dt).
                     # Effectively x_t+dt - x_t - base_b * dt. Shape (sum(n_atoms), 3).
                     step_sampled_residual_effects[DataField.pos] = res_b * dt + noise * sqrt_dt
                     # Log probability of x_t+dt given x_t for SDE.
-                    # Sum log probs over x, y, and z for additive mode yielding tensor of shape (sum(n_atoms),).
+                    # Sum log probs over x, y, and z yielding tensor of shape (sum(n_atoms),).
                     log_probs_atoms = -0.5 * (
                             torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2)
                     ).sum(dim=tuple(range(1, randn.ndim)))
@@ -489,10 +508,17 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
                 assert sigma.ndim == 0
 
-                if self.residual_mode == self.ResidualMode.ADDITIVE:
-                    res_b = residual_output[DataField.cell.name + "_b"]
-                    assert res_b.shape == base_b.shape
-                    velocity = base_b + res_b
+                if self.residual_mode == self.ResidualMode.FULL or self.residual_mode == self.ResidualMode.ADDITIVE:
+                    if self.residual_mode == self.ResidualMode.FULL:
+                        velocity = residual_output[DataField.cell.name + "_b"]
+                        assert velocity.shape == base_b.shape
+                        res_b = velocity - base_b
+                        step_base_model_outputs[DataField.cell] = base_b
+                    else:
+                        assert self.residual_mode == self.ResidualMode.ADDITIVE
+                        res_b = residual_output[DataField.cell.name + "_b"]
+                        assert res_b.shape == base_b.shape
+                        velocity = base_b + res_b
                     randn = torch.randn_like(res_b)
                     noise = sigma * randn
                     # Store deviation effect for PPO update: res_b * dt + noise * sqrt(dt).
@@ -534,6 +560,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
             sampled_residual_effects.append(step_sampled_residual_effects)
             old_log_probs.append(step_old_log_probs)
+            base_model_outputs.append(step_base_model_outputs)
 
         # Append final state.
         states.append(x_t.clone())
@@ -579,6 +606,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
             states=states,
             sampled_residual_effects=sampled_residual_effects,
             old_log_probs=old_log_probs,
+            base_model_outputs=base_model_outputs,
             rewards=rewards,
             advantages=advantages,
             info_dict=info_dict,
@@ -629,8 +657,14 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
                 assert sigma.ndim == 0
 
-                if self.residual_mode == self.ResidualMode.ADDITIVE:
-                    res_b = residual_output[DataField.pos.name + "_b"]  # Shape (sum(n_atoms), 3).
+                if self.residual_mode == self.ResidualMode.FULL or self.residual_mode == self.ResidualMode.ADDITIVE:
+                    if self.residual_mode == self.ResidualMode.FULL:
+                        velocity = residual_output[DataField.pos.name + "_b"]  # Shape (sum(n_atoms), 3).
+                        res_b = velocity - trajectory.base_model_outputs[t_index][DataField.pos]
+                    else:
+                        assert self.residual_mode == self.ResidualMode.ADDITIVE
+                        res_b = residual_output[DataField.pos.name + "_b"]  # Shape (sum(n_atoms), 3).
+
                     old_log_probs_atoms = trajectory.old_log_probs[t_index][DataField.pos]  # Shape (sum(n_atoms),).
                     # This is effectively x_t+dt - x_t - base_b * dt. Shape (sum(n_atoms), 3).
                     sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.pos]
@@ -759,8 +793,14 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
                 assert sigma.ndim == 0
 
-                if self.residual_mode == self.ResidualMode.ADDITIVE:
-                    res_b = residual_output[DataField.cell.name + "_b"]  # Shape (batch_size, 3, 3).
+                if self.residual_mode == self.ResidualMode.FULL or self.residual_mode == self.ResidualMode.ADDITIVE:
+                    if self.residual_mode == self.ResidualMode.FULL:
+                        velocity = residual_output[DataField.cell.name + "_b"]  # Shape (batch_size, 3, 3).
+                        res_b = velocity - trajectory.base_model_outputs[t_index][DataField.cell]
+                    else:
+                        assert self.residual_mode == self.ResidualMode.ADDITIVE
+                        res_b = residual_output[DataField.cell.name + "_b"]  # Shape (batch_size, 3, 3).
+
                     old_log_prob = trajectory.old_log_probs[t_index][DataField.cell]  # Shape (batch_size,).
                     # This is effectively x_t+dt - x_t - base_b * dt. Shape (batch_size, 3, 3).
                     sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.cell]
@@ -882,13 +922,17 @@ class OMGTFLightningPPO(lightning.LightningModule):
             dt = times[t_index] - times[t_index - 1]
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
-            base_model_output = base_model(x_t, time)
+            base_model_output = base_model(x_t, time) if self.residual_mode != self.ResidualMode.FULL else None
             residual_output = self.residual_model(x_t, time)
             if self.integrate_pos:
-                base_b = base_model_output[DataField.pos.name + "_b"]
+                base_b = base_model_output[DataField.pos.name + "_b"] if base_model_output is not None else None
                 sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
                 assert sigma.ndim == 0
-                if self.residual_mode == self.ResidualMode.ADDITIVE:
+                if self.residual_mode == self.ResidualMode.FULL:
+                    assert base_b is None
+                    velocity = residual_output[DataField.pos.name + "_b"]
+                    noise = sigma * torch.randn_like(velocity)
+                elif self.residual_mode == self.ResidualMode.ADDITIVE:
                     res_b = residual_output[DataField.pos.name + "_b"]
                     assert res_b.shape == base_b.shape
                     velocity = base_b + res_b
@@ -907,10 +951,14 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 # Euler-Maruyama update for SDE.
                 x_t.pos = self.pos_corrector.correct(x_t.pos + velocity * dt + noise * sqrt_dt)
             if self.integrate_cell:
-                base_b = base_model_output[DataField.cell.name + "_b"]
+                base_b = base_model_output[DataField.cell.name + "_b"] if base_model_output is not None else None
                 sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
                 assert sigma.ndim == 0
-                if self.residual_mode == self.ResidualMode.ADDITIVE:
+                if self.residual_mode == self.ResidualMode.FULL:
+                    assert base_b is None
+                    velocity = residual_output[DataField.cell.name + "_b"]
+                    noise = sigma * torch.randn_like(velocity)
+                elif self.residual_mode == self.ResidualMode.ADDITIVE:
                     res_b = residual_output[DataField.cell.name + "_b"]
                     assert res_b.shape == base_b.shape
                     velocity = base_b + res_b
