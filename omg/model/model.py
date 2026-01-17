@@ -38,3 +38,24 @@ class Model(nn.Module):
         """
         self.encoder.enable_masked_species()
         self.head.enable_masked_species()
+
+    def freeze_encoder(self) -> None:
+        """
+        Freeze the encoder and embedders, leaving only the head trainable.
+
+        If the encoder has its own freeze_encoder method (e.g., CSPNetFull which has output heads
+        embedded in the encoder), it will be called instead to freeze only the encoder part while
+        keeping the output heads trainable.
+        """
+        if hasattr(self.encoder, 'freeze_encoder'):
+            # Encoder has output heads embedded - use its own freeze method.
+            self.encoder.freeze_encoder()
+        else:
+            # Standard encoder without embedded heads - freeze entirely.
+            for param in self.encoder.parameters():
+                param.requires_grad = False
+        for param in self.time_embedder.parameters():
+            param.requires_grad = False
+        if self.prop_embedder is not None:
+            for param in self.prop_embedder.parameters():
+                param.requires_grad = False

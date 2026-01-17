@@ -179,3 +179,28 @@ class CSPNetFull(Encoder, CSPNet):
         # The nodes have to be able to handle the additional masked species.
         self.node_embedding = nn.Embedding(self.max_atoms + 1, self.hidden_dim)
         self.species_shift = 0
+        raise NotImplementedError
+
+    def freeze_encoder(self) -> None:
+        """
+        Freeze all layers except output heads (coord_out, lattice_out, type_out, etc.).
+        # TODO: MAKE SURE THAT THIS IS CALLED AFTER enable_masked_species.
+        """
+        # Freeze embedding layers.
+        for param in self.node_embedding.parameters():
+            param.requires_grad = False
+        for param in self.atom_latent_emb.parameters():
+            param.requires_grad = False
+        # Freeze message passing layers.
+        for i in range(self.num_layers):
+            for param in self._modules[f"csp_layer_{i}"].parameters():
+                param.requires_grad = False
+        # Freeze layer norm.
+        if self.ln:
+            for param in self.final_layer_norm.parameters():
+                param.requires_grad = False
+        # Freeze adapters if present.
+        if hasattr(self, 'adapters'):
+            for adapter in self.adapters:
+                for param in adapter.parameters():
+                    param.requires_grad = False

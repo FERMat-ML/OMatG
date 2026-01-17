@@ -113,7 +113,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
     def __init__(self, reward: Reward, noise_schedules: dict[str, NoiseSchedule],
                  relative_costs: dict[str, float], reference_noise_schedules: dict[str, NoiseSchedule],
-                 residual_model: Optional[Union[Model, TimeMLP]] = None, grpo_group_size: int = 32,
+                 residual_model: Optional[Union[Model, TimeMLP]] = None,
+                 freeze_residual_model_encoder: bool = False, grpo_group_size: int = 32,
                  grpo_num_groups: int = 16, grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2,
                  ppo_epochs: int = 1, gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
                  generation_xyz_filename: Optional[str] = None, position_normalization: str = "none",
@@ -196,11 +197,15 @@ class OMGTFLightningPPO(lightning.LightningModule):
             if residual_model is not None:
                 raise ValueError("Full residual mode does not support passing a residual model, it must be None.")
             self.residual_model = deepcopy(base_model.model)  # TODO: CHECK WHETHER I CAN SAFELY LOAD CHECKPOINTS.
+            if freeze_residual_model_encoder:
+                self.residual_model.freeze_encoder()
         else:
             assert self.residual_mode == self.ResidualMode.ADDITIVE or self.residual_mode == self.ResidualMode.SCALE
             if residual_model is None:
                 raise ValueError(f"{self.residual_mode.name.capitalize()} residual mode requires a residual model to "
                                  f"be provided.")
+            if freeze_residual_model_encoder:
+                raise ValueError("Freezing residual model encoder is only supported for full residual mode.")
             self.residual_model = residual_model
         # Freeze base model during residual training.
         base_model.freeze()
