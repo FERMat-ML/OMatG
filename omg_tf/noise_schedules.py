@@ -56,7 +56,7 @@ class SqrtNoiseSchedule(NoiseSchedule):
     from 1 to 0).
 
     :param noise_scale:
-        The noise scale a.
+        The noise scale a, i.e., the noise at time 0.5.
     :type noise_scale: float
 
     :raises ValueError:
