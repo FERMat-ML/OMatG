@@ -874,9 +874,10 @@ class CompositeRewards(Reward):
         total_rewards = np.zeros(len(structures))
         total_dict = {}
         for reward_function, weight in zip(self._reward_functions, self._weights):
-            rewards, info_dict = reward_function.compute(structures, stage, enable_progress_bar)
-            total_rewards += weight * rewards
-            for key, value in info_dict.items():
-                assert key not in total_dict
-                total_dict[key] = value
+            if stage != Reward.ComputeStage.TRAIN or weight > 0.0:
+                rewards, info_dict = reward_function.compute(structures, stage, enable_progress_bar)
+                total_rewards += weight * rewards
+                for key, value in info_dict.items():
+                    assert key not in total_dict
+                    total_dict[key] = value
         return total_rewards, total_dict
