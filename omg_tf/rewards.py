@@ -748,7 +748,10 @@ class EnergyReward(Reward):
         If scale is not positive.
     """
 
-    def __init__(self, scale: float = 1.0, device: Optional[str] = "cpu") -> None:
+    def __init__(self, scale: float = 1.0, device: Optional[str] = "cpu",
+                 invalid_penalty: Optional[float] = None, volume_check_cutoff: float = 0.1,
+                 structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
+                 clip_std: Optional[float] = None) -> None:
         """Constructor for EnergyReward.
 
         CPU device seems to be quicker for small batches (tested up to 1024 structures).
@@ -756,9 +759,24 @@ class EnergyReward(Reward):
         super().__init__()
         if not scale > 0.0:
             raise ValueError("Scale must be positive.")
+        if invalid_penalty is not None and invalid_penalty < 0.0:
+            raise ValueError("Invalid penalty must be non-negative.")
+        if not volume_check_cutoff >= 0.0:
+            raise ValueError("Volume check cutoff must be non-negative.")
+        if not structure_check_cutoff >= 0.0:
+            raise ValueError("Structure check cutoff must be non-negative.")
+        if not polar_sine_cutoff >= 0.0:
+            raise ValueError("Polar sine cutoff must be non-negative.")
+        if clip_std is not None and not clip_std > 0.0:
+            raise ValueError("clip_std must be positive.")
         from mace.calculators import mace_mp
         self._scale = scale
         self._mace_calculator = mace_mp(model="medium-mpa-0", device=device)
+        self._invalid_penalty = invalid_penalty
+        self._volume_check_cutoff = volume_check_cutoff
+        self._structure_check_cutoff = structure_check_cutoff
+        self._polar_sine_cutoff = polar_sine_cutoff
+        self._clip_std = clip_std
 
     def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage,
                 enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
@@ -782,12 +800,52 @@ class EnergyReward(Reward):
             (List of rewards per structure, info dictionary).
         :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
         """
+        energies = np.empty(len(structures), dtype=float)
+        invalid_flags = np.zeros(len(structures), dtype=float)
+        penalty_energy = None
+        if self._invalid_penalty is not None:
+            penalty_energy = self._invalid_penalty / self._scale
+
         with torch.set_grad_enabled(True):  # Mace needs gradients.
-            energies = np.array([self._mace_calculator.get_potential_energy(structure.get_ase_atoms()) / len(structure.atomic_numbers)
-                                 for structure in tqdm.tqdm(structures, desc="Computing energy rewards",
-                                                            disable=not enable_progress_bar)])
+            for idx, structure in enumerate(tqdm.tqdm(structures, desc="Computing energy rewards",
+                                                      disable=not enable_progress_bar)):
+                if penalty_energy is not None:
+                    py_structure = structure.get_pymatgen_structure()
+                    volume_valid = (py_structure.volume >= self._volume_check_cutoff)
+                    dist_mat = py_structure.distance_matrix
+                    dist_mat = dist_mat + np.diag(
+                        np.ones(dist_mat.shape[0]) * (self._structure_check_cutoff + 10.0)
+                    )
+                    min_dist = dist_mat.min()
+                    structure_valid = (min_dist >= self._structure_check_cutoff)
+                    polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+                    polar_sine_valid = (polar_sine >= self._polar_sine_cutoff)
+                    if not (volume_valid and structure_valid and polar_sine_valid):
+                        energies[idx] = penalty_energy
+                        invalid_flags[idx] = 1.0
+                        continue
+                energies[idx] = (
+                    self._mace_calculator.get_potential_energy(structure.get_ase_atoms())
+                    / len(structure.atomic_numbers)
+                )
+
+        raw_energies = energies.copy()
+        if self._clip_std is not None:
+            valid_mask = invalid_flags == 0.0
+            valid_energies = energies[valid_mask]
+            if valid_energies.size > 1:
+                mean = valid_energies.mean()
+                std = valid_energies.std()
+                if std > 0.0:
+                    low = mean - self._clip_std * std
+                    high = mean + self._clip_std * std
+                    energies[valid_mask] = np.clip(energies[valid_mask], low, high)
+
         rewards = -self._scale * energies  # Minimize energy.
-        return rewards, {"energy_per_atom": energies}
+        info_dict = {"energy_per_atom": energies, "energy_invalid": invalid_flags}
+        if self._clip_std is not None:
+            info_dict["energy_per_atom_raw"] = raw_energies
+        return rewards, info_dict
 
 
 class CompositeRewards(Reward):
