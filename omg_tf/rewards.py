@@ -787,8 +787,6 @@ class EnergyReward(Reward):
                                  for structure in tqdm.tqdm(structures, desc="Computing energy rewards",
                                                             disable=not enable_progress_bar)])
         rewards = -self._scale * energies  # Minimize energy.
-        for structure in structures:
-            print(structure.a)
         return rewards, {"energy_per_atom": energies}
 
 
