@@ -699,7 +699,7 @@ class EnergyReward(Reward):
         :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
         """
         with torch.set_grad_enabled(True):  # Mace needs gradients.
-            energies = np.array([self._mace_calculator.get_potential_energy(structure.get_ase_atoms())
+            energies = np.array([self._mace_calculator.get_potential_energy(structure.get_ase_atoms()) / len(structure.atomic_numbers)
                                  for structure in tqdm.tqdm(structures, desc="Computing energy rewards",
                                                             disable=not enable_progress_bar)])
         rewards = -self._scale * energies  # Minimize energy.
