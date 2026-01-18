@@ -1055,24 +1055,24 @@ class OMGTFLightningPPO(lightning.LightningModule):
                  batch_size=len(batch))
         self.log_dict(all_clip_fractions, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                       batch_size=len(batch))
-        self.log("reward_mean", rewards.mean(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("reward_mean", rewards.mean(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log("reward_std", rewards.std(), on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
-        self.log("reward_std_within_group", within_group_std, on_step=False, on_epoch=True, prog_bar=True,
+        self.log("reward_std_within_group", within_group_std, on_step=True, on_epoch=True, prog_bar=True,
                  sync_dist=True, batch_size=len(batch))
-        self.log_dict(trajectory.info_dict, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
+        self.log_dict(trajectory.info_dict, on_step=True, on_epoch=True, prog_bar=True, sync_dist=True,
                       batch_size=len(batch))
 
         for field in self.integrated_data_fields:
             if self.noise_schedules[field].learnable():
                 times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
                 sigmas = self.noise_schedules[field].noise(times)
-                self.log(f"sigma_{field.name}_mean", sigmas.mean(), on_step=False, on_epoch=True, prog_bar=True,
+                self.log(f"sigma_{field.name}_mean", sigmas.mean(), on_step=True, on_epoch=True, prog_bar=True,
                          sync_dist=True, batch_size=len(batch))
-                self.log(f"sigma_{field.name}_min", sigmas.min(), on_step=False, on_epoch=True, sync_dist=True,
+                self.log(f"sigma_{field.name}_min", sigmas.min(), on_step=True, on_epoch=True, sync_dist=True,
                          batch_size=len(batch))
-                self.log(f"sigma_{field.name}_max", sigmas.max(), on_step=False, on_epoch=True, sync_dist=True,
+                self.log(f"sigma_{field.name}_max", sigmas.max(), on_step=True, on_epoch=True, sync_dist=True,
                          batch_size=len(batch))
 
     def validation_step(self, batch: OMGData, batch_idx: int) -> None:
