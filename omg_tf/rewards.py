@@ -807,7 +807,7 @@ class CompositeRewards(Reward):
         super().__init__()
         if len(rewards) != len(weights):
             raise ValueError("Number of reward functions must match number of weights.")
-        if not all(w > 0.0 for w in weights):
+        if not all(w >= 0.0 for w in weights):
             raise ValueError("Weights must be positive.")
         if not abs(sum(weights) - 1.0) < 1e-6:
             raise ValueError("Weights must sum to 1.0")
