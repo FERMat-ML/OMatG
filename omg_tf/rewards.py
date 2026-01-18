@@ -47,6 +47,90 @@ class VolumeReward(Reward):
         return volumes, {"volume": volumes}
 
 
+class ValidityPenaltyReward(Reward):
+    """
+    Reward function that penalizes invalid structures based on simple geometric checks.
+
+    A structure is considered invalid if any of the following hold:
+      - Cell volume is below volume_check_cutoff
+      - Minimum interatomic distance is below structure_check_cutoff
+      - Polar sine is below polar_sine_cutoff (near-collinear cell)
+
+    The reward is -scale for invalid structures and 0 for valid ones.
+    """
+
+    def __init__(self, scale: float = 1.0, volume_check_cutoff: float = 0.1,
+                 structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3) -> None:
+        """Constructor for ValidityPenaltyReward."""
+        super().__init__()
+        if not scale > 0.0:
+            raise ValueError("Scale must be positive.")
+        if not volume_check_cutoff >= 0.0:
+            raise ValueError("Volume check cutoff must be non-negative.")
+        if not structure_check_cutoff >= 0.0:
+            raise ValueError("Structure check cutoff must be non-negative.")
+        if not polar_sine_cutoff >= 0.0:
+            raise ValueError("Polar sine cutoff must be non-negative.")
+        self._scale = scale
+        self._volume_check_cutoff = volume_check_cutoff
+        self._structure_check_cutoff = structure_check_cutoff
+        self._polar_sine_cutoff = polar_sine_cutoff
+
+    def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage,
+                enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        """
+        Compute validity penalties for a batch of structures.
+
+        :param structures:
+            Sequence of Structure objects representing generated structures.
+        :type structures: Sequence[Structure]
+        :param stage:
+            Stage of the reward computation. Not used in this reward function.
+        :type stage: Reward.ComputeStage
+        :param enable_progress_bar:
+            Whether to enable the progress bar for this computation.
+        :type enable_progress_bar: bool
+
+        :return:
+            (List of rewards per structure, info dictionary).
+        :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
+        """
+        invalid_flags = []
+        invalid_volume = []
+        invalid_min_dist = []
+        invalid_polar_sine = []
+
+        for structure in tqdm.tqdm(structures, desc="Computing validity penalties",
+                                   disable=not enable_progress_bar):
+            py_structure = structure.get_pymatgen_structure()
+
+            volume_valid = (py_structure.volume >= self._volume_check_cutoff)
+            dist_mat = py_structure.distance_matrix
+            # Pad diagonal with a large number to remove self-matches.
+            dist_mat = dist_mat + np.diag(np.ones(dist_mat.shape[0]) * (self._structure_check_cutoff + 10.0))
+            min_dist = dist_mat.min()
+            structure_valid = (min_dist >= self._structure_check_cutoff)
+
+            polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+            polar_sine_valid = (polar_sine >= self._polar_sine_cutoff)
+
+            invalid = not (volume_valid and structure_valid and polar_sine_valid)
+            invalid_flags.append(1.0 if invalid else 0.0)
+            invalid_volume.append(0.0 if volume_valid else 1.0)
+            invalid_min_dist.append(0.0 if structure_valid else 1.0)
+            invalid_polar_sine.append(0.0 if polar_sine_valid else 1.0)
+
+        invalid_flags = np.array(invalid_flags, dtype=float)
+        rewards = -self._scale * invalid_flags
+        info_dict = {
+            "invalid_structure": invalid_flags,
+            "invalid_volume": np.array(invalid_volume, dtype=float),
+            "invalid_min_dist": np.array(invalid_min_dist, dtype=float),
+            "invalid_polar_sine": np.array(invalid_polar_sine, dtype=float),
+        }
+        return rewards, info_dict
+
+
 class CRMSEReward(Reward):
     """
     Reward function that reduces the corrected root-mean-square error (cRMSE) between generated structures and known
