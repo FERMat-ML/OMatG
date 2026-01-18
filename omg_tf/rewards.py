@@ -650,6 +650,57 @@ class ProbabilityMatchingCRMSEReward(CRMSEReward):
         }
 
 
+class EnergyReward(Reward):
+    """
+    Reward function that encourages lower potential energy per atom.
+
+    :param scale:
+        Scaling factor for the reward.
+        Must be positive.
+        Defaults to 1.0.
+    :type scale: float
+    :raises ValueError:
+        If scale is not positive.
+    """
+
+    def __init__(self, scale: float = 1.0) -> None:
+        """Constructor for EnergyReward."""
+        super().__init__()
+        if not scale > 0.0:
+            raise ValueError("Scale must be positive.")
+        from mace.calculators import mace_mp
+        self._scale = scale
+        self._mace_calculator = mace_mp(model="medium-mpa-0")
+
+    def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage,
+                enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        """
+        Compute rewards for a batch of structures.
+
+        This reward is simply the negative potential energy per atom of each structure, scaled by the specified factor.
+        The stage parameter is included for compatibility but is not used in this reward function.
+
+        :param structures:
+            Sequence of Structure objects representing generated structures.
+        :type structures: Sequence[Structure]
+        :param stage:
+            Stage of the reward computation. Not used in this reward function.
+        :type stage: Reward.ComputeStage
+        :param enable_progress_bar:
+            Whether to enable the progress bar for this computation.
+        :type enable_progress_bar: bool
+
+        :return:
+            (List of rewards per structure, info dictionary).
+        :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
+        """
+        energies = np.array([self._mace_calculator.get_potential_energy(structure.get_ase_atoms())
+                             for structure in tqdm.tqdm(structures, desc="Computing energy rewards",
+                                                        disable=not enable_progress_bar)])
+        rewards = -self._scale * energies
+        return rewards, {"energy_per_atom": energies}
+
+
 class CompositeRewards(Reward):
     """
     Composite reward that combines multiple reward functions.
