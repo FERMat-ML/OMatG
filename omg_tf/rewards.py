@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure as PymatgenStructure
+import torch
 import tqdm
 from tqdm.contrib.concurrent import process_map
 import warnings
@@ -663,14 +664,17 @@ class EnergyReward(Reward):
         If scale is not positive.
     """
 
-    def __init__(self, scale: float = 1.0) -> None:
-        """Constructor for EnergyReward."""
+    def __init__(self, scale: float = 1.0, device: Optional[str] = "cpu") -> None:
+        """Constructor for EnergyReward.
+
+        CPU device seems to be quicker for small batches (tested up to 1024 structures).
+        """
         super().__init__()
         if not scale > 0.0:
             raise ValueError("Scale must be positive.")
         from mace.calculators import mace_mp
         self._scale = scale
-        self._mace_calculator = mace_mp(model="medium-mpa-0")
+        self._mace_calculator = mace_mp(model="medium-mpa-0", device=device)
 
     def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage,
                 enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
@@ -694,10 +698,13 @@ class EnergyReward(Reward):
             (List of rewards per structure, info dictionary).
         :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
         """
-        energies = np.array([self._mace_calculator.get_potential_energy(structure.get_ase_atoms())
-                             for structure in tqdm.tqdm(structures, desc="Computing energy rewards",
-                                                        disable=not enable_progress_bar)])
-        rewards = -self._scale * energies
+        with torch.set_grad_enabled(True):  # Mace needs gradients.
+            energies = np.array([self._mace_calculator.get_potential_energy(structure.get_ase_atoms())
+                                 for structure in tqdm.tqdm(structures, desc="Computing energy rewards",
+                                                            disable=not enable_progress_bar)])
+        rewards = -self._scale * energies  # Minimize energy.
+        for structure in structures:
+            print(structure.a)
         return rewards, {"energy_per_atom": energies}
 
 
