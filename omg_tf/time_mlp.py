@@ -142,13 +142,14 @@ class TimeMLP(nn.Module):
         if max_n < 2:
             return torch.zeros(batch_size, device=x.pos.device, dtype=x.pos.dtype)
 
-        # Pad positions to (batch_size, max_n, 3).
-        # Use zeros for padding (value doesn't matter since we mask them out).
+        # Pad positions to (batch_size, max_n, 3) - fully vectorized.
+        # Compute local index of each atom within its structure.
+        n_atoms_cumsum = x.n_atoms.cumsum(0)
+        offsets = torch.cat([torch.zeros(1, device=x.pos.device, dtype=n_atoms_cumsum.dtype), n_atoms_cumsum[:-1]])
+        local_idx = torch.arange(x.pos.shape[0], device=x.pos.device) - offsets[x.batch]
+        # Scatter positions into padded tensor.
         padded_frac = torch.zeros(batch_size, max_n, 3, device=x.pos.device, dtype=x.pos.dtype)
-        for struct_idx in range(batch_size):
-            n = x.n_atoms[struct_idx].item()
-            mask = (x.batch == struct_idx)
-            padded_frac[struct_idx, :n] = x.pos[mask]
+        padded_frac[x.batch, local_idx] = x.pos
 
         # Pairwise fractional differences: (batch_size, max_n, max_n, 3).
         frac_diff = padded_frac.unsqueeze(2) - padded_frac.unsqueeze(1)
