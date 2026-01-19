@@ -1,3 +1,4 @@
+import warnings
 import torch
 import torch.nn as nn
 from omg_tf.abstracts import NoiseSchedule
@@ -19,7 +20,9 @@ class ConstantNoiseSchedule(NoiseSchedule):
         """Constructor of the ConstantNoiseSchedule class."""
         super().__init__()
         if not noise_scale >= 0.0:
-            raise ValueError("Noise scale must be positive.")
+            raise ValueError("Noise scale must be non-negative.")
+        if noise_scale == 0.0:
+            warnings.warn("Using zero noise scale in ConstantNoiseSchedule will lead to no exploration at all times.")
         self._noise_scale = noise_scale
 
     def noise(self, t: torch.Tensor) -> torch.Tensor:
@@ -66,8 +69,10 @@ class SqrtNoiseSchedule(NoiseSchedule):
     def __init__(self, noise_scale: float) -> None:
         """Constructor of the SqrtNoiseSchedule class."""
         super().__init__()
-        if not noise_scale > 0.0:
-            raise ValueError("Noise scale must be positive.")
+        if not noise_scale >= 0.0:
+            raise ValueError("Noise scale must be non-negative.")
+        if noise_scale == 0.0:
+            warnings.warn("Using zero noise scale in SqrtNoiseSchedule will lead to no exploration at all times.")
         self._noise_scale = noise_scale
 
     def noise(self, t: torch.Tensor) -> torch.Tensor:
