@@ -127,37 +127,56 @@ class TimeMLP(nn.Module):
         Compute the minimum nearest-neighbor distance for each structure in the batch,
         respecting periodic boundary conditions via minimum image convention.
 
+        Vectorized implementation that pads structures to max_n_atoms and processes
+        the entire batch in parallel.
+
         :param x: OMGData batch.
         :return: Tensor of shape (batch_size,) with min NN distance per structure.
         """
         assert torch.all(x.pos_is_fractional)
 
         batch_size = x.cell.shape[0]
-        min_distances = torch.zeros(batch_size, device=x.pos.device, dtype=x.pos.dtype)
+        max_n = x.n_atoms.max().item()
 
-        # Compute per-structure min NN distance.
-        # This is O(n^2) per structure but structures are typically small.
+        # Handle edge case where all structures have < 2 atoms.
+        if max_n < 2:
+            return torch.zeros(batch_size, device=x.pos.device, dtype=x.pos.dtype)
+
+        # Pad positions to (batch_size, max_n, 3).
+        # Use zeros for padding (value doesn't matter since we mask them out).
+        padded_frac = torch.zeros(batch_size, max_n, 3, device=x.pos.device, dtype=x.pos.dtype)
         for struct_idx in range(batch_size):
+            n = x.n_atoms[struct_idx].item()
             mask = (x.batch == struct_idx)
-            struct_frac = x.pos[mask]  # Shape: (n, 3).
-            n = struct_frac.shape[0]
-            if n < 2:
-                min_distances[struct_idx] = 0.0
-                continue
+            padded_frac[struct_idx, :n] = x.pos[mask]
 
-            # Pairwise fractional differences.
-            frac_diff = struct_frac.unsqueeze(0) - struct_frac.unsqueeze(1)  # Shape: (n, n, 3).
-            frac_diff = frac_diff - torch.round(frac_diff)  # Wrap to [-0.5, 0.5).
+        # Pairwise fractional differences: (batch_size, max_n, max_n, 3).
+        frac_diff = padded_frac.unsqueeze(2) - padded_frac.unsqueeze(1)
+        frac_diff = frac_diff - torch.round(frac_diff)  # Wrap to [-0.5, 0.5).
 
-            cart_diff = torch.einsum('ijk,kl->ijl', frac_diff, x.cell[struct_idx])  # Shape: (n, n, 3).
-            # Apply minimum image convention and convert to Cartesian.
-            dist = torch.linalg.norm(cart_diff, dim=-1)  # Shape: (n, n).
+        # Convert to Cartesian: (batch_size, max_n, max_n, 3).
+        # cell is (batch_size, 3, 3), need to apply per-structure.
+        cart_diff = torch.einsum('bijk,bkl->bijl', frac_diff, x.cell)
 
-            # Set diagonal to large value to exclude self-distances.
-            dist = dist + torch.eye(n, device=dist.device, dtype=dist.dtype) * 1e10
+        # Compute distances: (batch_size, max_n, max_n).
+        dist = torch.linalg.norm(cart_diff, dim=-1)
 
-            # Min distance per atom, then min over all atoms.
-            min_distances[struct_idx] = dist.min()
+        # Create mask for valid atom pairs: (batch_size, max_n, max_n).
+        # Valid if both i < n_atoms and j < n_atoms and i != j.
+        atom_idx = torch.arange(max_n, device=x.pos.device)  # Shape (max_n,)
+        valid_i = atom_idx.unsqueeze(0) < x.n_atoms.unsqueeze(1)  # (batch_size, max_n).
+        valid_pair = valid_i.unsqueeze(2) & valid_i.unsqueeze(1)  # (batch_size, max_n, max_n).
+        not_self = ~torch.eye(max_n, dtype=torch.bool, device=x.pos.device).unsqueeze(0)  # (1, max_n, max_n)
+        valid_pair = valid_pair & not_self
+
+        # Set invalid pairs to large value.
+        dist = torch.where(valid_pair, dist, torch.tensor(float('inf'), device=dist.device, dtype=dist.dtype))
+
+        # Min over all pairs per structure.
+        min_distances = dist.reshape(batch_size, -1).min(dim=-1).values
+
+        # Handle structures with < 2 atoms (no valid pairs -> inf -> set to 0).
+        min_distances = torch.where(x.n_atoms < 2, torch.zeros_like(min_distances), min_distances)
 
         return min_distances
 
