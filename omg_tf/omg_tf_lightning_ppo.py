@@ -113,7 +113,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
     def __init__(self, reward: Reward, noise_schedules: dict[str, NoiseSchedule],
                  relative_costs: dict[str, float], reference_noise_schedules: dict[str, NoiseSchedule],
-                 residual_model: Optional[Union[Model, TimeMLP]] = None,
+                 residual_model: Optional[Union[Model, TimeMLP]] = None, normalize_relative_costs: bool = True,
                  freeze_residual_model_encoder: bool = False, grpo_group_size: int = 32,
                  grpo_num_groups: int = 16, grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2,
                  ppo_epochs: int = 1, gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
@@ -137,6 +137,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :param reference_noise_schedules:
             Reference noise schedules per data field for KL regularization.
         :type reference_noise_schedules: dict[str, NoiseSchedule]
+        :param normalize_relative_costs:
+            If True, normalize relative_costs to sum to 1. If False, use absolute weights.
+        :type normalize_relative_costs: bool
         :param grpo_group_size:
             Number of samples per GRPO group.
         :type grpo_group_size: int
@@ -337,8 +340,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
         sum_costs = sum(relative_costs.values())
         if sum_costs == 0.0:
             raise ValueError("All relative costs are zero.")
-        relative_costs = {key: value / sum_costs for key, value in relative_costs.items()}
-        assert abs(sum(relative_costs.values()) - 1.0) < 1e-10
+        if normalize_relative_costs:
+            relative_costs = {key: value / sum_costs for key, value in relative_costs.items()}
+            assert abs(sum(relative_costs.values()) - 1.0) < 1e-10
         for field in self.integrated_data_fields:
             if field.name + "_policy" not in relative_costs:
                 raise ValueError(f"Missing relative cost for policy of integrated data field '{field.name}'.")
@@ -368,6 +372,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
             else:
                 raise ValueError(f"Relative cost provided for unknown term '{field}'.")
         self.relative_costs = relative_costs
+        self.normalize_relative_costs = normalize_relative_costs
 
         if not grpo_group_size > 1:
             raise ValueError("GRPO group size must be bigger than one.")
