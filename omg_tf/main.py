@@ -58,3 +58,7 @@ Open Materials Generation (OMatG) Version {__version__}
 
 A state-of-the-art generative model for crystal structure prediction and de novo generation of inorganic crystals.
 """})
+
+
+if __name__ == '__main__':
+    main()
