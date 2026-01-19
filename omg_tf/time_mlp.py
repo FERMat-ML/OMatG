@@ -11,8 +11,8 @@ class GlobalInvariant(Enum):
     N_ATOMS = auto()
     """Number of atoms in the structure. Captures system size."""
 
-    VOLUME_PER_ATOM = auto()
-    """Volume per atom: volume / n_atoms. Inverse of density."""
+    LOG_VOLUME_PER_ATOM = auto()
+    """Log volume per atom: log(volume / n_atoms). Log-scale for stable MLP input range."""
 
     CELL_ANISOTROPY = auto()
     """Ratio of min to max cell vector length. Captures cell shape (1 = cubic, < 1 = elongated)."""
@@ -104,10 +104,12 @@ class TimeMLP(nn.Module):
                 # TODO: NORMALIZATION FACTOR SHOULD BE PARAMETER
                 n_atoms = x.n_atoms.float().unsqueeze(-1)  # Shape: (batch_size, 1).
                 invariant_list.append(n_atoms / 20.0)
-            elif invariant == GlobalInvariant.VOLUME_PER_ATOM:
-                n_atoms = x.n_atoms.float().unsqueeze(-1)  # Shape: (batch_size, 1).
-                volume = torch.abs(torch.det(x.cell)).unsqueeze(-1)  # Shape (batch_size, 1).
-                invariant_list.append(volume / n_atoms)
+            elif invariant == GlobalInvariant.LOG_VOLUME_PER_ATOM:
+                # Use slogdet for numerical stability (avoids computing det then log).
+                _, logabsdet = torch.linalg.slogdet(x.cell)  # Both shape (batch_size,).
+                log_volume = logabsdet.unsqueeze(-1)  # Shape: (batch_size, 1).
+                log_n_atoms = torch.log(x.n_atoms.float()).unsqueeze(-1)  # Shape: (batch_size, 1).
+                invariant_list.append(log_volume - log_n_atoms)
             elif invariant == GlobalInvariant.CELL_ANISOTROPY:
                 cell_lengths = torch.norm(x.cell, dim=-1)  # Shape: (batch_size, 3).
                 min_cell_length = torch.min(cell_lengths, dim=-1).values.unsqueeze(-1)  # Shape: (batch_size, 1).
