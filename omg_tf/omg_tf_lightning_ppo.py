@@ -118,7 +118,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
                  grpo_num_groups: int = 16, grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2,
                  ppo_epochs: int = 1, gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
                  generation_xyz_filename: Optional[str] = None, position_normalization: str = "none",
-                 residual_mode: str = "additive", enable_progress_bar: bool = True) -> None:
+                 residual_mode: str = "additive", disable_cell_residual: bool = False,
+                 enable_progress_bar: bool = True) -> None:
         """
         Constructor for OMGTFLightningPPO.
 
@@ -175,6 +176,10 @@ class OMGTFLightningPPO(lightning.LightningModule):
             - "additive": v_total = base_b + res_b (default)
             - "scale": v_total = (1 + res_s) * base_b
         :type residual_mode: str
+        :param disable_cell_residual:
+            If True, the cell is integrated using the base velocity only (no residuals or policy noise),
+            and no PPO losses are computed for the cell field.
+        :type disable_cell_residual: bool
         :param enable_progress_bar:
             If True, enable progress bar during training.
         :type enable_progress_bar: bool
@@ -191,6 +196,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
             self.residual_mode = self.ResidualMode[residual_mode.upper()]
         except KeyError:
             raise ValueError(f"Invalid residual mode '{residual_mode}'. Must be 'full', 'additive' or 'scale'.")
+        self.disable_cell_residual = disable_cell_residual
 
         base_model = base_modules["model"]
         if base_model is None:
@@ -282,11 +288,12 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 self.cell_corrector = cell_interpolant.get_corrector()
             else:
                 raise ValueError("Unsupported stochastic interpolant for cell residual integration.")
-            self.integrated_data_fields.append(DataField.cell)
-            if DataField.cell.name not in noise_schedules:
-                raise ValueError("Noise schedule for cell residuals must be provided when integrating cell.")
-            if DataField.cell.name not in reference_noise_schedules:
-                raise ValueError("Reference noise schedule for cell residuals must be provided when integrating cell.")
+            if not self.disable_cell_residual:
+                self.integrated_data_fields.append(DataField.cell)
+                if DataField.cell.name not in noise_schedules:
+                    raise ValueError("Noise schedule for cell residuals must be provided when integrating cell.")
+                if DataField.cell.name not in reference_noise_schedules:
+                    raise ValueError("Reference noise schedule for cell residuals must be provided when integrating cell.")
         else:
             if DataField.cell.name in noise_schedules:
                 raise ValueError("Noise schedule for cell residuals provided but cell is not integrated.")
@@ -294,6 +301,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 raise ValueError("Reference noise schedule for cell residuals provided but cell is not integrated.")
         assert ((self.integrate_cell and self.cell_corrector is not None)
                 or (not self.integrate_cell and self.cell_corrector is None))
+        self.integrate_cell_residual = self.integrate_cell and not self.disable_cell_residual
 
         species_interpolant = base_model.si.get_stochastic_interpolant(DataField.species.name)
         self.integrate_species = not isinstance(species_interpolant, SingleStochasticInterpolantIdentity)
@@ -334,6 +342,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
             raise ValueError("Position normalization is not supported for scale residual mode.")
         self.position_normalization = normalization
 
+        #if self.disable_cell_residual:
+        #    relative_costs = {key: value for key, value in relative_costs.items()
+        #                      if not key.startswith(f"{DataField.cell.name}_")}
         if not all(cost >= 0.0 for cost in relative_costs.values()):
             raise ValueError("All relative costs must be non-negative.")
         # Normalize and validate relative costs.
@@ -528,55 +539,59 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
             if self.integrate_cell:
                 base_b = base_model_output[DataField.cell.name + "_b"]
-                sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
-                assert sigma.ndim == 0
-
-                if self.residual_mode == self.ResidualMode.FULL or self.residual_mode == self.ResidualMode.ADDITIVE:
-                    if self.residual_mode == self.ResidualMode.FULL:
-                        velocity = residual_output[DataField.cell.name + "_b"]
-                        assert velocity.shape == base_b.shape
-                        res_b = velocity - base_b
-                        step_base_model_outputs[DataField.cell] = base_b
-                    else:
-                        assert self.residual_mode == self.ResidualMode.ADDITIVE
-                        res_b = residual_output[DataField.cell.name + "_b"]
-                        assert res_b.shape == base_b.shape
-                        velocity = base_b + res_b
-                    randn = torch.randn_like(res_b)
-                    noise = sigma * randn
-                    # Store deviation effect for PPO update: res_b * dt + noise * sqrt(dt).
-                    # Effectively x_t+dt - x_t - base_b * dt. Shape (batch_size, 3, 3).
-                    step_sampled_residual_effects[DataField.cell] = res_b * dt + noise * sqrt_dt
-                    # Log probability of x_t+dt given x_t for SDE.
-                    # Sum log probs over all dimensions except batch yielding tensor of shape (batch_size,).
-                    step_old_log_probs[DataField.cell] = -0.5 * (
-                            torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2)
-                    ).sum(dim=tuple(range(1, randn.ndim)))
-                    # Norm over cell dimensions.
-                    base_norm_struct = torch.linalg.norm(base_b.reshape(base_b.shape[0], -1), dim=-1)
-                    res_norm_struct = torch.linalg.norm(res_b.reshape(res_b.shape[0], -1), dim=-1)
-                    # Mean over batch.
-                    cell_ratio_total += (res_norm_struct / (base_norm_struct + 1.0e-8)).mean()
+                if self.disable_cell_residual:
+                    velocity = base_b
+                    noise = torch.zeros_like(base_b)
                 else:
-                    assert self.residual_mode == self.ResidualMode.SCALE
-                    # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
-                    res_s = residual_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
-                    assert res_s.shape[:1] == base_b.shape[:1]
-                    velocity = (1.0 + res_s) * base_b
-                    randn = torch.randn_like(res_s)
-                    noise = sigma * randn * base_b
-                    # Store deviation effect for PPO update: res_s * dt + noise * sqrt(dt).
-                    # Effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
-                    # Noise is effectively one-dimensional. Shape (batch_size,).
-                    step_sampled_residual_effects[DataField.cell] = (
-                            res_s.squeeze(dim=(1, 2)) * dt + sigma * randn.squeeze(dim=(1, 2)) * sqrt_dt)
-                    # Log probability of x_t+dt given x_t for SDE.
-                    # Tensor of shape (batch_size,).
-                    step_old_log_probs[DataField.cell] = -0.5 * (
-                            torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn.squeeze(dim=(1, 2)) ** 2)
-                    )
-                    # Mean over batch.
-                    cell_ratio_total += res_s.squeeze(dim=(1, 2)).abs().mean()
+                    sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
+                    assert sigma.ndim == 0
+
+                    if self.residual_mode == self.ResidualMode.FULL or self.residual_mode == self.ResidualMode.ADDITIVE:
+                        if self.residual_mode == self.ResidualMode.FULL:
+                            velocity = residual_output[DataField.cell.name + "_b"]
+                            assert velocity.shape == base_b.shape
+                            res_b = velocity - base_b
+                            step_base_model_outputs[DataField.cell] = base_b
+                        else:
+                            assert self.residual_mode == self.ResidualMode.ADDITIVE
+                            res_b = residual_output[DataField.cell.name + "_b"]
+                            assert res_b.shape == base_b.shape
+                            velocity = base_b + res_b
+                        randn = torch.randn_like(res_b)
+                        noise = sigma * randn
+                        # Store deviation effect for PPO update: res_b * dt + noise * sqrt(dt).
+                        # Effectively x_t+dt - x_t - base_b * dt. Shape (batch_size, 3, 3).
+                        step_sampled_residual_effects[DataField.cell] = res_b * dt + noise * sqrt_dt
+                        # Log probability of x_t+dt given x_t for SDE.
+                        # Sum log probs over all dimensions except batch yielding tensor of shape (batch_size,).
+                        step_old_log_probs[DataField.cell] = -0.5 * (
+                                torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2)
+                        ).sum(dim=tuple(range(1, randn.ndim)))
+                        # Norm over cell dimensions.
+                        base_norm_struct = torch.linalg.norm(base_b.reshape(base_b.shape[0], -1), dim=-1)
+                        res_norm_struct = torch.linalg.norm(res_b.reshape(res_b.shape[0], -1), dim=-1)
+                        # Mean over batch.
+                        cell_ratio_total += (res_norm_struct / (base_norm_struct + 1.0e-8)).mean()
+                    else:
+                        assert self.residual_mode == self.ResidualMode.SCALE
+                        # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
+                        res_s = residual_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
+                        assert res_s.shape[:1] == base_b.shape[:1]
+                        velocity = (1.0 + res_s) * base_b
+                        randn = torch.randn_like(res_s)
+                        noise = sigma * randn * base_b
+                        # Store deviation effect for PPO update: res_s * dt + noise * sqrt(dt).
+                        # Effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
+                        # Noise is effectively one-dimensional. Shape (batch_size,).
+                        step_sampled_residual_effects[DataField.cell] = (
+                                res_s.squeeze(dim=(1, 2)) * dt + sigma * randn.squeeze(dim=(1, 2)) * sqrt_dt)
+                        # Log probability of x_t+dt given x_t for SDE.
+                        # Tensor of shape (batch_size,).
+                        step_old_log_probs[DataField.cell] = -0.5 * (
+                                torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn.squeeze(dim=(1, 2)) ** 2)
+                        )
+                        # Mean over batch.
+                        cell_ratio_total += res_s.squeeze(dim=(1, 2)).abs().mean()
 
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
@@ -607,7 +622,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
         if self.integrate_pos:
             # Average over timesteps.
             info_dict["pos_residual_ratio"] = pos_ratio_total / (len(times) - 1)
-        if self.integrate_cell:
+        if self.integrate_cell_residual:
             # Average over timesteps.
             info_dict["cell_residual_ratio"] = cell_ratio_total / (len(times) - 1)
 
@@ -811,7 +826,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 if self.noise_schedules[DataField.pos].learnable():
                     total_entropy_losses[DataField.pos] += entropy_loss.item()
 
-            if self.integrate_cell:
+            if self.integrate_cell_residual:
                 sigma_ref = self.reference_noise_schedules[DataField.cell].noise(t)  # Scalar.
                 sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
                 assert sigma.ndim == 0
@@ -945,10 +960,15 @@ class OMGTFLightningPPO(lightning.LightningModule):
             dt = times[t_index] - times[t_index - 1]
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
-            base_model_output = base_model(x_t, time) if self.residual_mode != self.ResidualMode.FULL else None
+            need_base_output = (self.residual_mode != self.ResidualMode.FULL
+                                or (self.integrate_cell and self.disable_cell_residual))
+            base_model_output = base_model(x_t, time) if need_base_output else None
             residual_output = self.residual_model(x_t, time)
             if self.integrate_pos:
-                base_b = base_model_output[DataField.pos.name + "_b"] if base_model_output is not None else None
+                base_b = None
+                if self.residual_mode != self.ResidualMode.FULL:
+                    assert base_model_output is not None
+                    base_b = base_model_output[DataField.pos.name + "_b"]
                 sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
                 assert sigma.ndim == 0
                 if self.residual_mode == self.ResidualMode.FULL:
@@ -975,24 +995,29 @@ class OMGTFLightningPPO(lightning.LightningModule):
                 x_t.pos = self.pos_corrector.correct(x_t.pos + velocity * dt + noise * sqrt_dt)
             if self.integrate_cell:
                 base_b = base_model_output[DataField.cell.name + "_b"] if base_model_output is not None else None
-                sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
-                assert sigma.ndim == 0
-                if self.residual_mode == self.ResidualMode.FULL:
-                    assert base_b is None
-                    velocity = residual_output[DataField.cell.name + "_b"]
-                    noise = sigma * torch.randn_like(velocity)
-                elif self.residual_mode == self.ResidualMode.ADDITIVE:
-                    res_b = residual_output[DataField.cell.name + "_b"]
-                    assert res_b.shape == base_b.shape
-                    velocity = base_b + res_b
-                    noise = sigma * torch.randn_like(res_b)
+                if self.disable_cell_residual:
+                    assert base_b is not None
+                    velocity = base_b
+                    noise = torch.zeros_like(base_b)
                 else:
-                    assert self.residual_mode == self.ResidualMode.SCALE
-                    # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
-                    res_s = residual_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
-                    assert res_s.shape[:1] == base_b.shape[:1]
-                    velocity = (1.0 + res_s) * base_b
-                    noise = sigma * torch.randn_like(res_s) * base_b
+                    sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
+                    assert sigma.ndim == 0
+                    if self.residual_mode == self.ResidualMode.FULL:
+                        assert base_b is None
+                        velocity = residual_output[DataField.cell.name + "_b"]
+                        noise = sigma * torch.randn_like(velocity)
+                    elif self.residual_mode == self.ResidualMode.ADDITIVE:
+                        res_b = residual_output[DataField.cell.name + "_b"]
+                        assert res_b.shape == base_b.shape
+                        velocity = base_b + res_b
+                        noise = sigma * torch.randn_like(res_b)
+                    else:
+                        assert self.residual_mode == self.ResidualMode.SCALE
+                        # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
+                        res_s = residual_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
+                        assert res_s.shape[:1] == base_b.shape[:1]
+                        velocity = (1.0 + res_s) * base_b
+                        noise = sigma * torch.randn_like(res_s) * base_b
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
         return x_t
