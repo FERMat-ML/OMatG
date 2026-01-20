@@ -294,6 +294,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
                     raise ValueError("Noise schedule for cell residuals must be provided when integrating cell.")
                 if DataField.cell.name not in reference_noise_schedules:
                     raise ValueError("Reference noise schedule for cell residuals must be provided when integrating cell.")
+            else:
+                if DataField.cell.name in noise_schedules:
+                    raise ValueError("Noise schedule for cell residuals provided but cell residual is not integrated.")
+                if DataField.cell.name in reference_noise_schedules:
+                    raise ValueError("Reference noise schedule for cell residuals provided but cell residual is not integrated.")
         else:
             if DataField.cell.name in noise_schedules:
                 raise ValueError("Noise schedule for cell residuals provided but cell is not integrated.")
@@ -342,9 +347,6 @@ class OMGTFLightningPPO(lightning.LightningModule):
             raise ValueError("Position normalization is not supported for scale residual mode.")
         self.position_normalization = normalization
 
-        #if self.disable_cell_residual:
-        #    relative_costs = {key: value for key, value in relative_costs.items()
-        #                      if not key.startswith(f"{DataField.cell.name}_")}
         if not all(cost >= 0.0 for cost in relative_costs.values()):
             raise ValueError("All relative costs must be non-negative.")
         # Normalize and validate relative costs.
