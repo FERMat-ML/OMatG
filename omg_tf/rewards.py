@@ -2,6 +2,7 @@ from functools import partial
 import os
 from typing import Optional, Sequence
 import numpy as np
+from ase.data import covalent_radii
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure as PymatgenStructure
 import torch
@@ -127,6 +128,73 @@ class ValidityPenaltyReward(Reward):
             "invalid_volume": np.array(invalid_volume, dtype=float),
             "invalid_min_dist": np.array(invalid_min_dist, dtype=float),
             "invalid_polar_sine": np.array(invalid_polar_sine, dtype=float),
+        }
+        return rewards, info_dict
+
+
+class RepulsionReward(Reward):
+    """
+    Reward that penalizes short interatomic distances based on covalent radii.
+
+    This is a fast surrogate that discourages atom overlaps without an expensive energy model.
+    """
+
+    def __init__(self, scale: float = 1.0, radius_scale: float = 0.9, min_dist_floor: float = 0.5) -> None:
+        """Constructor for RepulsionReward."""
+        super().__init__()
+        if not scale > 0.0:
+            raise ValueError("Scale must be positive.")
+        if not radius_scale > 0.0:
+            raise ValueError("radius_scale must be positive.")
+        if not min_dist_floor >= 0.0:
+            raise ValueError("min_dist_floor must be non-negative.")
+        self._scale = scale
+        self._radius_scale = radius_scale
+        self._min_dist_floor = min_dist_floor
+
+    def compute(self, structures: Sequence[Structure], stage: Reward.ComputeStage,
+                enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+        """
+        Compute repulsion penalties for a batch of structures.
+
+        For each structure, we compute a soft penalty for atom pairs closer than a
+        threshold based on covalent radii. The reward is negative and scaled.
+        """
+        penalties = []
+        min_distances = []
+
+        for structure in tqdm.tqdm(structures, desc="Computing repulsion rewards",
+                                   disable=not enable_progress_bar):
+            py_structure = structure.get_pymatgen_structure()
+            numbers = np.array(py_structure.atomic_numbers, dtype=int)
+            num_atoms = len(numbers)
+
+            if num_atoms < 2:
+                penalties.append(0.0)
+                min_distances.append(0.0)
+                continue
+
+            # Compute minimum-image pairwise distances via pymatgen.
+            # This is O(N^2); consider neighbor lists if it becomes a bottleneck.
+            dists = py_structure.distance_matrix
+            dists = dists + np.eye(num_atoms) * 1.0e9  # Mask self-distances.
+
+            # Threshold matrix based on covalent radii.
+            radii = covalent_radii[numbers]
+            threshold = self._radius_scale * (radii[:, None] + radii[None, :])
+            threshold = np.maximum(threshold, self._min_dist_floor)
+
+            # Soft penalty for overlaps.
+            violations = np.maximum(threshold - dists, 0.0)
+            penalty = np.mean(violations ** 2)
+            penalties.append(penalty)
+            min_distances.append(np.min(dists))
+
+        penalties = np.array(penalties, dtype=float)
+        rewards = -self._scale * penalties
+        info_dict = {
+            "repulsion_penalty": penalties,
+            "repulsion_min_dist": np.array(min_distances, dtype=float),
         }
         return rewards, info_dict
 
