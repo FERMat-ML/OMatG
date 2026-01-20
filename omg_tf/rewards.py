@@ -137,9 +137,11 @@ class RepulsionReward(Reward):
     Reward that penalizes short interatomic distances based on covalent radii.
 
     This is a fast surrogate that discourages atom overlaps without an expensive energy model.
+
+    The radius scale 0.8 is fine-tuned for the mp_20_ps dataset (it flags most structures as valid).
     """
 
-    def __init__(self, scale: float = 1.0, radius_scale: float = 0.9, min_dist_floor: float = 0.5) -> None:
+    def __init__(self, scale: float = 1.0, radius_scale: float = 0.8, min_dist_floor: float = 0.5) -> None:
         """Constructor for RepulsionReward."""
         super().__init__()
         if not scale > 0.0:
