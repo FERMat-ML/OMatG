@@ -35,6 +35,7 @@ class OMGCLI(LightningCLI):
         d["csp_metrics"] = {"model", "datamodule"}
         d["dng_metrics"] = {"model", "datamodule"}
         d["fit_lattice"] = {"model", "datamodule"}
+        d["energy_metrics"] = {"model", "datamodule"}
         d["create_compositions"] = {"model", "datamodule"}
         d["load"] = {"model", "datamodule"}
         return d
