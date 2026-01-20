@@ -13,6 +13,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import pickle
 from pymatgen.core import Composition, Lattice, Structure
+from pymatgen.io.ase import AseAtomsAdaptor
 from scipy.stats import lognorm, wasserstein_distance
 from sklearn.neighbors import KernelDensity
 import tqdm
@@ -1012,6 +1013,52 @@ class OMGTrainer(Trainer):
                 "wdist_coordination_numbers": wdist_coordination_numbers,
                 "cov_recall": cov_recall,
                 "cov_precision": cov_precision
+            }, f, indent=4)
+
+    def energy_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
+                       result_name: str = "energy_metrics.json", energy_storage_file: str = "energies_per_atom.npy",
+                       device: str = "cpu", volume_check_cutoff: float = 0.1,
+                       structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3):
+        from mace.calculators import mace_mp
+        mace_calculator = mace_mp(model="medium-mpa-0", device=device)
+
+        final_file = Path(xyz_file)
+        if not final_file.exists():
+            raise FileNotFoundError(f"File {final_file} does not exist.")
+
+        if not result_name.endswith(".json"):
+            raise ValueError("The result_name must end with .json")
+
+        # Get atoms
+        gen_atoms = xyz_reader(final_file)
+
+        energies_per_atom = np.full(len(gen_atoms), np.nan, dtype=float)
+        with torch.set_grad_enabled(True):  # Mace needs gradients.
+            for idx, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Computing energies with MACE")):
+                py_structure = AseAtomsAdaptor.get_structure(atoms)
+                volume_valid = (py_structure.volume >= volume_check_cutoff)
+                dist_mat = py_structure.distance_matrix
+                dist_mat = dist_mat + np.diag(
+                    np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0)
+                )
+                min_dist = dist_mat.min()
+                structure_valid = (min_dist >= structure_check_cutoff)
+                polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+                polar_sine_valid = (polar_sine >= polar_sine_cutoff)
+                if volume_valid and structure_valid and polar_sine_valid:
+                    energies_per_atom[idx] = mace_calculator.get_potential_energy(atoms) / len(atoms)
+
+        np.save(energy_storage_file, energies_per_atom)
+        valid_energies = energies_per_atom[~np.isnan(energies_per_atom)]
+        number_invalid_energies = np.sum(np.isnan(energies_per_atom))
+
+        print("Mean energy per atom of valid structures: ", float(np.mean(valid_energies)))
+        print("Number of invalid structures during energy computation: ", int(number_invalid_energies))
+
+        with open(result_name, "w") as f:
+            json.dump({
+                "mean_energy_per_atom": float(np.mean(valid_energies)),
+                "number_invalid_energies": int(number_invalid_energies)
             }, f, indent=4)
 
     def fit_lattice(self, model: OMGLightning, datamodule: OMGDataModule) -> None:
