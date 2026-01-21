@@ -253,11 +253,10 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             action = drift * dt + noise_term
             actions.append(action.clone())
 
-            # Log probability under action distribution N(drift*dt, 2ε·dt·I).
-            var = 2.0 * eps_t * dt
-            diff = action - drift * dt
-            log_prob_per_atom = -0.5 * (torch.log(2.0 * torch.pi * var) + (diff ** 2) / var).sum(dim=-1)
-            # Sum over atoms per structure.
+            # Log probability: action ~ N(drift*dt, 2ε·dt·I), so log p(action) uses z² since noise = √(2ε·dt)·z.
+            # Sum log probs over x, y, and z yielding tensor of shape (sum(n_atoms), ).
+            log_prob_per_atom = -0.5 * (torch.log(2.0 * torch.pi * 2.0 * eps_t * dt) + (z ** 2)).sum(dim=-1)
+            # Sum over atoms per structure. Shape: (batch_size, ).
             log_prob = scatter_add(log_prob_per_atom, x_t.batch)
             old_log_probs.append(log_prob.clone())
 
@@ -270,6 +269,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
                 # Use ODE for cell (no noise).
                 x_t.cell = self.cell_corrector.correct(x_t.cell + cell_b * dt)
 
+        # Append final state.
         states.append(x_t.clone())
 
         # Convert final structures and compute rewards.
@@ -291,14 +291,16 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         info_dict = {k: torch.tensor(v, dtype=self.dtype, device=self.device).mean() for k, v in info_dict.items()}
 
         # Compute GRPO advantages.
+        # Partial batch possible.
         assert len(rewards) % self.grpo_group_size == 0
+        assert len(rewards) // self.grpo_group_size <= self.grpo_num_groups
         advantages = torch.zeros_like(rewards)
         for i in range(len(rewards) // self.grpo_group_size):
             sl = slice(i * self.grpo_group_size, (i + 1) * self.grpo_group_size)
             group_rewards = rewards[sl]
             group_mean = group_rewards.mean()
             group_std = group_rewards.std(unbiased=False)
-            advantages[sl] = (group_rewards - group_mean) / (group_std + 1e-8)
+            advantages[sl] = (group_rewards - group_mean) / (group_std + 1.0e-8)
 
         return SDETrajectoryData(
             states=states,
@@ -328,7 +330,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         opt = self.optimizers()
         opt.zero_grad()
 
-        for t_index in trange(num_timesteps, desc="PPO Update", position=1, leave=False,
+        for t_index in trange(num_timesteps, desc="Perform PPO Update", position=1, leave=False,
                               disable=not self.enable_progress_bar):
             t = times[t_index]
             dt = times[t_index + 1] - times[t_index]
@@ -355,16 +357,20 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             # Current log prob: log N(action; drift_current * dt, 2ε·dt·I).
             # = -0.5 * [d*log(2π·2ε·dt) + ||action - drift_current*dt||² / (2ε·dt)]
             var = 2.0 * eps_t * dt
+            # Action basically stores x_t+dt - x_t.
+            # Sum log probs over x, y, z. Shape: (sum(n_atoms), ).
             diff = action - drift_current * dt
             log_prob_per_atom = -0.5 * (
                 torch.log(2.0 * torch.pi * var) + (diff ** 2) / var
             ).sum(dim=-1)
+            # Sum over atoms per structure. Shape: (batch_size, ).
             current_log_prob = scatter_add(log_prob_per_atom, x_t.batch)
 
             # PPO ratio and clipped surrogate.
             ratio = torch.exp(current_log_prob - old_log_prob.detach())
             clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
-            clip_fraction = ((ratio < 1.0 - self.ppo_clip_epsilon) | (ratio > 1.0 + self.ppo_clip_epsilon)).float().mean()
+            clip_fraction = ((ratio < 1.0 - self.ppo_clip_epsilon)
+                             | (ratio > 1.0 + self.ppo_clip_epsilon)).float().mean()
 
             surrogate = torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages)
             policy_loss = -surrogate.mean()
