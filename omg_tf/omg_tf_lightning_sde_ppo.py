@@ -605,7 +605,3 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         xyz_saver(x_1.to("cpu"), filename)
 
         return x_1
-
-    def configure_optimizers(self):
-        """Configure optimizer for policy model."""
-        return torch.optim.AdamW(self.policy_model.parameters(), lr=1e-5)
