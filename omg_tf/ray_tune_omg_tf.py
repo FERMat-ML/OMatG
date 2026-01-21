@@ -97,11 +97,11 @@ def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: 
         # For some reason, these files are not copied over automatically.
         # This part will only run on errors, not when the ASHAScheduler kills a trial.
         try:
-            shutil.copy(f"{os.getcwd()}/stdout", f"{context.get_storage().trial_fs_path}/")
+            shutil.copy(f"{os.getcwd()}/stdout", f"{trial_dir}/")
         except FileNotFoundError:
             pass
         try:
-            shutil.copy(f"{os.getcwd()}/stderr", f"{context.get_storage().trial_fs_path}/")
+            shutil.copy(f"{os.getcwd()}/stderr", f"{trial_dir}/")
         except FileNotFoundError:
             pass
         wandb.teardown()
