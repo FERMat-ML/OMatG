@@ -6,6 +6,7 @@ import shutil
 import sys
 from typing import Optional
 import warnings
+from lightning.pytorch import Trainer
 from optuna.samplers import TPESampler
 from ray import init, tune
 from ray.tune.schedulers import ASHAScheduler
@@ -17,6 +18,14 @@ from omg.datamodule import OMGDataModule
 from omg.omg_cli import OMGCLI
 from omg.omg_lightning import OMGLightning
 from omg.omg_trainer import OMGTrainer
+
+
+class LimitTrainer(Trainer):
+    # On some clusters, we have to specifically enforce int type if we want to set limit_train_batches.
+    def __init__(self, limit_train_batches: int, *args, **kwargs):
+        # Add limit train_batches to kwargs.
+        kwargs["limit_train_batches"] = limit_train_batches
+        super().__init__(*args, **kwargs)
 
 
 def yield_flattened_items(d: dict):
@@ -77,7 +86,7 @@ def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: 
         base_modules["model"] = omg_cli.model
         base_modules["datamodule"] = omg_cli.datamodule
 
-        OMGTFCLI(model_class=OMGTFLightningPPO,
+        OMGTFCLI(model_class=OMGTFLightningPPO, trainer_class=LimitTrainer,
                  args=["fit", "--config", str(rl_config_path), "--trainer.logger", "WandbLogger",
                        "--trainer.logger.name", context.get_trial_name(), "--trainer.logger.project", project_name,
                        "--seed_everything", "0", "--model.store_validation_structures_path", trial_dir + "/val.xyz"])
