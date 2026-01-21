@@ -53,11 +53,12 @@ def overwrite_flattened_items(original_dict: dict, flattened_updates: dict) -> d
 
 
 def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: Path, ckpt_path: Path,
-                      project_name: str):
+                      project_name: str, use_sde: bool):
     # Import here to avoid issues with global base_modules when using Ray Tune.
     from omg_tf.base_modules import base_modules
     from omg_tf.omg_tf_cli import OMGTFCLI
     from omg_tf.omg_tf_lightning_ppo import OMGTFLightningPPO
+    from omg_tf.omg_tf_lightning_sde_ppo import OMGTFLightningSDEPPO
 
     context = tune.get_context()
     trial_dir = context.get_trial_dir()
@@ -86,7 +87,12 @@ def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: 
         base_modules["model"] = omg_cli.model
         base_modules["datamodule"] = omg_cli.datamodule
 
-        OMGTFCLI(model_class=OMGTFLightningPPO, trainer_class=LimitTrainer,
+        if use_sde:
+            model_class = OMGTFLightningSDEPPO
+        else:
+            model_class = OMGTFLightningPPO
+
+        OMGTFCLI(model_class=model_class, trainer_class=LimitTrainer,
                  args=["fit", "--config", str(rl_config_path), "--trainer.logger", "WandbLogger",
                        "--trainer.logger.name", context.get_trial_name(), "--trainer.logger.project", project_name,
                        "--seed_everything", "0", "--model.store_validation_structures_path", trial_dir + "/val.xyz"])
@@ -109,7 +115,7 @@ def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: 
 
 def tune_omg_tf(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_path: Path,
                 storage_path: Path, temp_dir: Optional[Path], project_name: str, cpus_per_trial: int,
-                gpus_per_trial: int, restore: bool, metric: str, mode: str) -> None:
+                gpus_per_trial: int, restore: bool, metric: str, mode: str, sde: bool) -> None:
     with open(rl_config, "r") as f:
         rl_config = yaml.unsafe_load(f)
 
@@ -132,7 +138,8 @@ def tune_omg_tf(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_pa
         base_rl_config=rl_config,
         base_omg_config_path=omg_config,
         ckpt_path=omg_ckpt_path,
-        project_name=project_name
+        project_name=project_name,
+        use_sde=sde
     )
 
     if restore:
@@ -174,6 +181,7 @@ def main():
     parser.add_argument("--gpus_per_trial", type=int, default=1)
     parser.add_argument("--temp_dir", type=Path, default=None)
     parser.add_argument("--restore", action="store_true")
+    parser.add_argument("--sde", action="store_true")
     args = parser.parse_args()
 
     absolute_rl_config_path = args.rl_config.absolute()
@@ -199,7 +207,7 @@ def main():
     tune_omg_tf(num_samples=-1, rl_config=absolute_rl_config_path, omg_config=absolute_omg_config_path,
                 omg_ckpt_path=absolute_omg_ckpt_path, storage_path=absolute_storage_path, temp_dir=args.temp_dir,
                 project_name=args.project_name, cpus_per_trial=args.cpus_per_trial, gpus_per_trial=args.gpus_per_trial,
-                restore=args.restore, metric="val_reward_mean", mode="max")
+                restore=args.restore, metric="val_reward_mean", mode="max", sde=args.sde)
 
 
 if __name__ == '__main__':
