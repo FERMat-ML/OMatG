@@ -21,10 +21,10 @@ from omg.omg_trainer import OMGTrainer
 
 
 class LimitTrainer(Trainer):
-    # On some clusters, we have to specifically enforce int type if we want to set limit_train_batches.
-    def __init__(self, limit_train_batches: int, *args, **kwargs):
+    # On some clusters, we have to specifically enforce int type if we want to set val_check_interval.
+    def __init__(self, val_check_interval: int, *args, **kwargs):
         # Add limit train_batches to kwargs.
-        kwargs["limit_train_batches"] = limit_train_batches
+        kwargs["val_check_interval"] = val_check_interval
         super().__init__(*args, **kwargs)
 
 
