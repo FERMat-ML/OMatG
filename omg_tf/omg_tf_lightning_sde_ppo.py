@@ -11,6 +11,7 @@ The key difference from omg_tf_lightning_ppo.py:
 """
 from copy import deepcopy
 from dataclasses import dataclass
+from enum import Enum, auto
 from pathlib import Path
 from time import strftime
 from typing import Optional
@@ -35,8 +36,8 @@ class SDETrajectoryData:
     states: list[OMGData]
     # List of actions (displacements) taken at each timestep. Shape (sum(n_atoms), 3) per step.
     actions: list[torch.Tensor]
-    # List of old log probabilities at each timestep. Shape (batch_size,) per step.
-    old_log_probs: list[torch.Tensor]
+    # List of old log probabilities per atom at each timestep. Shape (sum(n_atoms),) per step.
+    old_log_probs_atoms: list[torch.Tensor]
     # List of base model outputs (b, eta) at each timestep for KL/distillation.
     base_outputs: list[tuple[torch.Tensor, torch.Tensor]]
     # Rewards for final structures.
@@ -64,6 +65,31 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
     - Requires SDE-type stochastic interpolant with gamma and epsilon
     """
 
+    class PositionNormalization(Enum):
+        """Enumeration of position normalization modes for PPO surrogate."""
+
+        NONE = auto()
+        """
+        Use joint-action PPO ratio without normalization.
+
+        Log probabilities of all atoms in a structure are summed to compute the joint action
+        log probability. Larger structures have more extreme ratios for the same per-atom change.
+        """
+        PER_STRUCTURE_WEIGHT = auto()
+        """
+        Use joint-action PPO ratio, but weight per-structure advantage by 1 / n_atoms.
+
+        This reduces the influence of larger structures on the policy update while keeping
+        the joint-action ratio formulation.
+        """
+        PER_ATOM_SURROGATE = auto()
+        """
+        Use per-atom PPO ratio averaged per structure.
+
+        Computes the PPO ratio for each atom individually and averages them per structure.
+        Most normalized approach - structure size has minimal effect on ratio magnitude.
+        """
+
     def __init__(
         self,
         reward: Reward,
@@ -78,6 +104,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         grpo_share_x_0: bool = True,
         ppo_clip_epsilon: float = 0.2,
         ppo_epochs: int = 1,
+        position_normalization: str = "none",
         gradient_clip_val: Optional[float] = 1.0,
         gradient_clip_algorithm: str = "norm",
         generation_xyz_filename: Optional[str] = None,
@@ -110,6 +137,11 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             PPO clipping parameter epsilon.
         :param ppo_epochs:
             Number of PPO update epochs per rollout.
+        :param position_normalization:
+            Position normalization mode for PPO surrogate. Options:
+            - "none": joint-action PPO ratio without normalization
+            - "per_structure_weight": joint-action ratio, but weight per-structure advantage by 1 / n_atoms
+            - "per_atom_surrogate": per-atom PPO ratio averaged per structure
         :param gradient_clip_val:
             Maximum gradient norm for clipping.
         :param gradient_clip_algorithm:
@@ -188,6 +220,17 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         self.gradient_clip_val = gradient_clip_val
         self.gradient_clip_algorithm = gradient_clip_algorithm
 
+        # Parse position normalization mode.
+        normalization_map = {
+            "none": self.PositionNormalization.NONE,
+            "per_structure_weight": self.PositionNormalization.PER_STRUCTURE_WEIGHT,
+            "per_atom_surrogate": self.PositionNormalization.PER_ATOM_SURROGATE,
+        }
+        if position_normalization not in normalization_map:
+            raise ValueError(f"Invalid position_normalization: {position_normalization}. "
+                             f"Must be one of {list(normalization_map.keys())}.")
+        self.position_normalization = normalization_map[position_normalization]
+
         self.generation_xyz_filename = generation_xyz_filename
         self.enable_progress_bar = enable_progress_bar
 
@@ -214,7 +257,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         x_t = x_0.clone()
 
         states = []
-        old_log_probs = []
+        old_log_probs_atoms = []
         actions = []
         base_outputs = []
 
@@ -240,7 +283,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             eta_base = base_output[DataField.pos.name + "_eta"]
 
             states.append(x_t.clone())
-            base_outputs.append((b_base.clone(), eta_base.clone()))
+            base_outputs.append((b_base, eta_base))
 
             # Compute drift: f = b - (ε/γ)·η
             drift = b_policy - (eps_t / gamma_t) * eta_policy
@@ -251,14 +294,12 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             noise_term = diffusion_coef * sqrt_dt * z
 
             action = drift * dt + noise_term
-            actions.append(action.clone())
+            actions.append(action)
 
             # Log probability: action ~ N(drift*dt, 2ε·dt·I), so log p(action) uses z² since noise = √(2ε·dt)·z.
-            # Sum log probs over x, y, and z yielding tensor of shape (sum(n_atoms), ).
+            # Sum log probs over x, y, and z yielding tensor of shape (sum(n_atoms),).
             log_prob_per_atom = -0.5 * (torch.log(2.0 * torch.pi * 2.0 * eps_t * dt) + (z ** 2)).sum(dim=-1)
-            # Sum over atoms per structure. Shape: (batch_size, ).
-            log_prob = scatter_add(log_prob_per_atom, x_t.batch)
-            old_log_probs.append(log_prob.clone())
+            old_log_probs_atoms.append(log_prob_per_atom)
 
             # Euler-Maruyama update.
             x_t.pos = self.pos_corrector.correct(x_t.pos + drift * dt + noise_term)
@@ -305,7 +346,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         return SDETrajectoryData(
             states=states,
             actions=actions,
-            old_log_probs=old_log_probs,
+            old_log_probs_atoms=old_log_probs_atoms,
             base_outputs=base_outputs,
             rewards=rewards,
             advantages=advantages,
@@ -341,7 +382,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
 
             x_t = trajectory.states[t_index]
             action = trajectory.actions[t_index]
-            old_log_prob = trajectory.old_log_probs[t_index]
+            old_log_probs_atoms = trajectory.old_log_probs_atoms[t_index]
             b_base, eta_base = trajectory.base_outputs[t_index]
 
             # Re-evaluate policy model with gradients.
@@ -358,30 +399,62 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             # = -0.5 * [d*log(2π·2ε·dt) + ||action - drift_current*dt||² / (2ε·dt)]
             var = 2.0 * eps_t * dt
             # Action basically stores x_t+dt - x_t.
-            # Sum log probs over x, y, z. Shape: (sum(n_atoms), ).
+            # Sum log probs over x, y, z. Shape: (sum(n_atoms),).
             diff = action - drift_current * dt
-            log_prob_per_atom = -0.5 * (
+            current_log_probs_atoms = -0.5 * (
                 torch.log(2.0 * torch.pi * var) + (diff ** 2) / var
             ).sum(dim=-1)
-            # Sum over atoms per structure. Shape: (batch_size, ).
-            current_log_prob = scatter_add(log_prob_per_atom, x_t.batch)
 
-            # PPO ratio and clipped surrogate.
-            ratio = torch.exp(current_log_prob - old_log_prob.detach())
-            clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
-            clip_fraction = ((ratio < 1.0 - self.ppo_clip_epsilon)
-                             | (ratio > 1.0 + self.ppo_clip_epsilon)).float().mean()
-
-            surrogate = torch.min(ratio * trajectory.advantages, clipped_ratio * trajectory.advantages)
-            policy_loss = -surrogate.mean()
+            # PPO ratio and clipped surrogate based on position normalization mode.
+            if self.position_normalization == self.PositionNormalization.NONE:
+                # Sum log probs over all atoms in each structure to get batch-wise log probs.
+                old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
+                current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
+                ratio = torch.exp(current_log_prob - old_log_prob.detach())
+                clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                clip_fraction = ((ratio < 1.0 - self.ppo_clip_epsilon)
+                                 | (ratio > 1.0 + self.ppo_clip_epsilon)).float().mean()
+                policy_loss = -torch.min(ratio * trajectory.advantages,
+                                         clipped_ratio * trajectory.advantages).mean()
+            elif self.position_normalization == self.PositionNormalization.PER_ATOM_SURROGATE:
+                # Per-atom ratio, averaged per structure.
+                ratio_atoms = torch.exp(current_log_probs_atoms - old_log_probs_atoms.detach())
+                clipped_ratio_atoms = torch.clamp(ratio_atoms, 1.0 - self.ppo_clip_epsilon,
+                                                  1.0 + self.ppo_clip_epsilon)
+                clip_mask_atoms = ((ratio_atoms < 1.0 - self.ppo_clip_epsilon)
+                                   | (ratio_atoms > 1.0 + self.ppo_clip_epsilon)).float()
+                clip_fraction = scatter_mean(clip_mask_atoms, x_t.batch).mean()
+                # Expand advantages to per-atom.
+                advantages_atoms = trajectory.advantages[x_t.batch]
+                loss_atoms = -torch.min(ratio_atoms * advantages_atoms,
+                                        clipped_ratio_atoms * advantages_atoms)
+                # Average per structure and then take mean over batch.
+                policy_loss = scatter_mean(loss_atoms, x_t.batch).mean()
+            else:
+                assert self.position_normalization == self.PositionNormalization.PER_STRUCTURE_WEIGHT
+                # Sum log probs over all atoms in each structure to get batch-wise log probs.
+                old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
+                current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
+                ratio = torch.exp(current_log_prob - old_log_prob.detach())
+                clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                clip_fraction = ((ratio < 1.0 - self.ppo_clip_epsilon)
+                                 | (ratio > 1.0 + self.ppo_clip_epsilon)).float().mean()
+                # Weight advantages by 1 / n_atoms so that large structures do not dominate.
+                weighted_advantages = trajectory.advantages / x_t.n_atoms.to(dtype=ratio.dtype)
+                policy_loss = -torch.min(ratio * weighted_advantages,
+                                         clipped_ratio * weighted_advantages).mean()
 
             # KL regularization: KL(current || base) for the drift distribution.
             # KL(N(μ1, σ²I) || N(μ2, σ²I)) = ||μ1 - μ2||² / (2σ²)
             # Here μ1 = drift_current * dt, μ2 = drift_base * dt, σ² = 2ε·dt.
             kl_per_dim = ((drift_current - drift_base.detach()) ** 2 * dt * dt) / (2.0 * var)
             kl_per_atom = kl_per_dim.sum(dim=-1)
-            kl_per_struct = scatter_add(kl_per_atom, x_t.batch)
-            reg_loss = kl_per_struct.mean()
+            if self.position_normalization == self.PositionNormalization.NONE:
+                # Sum over atoms to get per-structure KL and take mean over batch.
+                reg_loss = scatter_add(kl_per_atom, x_t.batch).mean()
+            else:
+                # Average over atoms to get per-structure KL and take mean over batch.
+                reg_loss = scatter_mean(kl_per_atom, x_t.batch).mean()
 
             # Eta distillation loss: keep eta close to base model's eta.
             eta_diff = (eta_policy - eta_base.detach()) ** 2
