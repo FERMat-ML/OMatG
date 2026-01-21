@@ -1146,7 +1146,8 @@ class OMGTFLightningPPO(lightning.LightningModule):
 
         if self.store_validation_structures_path is not None:
             filename = Path(self.store_validation_structures_path)
-            epoch_filename = filename.with_stem(f"{filename.stem}_epoch_{self.current_epoch:04d}")
+            epoch_filename = filename.with_stem(
+                f"{filename.stem}_epoch_{self.current_epoch:04d}_step_{self.global_step:06d}")
             if epoch_filename.exists() and batch_idx == 0:
                 epoch_filename.unlink()
             xyz_saver(x_1, epoch_filename)
