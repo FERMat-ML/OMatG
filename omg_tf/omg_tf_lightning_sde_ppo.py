@@ -107,6 +107,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         gradient_clip_algorithm: str = "norm",
         generation_xyz_filename: Optional[str] = None,
         enable_progress_bar: bool = True,
+        store_validation_structures_path: Optional[str] = None
     ) -> None:
         """
         Constructor for OMGTFLightningSDEPPO.
@@ -142,6 +143,8 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             Filename for saving generated structures during prediction.
         :param enable_progress_bar:
             If True, enable progress bar during training.
+        :param store_validation_structures:
+            If True, store validation structures for reward computation.
         """
         super().__init__()
         self.automatic_optimization = False
@@ -240,6 +243,11 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
 
         self.generation_xyz_filename = generation_xyz_filename
         self.enable_progress_bar = enable_progress_bar
+
+        if store_validation_structures_path is not None:
+            if not store_validation_structures_path.endswith(".xyz"):
+                raise ValueError("store_validation_structures_path must be an .xyz file.")
+        self.store_validation_structures_path = store_validation_structures_path
 
     def setup(self, stage: str) -> None:
         """Set up datasets for reward computation."""
@@ -593,6 +601,13 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
         self.log_dict(info_dict, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
+
+        if self.store_validation_structures_path is not None:
+            filename = Path(self.store_validation_structures_path)
+            epoch_filename = filename.with_stem(f"{filename.stem}_epoch_{self.current_epoch:04d}")
+            if epoch_filename.exists() and batch_idx == 0:
+                epoch_filename.unlink()
+            xyz_saver(x_1, epoch_filename)
 
     def predict_step(self, batch: OMGData) -> OMGData:
         x_0 = base_modules["model"].sampler.sample_p_0(batch).to(self.device)

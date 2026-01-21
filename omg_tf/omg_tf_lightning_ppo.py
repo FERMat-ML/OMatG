@@ -119,7 +119,7 @@ class OMGTFLightningPPO(lightning.LightningModule):
                  ppo_epochs: int = 1, gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
                  generation_xyz_filename: Optional[str] = None, position_normalization: str = "none",
                  residual_mode: str = "additive", disable_cell_residual: bool = False,
-                 enable_progress_bar: bool = True) -> None:
+                 enable_progress_bar: bool = True, store_validation_structures_path: Optional[str] = None) -> None:
         """
         Constructor for OMGTFLightningPPO.
 
@@ -183,6 +183,9 @@ class OMGTFLightningPPO(lightning.LightningModule):
         :param enable_progress_bar:
             If True, enable progress bar during training.
         :type enable_progress_bar: bool
+        :param store_validation_structures:
+            If True, store generated structures during validation for analysis.
+        :type store_validation_structures: bool
         """
         super().__init__()
 
@@ -418,6 +421,11 @@ class OMGTFLightningPPO(lightning.LightningModule):
             raise ValueError("Reference noise schedules must not be learnable.")
 
         self.enable_progress_bar = enable_progress_bar
+
+        if store_validation_structures_path is not None:
+            if not store_validation_structures_path.endswith(".xyz"):
+                raise ValueError("store_validation_structures_path must be an .xyz file.")
+        self.store_validation_structures_path = store_validation_structures_path
 
     # noinspection PyUnresolvedReferences
     def setup(self, stage: str) -> None:
@@ -1135,6 +1143,13 @@ class OMGTFLightningPPO(lightning.LightningModule):
         self.log("val_reward_std", rewards.std(), on_step=False, on_epoch=True, prog_bar=True, sync_dist=True,
                  batch_size=len(batch))
         self.log_dict(info_dict, on_step=False, on_epoch=True, prog_bar=True, sync_dist=True, batch_size=len(batch))
+
+        if self.store_validation_structures_path is not None:
+            filename = Path(self.store_validation_structures_path)
+            epoch_filename = filename.with_stem(f"{filename.stem}_epoch_{self.current_epoch:04d}")
+            if epoch_filename.exists() and batch_idx == 0:
+                epoch_filename.unlink()
+            xyz_saver(x_1, epoch_filename)
 
     def predict_step(self, batch: OMGData) -> OMGData:
         # Sample initial structures independently.
