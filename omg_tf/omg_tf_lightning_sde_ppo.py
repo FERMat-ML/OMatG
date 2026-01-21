@@ -98,7 +98,6 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         relative_costs: dict[str, float],
         normalize_relative_costs: bool = True,
         freeze_encoder: bool = False,
-        eta_distillation_weight: float = 1.0,
         grpo_group_size: int = 32,
         grpo_num_groups: int = 16,
         grpo_share_x_0: bool = True,
@@ -125,8 +124,6 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             If True, normalize relative_costs to sum to 1.
         :param freeze_encoder:
             If True, freeze the encoder of the policy model.
-        :param eta_distillation_weight:
-            Additional weight for eta distillation loss (applied on top of relative_costs).
         :param grpo_group_size:
             Number of samples per GRPO group.
         :param grpo_num_groups:
@@ -157,7 +154,6 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         self.reward = reward
         self.gamma = gamma
         self.epsilon = epsilon
-        self.eta_distillation_weight = eta_distillation_weight
 
         # Get base model and create policy model as a copy.
         base_model = base_modules["model"]
@@ -458,7 +454,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
 
             # Eta distillation loss: keep eta close to base model's eta.
             eta_diff = (eta_policy - eta_base.detach()) ** 2
-            distill_per_atom = eta_diff.sum(dim=-1)
+            distill_per_atom = eta_diff.sum(dim=-1)  # Sum over x, y, z.
             distill_per_struct = scatter_mean(distill_per_atom, x_t.batch)
             distill_loss = distill_per_struct.mean()
 
@@ -466,7 +462,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             timestep_loss = (
                 self.relative_costs["pos_policy"] * policy_loss
                 + self.relative_costs["pos_regularization"] * reg_loss
-                + self.relative_costs["pos_eta_distillation"] * self.eta_distillation_weight * distill_loss
+                + self.relative_costs["pos_eta_distillation"] * distill_loss
             )
 
             scaled_loss = timestep_loss / num_timesteps
