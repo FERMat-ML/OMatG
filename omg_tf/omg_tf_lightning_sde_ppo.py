@@ -22,7 +22,8 @@ from torch_scatter import scatter_add, scatter_mean
 from tqdm import trange
 from omg.datamodule import OMGData, Structure
 from omg.globals import BIG_TIME, SMALL_TIME
-from omg.si import DifferentialEquationType, SingleStochasticInterpolant, SingleStochasticInterpolantIdentity
+from omg.si import (DifferentialEquationType, SingleStochasticInterpolant, SingleStochasticInterpolantOS,
+                    SingleStochasticInterpolantIdentity)
 from omg.si.abstracts import Epsilon, LatentGamma
 from omg.utils import DataField, xyz_saver
 from omg_tf.abstracts import Reward
@@ -180,7 +181,26 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         # Cell uses base model directly (no RL).
         cell_interpolant = base_model.si.get_stochastic_interpolant(DataField.cell.name)
         self.integrate_cell = not isinstance(cell_interpolant, SingleStochasticInterpolantIdentity)
-        self.cell_corrector = cell_interpolant.get_corrector() if self.integrate_cell else None
+        self.cell_corrector = None
+        if self.integrate_cell:
+            if isinstance(cell_interpolant, SingleStochasticInterpolant):
+                if cell_interpolant.differential_equation_type != DifferentialEquationType.ODE:
+                    raise ValueError("Cell stochastic interpolant must be ODE type for SDE PPO.")
+                if cell_interpolant.velocity_annealing_factor != 0.0:
+                    raise ValueError("Cell velocity annealing is not supported for SDE PPO.")
+                self.cell_corrector = cell_interpolant.get_corrector()
+            elif isinstance(cell_interpolant, SingleStochasticInterpolantOS):
+                if cell_interpolant.differential_equation_type != DifferentialEquationType.ODE:
+                    raise ValueError("Cell stochastic interpolant must be ODE type for SDE PPO.")
+                if not cell_interpolant.predict_velocity:
+                    raise ValueError("Cell stochastic interpolant must predict velocity for SDE PPO.")
+                if cell_interpolant.velocity_annealing_factor != 0.0:
+                    raise ValueError("Cell velocity annealing is not supported for SDE PPO.")
+                self.cell_corrector = cell_interpolant.get_corrector()
+            else:
+                raise ValueError("Unsupported stochastic interpolant for cell integration.")
+        assert ((self.integrate_cell and self.cell_corrector is not None)
+                or (not self.integrate_cell and self.cell_corrector is None))
 
         self.integration_time_steps = base_model.si.integration_time_steps
 
@@ -217,15 +237,12 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         self.gradient_clip_algorithm = gradient_clip_algorithm
 
         # Parse position normalization mode.
-        normalization_map = {
-            "none": self.PositionNormalization.NONE,
-            "per_structure_weight": self.PositionNormalization.PER_STRUCTURE_WEIGHT,
-            "per_atom_surrogate": self.PositionNormalization.PER_ATOM_SURROGATE,
-        }
-        if position_normalization not in normalization_map:
+        try:
+            self.position_normalization = self.PositionNormalization[position_normalization.upper()]
+        except KeyError:
+            valid_options = [name.lower() for name in self.PositionNormalization.__members__.keys()]
             raise ValueError(f"Invalid position_normalization: {position_normalization}. "
-                             f"Must be one of {list(normalization_map.keys())}.")
-        self.position_normalization = normalization_map[position_normalization]
+                             f"Must be one of {valid_options}.")
 
         self.generation_xyz_filename = generation_xyz_filename
         self.enable_progress_bar = enable_progress_bar
@@ -268,15 +285,15 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             eps_t = self.epsilon.epsilon(t)  # Scalar.
             gamma_t = self.gamma.gamma(t)  # Scalar.
 
+            # Get base model outputs for distillation and cell integration.
+            base_output = base_model(x_t, time)
+            b_base = base_output[DataField.pos.name + "_b"]
+            eta_base = base_output[DataField.pos.name + "_eta"]
+
             # Get policy model outputs (b, eta).
             policy_output = self.policy_model(x_t, time)
             b_policy = policy_output[DataField.pos.name + "_b"]
             eta_policy = policy_output[DataField.pos.name + "_eta"]
-
-            # Get base model outputs for distillation.
-            base_output = base_model(x_t, time)
-            b_base = base_output[DataField.pos.name + "_b"]
-            eta_base = base_output[DataField.pos.name + "_eta"]
 
             states.append(x_t.clone())
             base_outputs.append((b_base, eta_base))
@@ -504,6 +521,8 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             eps_t = self.epsilon.epsilon(t)
             gamma_t = self.gamma.gamma(t)
 
+            # Get output before updating x_t.pos.
+            base_output = base_model(x_t, time) if self.integrate_cell else None
             policy_output = self.policy_model(x_t, time)
             b_policy = policy_output[DataField.pos.name + "_b"]
             eta_policy = policy_output[DataField.pos.name + "_eta"]
@@ -514,7 +533,7 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             x_t.pos = self.pos_corrector.correct(x_t.pos + drift * dt + diffusion)
 
             if self.integrate_cell:
-                base_output = base_model(x_t, time)
+                assert base_output is not None
                 cell_b = base_output[DataField.cell.name + "_b"]
                 x_t.cell = self.cell_corrector.correct(x_t.cell + cell_b * dt)
 
