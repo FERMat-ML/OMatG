@@ -80,7 +80,7 @@ def train_omg_tf_tune(config: dict, base_rl_config: dict, base_omg_config_path: 
         OMGTFCLI(model_class=OMGTFLightningPPO,
                  args=["fit", "--config", str(rl_config_path), "--trainer.logger", "WandbLogger",
                        "--trainer.logger.name", context.get_trial_name(), "--trainer.logger.project", project_name,
-                       "--seed_everything", "0"])
+                       "--seed_everything", "0", "--model.store_validation_structures_path", trial_dir + "/val.xyz"])
     finally:
         # Necessary to flush stdout and stderr files.
         sys.stdout.flush()
