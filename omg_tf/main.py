@@ -8,6 +8,7 @@ from omg.omg_lightning import OMGLightning
 from omg.omg_trainer import OMGTrainer
 from omg_tf.base_modules import base_modules
 from omg_tf import omg_tf_lightning_ppo
+from omg_tf import omg_tf_lightning_sde_ppo
 from omg_tf import omg_tf_cli
 
 
@@ -15,6 +16,13 @@ def main():
     """Main function to run the Open Materials Generation with Targeted Functions (OMatG-TF) command line interface
     (used by omg_tf command)."""
     args = sys.argv[1:]
+
+    # Check for 'sde' subcommand to use SDE-based PPO.
+    use_sde = False
+    if args and args[0] == "sde":
+        use_sde = True
+        args = args[1:]
+
     try:
         omg_index = args.index("omg")
     except ValueError:
@@ -50,8 +58,14 @@ def main():
 
     # TODO: DOES HELP STILL WORK?
 
+    # Select model class based on subcommand.
+    if use_sde:
+        model_class = omg_tf_lightning_sde_ppo.OMGTFLightningSDEPPO
+    else:
+        model_class = omg_tf_lightning_ppo.OMGTFLightningPPO
+
     # Pass only omg_tf arguments.
-    omg_tf_cli.OMGTFCLI(model_class=omg_tf_lightning_ppo.OMGTFLightningPPO, args=args[:omg_index],
+    omg_tf_cli.OMGTFCLI(model_class=model_class, args=args[:omg_index],
                         save_config_callback=None,
                         parser_kwargs={"formatter_class": argparse.RawDescriptionHelpFormatter, "description": f"""
 Open Materials Generation (OMatG) Version {__version__}
