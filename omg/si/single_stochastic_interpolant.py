@@ -546,3 +546,13 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: Corrector
         """
         return self._corrector
+
+    def get_gamma(self) -> Optional[LatentGamma]:
+        """
+        Get the gamma function gamma(t) used in the stochastic interpolant.
+
+        :return:
+           Gamma function.
+        :rtype: Optional[LatentGamma]
+        """
+        return self._gamma

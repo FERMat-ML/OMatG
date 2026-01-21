@@ -24,7 +24,7 @@ from omg.datamodule import OMGData, Structure
 from omg.globals import BIG_TIME, SMALL_TIME
 from omg.si import (DifferentialEquationType, SingleStochasticInterpolant, SingleStochasticInterpolantOS,
                     SingleStochasticInterpolantIdentity)
-from omg.si.abstracts import Epsilon, LatentGamma
+from omg.si.abstracts import Epsilon
 from omg.utils import DataField, xyz_saver
 from omg_tf.abstracts import Reward
 from omg_tf.base_modules import base_modules
@@ -94,11 +94,9 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
     def __init__(
         self,
         reward: Reward,
-        gamma: LatentGamma,
         epsilon: Epsilon,
         relative_costs: dict[str, float],
         normalize_relative_costs: bool = True,
-        freeze_encoder: bool = False,
         grpo_group_size: int = 32,
         grpo_num_groups: int = 16,
         grpo_share_x_0: bool = True,
@@ -115,16 +113,12 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
 
         :param reward:
             The reward function to optimize.
-        :param gamma:
-            Gamma function γ(t) for the stochastic interpolant latent variable.
         :param epsilon:
             Epsilon function ε(t) for the SDE diffusion coefficient.
         :param relative_costs:
             Dictionary with keys: "pos_policy", "pos_regularization", and optional "pos_eta_distillation".
         :param normalize_relative_costs:
             If True, normalize relative_costs to sum to 1.
-        :param freeze_encoder:
-            If True, freeze the encoder of the policy model.
         :param grpo_group_size:
             Number of samples per GRPO group.
         :param grpo_num_groups:
@@ -153,7 +147,6 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
         self.automatic_optimization = False
 
         self.reward = reward
-        self.gamma = gamma
         self.epsilon = epsilon
 
         # Get base model and create policy model as a copy.
@@ -162,8 +155,6 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             raise ValueError("Base model must be set globally before initializing.")
 
         self.policy_model = deepcopy(base_model.model)
-        if freeze_encoder:
-            self.policy_model.freeze_encoder()
         base_model.freeze()
 
         # Validate that position uses SDE-type stochastic interpolant.
@@ -176,6 +167,9 @@ class OMGTFLightningSDEPPO(lightning.LightningModule):
             raise ValueError("Position stochastic interpolant must be SDE type.")
         if pos_interpolant.velocity_annealing_factor != 0.0:
             raise ValueError("Velocity annealing is not supported.")
+        self.gamma = pos_interpolant.get_gamma()
+        if self.gamma is None:
+            raise ValueError("Position stochastic interpolant must provide gamma for SDE-based training.")
         self.pos_corrector = pos_interpolant.get_corrector()
 
         # Cell uses base model directly (no RL).
