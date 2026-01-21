@@ -24,7 +24,7 @@ from omg.datamodule import OMGDataset, OMGDataModule
 from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
-from omg.utils import convert_ase_atoms_to_data, xyz_reader
+from omg.utils import convert_ase_atoms_to_data, prefixed_stdout, xyz_reader
 from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_cov, get_space_group,
                           get_volume_frac, match_rmsds, metre_rmsds, ValidAtoms)
 
@@ -1018,9 +1018,13 @@ class OMGTrainer(Trainer):
     def energy_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
                        result_name: str = "energy_metrics.json", energy_storage_file: str = "energies_per_atom.npy",
                        device: str = "cpu", volume_check_cutoff: float = 0.1,
-                       structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3):
-        from mace.calculators import mace_mp
-        mace_calculator = mace_mp(model="medium-mpa-0", device=device)
+                       structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
+                       enable_cueq: bool = False) -> None:
+        # Catch warnings from MACE and prefix stdout.
+        with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            from mace.calculators import mace_mp
+            mace_calculator = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq)
 
         final_file = Path(xyz_file)
         if not final_file.exists():

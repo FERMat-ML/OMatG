@@ -1,5 +1,7 @@
+from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
+import sys
 from typing import Sequence, Union
 from ase import Atoms
 from ase.io import read, write
@@ -210,3 +212,39 @@ class StandardScaler:
             np.isnan(transformed_with_nan), self.replace_nan_token, transformed_with_nan)
 
         return transformed_with_none
+
+
+@contextmanager
+def prefixed_stdout(prefix: str):
+    """Context manager that prefixes all stdout lines with a given prefix."""
+    class PrefixedWriter:
+        def __init__(self, original, prefix):
+            self.original = original
+            self.prefix = prefix
+            self.at_line_start = True
+
+        def write(self, text):
+            if not text:
+                return
+            lines = text.split('\n')
+            for i, line in enumerate(lines):
+                if i > 0:
+                    self.original.write('\n')
+                    self.at_line_start = True
+                if line:
+                    if self.at_line_start:
+                        self.original.write(self.prefix)
+                    self.original.write(line)
+                    self.at_line_start = False
+            if text.endswith('\n'):
+                self.at_line_start = True
+
+        def flush(self):
+            self.original.flush()
+
+    old_stdout = sys.stdout
+    sys.stdout = PrefixedWriter(old_stdout, prefix)
+    try:
+        yield
+    finally:
+        sys.stdout = old_stdout

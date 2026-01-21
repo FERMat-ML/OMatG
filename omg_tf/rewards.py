@@ -10,6 +10,7 @@ import tqdm
 from tqdm.contrib.concurrent import process_map
 import warnings
 from omg.datamodule import OMGDataset, Structure
+from omg.utils import prefixed_stdout
 from .abstracts import Reward
 
 
@@ -821,7 +822,7 @@ class EnergyReward(Reward):
     def __init__(self, scale: float = 1.0, device: Optional[str] = "cpu",
                  invalid_penalty: Optional[float] = None, volume_check_cutoff: float = 0.1,
                  structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
-                 clip_std: Optional[float] = None) -> None:
+                 clip_std: Optional[float] = None, enable_cueq: bool = False) -> None:
         """Constructor for EnergyReward.
 
         CPU device seems to be quicker for small batches (tested up to 1024 structures).
@@ -839,9 +840,12 @@ class EnergyReward(Reward):
             raise ValueError("Polar sine cutoff must be non-negative.")
         if clip_std is not None and not clip_std > 0.0:
             raise ValueError("clip_std must be positive.")
-        from mace.calculators import mace_mp
         self._scale = scale
-        self._mace_calculator = mace_mp(model="medium-mpa-0", device=device)
+        # Catch warnings from MACE and prefix stdout.
+        with prefixed_stdout("[MACE] "), warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            from mace.calculators import mace_mp
+            self._mace_calculator = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq)
         self._invalid_penalty = invalid_penalty
         self._volume_check_cutoff = volume_check_cutoff
         self._structure_check_cutoff = structure_check_cutoff
