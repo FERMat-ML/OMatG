@@ -148,8 +148,9 @@ def tune_omg_tf(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_pa
         tuner = tune.Tuner.restore(
             str(restore_path),
             tune.with_resources(tune_func, resources=resources_per_trial),
-            resume_unfinished=True,
-            restart_errored=True
+            param_space=search_space,
+            resume_unfinished=False,
+            restart_errored=False
         )
     else:
         tuner = tune.Tuner(
