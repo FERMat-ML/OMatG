@@ -118,7 +118,6 @@ def tune_omg(num_samples: int, omg_config: Path, omg_ckpt_path: Path, storage_pa
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--rl_config", type=Path, required=True)
     parser.add_argument("--omg_config", type=Path, required=True)
     parser.add_argument("--omg_ckpt_path", type=Path, required=True)
     parser.add_argument("--project_name", type=str, required=True)
@@ -129,10 +128,6 @@ def main():
     parser.add_argument("--restore", action="store_true")
     parser.add_argument("--sde", action="store_true")
     args = parser.parse_args()
-
-    absolute_rl_config_path = args.rl_config.absolute()
-    if not absolute_rl_config_path.exists():
-        raise RuntimeError(f"RL config path {absolute_rl_config_path} does not exist.")
 
     absolute_omg_config_path = args.omg_config.absolute()
     if not absolute_omg_config_path.exists():
