@@ -71,7 +71,7 @@ class ValidAtoms(object):
 
     def __init__(self, atoms: Atoms, volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
                  use_pauling_test: bool = True, include_alloys: bool = True, skip_validation: bool = False,
-                 upper_narity_limit: Optional[int] = None) -> None:
+                 upper_narity_limit: Optional[int] = None, polar_sine_cutoff: float = 1.0e-3) -> None:
         """Constructor of the ValidAtoms class."""
         if upper_narity_limit is not None and upper_narity_limit < 1:
             raise ValueError("The upper n-arity limit must be at least 1.")
@@ -84,6 +84,8 @@ class ValidAtoms(object):
         self._include_alloys = include_alloys
         self._volume_valid = self._structure.volume > volume_check_cutoff
         self._structure_valid = self._structure_check(self._structure, self._structure_check_cutoff)
+        self._polar_sine_valid = ((self._structure.lattice.volume / np.prod(self._structure.lattice.lengths))
+                                  >= polar_sine_cutoff)
         if skip_validation:
             self._composition_valid = True
             self._fingerprint_valid = True
@@ -313,6 +315,17 @@ class ValidAtoms(object):
         :rtype: bool
         """
         return self._structure_valid
+
+    @property
+    def polar_sine_valid(self) -> bool:
+        """
+        Returns the polar sine validity of the Atoms instance.
+
+        :return:
+            The polar sine validity.
+        :rtype: bool
+        """
+        return self._polar_sine_valid
 
     @property
     def composition_valid(self) -> bool:

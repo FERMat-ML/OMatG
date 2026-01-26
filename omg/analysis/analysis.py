@@ -517,7 +517,10 @@ def _get_match_and_rmsd(atoms_one: ValidAtoms, atoms_two: ValidAtoms, ltol: floa
         Root-mean-square displacement.
     :rtype: Optional[float]
     """
-    if _element_check(atoms_one.atoms, atoms_two.atoms, check_reduced) and atoms_one.structure_valid and atoms_two.structure_valid and atoms_one.volume_valid and atoms_two.volume_valid:
+    if (_element_check(atoms_one.atoms, atoms_two.atoms, check_reduced)
+            and atoms_one.structure_valid and atoms_two.structure_valid
+            and atoms_one.volume_valid and atoms_two.volume_valid
+            and atoms_one.polar_sine_valid and atoms_two.polar_sine_valid):
         return _structure_matcher(atoms_one.structure, atoms_two.structure, ltol=ltol, stol=stol, angle_tol=angle_tol)
     return None
 
