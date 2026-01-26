@@ -7,7 +7,7 @@ import lightning
 import numpy as np
 from scipy.stats import wasserstein_distance
 import torch
-from omg.analysis import get_coordination_numbers, get_cov, match_rmsds, ValidAtoms
+from omg.analysis import get_coordination_numbers, get_cov, match_rmsds, metre_rmsds, ValidAtoms
 from omg.datamodule import OMGData
 from omg.globals import SMALL_TIME, BIG_TIME
 from omg.model.model import Model
@@ -125,6 +125,10 @@ class OMGLightning(lightning.LightningModule):
         """
         Match rate for the CSP task.
         """
+        METRE = auto()
+        """
+        METRe for the CSP task.
+        """
         DNG_EVAL = auto()
         """
         Evaluation for the DNG task.
@@ -180,7 +184,7 @@ class OMGLightning(lightning.LightningModule):
             self._validation_metric = self.ValidationMetric[validation_mode.upper()]
         except AttributeError:
             raise ValueError(f"Unknown validation metric f{validation_mode}.")
-        if self._validation_metric == self.ValidationMetric.MATCH_RATE:
+        if self._validation_metric == self.ValidationMetric.MATCH_RATE or self._validation_metric == self.ValidationMetric.METRE:
             if not isinstance(species_stochastic_interpolant, SingleStochasticInterpolantIdentity):
                 raise ValueError("Species stochastic interpolant must be of type SingleStochasticInterpolantIdentity "
                                  "for match rate validation.")
@@ -278,6 +282,7 @@ class OMGLightning(lightning.LightningModule):
         x_0 = self.sampler.sample_p_0(x_1).to(self.device)
 
         if (self._validation_metric == self.ValidationMetric.MATCH_RATE
+                or self._validation_metric == self.ValidationMetric.METRE
                 or self._validation_metric == self.ValidationMetric.DNG_EVAL):
             # Prevent moving x_1 to cpu because it's needed below.
             x_1_cpu = x_1.clone().to('cpu')
@@ -356,6 +361,19 @@ class OMGLightning(lightning.LightningModule):
                 enable_progress_bar=True)
 
             self.log("match_rate", float(match_rate), sync_dist=True)
+            self.log("mean_rmsd", float(mean_rmsd), sync_dist=True)
+            self.log("corr_rmsd", float(corr_rmsd), sync_dist=True)
+        elif self._validation_metric == self.ValidationMetric.METRE:
+            assert len(self.generated_atoms) == len(self.reference_atoms)
+            gen_valid_atoms = ValidAtoms.get_valid_atoms(self.generated_atoms, desc="Validating generated structures",
+                                                         skip_validation=True, number_cpus=1)
+            ref_valid_atoms = ValidAtoms.get_valid_atoms(self.reference_atoms, desc="Validating reference structures",
+                                                         skip_validation=True, number_cpus=1)
+            metre, mean_rmsd, _, _, _, _, corr_rmsd, _ = metre_rmsds(
+                gen_valid_atoms, ref_valid_atoms, ltol=0.3, stol=0.5, angle_tol=10.0, number_cpus=self.number_cpus,
+                enable_progress_bar=True)
+
+            self.log("metre", float(metre), sync_dist=True)
             self.log("mean_rmsd", float(mean_rmsd), sync_dist=True)
             self.log("corr_rmsd", float(corr_rmsd), sync_dist=True)
         elif self._validation_metric == self.ValidationMetric.DNG_EVAL:
