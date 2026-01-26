@@ -3,6 +3,7 @@ from pathlib import Path
 import time
 from typing import Dict, Optional
 from ase import Atoms
+from ase.io import write
 import lightning
 import numpy as np
 from scipy.stats import wasserstein_distance
@@ -138,7 +139,8 @@ class OMGLightning(lightning.LightningModule):
                  relative_si_costs: Dict[str, float], use_min_perm_dist: bool = False,
                  generation_xyz_filename: Optional[str] = None, sobol_time: bool = False,
                  float_32_matmul_precision: str = "medium", validation_mode: str = "loss",
-                 dataset_name: str = "mp_20", number_cpus: int = 12) -> None:
+                 dataset_name: str = "mp_20", number_cpus: int = 12,
+                 store_validation_structures_path: Optional[str] = None) -> None:
         """Constructor of the OMGLightning class."""
         super().__init__()
         self.si = si
@@ -200,6 +202,12 @@ class OMGLightning(lightning.LightningModule):
 
         self.reference_atoms = []
         self.generated_atoms = []
+        if store_validation_structures_path is not None:
+            if self._validation_metric == self.ValidationMetric.LOSS:
+                raise ValueError("The store_validation_structures_path option cannot be used with validation_mode 'loss'.")
+            if not store_validation_structures_path.endswith(".xyz"):
+                raise ValueError("store_validation_structures_path must be an .xyz file.")
+        self.store_validation_structures_path = store_validation_structures_path
 
     def training_step(self, x_1: OMGData) -> torch.Tensor:
         """
@@ -429,6 +437,21 @@ class OMGLightning(lightning.LightningModule):
             self.log_dict(metrics, sync_dist=True)
         else:
             assert self._validation_metric == self.ValidationMetric.LOSS
+
+        if self.store_validation_structures_path is not None:
+            assert self._validation_metric != self.ValidationMetric.LOSS
+            assert len(self.generated_atoms) == len(self.reference_atoms)
+            assert len(self.generated_atoms) > 0
+            filename = Path(self.store_validation_structures_path)
+            epoch_filename = filename.with_stem(
+                f"{filename.stem}_epoch_{self.current_epoch:04d}_step_{self.global_step:06d}")
+            epoch_filename_ref = epoch_filename.with_stem(epoch_filename.stem + "_ref")
+            if epoch_filename.exists():
+                epoch_filename.unlink()
+            if epoch_filename_ref.exists():
+                epoch_filename_ref.unlink()
+            write(epoch_filename, self.generated_atoms, append=True)
+            write(epoch_filename_ref, self.reference_atoms, append=True)
 
     def predict_step(self, x: OMGData) -> OMGData:
         """
