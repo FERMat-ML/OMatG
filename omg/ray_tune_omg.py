@@ -73,7 +73,7 @@ def validate_omg_tune(config: dict, base_omg_config: dict, ckpt_path: Path, proj
                  "--trainer.logger.project", project_name,
                  "--seed_everything", "0", "--model.validation_mode", "metre",
                  "--model.store_validation_structures_path", trial_dir + "/val.xyz",
-                 "--model.number_cpus", cpus_per_trial])
+                 "--model.number_cpus", str(cpus_per_trial)])
     wandb.teardown()
 
 
