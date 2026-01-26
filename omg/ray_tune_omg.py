@@ -39,7 +39,8 @@ def overwrite_flattened_items(original_dict: dict, flattened_updates: dict) -> d
     return new_dict
 
 
-def validate_omg_tune(config: dict, base_omg_config: dict, ckpt_path: Path, project_name: str):
+def validate_omg_tune(config: dict, base_omg_config: dict, ckpt_path: Path, project_name: str,
+                      cpus_per_trial: int) -> None:
     context = tune.get_context()
     trial_dir = context.get_trial_dir()
     omg_config = overwrite_flattened_items(base_omg_config, config)
@@ -59,7 +60,8 @@ def validate_omg_tune(config: dict, base_omg_config: dict, ckpt_path: Path, proj
                  "--trainer.logger", "WandbLogger", "--trainer.logger.name", context.get_trial_name(),
                  "--trainer.logger.project", project_name,
                  "--seed_everything", "0", "--model.validation_mode", "metre",
-                 "--model.store_validation_structures_path", trial_dir + "/val.xyz"])
+                 "--model.store_validation_structures_path", trial_dir + "/val.xyz",
+                 "--model.number_cpus", cpus_per_trial])
     wandb.teardown()
 
 
@@ -86,6 +88,7 @@ def tune_omg(num_samples: int, omg_config: Path, omg_ckpt_path: Path, storage_pa
         base_omg_config=omg_config,
         ckpt_path=omg_ckpt_path,
         project_name=project_name,
+        cpus_per_trial=cpus_per_trial,
     )
 
     if restore:
