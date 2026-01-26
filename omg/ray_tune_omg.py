@@ -126,7 +126,6 @@ def main():
     parser.add_argument("--gpus_per_trial", type=int, default=1)
     parser.add_argument("--temp_dir", type=Path, default=None)
     parser.add_argument("--restore", action="store_true")
-    parser.add_argument("--sde", action="store_true")
     args = parser.parse_args()
 
     absolute_omg_config_path = args.omg_config.absolute()
