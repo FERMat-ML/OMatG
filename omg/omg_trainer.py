@@ -1019,7 +1019,7 @@ class OMGTrainer(Trainer):
                        result_name: str = "energy_metrics.json", energy_storage_file: str = "energies_per_atom.npy",
                        device: str = "cpu", volume_check_cutoff: float = 0.1,
                        structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
-                       enable_cueq: bool = False) -> None:
+                       enable_cueq: bool = False, predict_energy_storage_file: Optional[str] = None) -> None:
         # Catch warnings from MACE and prefix stdout.
         with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
@@ -1032,6 +1032,25 @@ class OMGTrainer(Trainer):
 
         if not result_name.endswith(".json"):
             raise ValueError("The result_name must end with .json")
+
+        if predict_energy_storage_file is not None:
+            ref_atoms = self._load_dataset_atoms(datamodule.pred_dataset)
+            ref_energies_per_atom = np.full(len(ref_atoms), np.nan, dtype=float)
+            with torch.set_grad_enabled(True):  # Mace needs gradients.
+                for idx, atoms in enumerate(tqdm.tqdm(ref_atoms, desc="Computing energies with MACE")):
+                    py_structure = AseAtomsAdaptor.get_structure(atoms)
+                    volume_valid = (py_structure.volume >= volume_check_cutoff)
+                    dist_mat = py_structure.distance_matrix
+                    dist_mat = dist_mat + np.diag(
+                        np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0)
+                    )
+                    min_dist = dist_mat.min()
+                    structure_valid = (min_dist >= structure_check_cutoff)
+                    polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+                    polar_sine_valid = (polar_sine >= polar_sine_cutoff)
+                    assert volume_valid and structure_valid and polar_sine_valid
+                    ref_energies_per_atom[idx] = mace_calculator.get_potential_energy(atoms) / len(atoms)
+            np.save(predict_energy_storage_file, ref_energies_per_atom)
 
         # Get atoms
         gen_atoms = xyz_reader(final_file)
