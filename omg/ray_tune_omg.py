@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from copy import deepcopy
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 import warnings
 from optuna.samplers import TPESampler
 from ray import init, tune
@@ -15,27 +15,39 @@ from omg.omg_lightning import OMGLightning
 from omg.omg_trainer import OMGTrainer
 
 
-def yield_flattened_items(d: dict):
+def yield_flattened_items(d: dict, prefix: tuple = ()):
     for key, value in d.items():
+        current_path = prefix + (key,)
         if isinstance(value, dict):
-            # Append parent key to child key with dot notation.
-            for child_key, child_value in yield_flattened_items(value):
-                yield f"{key}.{child_key}", child_value
+            yield from yield_flattened_items(value, current_path)
+        elif isinstance(value, list):
+            for index, item in enumerate(value):
+                item_path = current_path + (index,)
+                if isinstance(item, dict):
+                    yield from yield_flattened_items(item, item_path)
+                else:
+                    yield item_path, item
         else:
-            yield key, value
+            yield current_path, value
 
 
-def overwrite_flattened_items(original_dict: dict, flattened_updates: dict) -> dict:
+def overwrite_flattened_items(original_dict: dict, flattened_updates: dict[tuple, Any]) -> dict:
     new_dict = deepcopy(original_dict)
     for key, value in flattened_updates.items():
-        assert not isinstance(value, dict)
         keys = key.split(".")
-        current_dict = new_dict
+        current = new_dict
         for k in keys[:-1]:
-            assert k in current_dict
-            current_dict = current_dict[k]
-        assert keys[-1] in current_dict
-        current_dict[keys[-1]] = value
+            try:
+                index = int(k)
+                current = current[index]
+            except ValueError:
+                current = current[k]
+        final_key = keys[-1]
+        try:
+            index = int(final_key)
+            current[index] = value
+        except ValueError:
+            current[final_key] = value
     return new_dict
 
 
@@ -73,9 +85,11 @@ def tune_omg(num_samples: int, omg_config: Path, omg_ckpt_path: Path, storage_pa
     search_space = {}
     for key, value in yield_flattened_items(omg_config):
         if isinstance(value, Domain):
-            if key in search_space:
-                raise RuntimeError(f"Duplicate key {key} found in search space.")
-            search_space[key] = value
+            # Convert tuple key to dot-separated string
+            str_key = ".".join(str(k) for k in key)
+            if str_key in search_space:
+                raise RuntimeError(f"Duplicate key {str_key} found in search space.")
+            search_space[str_key] = value
 
     init(address="local", log_to_driver=True, _temp_dir=str(temp_dir) if temp_dir is not None else None)
     sampler = TPESampler(seed=0)
