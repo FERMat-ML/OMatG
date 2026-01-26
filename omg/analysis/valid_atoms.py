@@ -82,15 +82,13 @@ class ValidAtoms(object):
         self._structure_check_cutoff = structure_check_cutoff
         self._use_pauling_test = use_pauling_test
         self._include_alloys = include_alloys
+        self._volume_valid = self._structure.volume > volume_check_cutoff
+        self._structure_valid = self._structure_check(self._structure, self._structure_check_cutoff)
         if skip_validation:
-            self._volume_valid = True
-            self._structure_valid = True
             self._composition_valid = True
             self._fingerprint_valid = True
             self._composition_fingerprint, self._structure_fingerprint = None, None
         else:
-            self._volume_valid = self._structure.volume > volume_check_cutoff
-            self._structure_valid = self._structure_check(self._structure, self._structure_check_cutoff)
             if self._volume_valid and self._structure_valid:
                 try:
                     self._composition_valid = self._smact_check(self._composition, self._use_pauling_test,
