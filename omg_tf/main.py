@@ -10,6 +10,7 @@ from omg_tf.base_modules import base_modules
 from omg_tf import omg_tf_lightning_ppo
 from omg_tf import omg_tf_lightning_sde_ppo
 from omg_tf import omg_tf_cli
+from omg_tf.omg_tf_trainer import OMGTFTrainer
 
 
 def main():
@@ -65,7 +66,7 @@ def main():
         model_class = omg_tf_lightning_ppo.OMGTFLightningPPO
 
     # Pass only omg_tf arguments.
-    omg_tf_cli.OMGTFCLI(model_class=model_class, args=args[:omg_index],
+    omg_tf_cli.OMGTFCLI(model_class=model_class, args=args[:omg_index], trainer_class=OMGTFTrainer,
                         save_config_callback=None,
                         parser_kwargs={"formatter_class": argparse.RawDescriptionHelpFormatter, "description": f"""
 Open Materials Generation (OMatG) Version {__version__}
