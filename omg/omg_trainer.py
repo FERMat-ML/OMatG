@@ -1202,5 +1202,7 @@ class OMGTrainer(Trainer):
         :type ckpt_path: Optional[Union[str, Path]]
         """
         if ckpt_path is not None:
+            print(f"Restoring states from the checkpoint path at {ckpt_path}")
             ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
             model.load_state_dict(ckpt["state_dict"])
+            print(f"Loaded model weights from the checkpoint at {ckpt_path}")
