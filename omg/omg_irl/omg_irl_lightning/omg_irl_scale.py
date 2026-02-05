@@ -159,23 +159,23 @@ class OMGIRLScale(OMGIRLLightningAbstract):
         x_t = x_0.clone()
         states = []
         old_log_probs = []
-        sampled_residual_effects = []
+        sampled_actions = []
         base_model_outputs = []
         scale_total = {field.name: torch.tensor(0.0, device=self.device)
                        for field in self.integrated_data_fields if field not in self.disable_fields}
 
-        # Integrate over time with residuals.
-        for t_index in trange(1, len(times), desc="Rollout with residuals", position=1, leave=False,
+        # Integrate over time with scale model.
+        for t_index in trange(1, len(times), desc="Rollout with scales", position=1, leave=False,
                               disable=not self.enable_progress_bar):
             t = times[t_index - 1]
             dt = times[t_index] - times[t_index - 1]
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
             base_model_output = base_model(x_t, time)
-            residual_output = self.scale_model(x_t, time)
+            scale_output = self.scale_model(x_t, time)
 
             states.append(x_t.clone())
-            step_sampled_residual_effects = {}
+            step_sampled_actions = {}
             step_old_log_probs = {}
             step_base_model_outputs = {}
 
@@ -189,7 +189,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                 else:
                     sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
                     assert sigma.ndim == 0
-                    scale = residual_output[DataField.pos.name + "_s"]  # Tensor of shape (batch_size,).
+                    scale = scale_output[DataField.pos.name + "_s"]  # Tensor of shape (batch_size,).
                     assert scale.shape == time.shape
                     # Tensor of shape (sum(n_atoms), 1) so that it can be broadcast to base_b shape (sum(n_atoms), 3).
                     scale_per_atom = scale[x_t.batch].unsqueeze(-1)
@@ -198,10 +198,10 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                     randn = torch.randn_like(scale)  # Tensor of shape (batch_size).
                     randn_per_atom = randn[x_t.batch].unsqueeze(-1)  # Tensor of shape (sum(n_atoms), 1).
                     noise = sigma * randn_per_atom * base_b
-                    # Store deviation effect for PPO update: res_s * dt + noise * sqrt(dt).
+                    # Store sampled action for PPO update: scale * dt + sigma * randn * sqrt(dt).
                     # Effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
                     # Noise is effectively one-dimensional. Shape (batch_size,).
-                    step_sampled_residual_effects[DataField.pos] = scale * dt + sigma * randn * sqrt_dt
+                    step_sampled_actions[DataField.pos] = scale * dt + sigma * randn * sqrt_dt
                     # Log probability of x_t+dt given x_t for SDE.
                     # Tensor of shape (batch_size,).
                     log_prob = -0.5 * (torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2))
@@ -223,15 +223,15 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                     sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
                     assert sigma.ndim == 0
                     # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
-                    scale = residual_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
+                    scale = scale_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
                     assert scale.shape[:1] == base_b.shape[:1]
                     velocity = (1.0 + scale) * base_b
                     randn = torch.randn_like(scale)
                     noise = sigma * randn * base_b
-                    # Store deviation effect for PPO update: res_s * dt + noise * sqrt(dt).
+                    # Store sampled action for PPO update: scale * dt + sigma * randn * sqrt(dt).
                     # Effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
                     # Noise is effectively one-dimensional. Shape (batch_size,).
-                    step_sampled_residual_effects[DataField.cell] = (
+                    step_sampled_actions[DataField.cell] = (
                             scale.squeeze(dim=(1, 2)) * dt + sigma * randn.squeeze(dim=(1, 2)) * sqrt_dt)
                     # Log probability of x_t+dt given x_t for SDE.
                     # Tensor of shape (batch_size,).
@@ -245,7 +245,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
 
-            sampled_residual_effects.append(step_sampled_residual_effects)
+            sampled_actions.append(step_sampled_actions)
             old_log_probs.append(step_old_log_probs)
             base_model_outputs.append(step_base_model_outputs)
 
@@ -255,7 +255,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
         # Average over time steps.
         info_dict = {f"{key}_scale": scale / (len(times) - 1) for key, scale in scale_total.items()}
 
-        return self._create_trajectory_data(states, sampled_residual_effects, old_log_probs, base_model_outputs,
+        return self._create_trajectory_data(states, sampled_actions, old_log_probs, base_model_outputs,
                                             info_dict)
 
     def ppo_update(self, trajectory: TrajectoryData) -> tuple[float, dict[str, float]]:
@@ -283,23 +283,23 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
             x_t = trajectory.states[t_index]
-            # Re-evaluate residual model with gradients.
-            residual_output = self.scale_model(x_t, time)
+            # Re-evaluate scale model with gradients.
+            scale_output = self.scale_model(x_t, time)
             timestep_loss = torch.tensor(0.0, device=self.device)
 
             if self.integrate_pos and DataField.pos not in self.disable_fields:
                 sigma_ref = self.reference_noise_schedules[DataField.pos].noise(t)  # Scalar.
                 sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
                 assert sigma.ndim == 0
-                scale = residual_output[DataField.pos.name + "_s"]  # Shape (batch_size,).
+                scale = scale_output[DataField.pos.name + "_s"]  # Shape (batch_size,).
                 old_log_prob = trajectory.old_log_probs[t_index][DataField.pos]  # Shape (batch_size,).
                 # This is effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
                 # Noise is effectively one-dimensional. Shape (batch_size,).
-                sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.pos]
+                sampled_action = trajectory.sampled_actions[t_index][DataField.pos]
                 # Tensor of shape (batch_size,).
                 current_log_prob = -0.5 * (
                         torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
-                        + ((sampled_residual_effect.detach() - scale * dt) / (sigma * sqrt_dt)) ** 2
+                        + ((sampled_action.detach() - scale * dt) / (sigma * sqrt_dt)) ** 2
                 )
                 ratio = torch.exp(current_log_prob - old_log_prob.detach())
                 clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
@@ -340,15 +340,15 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                 sigma_ref = self.reference_noise_schedules[DataField.cell].noise(t)  # Scalar.
                 sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
                 assert sigma.ndim == 0
-                scale = residual_output[DataField.cell.name + "_s"]  # Shape (batch_size,).
+                scale = scale_output[DataField.cell.name + "_s"]  # Shape (batch_size,).
                 old_log_prob = trajectory.old_log_probs[t_index][DataField.cell]  # Shape (batch_size,).
                 # This is effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
                 # Noise is effectively one-dimensional. Shape (batch_size,).
-                sampled_residual_effect = trajectory.sampled_residual_effects[t_index][DataField.cell]
+                sampled_action = trajectory.sampled_actions[t_index][DataField.cell]
                 # Tensor of shape (batch_size,).
                 current_log_prob = -0.5 * (
                         torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
-                        + ((sampled_residual_effect.detach() - scale * dt) / (sigma * sqrt_dt)) ** 2
+                        + ((sampled_action.detach() - scale * dt) / (sigma * sqrt_dt)) ** 2
                 )
 
                 ratio = torch.exp(current_log_prob - old_log_prob.detach())
@@ -424,7 +424,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
             base_model_output = base_model(x_t, time)
-            residual_output = self.scale_model(x_t, time)
+            scale_output = self.scale_model(x_t, time)
 
             if self.integrate_pos:
                 base_b = base_model_output[DataField.pos.name + "_b"]
@@ -436,7 +436,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                 else:
                     sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
                     assert sigma.ndim == 0
-                    scale = residual_output[DataField.pos.name + "_s"]  # Tensor of shape (batch_size,).
+                    scale = scale_output[DataField.pos.name + "_s"]  # Tensor of shape (batch_size,).
                     assert scale.shape == time.shape
                     # Tensor of shape (sum(n_atoms), 1) so that it can be broadcast to base_b shape (sum(n_atoms), 3).
                     scale_per_atom = scale[x_t.batch].unsqueeze(-1)
@@ -460,7 +460,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                     sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
                     assert sigma.ndim == 0
                     # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
-                    scale = residual_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
+                    scale = scale_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
                     assert scale.shape[:1] == base_b.shape[:1]
                     velocity = (1.0 + scale) * base_b
                     noise = sigma * torch.randn_like(scale) * base_b
