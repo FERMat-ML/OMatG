@@ -19,20 +19,21 @@ class OMGIRLScale(OMGIRLLightningAbstract):
     framework.
 
     This class learns a time-dependent velocity-annealing schedule that modifies the base OMatG model's velocity
-    as (1 + s(t)) * b(x_t, t), where s(t) is the learned scale and b(x_t, t) is the base model's predicted velocity.
+    as (1 + s(t)) * b(x_t, t), where s(t) is the learned scale and b_ref(x_t, t) is the base model's predicted velocity.
 
     Exploration is enabled by adding Gaussian noise with time-dependent standard deviation sigma(t) to the
-    velocity-annealing schedule, resulting the following Euler-Maruyama update for the variable x_t:
-    x_t+dt = x_t + [1 + s(t)] * b(x_t, t) * dt + sigma(t) * b(x_t, t) * randn * sqrt(dt),
+    velocity-annealing schedule, resulting in the following Euler-Maruyama update for the variable x_t:
+    x_t+dt = x_t + [1 + s(t)] * b_ref(x_t, t) * dt + sigma(t) * b_ref(x_t, t) * randn * sqrt(dt),
     where randn is a one-dimensional standard normal random variable, and sigma(t) is a (potentially learnable) noise
     schedule.
 
     Analogously, the reference policy is given by
-    x_t+dt = x_t + b(x_t, t) * dt + sigma_ref(t) * b(x_t, t) * randn * sqrt(dt).
+    x_t+dt = x_t + b_ref(x_t, t) * dt + sigma_ref(t) * b_ref(x_t, t) * randn * sqrt(dt),
+    where sigma_ref(t) is a fixed reference noise schedule.
 
     The GRPO framework is used to learn a velocity-annealing schedule for the atomic positions and the lattice vectors,
     given that they are integrated by the base model. Any scores predicted by the base model are ignored. Optionally,
-    one can switch of learning of a velocity-annealing schedule for each of these data fields.
+    one can switch off learning of a velocity-annealing schedule for each of these data fields.
 
     For every data field for which a velocity-annealing schedule is learned, the loss consists of a policy loss,
     a regularization loss, and optionally, if the noise schedule for that data field is learnable, an entropy loss. The
@@ -394,8 +395,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
         # Average over time steps.
         info_dict = {f"{key}_scale": scale / (len(times) - 1) for key, scale in scale_total.items()}
 
-        return self._create_trajectory_data(states, sampled_actions, old_log_probs, base_model_outputs,
-                                            info_dict)
+        return self._create_trajectory_data(states, sampled_actions, old_log_probs, base_model_outputs, info_dict)
 
     def ppo_update(self, trajectory: TrajectoryData) -> tuple[float, dict[str, float]]:
         """
@@ -440,7 +440,6 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             dt = times[t_index + 1] - times[t_index]
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
-            x_t = trajectory.states[t_index]
             # Re-evaluate scale model with gradients.
             scale_output = self.scale_model(time)
             timestep_loss = torch.tensor(0.0, device=self.device)
@@ -448,7 +447,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             if self.integrate_pos and DataField.pos not in self.disable_fields:
                 sigma_ref = self.reference_noise_schedules[DataField.pos].noise(t)  # Scalar.
                 sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
-                assert sigma.ndim == 0
+                assert sigma.ndim == sigma_ref.ndim == 0
                 scale = scale_output[DataField.pos.name + "_s"]  # Shape (batch_size,).
                 old_log_prob = trajectory.old_log_probs[t_index][DataField.pos]  # Shape (batch_size,).
                 # This is effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
@@ -497,7 +496,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             if self.integrate_cell and DataField.cell not in self.disable_fields:
                 sigma_ref = self.reference_noise_schedules[DataField.cell].noise(t)  # Scalar.
                 sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
-                assert sigma.ndim == 0
+                assert sigma.ndim == sigma_ref.ndim == 0
                 scale = scale_output[DataField.cell.name + "_s"]  # Shape (batch_size,).
                 old_log_prob = trajectory.old_log_probs[t_index][DataField.cell]  # Shape (batch_size,).
                 # This is effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
