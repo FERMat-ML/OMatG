@@ -7,18 +7,141 @@ from omg.datamodule import OMGData
 from omg.globals import SMALL_TIME, BIG_TIME
 from omg.si import DifferentialEquationType, SingleStochasticInterpolantOS
 from omg.utils import DataField
-from omg.omg_irl import base_modules, NoiseSchedule, Reward, TimeMLP
+from omg.omg_irl import base_modules, NoiseSchedule, Reward
 from .abstracts import OMGIRLLightningAbstract, TrajectoryData
+from .scale_mlp import ScaleMLP
 
 
 class OMGIRLScale(OMGIRLLightningAbstract):
+    """
+    Velocity-annealing Open Materials Generation with Inference-time Reinforcement Learning (OMatG-IRL) using
+    group-relative policy optimization (GRPO) and proximal policy optimization (PPO) within the PyTorch Lightning
+    framework.
+
+    This class learns a time-dependent velocity-annealing schedule that modifies the base OMatG model's velocity
+    as (1 + s(t)) * b(x_t, t), where s(t) is the learned scale and b(x_t, t) is the base model's predicted velocity.
+
+    Exploration is enabled by adding Gaussian noise with time-dependent standard deviation sigma(t) to the
+    velocity-annealing schedule, resulting the following Euler-Maruyama update for the variable x_t:
+    x_t+dt = x_t + [1 + s(t)] * b(x_t, t) * dt + sigma(t) * b(x_t, t) * randn * sqrt(dt),
+    where randn is a one-dimensional standard normal random variable, and sigma(t) is a (potentially learnable) noise
+    schedule.
+
+    Analogously, the reference policy is given by
+    x_t+dt = x_t + b(x_t, t) * dt + sigma_ref(t) * b(x_t, t) * randn * sqrt(dt).
+
+    The GRPO framework is used to learn a velocity-annealing schedule for the atomic positions and the lattice vectors,
+    given that they are integrated by the base model. Any scores predicted by the base model are ignored. Optionally,
+    one can switch of learning of a velocity-annealing schedule for each of these data fields.
+
+    For every data field for which a velocity-annealing schedule is learned, the loss consists of a policy loss,
+    a regularization loss, and optionally, if the noise schedule for that data field is learnable, an entropy loss. The
+    relative costs of these losses should be specified with the keys '<data_field>_policy',
+    '<data_field>_regularization', and '<data_field>_entropy' in the relative_costs dictionary.
+
+    :param reward:
+        Reward function to evaluate the generated structures.
+    :type reward: Reward
+    :param reference_noise_schedules:
+        Dictionary mapping data field names to reference noise schedules sigma_ref(t).
+        The reference noise schedules must not be learnable.
+    :type reference_noise_schedules: dict[str, NoiseSchedule]
+    :param noise_schedules:
+        Dictionary mapping data field names to noise schedules sigma(t).
+        The noise schedules can be learnable or non-learnable.
+    :type noise_schedules: dict[str, NoiseSchedule]
+    :param relative_costs:
+        Dictionary mapping cost types to their relative costs for each data field.
+    :type relative_costs: dict[str, float]
+    :param scale_model:
+        The scale model to learn the velocity-annealing schedule s(t).
+        The scale model should output a dictionary mapping data field names to their corresponding scales.
+    :type scale_model: ScaleMLP
+    :normalize_relative_costs:
+        If True, all relative costs are normalized so that they sum to 1.
+        Defaults to True.
+    :type normalize_relative_costs: bool
+    :param disable_fields:
+        Sequence of data field names for which to disable learning of the velocity-annealing schedule.
+        For these data fields, the velocity-annealing schedule is effectively set to zero, and no noise is added.
+        Defaults to an empty sequence.
+    :type disable_fields: Sequence[str]
+    :param grpo_group_size:
+        Number of samples per structure in each GRPO group.
+        Must be greater than 1.
+        Defaults to 32.
+    :type grpo_group_size: int
+    :param grpo_num_groups:
+        Number of GRPO groups per training batch.
+        The total number of structures in a training batch is grpo_group_size * grpo_num_groups.
+        Must be greater than 0.
+        Defaults to 16.
+    :type grpo_num_groups: int
+    :param grpo_share_x_0:
+        If True, all group members share the same initial structure x_0, i.e., x_0 is sampled once per GRPO group.
+        If False, x_0 is sampled independently for each group member.
+        Defaults to True.
+    :type grpo_share_x_0: bool
+    :param ppo_clip_epsilon:
+        PPO clipping epsilon for the surrogate objective.
+        Must be greater than 0.
+        Defaults to 0.2.
+    :type ppo_clip_epsilon: float
+    :param ppo_epochs:
+        Number of PPO epochs (passes over the same trajectory) per training step.
+        Must be at least 1.
+        Defaults to 1.
+    :type ppo_epochs: int
+    :param gradient_clip_val:
+        Value for gradient clipping.
+        If None, no gradient clipping is applied.
+        Defaults to 1.0.
+    :type gradient_clip_val: Optional[float]
+    :param gradient_clip_algorithm:
+        Algorithm for gradient clipping. Options are "norm" or "value".
+        Defaults to "norm".
+    :type gradient_clip_algorithm: str
+    :param generation_xyz_filename:
+        If provided, the filename to store predicted structures during prediction.
+        If None, a timestamped filename will be generated.
+        Must be an .xyz file if provided.
+        Defaults to None.
+    :type generation_xyz_filename: Optional[str]
+    :param validation_xyz_filename:
+        If provided, the filename to store validation structures during validation.
+        This filename will be used as a prefix, and epoch and step information will be appended to it for each
+        validation batch.
+        If None, validation structures will not be stored.
+        Must be an .xyz file if provided.
+        Defaults to None.
+    :type validation_xyz_filename: Optional[str]
+    :param enable_progress_bar:
+        If True, enables progress bars during reward computation, rollout, PPO update, and integration.
+        Defaults to True.
+    :type enable_progress_bar: bool
+
+    :raises ValueError:
+        If reference_noise_schedules contains an invalid data field name.
+        If any reference noise schedule is learnable.
+        If noise_schedules contains an invalid data field name.
+        If disable_fields contains an invalid data field name.
+        If any relative cost is negative.
+        If all relative costs are zero.
+        If any relative cost key does not follow the format '<data_field>_<cost_type>', where <cost_type> is one of
+        'policy', 'regularization', or 'entropy'.
+        If integrating species is enabled.
+        If an integrated data field is missing a reference noise schedule, noise schedule, or relative costs.
+        If velocity prediction is not enabled for position or cell data fields when using SingleStochasticInterpolantOS.
+    """
+
     def __init__(self, reward: Reward, reference_noise_schedules: dict[str, NoiseSchedule],
                  noise_schedules: dict[str, NoiseSchedule], relative_costs: dict[str, float],
-                 scale_model: TimeMLP, normalize_relative_costs: bool = True, disable_fields: Sequence[str] = (),
+                 scale_model: ScaleMLP, normalize_relative_costs: bool = True, disable_fields: Sequence[str] = (),
                  grpo_group_size: int = 32, grpo_num_groups: int = 16, grpo_share_x_0: bool = True,
                  ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1, gradient_clip_val: Optional[float] = 1.0,
                  gradient_clip_algorithm: str = "norm", generation_xyz_filename: Optional[str] = None,
                  validation_xyz_filename: Optional[str] = None, enable_progress_bar: bool = True) -> None:
+        """Constructor of OMGIRLScale."""
         super().__init__(reward=reward, grpo_group_size=grpo_group_size, grpo_num_groups=grpo_num_groups,
                          grpo_share_x_0=grpo_share_x_0, ppo_clip_epsilon=ppo_clip_epsilon, ppo_epochs=ppo_epochs,
                          gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm,
@@ -28,15 +151,16 @@ class OMGIRLScale(OMGIRLLightningAbstract):
         self.scale_model = scale_model
 
         try:
-            self.reference_noise_schedules = {DataField[field.lower()]: ns
-                                              for field, ns in reference_noise_schedules.items()}
+            self.reference_noise_schedules: dict[DataField, NoiseSchedule] = {
+                DataField[field.lower()]: ns for field, ns in reference_noise_schedules.items()}
         except KeyError as e:
             raise ValueError(f"Invalid data field in reference_noise_schedules: {e}") from e
         if any(schedule.learnable() for schedule in self.reference_noise_schedules.values()):
             raise ValueError("Reference noise schedules must not be learnable.")
 
         try:
-            self.noise_schedules = {DataField[field.lower()]: ns for field, ns in noise_schedules.items()}
+            self.noise_schedules: dict[DataField, NoiseSchedule] = {
+                DataField[field.lower()]: ns for field, ns in noise_schedules.items()}
         except KeyError as e:
             raise ValueError(f"Invalid data field in noise_schedules: {e}") from e
         # Store learnable noise schedules in ModuleDict for proper registration.
@@ -50,7 +174,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             self.noise_schedule_modules = None
 
         try:
-            self.disable_fields = set(DataField[field.lower()] for field in disable_fields)
+            self.disable_fields: set[DataField] = set(DataField[field.lower()] for field in disable_fields)
         except KeyError as e:
             raise ValueError(f"Invalid data field in disable_fields: {e}") from e
 
@@ -151,6 +275,21 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                                      "SingleStochasticInterpolantOS.")
 
     def _rollout(self, x_0: OMGData) -> TrajectoryData:
+        """
+        Generate a trajectory rollout starting from initial structures x_0 without gradients, storing data for PPO
+        updates.
+
+        This method is called in no_grad context by the public rollout method.
+
+        :param x_0:
+            Initial structures at time 0 sampled from p_0.
+        :type x_0: OMGData
+
+        :return:
+            Trajectory data containing states, sampled actions, old log probabilities, base model outputs, rewards,
+            advantages, and info dictionary for logging.
+        :rtype: TrajectoryData
+        """
         base_model = base_modules["model"].model
         assert base_model is not None
         batch_size = len(x_0.n_atoms)
@@ -172,7 +311,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
             base_model_output = base_model(x_t, time)
-            scale_output = self.scale_model(x_t, time)
+            scale_output = self.scale_model(time)
 
             states.append(x_t.clone())
             step_sampled_actions = {}
@@ -259,6 +398,25 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                                             info_dict)
 
     def ppo_update(self, trajectory: TrajectoryData) -> tuple[float, dict[str, float]]:
+        """
+        Perform a PPO update using the provided trajectory data.
+
+        This method takes the trajectory data generated during the rollout and performs one PPO update, returning the
+        computed total loss and an additional dictionary for logging.
+
+        :param trajectory:
+            Trajectory data containing states, sampled actions, old log probabilities, base model outputs,
+            rewards, advantages, and info dictionary for logging.
+            This object is generated by the rollout method.
+        :type trajectory: TrajectoryData
+
+        :return:
+            A tuple containing two elements:
+            - The total loss as a float value.
+            - A dictionary mapping arbitrary string keys to float values for logging. This can include individual loss
+                components, clip fractions, or any other relevant metrics.
+        :rtype: tuple[float, dict[str, float]]
+        """
         batch_size = len(trajectory.rewards)
         # noinspection PyTypeChecker
         times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
@@ -284,7 +442,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             time = t.repeat(batch_size)
             x_t = trajectory.states[t_index]
             # Re-evaluate scale model with gradients.
-            scale_output = self.scale_model(x_t, time)
+            scale_output = self.scale_model(time)
             timestep_loss = torch.tensor(0.0, device=self.device)
 
             if self.integrate_pos and DataField.pos not in self.disable_fields:
@@ -410,6 +568,19 @@ class OMGIRLScale(OMGIRLLightningAbstract):
         return total_loss, logging_info
 
     def _integrate(self, x_0: OMGData) -> OMGData:
+        """
+        Integrate the reinforced model starting from initial structures x_0.
+
+        This method is called in no_grad context by the public integrate method.
+
+        :param x_0:
+            Initial structures at time 0 sampled from p_0.
+        :type x_0: OMGData
+
+        :return:
+            Integrated structures at time 1 after applying the reinforced model.
+        :rtype: OMGData
+        """
         base_model = base_modules["model"].model
         assert base_model is not None
         batch_size = len(x_0.n_atoms)
@@ -424,7 +595,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
             base_model_output = base_model(x_t, time)
-            scale_output = self.scale_model(x_t, time)
+            scale_output = self.scale_model(time)
 
             if self.integrate_pos:
                 base_b = base_model_output[DataField.pos.name + "_b"]

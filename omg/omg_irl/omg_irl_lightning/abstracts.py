@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from enum import Enum, auto
 from pathlib import Path
 from time import strftime
 from typing import Optional
@@ -32,33 +31,6 @@ class TrajectoryData:
     advantages: torch.Tensor
     # Info dictionary for final structures.
     info_dict: dict[str, torch.Tensor]
-
-
-class PositionNormalization(Enum):
-    """
-    Enumeration of position normalization modes for positions.
-    """
-
-    NONE = auto()
-    """
-    Use joint-action PPO ratio without normalization.
-
-    This is the standard PPO approach where the log probabilities of all atoms in a structure are summed
-    to compute the joint action log probability for the entire structure.
-    """
-    PER_STRUCTURE_WEIGHT = auto()
-    """
-    Use joint-action PPO ratio, but weight per-structure advantage by 1 / n_atoms.
-
-    This normalization reduces the influence of larger structures on the policy update.
-    """
-    PER_ATOM_SURROGATE = auto()
-    """
-    Use per-atom PPO ratio averaged per structure.
-
-    This normalization computes the PPO ratio for each atom individually and averages them per structure,
-    effectively normalizing the policy update on a per-atom basis.
-    """
 
 
 class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
