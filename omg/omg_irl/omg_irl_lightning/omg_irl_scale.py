@@ -123,9 +123,9 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             if fixed_data_field in self.disable_fields:
                 warnings.warn(f"Disabled field {fixed_data_field.name} is not an integrated data field and will be "
                               f"ignored.")
-            if fixed_data_field.name in self.reference_noise_schedules:
+            if fixed_data_field in self.reference_noise_schedules:
                 warnings.warn(f"Reference noise schedule for fixed data field {fixed_data_field.name} will be ignored.")
-            if fixed_data_field.name in self.noise_schedules:
+            if fixed_data_field in self.noise_schedules:
                 warnings.warn(f"Noise schedule for fixed data field {fixed_data_field.name} will be ignored.")
 
         if self.integrate_pos:
