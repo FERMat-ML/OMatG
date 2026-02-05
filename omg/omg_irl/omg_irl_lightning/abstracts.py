@@ -6,6 +6,7 @@ from time import strftime
 from typing import Optional
 import lightning
 import torch
+from torch_geometric.data import Batch
 from omg.datamodule import OMGData, Structure
 from omg.si import (DiscreteFlowMatchingMask, DiscreteFlowMatchingUniform, SingleStochasticInterpolant,
                     SingleStochasticInterpolantIdentity, SingleStochasticInterpolantOS)
@@ -134,6 +135,8 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
         If the base model was not set globally before initialization.
         If grpo_group_size is less than or equal to 1.
         If grpo_num_groups is less than or equal to 0.
+        If ppo_clip_epsilon is negative.
+        If ppo_epochs is less than 1.
         If prediction_xyz_filename is not an .xyz file.
         If validation_xyz_filename is not an .xyz file.
         If none of position, cell, or species is integrated by the base model.
@@ -167,6 +170,10 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
         # noinspection PyUnresolvedReferences
         base_modules["datamodule"].train_batch_size = grpo_num_groups
 
+        if not ppo_clip_epsilon >= 0.0:
+            raise ValueError("PPO clip epsilon must be non-negative.")
+        if not ppo_epochs >= 1:
+            raise ValueError("PPO epochs must be at least 1.")
         self.ppo_clip_epsilon = ppo_clip_epsilon
         self.ppo_epochs = ppo_epochs
         self.gradient_clip_val: Optional[float] = gradient_clip_val
@@ -188,7 +195,7 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
         self.pos_interpolant = base_model.si.get_stochastic_interpolant(DataField.pos.name)
         self.integrate_pos = isinstance(self.pos_interpolant,
                                         (SingleStochasticInterpolant, SingleStochasticInterpolantOS))
-        assert self._integrate_pos or isinstance(self.pos_interpolant, SingleStochasticInterpolantIdentity)
+        assert self.integrate_pos or isinstance(self.pos_interpolant, SingleStochasticInterpolantIdentity)
         self.pos_corrector = self.pos_interpolant.get_corrector() if self.integrate_pos else None
         if self.integrate_pos:
             self.integrated_data_fields.add(DataField.pos)

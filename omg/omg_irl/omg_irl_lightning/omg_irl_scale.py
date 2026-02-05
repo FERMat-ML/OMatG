@@ -62,7 +62,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
         self.normalize_relative_costs = normalize_relative_costs
         if self.normalize_relative_costs:
             self.relative_costs = {key: value / sum_costs for key, value in relative_costs.items()}
-            assert abs(sum(relative_costs.values()) - 1.0) < 1e-10
+            assert abs(sum(self.relative_costs.values()) - 1.0) < 1e-10
         else:
             self.relative_costs = relative_costs
         for field in self.relative_costs.keys():
@@ -172,7 +172,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
             base_model_output = base_model(x_t, time)
-            residual_output = self.residual_model(x_t, time)
+            residual_output = self.scale_model(x_t, time)
 
             states.append(x_t.clone())
             step_sampled_residual_effects = {}
@@ -253,7 +253,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
         states.append(x_t.clone())
 
         # Average over time steps.
-        info_dict = {key: scale / (len(times) - 1) for key, scale in scale_total.items()}
+        info_dict = {f"{key}_scale": scale / (len(times) - 1) for key, scale in scale_total.items()}
 
         return self._create_trajectory_data(states, sampled_residual_effects, old_log_probs, base_model_outputs,
                                             info_dict)
@@ -264,12 +264,13 @@ class OMGIRLScale(OMGIRLLightningAbstract):
         times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
         num_timesteps = len(times) - 1
 
-        # Track losses for logging.
+        # Track losses for logging (only for non-disabled integrated fields).
+        active_fields = [field for field in self.integrated_data_fields if field not in self.disable_fields]
         total_loss = 0.0
-        total_policy_losses = {field: 0.0 for field in self.integrated_data_fields}
-        total_reg_losses = {field: 0.0 for field in self.integrated_data_fields}
-        total_entropy_losses = {field: 0.0 for field in self.integrated_data_fields}
-        total_clip_fractions = {field: 0.0 for field in self.integrated_data_fields}
+        total_policy_losses = {field: 0.0 for field in active_fields}
+        total_reg_losses = {field: 0.0 for field in active_fields}
+        total_entropy_losses = {field: 0.0 for field in active_fields}
+        total_clip_fractions = {field: 0.0 for field in active_fields}
 
         # Zero gradients once at the start, then accumulate across all timesteps.
         opt = self.optimizers()
@@ -283,7 +284,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             time = t.repeat(batch_size)
             x_t = trajectory.states[t_index]
             # Re-evaluate residual model with gradients.
-            residual_output = self.residual_model(x_t, time)
+            residual_output = self.scale_model(x_t, time)
             timestep_loss = torch.tensor(0.0, device=self.device)
 
             if self.integrate_pos and DataField.pos not in self.disable_fields:
@@ -335,7 +336,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                 if self.noise_schedules[DataField.pos].learnable():
                     total_entropy_losses[DataField.pos] += entropy_loss.item()
 
-            if self.integrate_cell and DataField.cell.name not in self.disable_fields:
+            if self.integrate_cell and DataField.cell not in self.disable_fields:
                 sigma_ref = self.reference_noise_schedules[DataField.cell].noise(t)  # Scalar.
                 sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
                 assert sigma.ndim == 0
@@ -399,7 +400,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
 
         # Return average losses and clip fractions for logging.
         logging_info = {}
-        for field in self.integrated_data_fields:
+        for field in active_fields:
             logging_info[field.name + "_loss_policy"] = total_policy_losses[field] / num_timesteps
             logging_info[field.name + "_loss_regularization"] = total_reg_losses[field] / num_timesteps
             if self.noise_schedules[field].learnable():
@@ -423,7 +424,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
             sqrt_dt = torch.sqrt(dt)
             time = t.repeat(batch_size)
             base_model_output = base_model(x_t, time)
-            residual_output = self.residual_model(x_t, time)
+            residual_output = self.scale_model(x_t, time)
 
             if self.integrate_pos:
                 base_b = base_model_output[DataField.pos.name + "_b"]
@@ -468,3 +469,33 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                 x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
 
         return x_t
+
+    def training_step(self, batch: OMGData, batch_idx: int) -> None:
+        """
+        Take a training step using GRPO with a PPO-like objective.
+
+        This method extends the training_step method of the OMGIRLLightningAbstract class by logging
+        statistics about the learnable noise schedules after the standard training step.
+
+        :param batch:
+            Batch of training data from the datamodule.
+            This batch contains grpo_num_groups unique structures.
+        :type batch: OMGData
+        :param batch_idx:
+            Index of the current batch.
+        :type batch_idx: int
+        """
+        super().training_step(batch, batch_idx)
+
+        # Log sigma schedule statistics for learnable noise schedules.
+        for field in self.integrated_data_fields:
+            if field not in self.disable_fields and self.noise_schedules[field].learnable():
+                # noinspection PyTypeChecker
+                times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
+                sigmas = self.noise_schedules[field].noise(times)
+                self.log(f"sigma_{field.name}_mean", sigmas.mean(), on_step=True, on_epoch=True, prog_bar=True,
+                         sync_dist=True, batch_size=len(batch))
+                self.log(f"sigma_{field.name}_min", sigmas.min(), on_step=True, on_epoch=True, sync_dist=True,
+                         batch_size=len(batch))
+                self.log(f"sigma_{field.name}_max", sigmas.max(), on_step=True, on_epoch=True, sync_dist=True,
+                         batch_size=len(batch))
