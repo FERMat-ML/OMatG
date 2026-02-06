@@ -59,7 +59,7 @@ class OMGIRLVelocity(OMGIRLScale):
     where b_ref(x_t, t) is the velocity field predicted by the frozen base model, and sigma_ref(t) is a fixed reference
     noise schedule.
 
-    The GRPO framework is reinforce the velocity fields for the atomic positions and the lattice vectors,
+    The GRPO framework is used to reinforce the velocity fields for the atomic positions and the lattice vectors,
     given that they are integrated by the base model. Any scores predicted by the base model are ignored. Optionally,
     one can switch off the reinforcement for each of these data fields.
 
@@ -86,13 +86,13 @@ class OMGIRLVelocity(OMGIRLScale):
     :param relative_costs:
         Dictionary mapping cost types to their relative costs for each data field.
     :type relative_costs: dict[str, float]
-    :normalize_relative_costs:
+    :param normalize_relative_costs:
         If True, all relative costs are normalized so that they sum to 1.
         Defaults to True.
     :type normalize_relative_costs: bool
     :param disable_fields:
-        Sequence of data field names for which to disable learning of the velocity-annealing schedule.
-        For these data fields, the velocity-annealing schedule is effectively set to zero, and no noise is added.
+        Sequence of data field names for which to disable reinforcement of the velocity field.
+        For these data fields, the base model velocity is used without modification, and no noise is added.
         Defaults to an empty sequence.
     :type disable_fields: Sequence[str]
     :param position_normalization:
@@ -118,7 +118,7 @@ class OMGIRLVelocity(OMGIRLScale):
     :type grpo_share_x_0: bool
     :param ppo_clip_epsilon:
         PPO clipping epsilon for the surrogate objective.
-        Must be greater than 0.
+        Must be non-negative.
         Defaults to 0.2.
     :type ppo_clip_epsilon: float
     :param ppo_epochs:
@@ -228,7 +228,7 @@ class OMGIRLVelocity(OMGIRLScale):
         old_log_probs = []
         sampled_actions = []
         base_model_outputs = []
-        ratios_total = {field.name: torch.tensor(0.0, device=self.device)
+        ratios_total = {field: torch.tensor(0.0, device=self.device)
                         for field in self.integrated_data_fields if field not in self.disable_fields}
 
         # Integrate over time with reinforced model.
@@ -275,12 +275,12 @@ class OMGIRLVelocity(OMGIRLScale):
                     step_old_log_probs[DataField.pos] = log_probs_atoms
                     # Norm over x, y, z.
                     base_norm_atoms = torch.linalg.norm(base_b, dim=-1)
-                    vel_norm_atoms = torch.linalg.norm(velocity, dim=-1)
+                    diff_b_norm_atoms = torch.linalg.norm(diff_b, dim=-1)
                     # Mean over atoms.
                     base_norm_struct = scatter_mean(base_norm_atoms, x_t.batch)
-                    vel_norm_struct = scatter_mean(vel_norm_atoms, x_t.batch)
+                    diff_b_norm_struct = scatter_mean(diff_b_norm_atoms, x_t.batch)
                     # Mean over batch.
-                    ratios_total[DataField.pos] += (vel_norm_struct / (base_norm_struct + 1.0e-8)).mean()
+                    ratios_total[DataField.pos] += (diff_b_norm_struct / (base_norm_struct + 1.0e-8)).mean()
 
                 # Euler-Maruyama update for SDE.
                 x_t.pos = self.pos_corrector.correct(x_t.pos + velocity * dt + noise * sqrt_dt)
@@ -311,9 +311,9 @@ class OMGIRLVelocity(OMGIRLScale):
                     ).sum(dim=tuple(range(1, randn.ndim)))
                     # Norm over cell dimensions.
                     base_norm_struct = torch.linalg.norm(base_b.reshape(base_b.shape[0], -1), dim=-1)
-                    vel_norm_struct = torch.linalg.norm(velocity.reshape(velocity.shape[0], -1), dim=-1)
+                    diff_b_norm_struct = torch.linalg.norm(diff_b.reshape(diff_b.shape[0], -1), dim=-1)
                     # Mean over batch.
-                    ratios_total[DataField.cell] += (vel_norm_struct / (base_norm_struct + 1.0e-8)).mean()
+                    ratios_total[DataField.cell] += (diff_b_norm_struct / (base_norm_struct + 1.0e-8)).mean()
 
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
@@ -326,7 +326,7 @@ class OMGIRLVelocity(OMGIRLScale):
         states.append(x_t.clone())
 
         # Average over time steps.
-        info_dict = {f"{key}_ratio": ratio / (len(times) - 1) for key, ratio in ratios_total.items()}
+        info_dict = {f"{key.name}_ratio": ratio / (len(times) - 1) for key, ratio in ratios_total.items()}
 
         return self._create_trajectory_data(states, sampled_actions, old_log_probs, base_model_outputs, info_dict)
 
@@ -393,7 +393,7 @@ class OMGIRLVelocity(OMGIRLScale):
                         torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
                         + ((sampled_action.detach() - diff_b * dt) / (sigma * sqrt_dt)) ** 2
                 ).sum(dim=tuple(range(1, sampled_action.ndim)))
-                if self.position_normalization == self.PositionNormalization.NONE:
+                if self.position_normalization == PositionNormalization.NONE:
                     # Sum log probs over all atoms in each structure to get batch-wise log probs.
                     old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
                     current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
@@ -404,7 +404,7 @@ class OMGIRLVelocity(OMGIRLScale):
                     # Take mean over batch.
                     policy_loss = -torch.min(ratio * trajectory.advantages,
                                              clipped_ratio * trajectory.advantages).mean()
-                elif self.position_normalization == self.PositionNormalization.PER_ATOM_SURROGATE:
+                elif self.position_normalization == PositionNormalization.PER_ATOM_SURROGATE:
                     ratio_atoms = torch.exp(current_log_probs_atoms - old_log_probs_atoms.detach())
                     clipped_ratio_atoms = torch.clamp(ratio_atoms, 1.0 - self.ppo_clip_epsilon,
                                                       1.0 + self.ppo_clip_epsilon)
@@ -418,7 +418,7 @@ class OMGIRLVelocity(OMGIRLScale):
                     # Average per structure and then take mean over batch.
                     policy_loss = scatter_mean(loss_atoms, x_t.batch).mean()
                 else:
-                    assert self.position_normalization == self.PositionNormalization.PER_STRUCTURE_WEIGHT
+                    assert self.position_normalization == PositionNormalization.PER_STRUCTURE_WEIGHT
                     # Sum log probs over all atoms in each structure to get batch-wise log probs.
                     old_log_prob = scatter_add(old_log_probs_atoms, x_t.batch)
                     current_log_prob = scatter_add(current_log_probs_atoms, x_t.batch)
@@ -438,7 +438,7 @@ class OMGIRLVelocity(OMGIRLScale):
                           + (sigma * sigma + diff_b * diff_b * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
                 # Sum over position dimensions to get per-atom KL.
                 per_atom_kl = kl_div.sum(dim=-1)
-                if self.position_normalization == self.PositionNormalization.NONE:
+                if self.position_normalization == PositionNormalization.NONE:
                     # Sum over atoms to get per-structure KL and take mean over batch.
                     reg_loss = scatter_add(per_atom_kl, x_t.batch).mean()
                 else:
@@ -451,7 +451,7 @@ class OMGIRLVelocity(OMGIRLScale):
                     # Multiply by position dimensions.
                     entropy_loss_per_atom = ((-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5)
                                              * diff_b.shape[-1])
-                    if self.position_normalization == self.PositionNormalization.NONE:
+                    if self.position_normalization == PositionNormalization.NONE:
                         # Sum over atoms to get per-structure entropy and take mean over batch.
                         entropy_loss = (entropy_loss_per_atom * x_t.n_atoms).mean()
                     else:
