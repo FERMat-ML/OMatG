@@ -67,7 +67,7 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
     :type grpo_share_x_0: bool
     :param ppo_clip_epsilon:
         PPO clipping epsilon for the surrogate objective.
-        Must be greater than 0.
+        Must be non-negative.
         Defaults to 0.2.
     :type ppo_clip_epsilon: float
     :param ppo_epochs:
@@ -99,7 +99,8 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
         Defaults to None.
     :type validation_xyz_filename: Optional[str]
     :param enable_progress_bar:
-        If True, enables progress bars during reward computation.
+        If True, enables progress bars during reward computation and subclass-specific operations such as
+        rollout, PPO update, and integration.
         Defaults to True.
     :type enable_progress_bar: bool
 
@@ -109,7 +110,7 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
         If grpo_num_groups is less than or equal to 0.
         If ppo_clip_epsilon is negative.
         If ppo_epochs is less than 1.
-        If prediction_xyz_filename is not an .xyz file.
+        If generation_xyz_filename is not an .xyz file.
         If validation_xyz_filename is not an .xyz file.
         If none of position, cell, or species is integrated by the base model.
     """
@@ -128,7 +129,7 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
 
         base_model = base_modules["model"]
         if base_model is None:
-            raise ValueError("Base model must be set globally before initializing OMGTFLightningPPO.")
+            raise ValueError("Base model must be set globally before initializing OMGIRLLightningAbstract.")
         self.integration_time_steps = base_model.si.integration_time_steps
         base_model.freeze()  # TODO: IS THAT FINE FOR FULL MODE?
 
@@ -153,7 +154,7 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
 
         if generation_xyz_filename is not None:
             if not generation_xyz_filename.endswith(".xyz"):
-                raise ValueError("prediction_xyz_filename must be an .xyz file.")
+                raise ValueError("generation_xyz_filename must be an .xyz file.")
         self.generation_xyz_filename: Optional[str] = generation_xyz_filename
         self.enable_progress_bar = enable_progress_bar
         if validation_xyz_filename is not None:

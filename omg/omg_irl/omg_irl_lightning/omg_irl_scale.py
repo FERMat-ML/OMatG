@@ -19,7 +19,8 @@ class OMGIRLScale(OMGIRLLightningAbstract):
     framework.
 
     This class learns a time-dependent velocity-annealing schedule that modifies the base OMatG model's velocity
-    as (1 + s(t)) * b(x_t, t), where s(t) is the learned scale and b_ref(x_t, t) is the base model's predicted velocity.
+    as (1 + s(t)) * b_ref(x_t, t), where s(t) is the learned scale and b_ref(x_t, t) is the base model's predicted
+    velocity.
 
     Exploration is enabled by adding Gaussian noise with time-dependent standard deviation sigma(t) to the
     velocity-annealing schedule, resulting in the following Euler-Maruyama update for the variable x_t:
@@ -58,7 +59,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
         The scale model to learn the velocity-annealing schedule s(t).
         The scale model should output a dictionary mapping data field names to their corresponding scales.
     :type scale_model: ScaleMLP
-    :normalize_relative_costs:
+    :param normalize_relative_costs:
         If True, all relative costs are normalized so that they sum to 1.
         Defaults to True.
     :type normalize_relative_costs: bool
@@ -85,7 +86,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
     :type grpo_share_x_0: bool
     :param ppo_clip_epsilon:
         PPO clipping epsilon for the surrogate objective.
-        Must be greater than 0.
+        Must be non-negative.
         Defaults to 0.2.
     :type ppo_clip_epsilon: float
     :param ppo_epochs:
@@ -255,7 +256,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
 
         if self.integrate_pos:
             if self.pos_interpolant.differential_equation_type != DifferentialEquationType.ODE:
-                warnings.warn("OMGIRLScale will ignore predicted scores for position data field and only work with"
+                warnings.warn("OMGIRLScale will ignore predicted scores for position data field and only work with "
                               "the velocity field.")
             if self.pos_interpolant.velocity_annealing_factor != 0.0:
                 warnings.warn("OMGIRLScale will ignore velocity annealing for position data field.")
@@ -266,7 +267,7 @@ class OMGIRLScale(OMGIRLLightningAbstract):
 
         if self.integrate_cell:
             if self.cell_interpolant.differential_equation_type != DifferentialEquationType.ODE:
-                warnings.warn("OMGIRLScale will ignore predicted scores for cell data field and only work with"
+                warnings.warn("OMGIRLScale will ignore predicted scores for cell data field and only work with "
                               "the velocity field.")
             if self.cell_interpolant.velocity_annealing_factor != 0.0:
                 warnings.warn("OMGIRLScale will ignore velocity annealing for cell data field.")
