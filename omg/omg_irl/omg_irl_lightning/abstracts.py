@@ -140,7 +140,6 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
         self.grpo_group_size = grpo_group_size
         self.grpo_num_groups = grpo_num_groups
         self.grpo_share_x_0 = grpo_share_x_0
-        # noinspection PyUnresolvedReferences
         base_modules["datamodule"].train_batch_size = grpo_num_groups
 
         if not ppo_clip_epsilon >= 0.0:

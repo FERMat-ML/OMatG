@@ -1,12 +1,12 @@
 from typing import Optional, TypedDict
-from lightning import LightningDataModule
+from omg.datamodule import OMGDataModule
 from omg.omg_lightning import OMGLightning
 
 
 class BaseModules(TypedDict):
     """TypedDict to hold the base model and datamodule."""
     model: Optional[OMGLightning]
-    datamodule: Optional[LightningDataModule]
+    datamodule: Optional[OMGDataModule]
 
 
 # Store the OMatG base model and datamodule globally to exclude them from lightning's parameter tracking.
