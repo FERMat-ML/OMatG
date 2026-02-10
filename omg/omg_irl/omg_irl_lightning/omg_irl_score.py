@@ -152,11 +152,6 @@ class OMGIRLScore(OMGIRLLightningAbstract):
         except KeyError:
             raise ValueError(f"Invalid position normalization: {position_normalization}")
 
-        if self.position_normalization != PositionNormalization.NONE:
-            if (self.integrate_pos and DataField.pos in self.disable_fields) or not self.integrate_pos:
-                warnings.warn(f"Position normalization '{self.position_normalization.name}' is enabled, "
-                              f"but position integration is disabled. Position normalization is ignored.")
-
         # Copy over the OMatG model so that it can be reinforced.
         base_model = base_modules["model"]
         assert base_model is not None
@@ -175,6 +170,11 @@ class OMGIRLScore(OMGIRLLightningAbstract):
             self.disable_fields: set[DataField] = set(DataField[field.lower()] for field in disable_fields)
         except KeyError as e:
             raise ValueError(f"Invalid data field in disable_fields: {e}") from e
+
+        if self.position_normalization != PositionNormalization.NONE:
+            if (self.integrate_pos and DataField.pos in self.disable_fields) or not self.integrate_pos:
+                warnings.warn(f"Position normalization '{self.position_normalization.name}' is enabled, "
+                              f"but position integration is disabled. Position normalization is ignored.")
 
         if not all(cost >= 0.0 for cost in relative_costs.values()):
             raise ValueError("All relative costs must be non-negative.")
@@ -245,13 +245,13 @@ class OMGIRLScore(OMGIRLLightningAbstract):
                                   "the velocity field.")
             else:
                 if self.pos_interpolant.differential_equation_type != DifferentialEquationType.SDE:
-                    raise ValueError("OMGIRLScore requires scores for position data field to be predicted (i.e., an"
+                    raise ValueError("OMGIRLScore requires scores for position data field to be predicted (i.e., an "
                                      "SDE integrated interpolant).")
-                self.gammas[DataField.pos] = self.pos_interpolant.gamma
+                self.gammas[DataField.pos] = self.pos_interpolant.get_gamma()
                 if self.gammas[DataField.pos] is None:
                     raise ValueError("OMGIRLScore requires gamma to be specified for position data field.")
             if self.pos_interpolant.velocity_annealing_factor != 0.0:
-                warnings.warn("OMGIRLScale will ignore velocity annealing for position data field.")
+                warnings.warn("OMGIRLScore will ignore velocity annealing for position data field.")
             if isinstance(self.pos_interpolant, SingleStochasticInterpolantOS):
                 if not self.pos_interpolant.predict_velocity:
                     raise ValueError("OMGIRLScore requires velocity prediction for position data field when using "
@@ -266,14 +266,14 @@ class OMGIRLScore(OMGIRLLightningAbstract):
                 if self.cell_interpolant.differential_equation_type != DifferentialEquationType.SDE:
                     raise ValueError("OMGIRLScore requires scores for cell data field to be predicted (i.e., an SDE "
                                      "integrated interpolant).")
-                self.gammas[DataField.cell] = self.cell_interpolant.gamma
+                self.gammas[DataField.cell] = self.cell_interpolant.get_gamma()
                 if self.gammas[DataField.cell] is None:
                     raise ValueError("OMGIRLScore requires gamma to be specified for cell data field.")
             if self.cell_interpolant.velocity_annealing_factor != 0.0:
-                warnings.warn("OMGIRLScale will ignore velocity annealing for cell data field.")
+                warnings.warn("OMGIRLScore will ignore velocity annealing for cell data field.")
             if isinstance(self.cell_interpolant, SingleStochasticInterpolantOS):
                 if not self.cell_interpolant.predict_velocity:
-                    raise ValueError("OMGIRLScale requires velocity prediction for cell data field when using "
+                    raise ValueError("OMGIRLScore requires velocity prediction for cell data field when using "
                                      "SingleStochasticInterpolantOS.")
 
     def _rollout(self, x_0: OMGData) -> TrajectoryData:
