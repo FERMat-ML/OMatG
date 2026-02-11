@@ -242,39 +242,39 @@ class OMGIRLScore(OMGIRLLightningAbstract):
         self.gammas = {}
         if self.integrate_pos:
             if DataField.pos in self.disable_fields:
-                if self.pos_interpolant.differential_equation_type != DifferentialEquationType.ODE:
+                if self.pos_interpolant.get_differential_equation_type() != DifferentialEquationType.ODE:
                     warnings.warn("OMGIRLScore will ignore predicted scores for position data field and only work with "
                                   "the velocity field.")
             else:
-                if self.pos_interpolant.differential_equation_type != DifferentialEquationType.SDE:
+                if self.pos_interpolant.get_differential_equation_type() != DifferentialEquationType.SDE:
                     raise ValueError("OMGIRLScore requires scores for position data field to be predicted (i.e., an "
                                      "SDE integrated interpolant).")
                 self.gammas[DataField.pos] = self.pos_interpolant.get_gamma()
                 if self.gammas[DataField.pos] is None:
                     raise ValueError("OMGIRLScore requires gamma to be specified for position data field.")
-            if self.pos_interpolant.velocity_annealing_factor != 0.0:
+            if self.pos_interpolant.get_velocity_annealing_factor() != 0.0:
                 warnings.warn("OMGIRLScore will ignore velocity annealing for position data field.")
             if isinstance(self.pos_interpolant, SingleStochasticInterpolantOS):
-                if not self.pos_interpolant.predict_velocity:
+                if not self.pos_interpolant.predicts_velocity():
                     raise ValueError("OMGIRLScore requires velocity prediction for position data field when using "
                                      "SingleStochasticInterpolantOS.")
 
         if self.integrate_cell:
             if DataField.cell in self.disable_fields:
-                if self.cell_interpolant.differential_equation_type != DifferentialEquationType.ODE:
+                if self.cell_interpolant.get_differential_equation_type() != DifferentialEquationType.ODE:
                     warnings.warn("OMGIRLScore will ignore predicted scores for cell data field and only work with "
                                   "the velocity field.")
             else:
-                if self.cell_interpolant.differential_equation_type != DifferentialEquationType.SDE:
+                if self.cell_interpolant.get_differential_equation_type() != DifferentialEquationType.SDE:
                     raise ValueError("OMGIRLScore requires scores for cell data field to be predicted (i.e., an SDE "
                                      "integrated interpolant).")
                 self.gammas[DataField.cell] = self.cell_interpolant.get_gamma()
                 if self.gammas[DataField.cell] is None:
                     raise ValueError("OMGIRLScore requires gamma to be specified for cell data field.")
-            if self.cell_interpolant.velocity_annealing_factor != 0.0:
+            if self.cell_interpolant.get_velocity_annealing_factor() != 0.0:
                 warnings.warn("OMGIRLScore will ignore velocity annealing for cell data field.")
             if isinstance(self.cell_interpolant, SingleStochasticInterpolantOS):
-                if not self.cell_interpolant.predict_velocity:
+                if not self.cell_interpolant.predicts_velocity():
                     raise ValueError("OMGIRLScore requires velocity prediction for cell data field when using "
                                      "SingleStochasticInterpolantOS.")
 

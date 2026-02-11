@@ -131,8 +131,8 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
         base_model = base_modules["model"]
         if base_model is None:
             raise ValueError("Base model must be set globally before initializing OMGIRLLightningAbstract.")
-        self.integration_time_steps = base_model.si.integration_time_steps
-        base_model.freeze()  # TODO: IS THAT FINE FOR FULL MODE?
+        self.integration_time_steps = base_model.si.get_integration_time_steps()
+        base_model.freeze()
 
         if grpo_group_size <= 1:
             raise ValueError("GRPO group size must be > 1.")
