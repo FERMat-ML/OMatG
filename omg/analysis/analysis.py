@@ -482,9 +482,11 @@ def _get_match_and_rmsd(atoms_one: ValidAtoms, atoms_two: ValidAtoms, ltol: floa
     Helper function to check whether the given first structure matches the given second structure by using pymatgen's
     StructureMatcher and, if so, to find the root-mean-square displacement between them.
 
-    Before checking two structures, this function first checks whether the two structures are of the same composition.
-    If the two structures do not match, the root-mean-square displacement is None. If check_reduced is True, structures
-    are checked even if they are simple multiples of each other.
+    Before checking two structures, this function first does some very basic validity checks on the structures. This
+    prevents the structure matcher from hanging on unphysical structures. Additionally, this function first checks
+    whether the two structures are of the same composition. If any of these checks fail, this function returns None
+    without using Pymatgen's StructureMatcher (as for two non-matching structures). If check_reduced is True,
+    structures are checked even if they are simple multiples of each other.
 
     If the two structures do not match, the root-mean-square displacement is None.
 
@@ -517,10 +519,10 @@ def _get_match_and_rmsd(atoms_one: ValidAtoms, atoms_two: ValidAtoms, ltol: floa
         Root-mean-square displacement.
     :rtype: Optional[float]
     """
-    if (_element_check(atoms_one.atoms, atoms_two.atoms, check_reduced)
-            and atoms_one.structure_valid and atoms_two.structure_valid
-            and atoms_one.volume_valid and atoms_two.volume_valid
-            and atoms_one.polar_sine_valid and atoms_two.polar_sine_valid):
+    atoms_one_structure_valid = atoms_one.structure_valid and atoms_one.volume_valid and atoms_one.polar_sine_valid
+    atoms_two_structure_valid = atoms_two.structure_valid and atoms_two.volume_valid and atoms_two.polar_sine_valid
+    quick_validity_check = atoms_one_structure_valid and atoms_two_structure_valid
+    if quick_validity_check and _element_check(atoms_one.atoms, atoms_two.atoms, check_reduced):
         return _structure_matcher(atoms_one.structure, atoms_two.structure, ltol=ltol, stol=stol, angle_tol=angle_tol)
     return None
 
