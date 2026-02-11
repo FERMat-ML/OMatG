@@ -56,4 +56,4 @@ class OMGIRLCLI(LightningCLI):
             The argument parser.
         :type parser: LightningArgumentParser
         """
-        parser.link_arguments("trainer.enable_progress_bar", "model.enable_progress_bar")
+        parser.link_arguments("trainer.enable_progress_bar", "model.init_args.enable_progress_bar")
