@@ -47,7 +47,7 @@ class StochasticInterpolants(object):
         if not integration_time_steps > 0:
             raise ValueError("The number of integration time steps must be positive.")
         self._stochastic_interpolants = stochastic_interpolants
-        self.integration_time_steps = integration_time_steps
+        self._integration_time_steps = integration_time_steps
         self._enable_progress_bar = enable_progress_bar
 
     def __len__(self) -> int:
@@ -229,7 +229,7 @@ class StochasticInterpolants(object):
             If save_intermediate is True, furthermore a list of the intermediate points in Data objects is returned.
         :rtype: torch_geometric.data.Data
         """
-        times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=x_0.pos.device)
+        times = torch.linspace(SMALL_TIME, BIG_TIME, self._integration_time_steps, device=x_0.pos.device)
         x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
         new_x_t = x_0.clone(*[data_field.name for data_field in self._data_fields])
         x_t_dict = x_t.to_dict()
@@ -292,3 +292,13 @@ class StochasticInterpolants(object):
             raise ValueError(f"Data field must be in {[d.name for d in DataField]}.")
         index = self._data_fields.index(df)
         return self._stochastic_interpolants[index]
+
+    def get_integration_time_steps(self) -> int:
+        """
+        Return the number of integration time steps for the integration of the collection of stochastic interpolants.
+
+        :return:
+            Number of integration time steps.
+        :rtype: int
+        """
+        return self._integration_time_steps
