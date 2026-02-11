@@ -1190,10 +1190,10 @@ class OMGTrainer(Trainer):
         actually starting training or testing.
 
         :param model:
-            OMG model (argument required and automatically passed by lightning CLI).
+            OMG model (argument required and automatically passed by Lightning CLI).
         :type model: OMGLightning
         :param datamodule:
-            OMG datamodule (argument required and automatically passed by lightning CLI).
+            OMG datamodule (argument required and automatically passed by Lightning CLI).
         :type datamodule: OMGDataModule
         :param ckpt_path:
             Path to the checkpoint file to load. If None, no checkpoint is loaded.
