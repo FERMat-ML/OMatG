@@ -8,7 +8,9 @@ from omg.datamodule import OMGData
 from omg.globals import SMALL_TIME, BIG_TIME
 from omg.si import DifferentialEquationType, SingleStochasticInterpolantOS
 from omg.utils import DataField
-from omg.omg_irl import base_modules, NoiseSchedule, Reward
+from omg.omg_irl.base_modules import base_modules
+from omg.omg_irl.noise_schedules import NoiseSchedule
+from omg.omg_irl.rewards import Reward
 from .abstracts import TrajectoryData, OMGIRLLightningAbstract
 from .omg_irl_velocity import PositionNormalization
 

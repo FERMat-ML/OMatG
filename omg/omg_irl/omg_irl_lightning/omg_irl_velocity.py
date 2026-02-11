@@ -8,7 +8,9 @@ from tqdm import trange
 from omg.datamodule import OMGData
 from omg.globals import SMALL_TIME, BIG_TIME
 from omg.utils import DataField
-from omg.omg_irl import base_modules, NoiseSchedule, Reward
+from omg.omg_irl.base_modules import base_modules
+from omg.omg_irl.noise_schedules import NoiseSchedule
+from omg.omg_irl.rewards import Reward
 from .abstracts import TrajectoryData
 from .omg_irl_scale import OMGIRLScale
 
