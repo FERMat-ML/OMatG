@@ -99,9 +99,10 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
         Defaults to None.
     :type validation_xyz_filename: Optional[str]
     :param enable_progress_bar:
-        If True, enables progress bars during reward computation and subclass-specific operations such as
+        If True or None, enables progress bars during reward computation and subclass-specific operations such as
         rollout, PPO update, and integration.
-        Defaults to True.
+        We allow for None to mirror the setup of Lightning's Trainer (see also omg_irl_cli.py).
+        Defaults to None.
     :type enable_progress_bar: bool
 
     :raises ValueError:
@@ -119,7 +120,7 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
                  grpo_share_x_0: bool = True, ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1,
                  gradient_clip_val: Optional[float] = 1.0, gradient_clip_algorithm: str = "norm",
                  generation_xyz_filename: Optional[str] = None, validation_xyz_filename: Optional[str] = None,
-                 enable_progress_bar: bool = True) -> None:
+                 enable_progress_bar: Optional[bool] = None) -> None:
         """Constructor of the OMGIRLLightningAbstract class."""
         super().__init__()
         # Use manual optimization for multiple optimizer steps per training_step.
@@ -155,7 +156,7 @@ class OMGIRLLightningAbstract(ABC, lightning.LightningModule):
             if not generation_xyz_filename.endswith(".xyz"):
                 raise ValueError("generation_xyz_filename must be an .xyz file.")
         self.generation_xyz_filename: Optional[str] = generation_xyz_filename
-        self.enable_progress_bar = enable_progress_bar
+        self.enable_progress_bar = enable_progress_bar if enable_progress_bar is not None else True
         if validation_xyz_filename is not None:
             if not validation_xyz_filename.endswith(".xyz"):
                 raise ValueError("validation_xyz_filename must be an .xyz file.")
