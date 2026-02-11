@@ -37,7 +37,7 @@ dependencies = [
 [project.scripts]
 omg = "omg.main:main"
 omg_load = "omg.main:load"
-omg_tf = "omg_tf.main:main"
+omg_irl = "omg.omg_irl.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
