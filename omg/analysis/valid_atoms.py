@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 class ValidAtoms(object):
     """
-    Validate an Atoms object based on volume, structure, composition, and fingerprint checks.
+    Validate an Atoms object based on volume, structure, polar sine, composition, and fingerprint checks.
 
     This class is inspired by CDVAE's/DiffCSP's crystal class (see
     https://github.com/jiaor17/DiffCSP/blob/main/scripts/compute_metrics.py).
@@ -24,6 +24,10 @@ class ValidAtoms(object):
 
     The structure is considered valid if all pairwise distances are larger than a given cutoff (default: 0.5 Å).
 
+    The polar sine of the lattice is considered valid if the ratio of the lattice volume to the product of the lattice
+    lengths is larger than a given cutoff (default: 1.0e-3). This is to filter out structures with very small angles
+    between the lattice vectors.
+
     The composition is considered valid if it is valid according to the SMACT rules. Because the checking of the SMACT
     rules can be slow for compositions with a high n-arity, the upper limit for the n-arity can be set. If the n-arity
     exceeds the upper limit, the composition is automatically considered invalid.
@@ -31,7 +35,8 @@ class ValidAtoms(object):
     This class also computes the CrystalNN structural fingerprints and the normalized Magpie compositional fingerprints.
     If the computation of the fingerprints fails, the atoms are considered invalid.
 
-    Note that the (slow) composition and fingerprint checks are only run if the volume and structure checks pass.
+    Note that the (slow) composition and fingerprint checks are only run if the volume, structure, and polar sine
+    checks pass.
 
     :param atoms:
         The Atoms instance to validate.
@@ -44,6 +49,10 @@ class ValidAtoms(object):
         The cutoff for the structure check (in angstroms).
         Defaults to 0.5.
     :type structure_check_cutoff: float
+    :param polar_sine_cutoff:
+        The cutoff for the polar sine check (dimensionless).
+        Defaults to 1.0e-3.
+    :type polar_sine_cutoff: float
     :param use_pauling_test:
         Whether to use the Pauling test for the composition check.
         Defaults to True.
@@ -53,7 +62,7 @@ class ValidAtoms(object):
         Defaults to True.
     :type include_alloys: bool
     :param skip_validation:
-        Whether to skip the validation and return a list of ValidAtoms instances with all properties set to True.
+        Whether to skip the expensive composition and fingerprint validations and automatically set them to True.
         Defaults to False.
     :type skip_validation: bool
     :param upper_narity_limit:
@@ -70,8 +79,8 @@ class ValidAtoms(object):
         _CompFP = ElementProperty.from_preset("magpie")
 
     def __init__(self, atoms: Atoms, volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
-                 use_pauling_test: bool = True, include_alloys: bool = True, skip_validation: bool = False,
-                 upper_narity_limit: Optional[int] = None, polar_sine_cutoff: float = 1.0e-3) -> None:
+                 polar_sine_cutoff: float = 1.0e-3, use_pauling_test: bool = True, include_alloys: bool = True,
+                 skip_validation: bool = False, upper_narity_limit: Optional[int] = None) -> None:
         """Constructor of the ValidAtoms class."""
         if upper_narity_limit is not None and upper_narity_limit < 1:
             raise ValueError("The upper n-arity limit must be at least 1.")
@@ -113,8 +122,8 @@ class ValidAtoms(object):
 
     @staticmethod
     def get_valid_atoms(atoms: Sequence[Atoms], volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
-                        use_pauling_test: bool = True, include_alloys: bool = True, desc: Optional[str] = None,
-                        skip_validation: bool = False, number_cpus: Optional[int] = None,
+                        polar_sine_cutoff: float = 1.0e-3, use_pauling_test: bool = True, include_alloys: bool = True,
+                        desc: Optional[str] = None, skip_validation: bool = False, number_cpus: Optional[int] = None,
                         enable_progress_bar: bool = True,
                         upper_narity_limit: Optional[None] = None) -> List["ValidAtoms"]:
         """
@@ -130,6 +139,10 @@ class ValidAtoms(object):
             The cutoff for the structure check (in angstroms).
             Defaults to 0.5.
         :type structure_check_cutoff: float
+        :param polar_sine_cutoff:
+            The cutoff for the polar sine check (dimensionless).
+            Defaults to 1.0e-3.
+        :type polar_sine_cutoff: float
         :param use_pauling_test:
             Whether to use the Pauling test for the composition check.
             Defaults to True.
@@ -170,14 +183,15 @@ class ValidAtoms(object):
         if skip_validation:
             # No parallelization necessary because this will be fast.
             valid_atoms = [ValidAtoms(atoms=a, volume_check_cutoff=volume_check_cutoff,
-                                      structure_check_cutoff=structure_check_cutoff, use_pauling_test=use_pauling_test,
+                                      structure_check_cutoff=structure_check_cutoff,
+                                      polar_sine_cutoff=polar_sine_cutoff, use_pauling_test=use_pauling_test,
                                       include_alloys=include_alloys, skip_validation=skip_validation,
                                       upper_narity_limit=upper_narity_limit) for a in atoms]
         else:
             constructor = partial(ValidAtoms, volume_check_cutoff=volume_check_cutoff,
-                                  structure_check_cutoff=structure_check_cutoff, use_pauling_test=use_pauling_test,
-                                  include_alloys=include_alloys, skip_validation=skip_validation,
-                                  upper_narity_limit=upper_narity_limit)
+                                  structure_check_cutoff=structure_check_cutoff, polar_sine_cutoff=polar_sine_cutoff,
+                                  use_pauling_test=use_pauling_test, include_alloys=include_alloys,
+                                  skip_validation=skip_validation, upper_narity_limit=upper_narity_limit)
             cpu_count = number_cpus if number_cpus is not None else os.cpu_count()
             if cpu_count > 1:
                 valid_atoms = process_map(constructor, atoms, desc=desc,
@@ -358,7 +372,8 @@ class ValidAtoms(object):
             The validity.
         :rtype: bool
         """
-        return self._volume_valid and self._structure_valid and self._composition_valid and self._fingerprint_valid
+        return (self._volume_valid and self._structure_valid and self._polar_sine_valid and self._composition_valid
+                and self._fingerprint_valid)
 
     @property
     def composition_fingerprint(self) -> Optional[List[float]]:
