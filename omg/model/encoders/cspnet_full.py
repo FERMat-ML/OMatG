@@ -31,10 +31,7 @@ class CSPNetFull(Encoder, CSPNet):
         pred_scalar = False,
         am_hidden_dim = 128, # added to acomodate adapter module
         prop_embed_dim = 32,  # needs to match the property embedding dimension of yaml file for time
-        prop = False,
-        initialize_zeros = False,
-        pred_pos_scalar = False,
-        pred_cell_scalar = False
+        prop = False
     ):
 
         super().__init__()
@@ -57,14 +54,8 @@ class CSPNetFull(Encoder, CSPNet):
         self.num_layers = num_layers
         self.coord_out = nn.Linear(hidden_dim, 3, bias = False)
         self.coord_out_2 = nn.Linear(hidden_dim, 3, bias = False)
-        self.pred_pos_scalar = pred_pos_scalar
-        if self.pred_pos_scalar:
-            self.coord_out_scalar = nn.Linear(hidden_dim, 1, bias = False)
         self.lattice_out = nn.Linear(hidden_dim, 9, bias = False)
         self.lattice_out_2 = nn.Linear(hidden_dim, 9, bias = False)
-        self.pred_cell_scalar = pred_cell_scalar
-        if self.pred_cell_scalar:
-            self.lattice_out_scalar = nn.Linear(hidden_dim, 1, bias = False)
         self.cutoff = cutoff
         self.max_neighbors = max_neighbors
         self.pred_type = pred_type
@@ -85,20 +76,6 @@ class CSPNetFull(Encoder, CSPNet):
             for i in range (self.num_layers):
                 adapter = AdapterModule(input_dim=hidden_dim, am_hidden_dim=am_hidden_dim, property_dim=prop_embed_dim)
                 self.adapters.append(adapter) # already on CUDA
-        if initialize_zeros:
-            nn.init.zeros_(self.coord_out.weight)
-            nn.init.zeros_(self.coord_out_2.weight)
-            if pred_pos_scalar:
-                nn.init.zeros_(self.coord_out_scalar.weight)
-            nn.init.zeros_(self.lattice_out.weight)
-            nn.init.zeros_(self.lattice_out_2.weight)
-            if pred_cell_scalar:
-                nn.init.zeros_(self.lattice_out_scalar.weight)
-            if self.pred_type:
-                nn.init.zeros_(self.type_out.weight)
-                nn.init.zeros_(self.type_out.bias)
-                nn.init.zeros_(self.type_out_2.weight)
-                nn.init.zeros_(self.type_out_2.bias)
 
     def _convert_inputs(self, x, **kwargs):
         atom_types = x.species
@@ -146,28 +123,20 @@ class CSPNetFull(Encoder, CSPNet):
         if self.ip:
             lattice_b = torch.einsum('bij,bjk->bik', lattice_b, lattices)
             lattice_eta = torch.einsum('bij,bjk->bik', lattice_eta, lattices)
-        data_dictionary = {
-            "pos_b": coord_b,
-            "pos_eta": coord_eta,
-            "cell_b": lattice_b,
-            "cell_eta": lattice_eta
-        }
         if self.pred_type:
             type_b = self.type_out(node_features)
             type_eta = self.type_out_2(node_features)
-            data_dictionary["species_b"] = type_b
-            data_dictionary["species_eta"] = type_eta
-
-        if self.pred_pos_scalar:
-            # TODO: ONE COULD ALSO PREDICT PER ATOM SCALAR!
-            coord_b_scalar = self.coord_out_scalar(graph_features)
-            data_dictionary["pos_s"] = coord_b_scalar
-        if self.pred_cell_scalar:
-            lattice_b_scalar = self.lattice_out_scalar(graph_features)
-            data_dictionary["cell_s"] = lattice_b_scalar
-
-        return Data(**data_dictionary)
-
+            data = Data(
+                species_b = type_b,
+                species_eta = type_eta,
+                pos_b = coord_b,
+                pos_eta = coord_eta,
+                cell_b = lattice_b,
+                cell_eta = lattice_eta
+            )
+            return data
+        data = Data( pos_b=coord_b, pos_eta=coord_eta, cell_b=lattice_b, cell_eta=lattice_eta)
+        return data
 
     def _convert_outputs(self, x, **kwargs):
         return x
@@ -179,28 +148,3 @@ class CSPNetFull(Encoder, CSPNet):
         # The nodes have to be able to handle the additional masked species.
         self.node_embedding = nn.Embedding(self.max_atoms + 1, self.hidden_dim)
         self.species_shift = 0
-        raise NotImplementedError
-
-    def freeze_encoder(self) -> None:
-        """
-        Freeze all layers except output heads (coord_out, lattice_out, type_out, etc.).
-        # TODO: MAKE SURE THAT THIS IS CALLED AFTER enable_masked_species.
-        """
-        # Freeze embedding layers.
-        for param in self.node_embedding.parameters():
-            param.requires_grad = False
-        for param in self.atom_latent_emb.parameters():
-            param.requires_grad = False
-        # Freeze message passing layers.
-        for i in range(self.num_layers):
-            for param in self._modules[f"csp_layer_{i}"].parameters():
-                param.requires_grad = False
-        # Freeze layer norm.
-        if self.ln:
-            for param in self.final_layer_norm.parameters():
-                param.requires_grad = False
-        # Freeze adapters if present.
-        if hasattr(self, 'adapters'):
-            for adapter in self.adapters:
-                for param in adapter.parameters():
-                    param.requires_grad = False
