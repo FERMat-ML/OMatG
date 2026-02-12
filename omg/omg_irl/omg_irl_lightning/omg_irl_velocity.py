@@ -205,8 +205,9 @@ class OMGIRLVelocity(OMGIRLScale):
         # Copy over the OMatG model so that it can be reinforced.
         base_model = base_modules["model"]
         assert base_model is not None
+        base_model.unfreeze()  # Base model was frozen in OMGIRLLightningAbstract, so unfreeze it before copying.
         self.model = deepcopy(base_model.model)
-        self.model.unfreeze()  # Base model was frozen in base class.
+        base_model.freeze()
 
     def _rollout(self, x_0: OMGData) -> TrajectoryData:
         """
