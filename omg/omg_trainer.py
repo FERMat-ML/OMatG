@@ -1017,14 +1017,90 @@ class OMGTrainer(Trainer):
 
     def energy_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
                        result_name: str = "energy_metrics.json", energy_storage_file: str = "energies_per_atom.npy",
-                       device: str = "cpu", volume_check_cutoff: float = 0.1,
-                       structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
-                       enable_cueq: bool = False, predict_energy_storage_file: Optional[str] = None) -> None:
+                       device: Literal["cpu", "cuda"] = "cpu", default_dtype: Literal["float32", "float64"] = "float64",
+                       enable_cueq: bool = False, volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
+                       polar_sine_cutoff: float = 1.0e-3, predict_energy_storage_file: Optional[str] = None) -> None:
+        """
+        Compute the energies per atom of the generated structures with MACE and report the mean energy per atom of valid
+        structures and the number of invalid structures during energy computation.
+
+        An invalid structure is a structure that fails a volume, structure, or polar sine checks. The volume check
+        checks if the volume of the structure is above a certain cutoff. The structure check checks if the minimum
+        interatomic distance in the structure is above a certain cutoff. The polar sine check checks if the polar sine
+        of the lattice is above a certain cutoff. These checks are used to filter out structures that are likely to
+        have diverging energies.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        :param xyz_file:
+            XYZ file containing the generated structures.
+            This argument has to be set on the command line.
+        :type xyz_file: str
+        :param result_name:
+            Name of the json file to save the energy results.
+            Defaults to "energy_metrics.json".
+            This argument can be optionally set on the command line.
+        :type result_name: str
+        :param energy_storage_file:
+            Name of the NumPy file to save the energies per atom.
+            Defaults to "energies_per_atom.npy".
+            This argument can be optionally set on the command line.
+        :type energy_storage_file: str
+        :param device:
+            The device to run MACE on. Can be "cpu" or "cuda".
+            Defaults to "cpu".
+            This argument can be optionally set on the command line.
+        :type device: Literal["cpu", "cuda"]
+        :param default_dtype:
+            The default dtype to use for MACE. Can be "float32" or "float64".
+            Defaults to "float64".
+            This argument can be optionally set on the command line.
+        :type default_dtype: Literal["float32", "float64"]
+        :param enable_cueq:
+            Whether to enable the CuEq in MACE.
+            Defaults to False.
+            This argument can be optionally set on the command line.
+        :type enable_cueq: bool
+        :param volume_check_cutoff:
+            The cutoff for the volume check in cubic angstroms. Structures with volume per atom below this cutoff are
+            considered invalid.
+            Defaults to 0.1.
+            This argument can be optionally set on the command line.
+        :type volume_check_cutoff: float
+        :param structure_check_cutoff:
+            The cutoff for the structure check in angstroms. Structures with minimum interatomic distance below
+            this cutoff are considered invalid.
+            Defaults to 0.5.
+            This argument can be optionally set on the command line.
+        :type structure_check_cutoff: float
+        :param polar_sine_cutoff:
+            The cutoff for the polar sine check. Structures with polar sine of the lattice below this cutoff
+            are considered invalid.
+            Defaults to 1.0e-3.
+            This argument can be optionally set on the command line.
+        :type polar_sine_cutoff: float
+        :param predict_energy_storage_file:
+            Name of the NumPy file to save the energies per atom of the prediction dataset.
+            If None, the energies per atom of the prediction dataset are not computed and saved.
+            Defaults to None.
+            This argument can be optionally set on the command line.
+        :type predict_energy_storage_file: Optional[str]
+
+        :raises FileNotFoundError:
+            If the xyz_file does not exist.
+        :raises ValueError:
+            If the result_name does not end with .json.
+        """
         # Catch warnings from MACE and prefix stdout.
         with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             from mace.calculators import mace_mp
-            mace_calculator = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq)
+            mace_calculator = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq,
+                                      default_dtype=default_dtype)
 
         final_file = Path(xyz_file)
         if not final_file.exists():

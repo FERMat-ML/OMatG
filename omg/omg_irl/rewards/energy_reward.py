@@ -28,11 +28,15 @@ class EnergyReward(Reward):
         Defaults to 1.0.
     :type scale: float
     :param device:
-        Device to run the MACE model on.
+        The device to run MACE on. Can be "cpu" or "cuda".
         Defaults to "cpu".
-    :type device: Optional[str]
+    :type device: Literal["cpu", "cuda"]
+    :param default_dtype:
+        The default dtype to use for MACE calculations. Can be "float32" or "float64".
+        Defaults to "float64".
+    :type default_dtype: Literal["float32", "float64"]
     :param enable_cueq:
-        Whether to enable the CU-EQ extension in MACE.
+        Whether to enable the CuEq in MACE.
         Defaults to False.
     :type enable_cueq: bool
     :param invalid_penalty:
@@ -73,7 +77,8 @@ class EnergyReward(Reward):
         If clip_std is specified and not positive.
     """
 
-    def __init__(self, scale: float = 1.0, device: Optional[str] = "cpu", enable_cueq: bool = False,
+    def __init__(self, scale: float = 1.0, device: Literal["cpu", "cuda"] = "cpu",
+                 default_dtype: Literal["float32", "float64"] = "float64", enable_cueq: bool = False,
                  invalid_penalty: Optional[float] = None, volume_check_cutoff: float = 0.1,
                  structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
                  clip_std: Optional[float] = None, ) -> None:
@@ -94,7 +99,8 @@ class EnergyReward(Reward):
         with prefixed_stdout("[MACE] "), warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             from mace.calculators import mace_mp
-            self._mace_calculator = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq)
+            self._mace_calculator = mace_mp(model="medium-mpa-0", device=device, default_dtype=default_dtype,
+                                            enable_cueq=enable_cueq)
         self._invalid_penalty = invalid_penalty
         self._volume_check_cutoff = volume_check_cutoff
         self._structure_check_cutoff = structure_check_cutoff
