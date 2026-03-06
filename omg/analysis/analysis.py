@@ -755,7 +755,6 @@ def match_rmsds_with_ghosts(
         raise ValueError("The number of CPUs must be at least 1.")
 
     adaptor = AseAtomsAdaptor()
-    matcher = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
 
     rmsds: List[Optional[float]] = []
 
@@ -763,18 +762,18 @@ def match_rmsds_with_ghosts(
     if enable_progress_bar:
         iterator = tqdm(iterator, total=len(atoms_list), desc="Computing ghost-inclusive RMSDs")
 
-    for atoms_gen, atoms_ref in iterator:
-        # Map ghost atoms to a safe dummy element index that ASE/pymatgen support.
-        # We use MAX_ATOM_NUM as the dummy label so it lies within the known range.
-        def _to_structure_with_safe_ghosts(atoms: Atoms) -> Structure:
-            atoms_copy = atoms.copy()
-            numbers = np.array(atoms_copy.numbers, dtype=int)
-            ghost_mask = (numbers <= 0) | (numbers > MAX_ATOM_NUM)
-            if ghost_mask.any():
-                numbers[ghost_mask] = MAX_ATOM_NUM
-                atoms_copy.numbers = numbers
-            return adaptor.get_structure(atoms_copy)
+    # Map ghost atoms to a safe dummy element index that ASE/pymatgen support.
+    # We use MAX_ATOM_NUM as the dummy label so it lies within the known range.
+    def _to_structure_with_safe_ghosts(atoms: Atoms) -> Structure:
+        atoms_copy = atoms.copy()
+        numbers = np.array(atoms_copy.numbers, dtype=int)
+        ghost_mask = (numbers <= 0) | (numbers > MAX_ATOM_NUM)
+        if ghost_mask.any():
+            numbers[ghost_mask] = MAX_ATOM_NUM
+            atoms_copy.numbers = numbers
+        return adaptor.get_structure(atoms_copy)
 
+    for atoms_gen, atoms_ref in iterator:
         struct_gen = _to_structure_with_safe_ghosts(atoms_gen)
         struct_ref = _to_structure_with_safe_ghosts(atoms_ref)
 
@@ -787,13 +786,14 @@ def match_rmsds_with_ghosts(
             rmsds.append(None)
             continue
 
-        if not matcher.fit(struct_gen, struct_ref):
+        try:
+            raw_rmsd = _structure_matcher(
+                struct_gen, struct_ref, ltol=ltol, stol=stol, angle_tol=angle_tol
+            )
+        except Exception:
             rmsds.append(None)
             continue
-
-        try:
-            raw_rmsd = matcher.get_rms_dist(struct_gen, struct_ref)
-        except Exception:
+        if raw_rmsd is None:
             rmsds.append(None)
             continue
 
@@ -803,7 +803,7 @@ def match_rmsds_with_ghosts(
             rmsds.append(None)
             continue
         scale = (vol / n_sites) ** (1.0 / 3.0)
-        rmsds.append(raw_rmsd / scale)
+        rmsds.append(float(raw_rmsd) / scale)
 
     filtered = [r for r in rmsds if r is not None]
     if filtered:
