@@ -764,8 +764,19 @@ def match_rmsds_with_ghosts(
         iterator = tqdm(iterator, total=len(atoms_list), desc="Computing ghost-inclusive RMSDs")
 
     for atoms_gen, atoms_ref in iterator:
-        struct_gen = adaptor.get_structure(atoms_gen)
-        struct_ref = adaptor.get_structure(atoms_ref)
+        # Map ghost atoms to a safe dummy element index that ASE/pymatgen support.
+        # We use MAX_ATOM_NUM as the dummy label so it lies within the known range.
+        def _to_structure_with_safe_ghosts(atoms: Atoms) -> Structure:
+            atoms_copy = atoms.copy()
+            numbers = np.array(atoms_copy.numbers, dtype=int)
+            ghost_mask = (numbers <= 0) | (numbers > MAX_ATOM_NUM)
+            if ghost_mask.any():
+                numbers[ghost_mask] = MAX_ATOM_NUM
+                atoms_copy.numbers = numbers
+            return adaptor.get_structure(atoms_copy)
+
+        struct_gen = _to_structure_with_safe_ghosts(atoms_gen)
+        struct_ref = _to_structure_with_safe_ghosts(atoms_ref)
 
         comp_gen = struct_gen.composition
         comp_ref = struct_ref.composition
