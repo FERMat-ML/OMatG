@@ -25,7 +25,7 @@ from omg.sampler.minimum_permutation_distance import correct_for_minimum_permuta
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, xyz_reader
 from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_cov, get_space_group,
-                          get_volume_frac, match_rmsds, metre_rmsds, ValidAtoms)
+                          get_volume_frac, match_rmsds, match_rmsds_with_ghosts, metre_rmsds, ValidAtoms)
 
 
 class OMGTrainer(Trainer):
@@ -834,15 +834,30 @@ class OMGTrainer(Trainer):
                 print(f"The corrected root-mean-square distance, normalized by (V / N) ** (1/3), between valid "
                       f"generated structures and the valid prediction dataset is {vcorr_rmsd}.")
 
+                gi_match_rate, gi_mean_rmsd, _, gi_corr_rmsd = match_rmsds_with_ghosts(
+                    gen_atoms,
+                    ref_atoms,
+                    ltol=ltol,
+                    stol=stol,
+                    angle_tol=angle_tol,
+                    number_cpus=number_cpus,
+                    check_reduced=check_reduced,
+                )
+
+                result = {
+                    "match_rate": fmr,
+                    "mean_RMSE": frmsd,
+                    "mean_cRMSE": corr_rmsd,
+                    "valid_match_rate": vmr,
+                    "valid_mean_RMSE": vrmsd,
+                    "valid_mean_cRMSE": vcorr_rmsd,
+                    "ghost_inclusive_match_rate": gi_match_rate,
+                    "ghost_inclusive_mean_RMSE": gi_mean_rmsd,
+                    "ghost_inclusive_mean_cRMSE": gi_corr_rmsd,
+                }
+
                 with open(result_name, "w") as f:
-                    json.dump({
-                        "match_rate": fmr,
-                        "mean_RMSE": frmsd,
-                        "mean_cRMSE": corr_rmsd,
-                        "valid_match_rate": vmr,
-                        "valid_mean_RMSE": vrmsd,
-                        "valid_mean_cRMSE": vcorr_rmsd
-                    }, f, indent=4)
+                    json.dump(result, f, indent=4)
 
             else:
                 fmr, frmsd, vmr, vrmsd, rmsds, val_rmsds, corr_rmsd, vcorr_rmsd = metre_rmsds(
@@ -867,15 +882,30 @@ class OMGTrainer(Trainer):
                 print(f"The corrected root-mean-square distance, normalized by (V / N) ** (1/3), for valid generated "
                       f"structures with respect to the valid prediction dataset is {vcorr_rmsd}.")
 
+                gi_match_rate, gi_mean_rmsd, _, gi_corr_rmsd = match_rmsds_with_ghosts(
+                    gen_atoms,
+                    ref_atoms,
+                    ltol=ltol,
+                    stol=stol,
+                    angle_tol=angle_tol,
+                    number_cpus=number_cpus,
+                    check_reduced=check_reduced,
+                )
+
+                result = {
+                    "METRe": fmr,
+                    "mean_RMSE": frmsd,
+                    "mean_cRMSE": corr_rmsd,
+                    "valid_METRe": vmr,
+                    "valid_mean_RMSE": vrmsd,
+                    "valid_mean_cRMSE": vcorr_rmsd,
+                    "ghost_inclusive_match_rate": gi_match_rate,
+                    "ghost_inclusive_mean_RMSE": gi_mean_rmsd,
+                    "ghost_inclusive_mean_cRMSE": gi_corr_rmsd,
+                }
+
                 with open(result_name, "w") as f:
-                    json.dump({
-                        "METRe": fmr,
-                        "mean_RMSE": frmsd,
-                        "mean_cRMSE": corr_rmsd,
-                        "valid_METRe": vmr,
-                        "valid_mean_RMSE": vrmsd,
-                        "valid_mean_cRMSE": vcorr_rmsd
-                    }, f, indent=4)
+                    json.dump(result, f, indent=4)
 
             plt.figure()
             bandwidth = np.std(filtered_rmsds) * len(filtered_rmsds) ** (-1 / 5)  # Scott's rule.

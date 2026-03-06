@@ -8,6 +8,7 @@ from ase.data import covalent_radii
 import numpy as np
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
+from pymatgen.io.ase import AseAtomsAdaptor
 from scipy.spatial.distance import cdist
 import spglib
 from tqdm.contrib.concurrent import process_map
@@ -721,6 +722,90 @@ def match_rmsds(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[ValidAtoms]
             res, valid_res,
             float(corr_rmsd),
             float(valid_corr_rmsd))
+
+
+def match_rmsds_with_ghosts(
+    atoms_list: Sequence[Atoms],
+    ref_list: Sequence[Atoms],
+    ltol: float = 0.2,
+    stol: float = 0.3,
+    angle_tol: float = 5.0,
+    number_cpus: Optional[int] = None,
+    check_reduced: bool = True,
+    enable_progress_bar: bool = True,
+) -> Tuple[float, float, List[Optional[float]], float]:
+    """
+    Ghost-inclusive variant of match_rmsds operating directly on ASE Atoms.
+
+    This function keeps ghost atoms in the structures and measures RMSDs over all
+    sites. It is intended as an auxiliary diagnostic; the canonical CSP metrics
+    should continue to use ValidAtoms-based match_rmsds.
+    """
+    if len(atoms_list) != len(ref_list):
+        warnings.warn(
+            "The number of structures in the generated atoms list differs from the "
+            "number of atoms in the reference list."
+        )
+    if len(atoms_list) > len(ref_list):
+        raise ValueError(
+            "The number of structures in the generated atoms list is greater than the "
+            "number of atoms in the reference list."
+        )
+    if number_cpus is not None and number_cpus < 1:
+        raise ValueError("The number of CPUs must be at least 1.")
+
+    adaptor = AseAtomsAdaptor()
+    matcher = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol)
+
+    rmsds: List[Optional[float]] = []
+
+    iterator = zip(atoms_list, ref_list)
+    if enable_progress_bar:
+        iterator = tqdm(iterator, total=len(atoms_list), desc="Computing ghost-inclusive RMSDs")
+
+    for atoms_gen, atoms_ref in iterator:
+        struct_gen = adaptor.get_structure(atoms_gen)
+        struct_ref = adaptor.get_structure(atoms_ref)
+
+        comp_gen = struct_gen.composition
+        comp_ref = struct_ref.composition
+        if check_reduced:
+            comp_gen = comp_gen.reduced_composition
+            comp_ref = comp_ref.reduced_composition
+        if comp_gen != comp_ref:
+            rmsds.append(None)
+            continue
+
+        if not matcher.fit(struct_gen, struct_ref):
+            rmsds.append(None)
+            continue
+
+        try:
+            raw_rmsd = matcher.get_rms_dist(struct_gen, struct_ref)
+        except Exception:
+            rmsds.append(None)
+            continue
+
+        n_sites = len(struct_gen)
+        vol = struct_gen.volume
+        if n_sites == 0 or vol <= 0:
+            rmsds.append(None)
+            continue
+        scale = (vol / n_sites) ** (1.0 / 3.0)
+        rmsds.append(raw_rmsd / scale)
+
+    filtered = [r for r in rmsds if r is not None]
+    if filtered:
+        mean_rmsd = float(np.mean(filtered))
+        corr_vals = filtered + [stol] * (len(rmsds) - len(filtered))
+        corr_rmsd = float(np.mean(corr_vals))
+        match_rate = len(filtered) / len(rmsds)
+    else:
+        mean_rmsd = float("nan")
+        corr_rmsd = float("nan")
+        match_rate = 0.0
+
+    return match_rate, mean_rmsd, rmsds, corr_rmsd
 
 
 def metre_rmsds(atoms_list: Sequence[ValidAtoms], ref_list: Sequence[ValidAtoms], ltol: float = 0.2,
