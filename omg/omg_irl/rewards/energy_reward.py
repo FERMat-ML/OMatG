@@ -1,8 +1,14 @@
-from typing import Optional, Sequence
+from typing import Literal, Optional, Sequence
 import numpy as np
 import tqdm
 import warnings
 import torch
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=UserWarning)
+    from mace.calculators import mace_mp
+    from torch_sim import static
+    from torch_sim.autobatching import BinningAutoBatcher
+    from torch_sim.models.mace import MaceModel
 from omg.datamodule import Structure
 from omg.utils import prefixed_stdout
 from .abstracts import ComputeStage, Reward
@@ -14,12 +20,19 @@ class EnergyReward(Reward):
 
     This reward first identifies invalid structures based on volume, interatomic distances, and polar sine criteria.
     If specified, these invalid structures are assigned a penalty energy instead of their computed (likely diverging)
-    energies. The energy per atom of valid structures is then calculated using the MACE-MPA-0 model. Finally, the
-    energies within a GRPO group can be clipped based on a specified number of standard deviations from the mean.
+    energies. The energy per atom of valid structures is then calculated using the MACE-MPA-0 model.
+
+    The energies within a GRPO group can be clipped based on a specified number of standard deviations from the mean.
     The reward for each structure is the negative of its (possibly penalized or clipped) energy per atom, scaled by the
     provided scaling factor.
 
-    TODO: We should batch the MACE calculations for better performance.
+    When using a CUDA device, the MACE calculations are batched using TorchSim's BinningAutoBatcher for
+    improved performance. This requires a max_memory_scaler parameter to control the batching behavior which is
+    essential for managing GPU memory usage. Larger values of max_memory_scaler allow for larger batches and potentially
+    better performance, but also increase the risk of out-of-memory errors. The optimal value for max_memory_scaler
+    depends on the specific GPU and the size of the structures being evaluated. The default value of 500000.0 is a
+    adjusted for 80GB A100 GPUs and the MP20 dataset.
+
     TODO: Change clipping to clipping within GRPO groups and compare results.
 
     :param scale:
@@ -39,6 +52,10 @@ class EnergyReward(Reward):
         Whether to enable the CuEq in MACE.
         Defaults to False.
     :type enable_cueq: bool
+    :param max_memory_scaler:
+        The max_memory_scaler parameter for TorchSim's BinningAutoBatcher when using CUDA.
+        Defaults to 500000.0, which is adjusted for 80GB A100 GPUs and the MP20 dataset.
+    :type max_memory_scaler: float
     :param invalid_penalty:
         Penalty energy in eV to assign to invalid structures.
         If None, no penalty is applied and energies for invalid structures are computed normally.
@@ -79,9 +96,9 @@ class EnergyReward(Reward):
 
     def __init__(self, scale: float = 1.0, device: Literal["cpu", "cuda"] = "cpu",
                  default_dtype: Literal["float32", "float64"] = "float64", enable_cueq: bool = False,
-                 invalid_penalty: Optional[float] = None, volume_check_cutoff: float = 0.1,
-                 structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
-                 clip_std: Optional[float] = None, ) -> None:
+                 max_memory_scaler: float = 500000.0, invalid_penalty: Optional[float] = None,
+                 volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
+                 polar_sine_cutoff: float = 1.0e-3, clip_std: Optional[float] = None, ) -> None:
         """Constructor for EnergyReward."""
         super().__init__()
         if not scale > 0.0:
@@ -95,17 +112,47 @@ class EnergyReward(Reward):
         if clip_std is not None and not clip_std > 0.0:
             raise ValueError("clip_std must be positive.")
         self._scale = scale
+        self._device = device
         # Catch warnings from MACE and prefix stdout.
         with prefixed_stdout("[MACE] "), warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
-            from mace.calculators import mace_mp
-            self._mace_calculator = mace_mp(model="medium-mpa-0", device=device, default_dtype=default_dtype,
-                                            enable_cueq=enable_cueq)
+            if self._device == "cpu":
+                self._mace_model = mace_mp(model="medium-mpa-0", device=device, default_dtype=default_dtype,
+                                           enable_cueq=enable_cueq)
+                self._batcher = None
+                if max_memory_scaler != 500000.0:
+                    warnings.warn("max_memory_scaler is only used when device is 'cuda', the specified value will be "
+                                  "ignored.")
+            else:
+                # TorchSim's batching does not work on CPU.
+                assert self._device == "cuda"
+                mace = mace_mp(model="medium-mpa-0", device=device, default_dtype=default_dtype,
+                               enable_cueq=enable_cueq, return_raw_model=True)
+                # noinspection PyTypeChecker
+                self._mace_model = MaceModel(model=mace, device=device, compute_forces=False, compute_stress=False,
+                                             dtype=torch.float64 if default_dtype == "float64" else torch.float32,
+                                             enable_cueq=enable_cueq)
+                self._batcher = BinningAutoBatcher(model=self._mace_model, max_memory_scaler=max_memory_scaler,
+                                                   memory_scales_with="n_atoms_x_density")
         self._invalid_penalty = invalid_penalty
         self._volume_check_cutoff = volume_check_cutoff
         self._structure_check_cutoff = structure_check_cutoff
         self._polar_sine_cutoff = polar_sine_cutoff
         self._clip_std = clip_std
+
+    def _is_valid(self, structure: Structure) -> bool:
+        """Check if the structure is valid based on volume, interatomic distances, and polar sine criteria."""
+        py_structure = structure.get_pymatgen_structure()
+        volume_valid = (py_structure.volume >= self._volume_check_cutoff)
+        dist_mat = py_structure.distance_matrix
+        dist_mat = dist_mat + np.diag(
+            np.ones(dist_mat.shape[0]) * (self._structure_check_cutoff + 10.0)
+        )
+        min_dist = dist_mat.min()
+        structure_valid = (min_dist >= self._structure_check_cutoff)
+        polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+        polar_sine_valid = (polar_sine >= self._polar_sine_cutoff)
+        return volume_valid and structure_valid and polar_sine_valid
 
     def compute(self, structures: Sequence[Structure], stage: ComputeStage,
                 enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
@@ -131,27 +178,33 @@ class EnergyReward(Reward):
         energies = np.empty(len(structures), dtype=float)
         invalid_flags = np.zeros(len(structures), dtype=float)
 
-        with torch.set_grad_enabled(True):  # Mace needs gradients.
-            for idx, structure in enumerate(tqdm.tqdm(structures, desc="Computing energy rewards",
-                                                      disable=not enable_progress_bar)):
-                if self._invalid_penalty is not None:
-                    py_structure = structure.get_pymatgen_structure()
-                    volume_valid = (py_structure.volume >= self._volume_check_cutoff)
-                    dist_mat = py_structure.distance_matrix
-                    dist_mat = dist_mat + np.diag(
-                        np.ones(dist_mat.shape[0]) * (self._structure_check_cutoff + 10.0)
-                    )
-                    min_dist = dist_mat.min()
-                    structure_valid = (min_dist >= self._structure_check_cutoff)
-                    polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
-                    polar_sine_valid = (polar_sine >= self._polar_sine_cutoff)
-                    if not (volume_valid and structure_valid and polar_sine_valid):
+        if self._device == "cpu":
+            with torch.set_grad_enabled(True):  # Mace needs gradients.
+                for idx, structure in enumerate(tqdm.tqdm(structures, desc="Computing energy rewards",
+                                                          disable=not enable_progress_bar)):
+                    if self._invalid_penalty is not None and not self._is_valid(structure):
                         energies[idx] = self._invalid_penalty
                         invalid_flags[idx] = 1.0
                         continue
-                energies[idx] = (
-                    self._mace_calculator.get_potential_energy(structure.get_ase_atoms())
-                    / len(structure.atomic_numbers))
+                    energies[idx] = (
+                        self._mace_model.get_potential_energy(structure.get_ase_atoms())
+                        / len(structure.atomic_numbers))
+        else:
+            assert self._device == "cuda"
+            if self._invalid_penalty is not None:
+                valid_mask = np.array([self._is_valid(structure) for structure in structures])
+            else:
+                valid_mask = np.ones(len(structures), dtype=bool)
+
+            energies[~valid_mask] = self._invalid_penalty
+            invalid_flags[~valid_mask] = 1.0
+
+            valid_atoms = [structures[i].get_ase_atoms() for i in range(len(structures)) if valid_mask[i]]
+            res = static(system=valid_atoms, model=self._mace_model, autobatcher=self._batcher,
+                         pbar=enable_progress_bar)
+            assert len(res) == len(valid_atoms)
+            energies[valid_mask] = [float(r["potential_energy"][0]) / len(atoms)
+                                    for r, atoms in zip(res, valid_atoms)]
 
         raw_energies = energies.copy()
         if self._clip_std is not None:
