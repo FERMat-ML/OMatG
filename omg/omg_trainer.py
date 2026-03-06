@@ -2,7 +2,7 @@ from collections import OrderedDict
 import json
 from math import log
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Literal, Optional, Sequence, Union
 import warnings
 from ase import Atoms
 from ase.io import write
@@ -19,6 +19,12 @@ from sklearn.neighbors import KernelDensity
 import tqdm
 import torch
 from torch_geometric.data import Data
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=UserWarning)
+    from mace.calculators import mace_mp
+    from torch_sim import static
+    from torch_sim.autobatching import BinningAutoBatcher
+    from torch_sim.models.mace import MaceModel
 from omg.omg_lightning import OMGLightning
 from omg.datamodule import OMGDataset, OMGDataModule
 from omg.globals import MAX_ATOM_NUM
@@ -1018,8 +1024,9 @@ class OMGTrainer(Trainer):
     def energy_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
                        result_name: str = "energy_metrics.json", energy_storage_file: str = "energies_per_atom.npy",
                        device: Literal["cpu", "cuda"] = "cpu", default_dtype: Literal["float32", "float64"] = "float64",
-                       enable_cueq: bool = False, volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
-                       polar_sine_cutoff: float = 1.0e-3, predict_energy_storage_file: Optional[str] = None) -> None:
+                       enable_cueq: bool = False, max_memory_scaler: float = 500000.0, volume_check_cutoff: float = 0.1,
+                       structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
+                       predict_energy_storage_file: Optional[str] = None) -> None:
         """
         Compute the energies per atom of the generated structures with MACE and report the mean energy per atom of valid
         structures and the number of invalid structures during energy computation.
@@ -1029,6 +1036,13 @@ class OMGTrainer(Trainer):
         interatomic distance in the structure is above a certain cutoff. The polar sine check checks if the polar sine
         of the lattice is above a certain cutoff. These checks are used to filter out structures that are likely to
         have diverging energies.
+
+        When using a CUDA device, the MACE calculations are batched using TorchSim's BinningAutoBatcher for
+        improved performance. This requires a max_memory_scaler parameter to control the batching behavior which is
+        essential for managing GPU memory usage. Larger values of max_memory_scaler allow for larger batches and potentially
+        better performance, but also increase the risk of out-of-memory errors. The optimal value for max_memory_scaler
+        depends on the specific GPU and the size of the structures being evaluated. The default value of 500000.0 is a
+        adjusted for 80GB A100 GPUs and the MP20 dataset.
 
         :param model:
             OMG model (argument required and automatically passed by lightning CLI).
@@ -1065,6 +1079,10 @@ class OMGTrainer(Trainer):
             Defaults to False.
             This argument can be optionally set on the command line.
         :type enable_cueq: bool
+        :param max_memory_scaler:
+            The max_memory_scaler parameter for TorchSim's BinningAutoBatcher when using CUDA.
+            Defaults to 500000.0, which is adjusted for 80GB A100 GPUs and the MP20 dataset.
+        :type max_memory_scaler: float
         :param volume_check_cutoff:
             The cutoff for the volume check in cubic angstroms. Structures with volume per atom below this cutoff are
             considered invalid.
@@ -1098,9 +1116,38 @@ class OMGTrainer(Trainer):
         # Catch warnings from MACE and prefix stdout.
         with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
-            from mace.calculators import mace_mp
-            mace_calculator = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq,
-                                      default_dtype=default_dtype)
+            if device == "cpu":
+                mace_model = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq,
+                                     default_dtype=default_dtype)
+                batcher = None
+                if max_memory_scaler != 500000.0:
+                    warnings.warn("max_memory_scaler is only used when device is 'cuda', the specified value will be "
+                                  "ignored.")
+            else:
+                # TorchSim's batching does not work on CPU.
+                assert device == "cuda"
+                mace = mace_mp(model="medium-mpa-0", device=device, default_dtype=default_dtype,
+                               enable_cueq=enable_cueq, return_raw_model=True)
+                # noinspection PyTypeChecker
+                mace_model = MaceModel(model=mace, device=device, compute_forces=False, compute_stress=False,
+                                       dtype=torch.float64 if default_dtype == "float64" else torch.float32,
+                                       enable_cueq=enable_cueq)
+                batcher = BinningAutoBatcher(model=mace_model, max_memory_scaler=max_memory_scaler,
+                                             memory_scales_with="n_atoms_x_density")
+
+        def is_valid(atoms: Atoms) -> bool:
+            """Check if a structure is valid based on volume, structure, and polar sine checks."""
+            py_structure = AseAtomsAdaptor.get_structure(atoms)
+            volume_valid = (py_structure.volume >= volume_check_cutoff)
+            dist_mat = py_structure.distance_matrix
+            dist_mat = dist_mat + np.diag(
+                np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0)
+            )
+            min_dist = dist_mat.min()
+            structure_valid = (min_dist >= structure_check_cutoff)
+            polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+            polar_sine_valid = (polar_sine >= polar_sine_cutoff)
+            return volume_valid and structure_valid and polar_sine_valid
 
         final_file = Path(xyz_file)
         if not final_file.exists():
@@ -1111,41 +1158,38 @@ class OMGTrainer(Trainer):
 
         if predict_energy_storage_file is not None:
             ref_atoms = self._load_dataset_atoms(datamodule.pred_dataset)
-            ref_energies_per_atom = np.full(len(ref_atoms), np.nan, dtype=float)
-            with torch.set_grad_enabled(True):  # Mace needs gradients.
-                for idx, atoms in enumerate(tqdm.tqdm(ref_atoms, desc="Computing energies with MACE")):
-                    py_structure = AseAtomsAdaptor.get_structure(atoms)
-                    volume_valid = (py_structure.volume >= volume_check_cutoff)
-                    dist_mat = py_structure.distance_matrix
-                    dist_mat = dist_mat + np.diag(
-                        np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0)
-                    )
-                    min_dist = dist_mat.min()
-                    structure_valid = (min_dist >= structure_check_cutoff)
-                    polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
-                    polar_sine_valid = (polar_sine >= polar_sine_cutoff)
-                    assert volume_valid and structure_valid and polar_sine_valid
-                    ref_energies_per_atom[idx] = mace_calculator.get_potential_energy(atoms) / len(atoms)
+            if device == "cpu":
+                ref_energies_per_atom = np.full(len(ref_atoms), np.nan, dtype=float)
+                with torch.set_grad_enabled(True):  # Mace needs gradients.
+                    for idx, atoms in enumerate(tqdm.tqdm(ref_atoms, desc="Computing energies with MACE")):
+                        assert is_valid(atoms)
+                        ref_energies_per_atom[idx] = mace_model.get_potential_energy(atoms) / len(atoms)
+            else:
+                assert device == "cuda"
+                assert all(is_valid(atoms) for atoms in ref_atoms)
+                res = static(system=ref_atoms, model=mace_model, autobatcher=batcher, pbar=True)
+                assert len(res) == len(ref_atoms)
+                ref_energies_per_atom = np.array([float(r["potential_energy"][0]) / len(atoms)
+                                                  for r, atoms in zip(res, ref_atoms)])
             np.save(predict_energy_storage_file, ref_energies_per_atom)
 
         # Get atoms
         gen_atoms = xyz_reader(final_file)
 
         energies_per_atom = np.full(len(gen_atoms), np.nan, dtype=float)
-        with torch.set_grad_enabled(True):  # Mace needs gradients.
-            for idx, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Computing energies with MACE")):
-                py_structure = AseAtomsAdaptor.get_structure(atoms)
-                volume_valid = (py_structure.volume >= volume_check_cutoff)
-                dist_mat = py_structure.distance_matrix
-                dist_mat = dist_mat + np.diag(
-                    np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0)
-                )
-                min_dist = dist_mat.min()
-                structure_valid = (min_dist >= structure_check_cutoff)
-                polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
-                polar_sine_valid = (polar_sine >= polar_sine_cutoff)
-                if volume_valid and structure_valid and polar_sine_valid:
-                    energies_per_atom[idx] = mace_calculator.get_potential_energy(atoms) / len(atoms)
+        if device == "cpu":
+            with torch.set_grad_enabled(True):  # Mace needs gradients.
+                for idx, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Computing energies with MACE")):
+                    if is_valid(atoms):
+                        energies_per_atom[idx] = mace_model.get_potential_energy(atoms) / len(atoms)
+        else:
+            assert device == "cuda"
+            valid_mask = np.array([is_valid(atoms) for atoms in gen_atoms])
+            valid_atoms = [gen_atoms[i] for i in range(len(gen_atoms)) if valid_mask[i]]
+            res = static(system=valid_atoms, model=mace_model, autobatcher=batcher, pbar=True)
+            assert len(res) == len(valid_atoms)
+            energies_per_atom[valid_mask] = np.array([float(r["potential_energy"][0]) / len(atoms)
+                                                      for r, atoms in zip(res, valid_atoms)])
 
         np.save(energy_storage_file, energies_per_atom)
         valid_energies = energies_per_atom[~np.isnan(energies_per_atom)]
