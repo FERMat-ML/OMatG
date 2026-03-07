@@ -95,7 +95,7 @@ data:
       file_path: "data/mp_20_ghosted_j05/test_ghosted.lmdb"
       lazy_storage: True
       niggli_reduce: False
-  batch_size: 512
+  batch_size: 256
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
