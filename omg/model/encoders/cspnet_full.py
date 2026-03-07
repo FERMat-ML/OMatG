@@ -8,7 +8,7 @@ from omg.model.model_utils import AdapterModule
 from omg.model.model_utils import prop_indicator
 
 from .encoder import Encoder
-from omg.globals import MAX_ATOM_NUM
+from omg.globals import MAX_ATOM_NUM, NUM_SPECIES_WITH_GHOST
 
 
 class CSPNetFull(Encoder, CSPNet):
@@ -31,7 +31,8 @@ class CSPNetFull(Encoder, CSPNet):
         pred_scalar = False,
         am_hidden_dim = 128, # added to acomodate adapter module
         prop_embed_dim = 32,  # needs to match the property embedding dimension of yaml file for time
-        prop = False
+        prop = False,
+        use_ghost_species = False,
     ):
 
         super().__init__()
@@ -39,6 +40,7 @@ class CSPNetFull(Encoder, CSPNet):
         self.ip = ip
         self.hidden_dim = hidden_dim
         self.species_shift = 1
+        self.use_ghost_species = use_ghost_species
         # Embedding size increased to accommodate ghost atoms (label 119)
         # With species_shift=1, species 119 maps to index 118, so we need at least 119 entries
         # Using max_atoms + 20 = 120 to safely handle species up to 119
@@ -147,7 +149,16 @@ class CSPNetFull(Encoder, CSPNet):
     def enable_masked_species(self) -> None:
         """
         Enable a masked species (with token 0) in the encoder.
+        When use_ghost_species is True, also supports ghost atoms (species 119) for DNG on ghosted data.
         """
-        # The nodes have to be able to handle the additional masked species.
-        self.node_embedding = nn.Embedding(self.max_atoms + 1, self.hidden_dim)
         self.species_shift = 0
+        if self.use_ghost_species:
+            # Mask (0) + real (1..118) + ghost (119) -> 120 embedding indices; predict 119 species classes.
+            self.node_embedding = nn.Embedding(NUM_SPECIES_WITH_GHOST + 1, self.hidden_dim)
+            self.type_out = nn.Linear(self.hidden_dim, NUM_SPECIES_WITH_GHOST)
+            self.type_out_2 = nn.Linear(self.hidden_dim, NUM_SPECIES_WITH_GHOST)
+        else:
+            # Mask (0) + real (1..max_atoms) -> max_atoms+1 embedding indices; predict max_atoms species classes.
+            self.node_embedding = nn.Embedding(self.max_atoms + 1, self.hidden_dim)
+            self.type_out = nn.Linear(self.hidden_dim, self.max_atoms)
+            self.type_out_2 = nn.Linear(self.hidden_dim, self.max_atoms)

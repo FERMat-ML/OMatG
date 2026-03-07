@@ -1,0 +1,128 @@
+model:
+  si:
+    class_path: omg.si.stochastic_interpolants.StochasticInterpolants
+    init_args:
+      stochastic_interpolants:
+        # chemical species
+        - class_path: omg.si.discrete_flow_matching_mask.DiscreteFlowMatchingMask
+          init_args:
+            noise: 0.18946955217679085
+        # fractional coordinates
+        - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
+          init_args:
+            interpolant: omg.si.interpolants.PeriodicLinearInterpolant
+            gamma:
+              class_path: omg.si.gamma.LatentGammaSqrt
+              init_args:
+                a: 0.018159684059653552
+            epsilon:
+              class_path: omg.si.epsilon.VanishingEpsilon
+              init_args:
+                c: 9.74900863316411
+                mu: 0.17191546490562354
+                sigma: 0.029425925880471573
+            differential_equation_type: "SDE"
+            integrator_kwargs:
+              method: "euler"
+              dt: 0.0014076164225116372
+            velocity_annealing_factor: 6.334345265874859
+            correct_center_of_mass_motion: true
+        # lattice vectors
+        - class_path: omg.si.single_stochastic_interpolant.SingleStochasticInterpolant
+          init_args:
+            interpolant: omg.si.interpolants.LinearInterpolant
+            gamma: null
+            epsilon: null
+            differential_equation_type: "ODE"
+            integrator_kwargs:
+              method: "euler"
+            velocity_annealing_factor: 1.0674474901964888
+            correct_center_of_mass_motion: false
+      data_fields:
+        - "species"
+        - "pos"
+        - "cell"
+      integration_time_steps: 710
+  relative_si_costs:
+    species_loss: 0.5918064683979826
+    pos_loss_b: 0.13091891010303253
+    pos_loss_z: 0.27077286248215743
+    cell_loss_b: 0.006501759016827464
+  sampler:
+    class_path: omg.sampler.IndependentSampler
+    init_args:
+      pos_distribution:
+        class_path: omg.sampler.position_distributions.UniformPositionDistribution
+      cell_distribution:
+        class_path: omg.sampler.cell_distributions.InformedLatticeDistribution
+        init_args:
+          dataset_name: mp_20
+      species_distribution:
+        class_path: omg.sampler.species_distributions.MaskSpeciesDistribution
+  model:
+    class_path: omg.model.model.Model
+    init_args:
+      encoder:
+        class_path: omg.model.encoders.cspnet_full.CSPNetFull
+        init_args:
+          use_ghost_species: true
+      head:
+        class_path: omg.model.heads.pass_through.PassThrough
+      time_embedder:
+        class_path: omg.model.model_utils.SinusoidalTimeEmbeddings
+        init_args:
+          dim: 256
+  use_min_perm_dist: True
+  float_32_matmul_precision: "high"
+  validation_mode: "loss"
+  dataset_name: "mp_20"
+data:
+  train_dataset:
+    class_path: omg.datamodule.StructureDataset
+    init_args:
+      file_path: "data/mp_20_ghosted_j05/train_ghosted.lmdb"
+      lazy_storage: True
+      niggli_reduce: False
+  val_dataset:
+    class_path: omg.datamodule.StructureDataset
+    init_args:
+      file_path: "data/mp_20_ghosted_j05/val_ghosted.lmdb"
+      lazy_storage: True
+      niggli_reduce: False
+  pred_dataset:
+    class_path: omg.datamodule.StructureDataset
+    init_args:
+      file_path: "data/mp_20_ghosted_j05/test_ghosted.lmdb"
+      lazy_storage: True
+      niggli_reduce: False
+  batch_size: 512
+trainer:
+  callbacks:
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        filename: "best_val_loss_total"
+        save_top_k: 1
+        monitor: "val_loss_total"
+        save_weights_only: false
+    - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+      init_args:
+        save_top_k: -1
+        monitor: "val_loss_total"
+        every_n_epochs: 100
+        save_weights_only: false
+  gradient_clip_val: 0.5
+  gradient_clip_algorithm: "value"
+  num_sanity_val_steps: 0
+  precision: "32-true"
+  max_epochs: 2000
+  enable_progress_bar: true
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 0.00019745455354877462
+    weight_decay: 0.0003111161289640361
+lr_scheduler:
+  class_path: torch.optim.lr_scheduler.CosineAnnealingLR
+  init_args:
+    T_max: 2000
+    eta_min: 1e-07

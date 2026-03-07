@@ -122,8 +122,10 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
         assert torch.all(x_1 != self._mask_index)  # No atom should not be masked in the final state.
         # model_prediction[0][a_i, j] is the probability of atom a_i being of species j + 1.
         # In order to compute the cross-entropy loss, we need to correct for the shift of the species in x_1.
-        pred = model_function(x_t)[0] 
-        assert pred.shape == (x_0.shape[0], MAX_ATOM_NUM)
+        pred = model_function(x_t)[0]
+        assert pred.shape[0] == x_0.shape[0] and pred.shape[1] >= int(x_1.max().item()), (
+            f"Species logits size {pred.shape[1]} must be >= max species index {int(x_1.max().item())} (e.g. 119 with ghost)."
+        )
         return {"loss": functional.cross_entropy(pred, x_1 - 1)}
 
     def integrate(self, model_function: Callable[[torch.Tensor, torch.Tensor], tuple[torch.Tensor, torch.Tensor]],
@@ -175,10 +177,11 @@ class DiscreteFlowMatchingMask(StochasticInterpolantSpecies):
             Integrated position.
         :rtype: torch.Tensor
         """
-        x_1_probs = functional.softmax(model_function(time, x_t)[0], dim=-1)  # Shape (sum(n_atoms), MAX_ATOM_NUM).
-        x_1_probs = x_1_probs.reshape((-1, MAX_ATOM_NUM))
+        x_1_probs = functional.softmax(model_function(time, x_t)[0], dim=-1)  # Shape (sum(n_atoms), num_classes).
+        num_classes = x_1_probs.size(-1)
+        x_1_probs = x_1_probs.reshape((-1, num_classes))
         # Sample from distribution for every of the sum(n_atoms) elements.
-        # Shift the atom type by one to get the real species.
+        # Shift the atom type by one to get the real species (1..num_classes, including ghost 119).
         x_1 = Categorical(x_1_probs).sample() + 1  # Shape (sum(n_atoms),).
         # Shape (sum(n_atoms),).
         will_unmask = torch.rand(x_t.shape, device=x_t.device) < (time_step * (1.0 + self._noise * time) / (1.0 - time))
