@@ -97,6 +97,11 @@ data:
       niggli_reduce: False
   batch_size: 256
 trainer:
+  logger:
+    class_path: lightning.pytorch.loggers.WandbLogger
+    init_args:
+      name: omg-dng-ghosted
+      project: omatg
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint
       init_args:
