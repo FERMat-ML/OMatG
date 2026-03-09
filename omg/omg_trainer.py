@@ -21,6 +21,7 @@ import torch
 from torch_geometric.data import Data
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=UserWarning)
+    warnings.simplefilter("ignore", category=DeprecationWarning)
     from mace.calculators import mace_mp
     from torch_sim import static
     from torch_sim.autobatching import BinningAutoBatcher
