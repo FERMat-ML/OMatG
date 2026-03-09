@@ -1,3 +1,4 @@
+import logging
 from typing import Literal, Optional, Sequence
 import numpy as np
 import tqdm
@@ -115,12 +116,17 @@ class EnergyReward(Reward):
             raise ValueError("clip_std must be positive.")
         self._scale = scale
         self._device = device
+        self._default_dtype = default_dtype
         # Catch warnings from MACE and prefix stdout.
         with prefixed_stdout("[MACE] "), warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             if self._device == "cpu":
+                logging.disable(logging.WARNING)  # MACE prints a warning when using CPU, disable it.
+                # Calling mace_mp with return_raw_model=False changes the default dtype of torch.
                 self._mace_model = mace_mp(model="medium-mpa-0", device=device, default_dtype=default_dtype,
                                            enable_cueq=enable_cueq)
+                logging.disable(logging.NOTSET)  # Undo the disabling of logging.
+                torch.set_default_dtype(torch.float32)  # Undo what happened in mace_mp construction.
                 self._batcher = None
                 if max_memory_scaler != 500000.0:
                     warnings.warn("max_memory_scaler is only used when device is 'cuda', the specified value will be "
@@ -182,6 +188,8 @@ class EnergyReward(Reward):
 
         if self._device == "cpu":
             with torch.set_grad_enabled(True):  # Mace needs gradients.
+                # Mace calculator needs appropriate default dtype.
+                torch.set_default_dtype(torch.float64 if self._default_dtype == "float64" else torch.float32)
                 for idx, structure in enumerate(tqdm.tqdm(structures, desc="Computing energy rewards with MACE",
                                                           disable=not enable_progress_bar, unit="structures",
                                                           position=1)):
@@ -192,6 +200,7 @@ class EnergyReward(Reward):
                     energies[idx] = (
                         self._mace_model.get_potential_energy(structure.get_ase_atoms())
                         / len(structure.atomic_numbers))
+                torch.set_default_dtype(torch.float32)  # Undo the change to default dtype.
         else:
             assert self._device == "cuda"
             if self._invalid_penalty is not None:
