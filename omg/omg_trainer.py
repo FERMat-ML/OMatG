@@ -1107,10 +1107,10 @@ class OMGTrainer(Trainer):
         :raises ValueError:
             If the result_name does not end with .json.
         """
-        with warnings.catch_warnings():
+        with warnings.catch_warnings(), prefixed_stdout(prefix="[MACE] "):
             warnings.simplefilter("ignore", category=UserWarning)
             from mace.calculators import mace_mp
-        with prefixed_stdout(prefix="[TorchSIM] "):
+        with prefixed_stdout(prefix="[TorchSim] "):
             from torch_sim import static
             from torch_sim.autobatching import BinningAutoBatcher
             from torch_sim.models.mace import MaceModel
