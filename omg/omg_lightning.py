@@ -468,12 +468,14 @@ class OMGLightning(lightning.LightningModule):
         if not subsampled:
             return
 
+        max_valid_z = 118
         for struct_idx in range(n_structures):
             frames: list[Atoms] = []
             for d in subsampled:
                 lower = d.ptr[struct_idx].item()
                 upper = d.ptr[struct_idx + 1].item()
-                species = d.species[lower:upper].detach().cpu().numpy()
+                species = d.species[lower:upper].detach().cpu().numpy().copy()
+                species[species > max_valid_z] = 0  # remap ghost atoms to dummy 'X'
                 positions = d.pos[lower:upper, :].detach().cpu().numpy()
                 cell = d.cell[struct_idx, :, :].detach().cpu().numpy()
                 atoms = Atoms(
