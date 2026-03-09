@@ -206,7 +206,7 @@ class EnergyReward(Reward):
             res = static(system=valid_atoms, model=self._mace_model, autobatcher=self._batcher,
                          pbar={"desc": "Computing valid energy rewards with MACE",
                                "postfix": f"{len(structures) - len(valid_atoms)} invalid structures",
-                               "unit": "structures", "position": 1} if enable_progress_bar else False)
+                               "unit": "structures", "position": 1, "leave": False} if enable_progress_bar else False)
             assert len(res) == len(valid_atoms)
             energies[valid_mask] = [float(r["potential_energy"][0]) / len(atoms)
                                     for r, atoms in zip(res, valid_atoms)]
