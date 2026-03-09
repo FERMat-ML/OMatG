@@ -25,8 +25,7 @@ class EnergyReward(Reward):
     If specified, these invalid structures are assigned a penalty energy instead of their computed (likely diverging)
     energies. The energy per atom of valid structures is then calculated using the MACE-MPA-0 model.
 
-    The energies within a GRPO group can be clipped based on a specified number of standard deviations from the mean.
-    The reward for each structure is the negative of its (possibly penalized or clipped) energy per atom, scaled by the
+    The reward for each structure is the negative of its (possibly penalized) energy per atom, scaled by the
     provided scaling factor.
 
     When using a CUDA device, the MACE calculations are batched using TorchSim's BinningAutoBatcher for
@@ -34,10 +33,8 @@ class EnergyReward(Reward):
     essential for managing GPU memory usage. Larger values of max_memory_scaler allow for larger batches and potentially
     better performance, but also increase the risk of out-of-memory errors. The optimal value for max_memory_scaler
     depends on the specific GPU, the size of the structures being evaluated, the floating point precision, and the
-    number of structures being evaluated (since TorchSim preloads all structures as tensors before batching. The default
-    value of 500000.0 is adjusted for 80GB H100 GPUs, the MP20 dataset, float64 precision, and 1024 structures.
-
-    TODO: Change clipping to clipping within GRPO groups and compare results.
+    number of structures being evaluated (since TorchSim preloads all structures as tensors before batching). The
+    default value of 500000.0 is adjusted for 80GB H100 GPUs, the MP20 dataset, float64 precision, and 1024 structures.
 
     :param scale:
         Scaling factor for the reward.
@@ -83,26 +80,19 @@ class EnergyReward(Reward):
         Must be non-negative.
         Defaults to 1.0e-3.
     :type polar_sine_cutoff: float
-    :param clip_std:
-        If specified, energies within a GRPO group are clipped to be within mean +/- clip_std
-        standard deviations.
-        Must be positive if specified.
-        Defaults to None.
-    :type clip_std: Optional[float]
 
     :raises ValueError:
         If scale is not positive.
         If volume_check_cutoff is negative.
         If structure_check_cutoff is negative.
         If polar_sine_cutoff is negative.
-        If clip_std is specified and not positive.
     """
 
     def __init__(self, scale: float = 1.0, device: Literal["cpu", "cuda"] = "cpu",
                  default_dtype: Literal["float32", "float64"] = "float64", enable_cueq: bool = False,
                  max_memory_scaler: float = 500000.0, invalid_penalty: Optional[float] = None,
                  volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
-                 polar_sine_cutoff: float = 1.0e-3, clip_std: Optional[float] = None, ) -> None:
+                 polar_sine_cutoff: float = 1.0e-3) -> None:
         """Constructor for EnergyReward."""
         super().__init__()
         if not scale > 0.0:
@@ -113,8 +103,6 @@ class EnergyReward(Reward):
             raise ValueError("Structure check cutoff must be non-negative.")
         if not polar_sine_cutoff >= 0.0:
             raise ValueError("Polar sine cutoff must be non-negative.")
-        if clip_std is not None and not clip_std > 0.0:
-            raise ValueError("clip_std must be positive.")
         self._scale = scale
         self._device = device
         self._default_dtype = default_dtype
@@ -147,7 +135,6 @@ class EnergyReward(Reward):
         self._volume_check_cutoff = volume_check_cutoff
         self._structure_check_cutoff = structure_check_cutoff
         self._polar_sine_cutoff = polar_sine_cutoff
-        self._clip_std = clip_std
 
     def _is_valid(self, structure: Structure) -> bool:
         """Check if the structure is valid based on volume, interatomic distances, and polar sine criteria."""
@@ -221,20 +208,6 @@ class EnergyReward(Reward):
             energies[valid_mask] = [float(r["potential_energy"][0]) / len(atoms)
                                     for r, atoms in zip(res, valid_atoms)]
 
-        raw_energies = energies.copy()
-        if self._clip_std is not None:
-            valid_mask = (invalid_flags == 0.0)
-            valid_energies = energies[valid_mask]
-            if valid_energies.size > 1:
-                mean = valid_energies.mean()
-                std = valid_energies.std()
-                if std > 0.0:
-                    low = mean - self._clip_std * std
-                    high = mean + self._clip_std * std
-                    energies[valid_mask] = np.clip(energies[valid_mask], low, high)
-
         rewards = -self._scale * energies  # Minimize energy.
         info_dict = {"energy_per_atom": energies, "energy_invalid": invalid_flags}
-        if self._clip_std is not None:
-            info_dict["energy_per_atom_raw"] = raw_energies
         return rewards, info_dict
