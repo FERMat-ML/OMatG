@@ -3,16 +3,17 @@ import numpy as np
 import tqdm
 import warnings
 import torch
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", category=UserWarning)
-    warnings.simplefilter("ignore", category=DeprecationWarning)
-    from mace.calculators import mace_mp
-    from torch_sim import static
-    from torch_sim.autobatching import BinningAutoBatcher
-    from torch_sim.models.mace import MaceModel
 from omg.datamodule import Structure
 from omg.utils import prefixed_stdout
 from .abstracts import ComputeStage, Reward
+
+with warnings.catch_warnings(), prefixed_stdout(prefix="[MACE] "):
+    warnings.simplefilter("ignore", category=UserWarning)
+    from mace.calculators import mace_mp
+with prefixed_stdout(prefix="[TorchSim] "):
+    from torch_sim import static
+    from torch_sim.autobatching import BinningAutoBatcher
+    from torch_sim.models.mace import MaceModel
 
 
 class EnergyReward(Reward):
