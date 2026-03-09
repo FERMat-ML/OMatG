@@ -542,24 +542,29 @@ class OMGTrainer(Trainer):
             # Plot avg cn KDE
             # KernelDensity expects array of shape (n_samples, n_features).
             # We only have a single feature.
-            bandwidth = np.std(ref_avg_cn) * len(ref_avg_cn) ** (-1 / 5)  # Scott's rule.
-            ref_avg_cn = np.array(ref_avg_cn)[:, np.newaxis]
-            avg_cn = np.array(avg_cn)[:, np.newaxis]
-            min_cn = min(ref_avg_cn.min(), avg_cn.min())
-            max_cn = max(ref_avg_cn.max(), avg_cn.max())
-            x_d = np.linspace(min_cn - 1.0, max_cn + 1.0, 1000)[:, np.newaxis]
-            kde_gt = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(ref_avg_cn)
-            log_density_gt = kde_gt.score_samples(x_d)
-            kde_gen = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(avg_cn)
-            log_density_gen = kde_gen.score_samples(x_d)
-            plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
-            plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Test")
-            plt.title("Average coordination number by structure")
-            plt.xlabel("Average CN")
-            plt.ylabel("Density")
-            plt.legend()
-            pdf.savefig()
-            plt.close()
+            ref_avg_cn = np.array(ref_avg_cn)
+            avg_cn = np.array(avg_cn)
+            ref_avg_cn = ref_avg_cn[~np.isnan(ref_avg_cn)]
+            avg_cn = avg_cn[~np.isnan(avg_cn)]
+            if len(ref_avg_cn) > 0 and len(avg_cn) > 0:
+                bandwidth = np.std(ref_avg_cn) * len(ref_avg_cn) ** (-1 / 5)  # Scott's rule.
+                ref_avg_cn = ref_avg_cn[:, np.newaxis]
+                avg_cn = avg_cn[:, np.newaxis]
+                min_cn = min(ref_avg_cn.min(), avg_cn.min())
+                max_cn = max(ref_avg_cn.max(), avg_cn.max())
+                x_d = np.linspace(min_cn - 1.0, max_cn + 1.0, 1000)[:, np.newaxis]
+                kde_gt = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(ref_avg_cn)
+                log_density_gt = kde_gt.score_samples(x_d)
+                kde_gen = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(avg_cn)
+                log_density_gen = kde_gen.score_samples(x_d)
+                plt.plot(x_d, np.exp(log_density_gen), color="blueviolet", label="Generated")
+                plt.plot(x_d, np.exp(log_density_gt), color="darkslategrey", label="Test")
+                plt.title("Average coordination number by structure")
+                plt.xlabel("Average CN")
+                plt.ylabel("Density")
+                plt.legend()
+                pdf.savefig()
+                plt.close()
 
             # Compute distributions of average coordination number by species
             ref_avg_cn_species = {}

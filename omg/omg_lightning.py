@@ -1,8 +1,9 @@
 from enum import Enum, auto
 from pathlib import Path
 import time
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Sequence
 from ase import Atoms
+from ase.io import write as ase_write
 import lightning
 import numpy as np
 from scipy.stats import wasserstein_distance
@@ -134,7 +135,9 @@ class OMGLightning(lightning.LightningModule):
                  relative_si_costs: Dict[str, float], use_min_perm_dist: bool = False,
                  generation_xyz_filename: Optional[str] = None, sobol_time: bool = False,
                  float_32_matmul_precision: str = "medium", validation_mode: str = "loss",
-                 dataset_name: str = "mp_20", number_cpus: int = 12) -> None:
+                 dataset_name: str = "mp_20", number_cpus: int = 12,
+                 save_animations: bool = False, animations_n_structures: int = 4,
+                 animations_stride: int = 10, animations_dir: Optional[str] = None) -> None:
         """Constructor of the OMGLightning class."""
         super().__init__()
         self.si = si
@@ -196,6 +199,11 @@ class OMGLightning(lightning.LightningModule):
 
         self.reference_atoms = []
         self.generated_atoms = []
+
+        self.save_animations = save_animations
+        self.animations_n_structures = animations_n_structures
+        self.animations_stride = animations_stride
+        self.animations_dir = animations_dir
 
     def training_step(self, x_1: OMGData) -> torch.Tensor:
         """
@@ -421,13 +429,8 @@ class OMGLightning(lightning.LightningModule):
         The initial structures are saved in a separate file with "_init" appended to the filename stem.
         If the `generation_xyz_filename` is not set, the filename is generated based on the current time.
 
-        :param x:
-            Batch of structures from the prediction dataset.
-        :type x: OMGData
-
-        :return:
-            Generated structures after integrating the stochastic interpolants.
-        :rtype: OMGData
+        If ``save_animations`` is enabled, it additionally saves multi-frame XYZ trajectories for a subset of
+        structures using the intermediate states returned by the stochastic interpolants integration.
         """
         x_0 = self.sampler.sample_p_0(x).to(self.device)
         gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
@@ -436,4 +439,50 @@ class OMGLightning(lightning.LightningModule):
         init_filename = filename.with_stem(filename.stem + "_init")
         xyz_saver(x_0.to("cpu"), init_filename)
         xyz_saver(gen.to("cpu"), filename)
+
+        if self.save_animations and inter is not None:
+            self._save_animations(inter, filename)
+
         return gen
+
+    def _save_animations(self, inter_list: List[OMGData], base_filename: Path) -> None:
+        """Save trajectories for a subset of structures as multi-frame XYZ files."""
+        if not inter_list:
+            return
+
+        first = inter_list[0].to("cpu")
+        batch_size = len(first.n_atoms)
+        if batch_size == 0:
+            return
+
+        n_structures = min(batch_size, max(1, int(self.animations_n_structures)))
+        stride = max(1, int(self.animations_stride))
+
+        if self.animations_dir is not None:
+            out_dir = Path(self.animations_dir)
+        else:
+            out_dir = base_filename.parent / f"{base_filename.stem}_animations"
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        subsampled = [d.to("cpu") for idx, d in enumerate(inter_list) if idx % stride == 0]
+        if not subsampled:
+            return
+
+        for struct_idx in range(n_structures):
+            frames: list[Atoms] = []
+            for d in subsampled:
+                lower = d.ptr[struct_idx].item()
+                upper = d.ptr[struct_idx + 1].item()
+                species = d.species[lower:upper].detach().cpu().numpy()
+                positions = d.pos[lower:upper, :].detach().cpu().numpy()
+                cell = d.cell[struct_idx, :, :].detach().cpu().numpy()
+                atoms = Atoms(
+                    numbers=species,
+                    scaled_positions=positions,
+                    cell=cell,
+                    pbc=(True, True, True),
+                )
+                frames.append(atoms)
+            if frames:
+                traj_path = out_dir / f"{base_filename.stem}_sample{struct_idx:03d}_traj.xyz"
+                ase_write(str(traj_path), frames)
