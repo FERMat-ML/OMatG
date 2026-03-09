@@ -492,9 +492,14 @@ def _element_check(atoms_one: Atoms, atoms_two: Atoms, check_reduced: bool) -> b
         atoms_one_counts = np.bincount(atoms_one.numbers, minlength=MAX_ATOM_NUM)
         atoms_two_counts = np.bincount(atoms_two.numbers, minlength=MAX_ATOM_NUM)
 
-        # Find the element with the minimum number of occurrences in each structure.
-        atoms_one_min = np.min(atoms_one_counts[np.nonzero(atoms_one_counts > 0)])
-        atoms_two_min = np.min(atoms_two_counts[np.nonzero(atoms_two_counts > 0)])
+        nz_one = np.nonzero(atoms_one_counts > 0)[0]
+        nz_two = np.nonzero(atoms_two_counts > 0)[0]
+
+        if nz_one.size == 0 or nz_two.size == 0:
+            return False
+
+        atoms_one_min = int(atoms_one_counts[nz_one].min())
+        atoms_two_min = int(atoms_two_counts[nz_two].min())
 
         return np.allclose(atoms_one_counts / atoms_one_min, atoms_two_counts / atoms_two_min)
     else:

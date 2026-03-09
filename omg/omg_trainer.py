@@ -352,29 +352,30 @@ class OMGTrainer(Trainer):
 
         if initial is not None:
             traveled_root_mean_square_distances = []
-            assert initial.pos.shape == generated.pos.shape
-            # noinspection PyTypeChecker
-            assert torch.all(initial.ptr == generated.ptr)
-            generated_pos_prime = fractional_coordinates_corrector.unwrap(initial.pos, generated.pos)
-            distances_squared = torch.sum((generated_pos_prime - initial.pos) ** 2, dim=-1)
-            for i in range(len(generated.ptr) - 1):
-                ds = distances_squared[generated.ptr[i]:generated.ptr[i + 1]]
-                traveled_root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
-
             root_mean_square_distances = []
-            rand_pos = torch.rand_like(generated.pos)
-            # Cell and species are not important here.
-            rand_data = Data(pos=rand_pos, cell=generated.cell, species=generated.species, ptr=generated.ptr,
-                             n_atoms=generated.n_atoms, batch=generated.batch)
-            if use_min_perm_dist:
-                correct_for_minimum_permutation_distance(rand_data, generated, fractional_coordinates_corrector,
-                                                         switch_species=False)
-                rand_pos = rand_data.pos
-            rand_pos_prime = fractional_coordinates_corrector.unwrap(generated.pos, rand_pos)
-            distances_squared = torch.sum((rand_pos_prime - generated.pos) ** 2, dim=-1)
-            for i in range(len(generated.ptr) - 1):
-                ds = distances_squared[generated.ptr[i]:generated.ptr[i + 1]]
-                root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
+
+            if (
+                initial.pos.shape == generated.pos.shape
+                and torch.all(initial.ptr == generated.ptr)
+            ):
+                generated_pos_prime = fractional_coordinates_corrector.unwrap(initial.pos, generated.pos)
+                distances_squared = torch.sum((generated_pos_prime - initial.pos) ** 2, dim=-1)
+                for i in range(len(generated.ptr) - 1):
+                    ds = distances_squared[generated.ptr[i]:generated.ptr[i + 1]]
+                    traveled_root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
+
+                rand_pos = torch.rand_like(generated.pos)
+                rand_data = Data(pos=rand_pos, cell=generated.cell, species=generated.species, ptr=generated.ptr,
+                                 n_atoms=generated.n_atoms, batch=generated.batch)
+                if use_min_perm_dist:
+                    correct_for_minimum_permutation_distance(rand_data, generated, fractional_coordinates_corrector,
+                                                             switch_species=False)
+                    rand_pos = rand_data.pos
+                rand_pos_prime = fractional_coordinates_corrector.unwrap(generated.pos, rand_pos)
+                distances_squared = torch.sum((rand_pos_prime - generated.pos) ** 2, dim=-1)
+                for i in range(len(generated.ptr) - 1):
+                    ds = distances_squared[generated.ptr[i]:generated.ptr[i + 1]]
+                    root_mean_square_distances.append(float(torch.sqrt(ds.mean())))
 
         sg_fail = 0
         sg_fail_F = 0
