@@ -511,7 +511,7 @@ class OMGTrainer(Trainer):
             pdf.savefig()
             plt.close()
 
-            if initial is not None:
+            if initial is not None and root_mean_square_distances and traveled_root_mean_square_distances:
                 # Compute distributions for fractional coordinate movement.
                 # Scott's rule for bandwidth.
                 bandwidth = np.std(ref_root_mean_square_distances) * len(ref_root_mean_square_distances) ** (-1 / 5)
@@ -535,13 +535,6 @@ class OMGTrainer(Trainer):
                 plt.xlabel("Root Mean Square Distance of Fractional Coordinates")
                 plt.ylabel("Density")
                 plt.legend()
-                # plt.text(
-                #    0.05, 0.95,
-                #    f'KS Test for identical distributions: p-value={kstest(trmsds, trmsds).pvalue}',
-                #    verticalalignment='top',
-                #    bbox=props,
-                #    transform=plt.gca().transAxes
-                # )
                 pdf.savefig()
                 plt.close()
 
@@ -908,24 +901,25 @@ class OMGTrainer(Trainer):
                 with open(result_name, "w") as f:
                     json.dump(result, f, indent=4)
 
-            plt.figure()
-            bandwidth = np.std(filtered_rmsds) * len(filtered_rmsds) ** (-1 / 5)  # Scott's rule.
-            filtered_rmsds = np.array(filtered_rmsds)[:, np.newaxis]
-            filtered_valid_rmsds = np.array(filtered_valid_rmsds)[:, np.newaxis]
-            max_rmsd = max(filtered_rmsds.max(), filtered_valid_rmsds.max())
-            x_d = np.linspace(0.0, max_rmsd + 0.1 * max_rmsd, 1000)[:, np.newaxis]
-            kde = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(filtered_rmsds)
-            log_density = kde.score_samples(x_d)
-            kde_val = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(filtered_valid_rmsds)
-            log_density_val = kde_val.score_samples(x_d)
-            plt.plot(x_d, np.exp(log_density), color="blueviolet", label="All")
-            plt.plot(x_d, np.exp(log_density_val), color="darkslategrey", label="Valid")
-            plt.xlabel(r"RMSE distribution ($\AA^3$)")
-            plt.ylabel("Density")
-            plt.title("RMSE")
-            plt.legend()
-            plt.savefig(plot_name)
-            plt.close()
+            if filtered_rmsds and filtered_valid_rmsds:
+                plt.figure()
+                bandwidth = np.std(filtered_rmsds) * len(filtered_rmsds) ** (-1 / 5)  # Scott's rule.
+                filtered_rmsds = np.array(filtered_rmsds)[:, np.newaxis]
+                filtered_valid_rmsds = np.array(filtered_valid_rmsds)[:, np.newaxis]
+                max_rmsd = max(filtered_rmsds.max(), filtered_valid_rmsds.max())
+                x_d = np.linspace(0.0, max_rmsd + 0.1 * max_rmsd, 1000)[:, np.newaxis]
+                kde = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(filtered_rmsds)
+                log_density = kde.score_samples(x_d)
+                kde_val = KernelDensity(kernel="tophat", bandwidth=bandwidth).fit(filtered_valid_rmsds)
+                log_density_val = kde_val.score_samples(x_d)
+                plt.plot(x_d, np.exp(log_density), color="blueviolet", label="All")
+                plt.plot(x_d, np.exp(log_density_val), color="darkslategrey", label="Valid")
+                plt.xlabel(r"RMSE distribution ($\AA^3$)")
+                plt.ylabel("Density")
+                plt.title("RMSE")
+                plt.legend()
+                plt.savefig(plot_name)
+                plt.close()
 
     def dng_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
                     dataset_name: Optional[str] = None, number_cpus: Optional[int] = None,
