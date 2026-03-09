@@ -1025,7 +1025,7 @@ class OMGTrainer(Trainer):
     def energy_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
                        result_name: str = "energy_metrics.json", energy_storage_file: str = "energies_per_atom.npy",
                        device: Literal["cpu", "cuda"] = "cpu", default_dtype: Literal["float32", "float64"] = "float64",
-                       enable_cueq: bool = False, max_memory_scaler: float = 500000.0, volume_check_cutoff: float = 0.1,
+                       enable_cueq: bool = False, max_memory_scaler: float = 250000.0, volume_check_cutoff: float = 0.1,
                        structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
                        predict_energy_storage_file: Optional[str] = None) -> None:
         """
@@ -1042,8 +1042,8 @@ class OMGTrainer(Trainer):
         improved performance. This requires a max_memory_scaler parameter to control the batching behavior which is
         essential for managing GPU memory usage. Larger values of max_memory_scaler allow for larger batches and potentially
         better performance, but also increase the risk of out-of-memory errors. The optimal value for max_memory_scaler
-        depends on the specific GPU and the size of the structures being evaluated. The default value of 500000.0 is a
-        adjusted for 80GB A100 GPUs and the MP20 dataset.
+        depends on the specific GPU, the size of the structures being evaluated, and the floating point precision.
+        The default value of 250000.0 is adjusted for 80GB H100 GPUs, the MP20 dataset, and float64 precision.
 
         :param model:
             OMG model (argument required and automatically passed by lightning CLI).
@@ -1082,7 +1082,7 @@ class OMGTrainer(Trainer):
         :type enable_cueq: bool
         :param max_memory_scaler:
             The max_memory_scaler parameter for TorchSim's BinningAutoBatcher when using CUDA.
-            Defaults to 500000.0, which is adjusted for 80GB A100 GPUs and the MP20 dataset.
+            Defaults to 250000.0, which is adjusted for 80GB H100 GPUs, the MP20 dataset, and float64 precision.
         :type max_memory_scaler: float
         :param volume_check_cutoff:
             The cutoff for the volume check in cubic angstroms. Structures with volume per atom below this cutoff are
