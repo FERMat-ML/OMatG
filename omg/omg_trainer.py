@@ -1165,10 +1165,13 @@ class OMGTrainer(Trainer):
             if device == "cpu":
                 ref_energies_per_atom = np.full(len(ref_atoms), np.nan, dtype=float)
                 with torch.set_grad_enabled(True):  # Mace needs gradients.
+                    # Mace calculator needs appropriate default dtype.
+                    torch.set_default_dtype(torch.float64 if default_dtype == "float64" else torch.float32)
                     for idx, atoms in enumerate(tqdm.tqdm(ref_atoms, desc="Computing energies with MACE",
                                                           unit="structures")):
                         assert is_valid(atoms)
                         ref_energies_per_atom[idx] = mace_model.get_potential_energy(atoms) / len(atoms)
+                    torch.set_default_dtype(torch.float32)  # Undo the change to default dtype.
             else:
                 assert device == "cuda"
                 assert all(is_valid(atoms) for atoms in ref_atoms)
