@@ -19,13 +19,6 @@ from sklearn.neighbors import KernelDensity
 import tqdm
 import torch
 from torch_geometric.data import Data
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", category=UserWarning)
-    warnings.simplefilter("ignore", category=DeprecationWarning)
-    from mace.calculators import mace_mp
-    from torch_sim import static
-    from torch_sim.autobatching import BinningAutoBatcher
-    from torch_sim.models.mace import MaceModel
 from omg.omg_lightning import OMGLightning
 from omg.datamodule import OMGDataset, OMGDataModule
 from omg.globals import MAX_ATOM_NUM
@@ -1114,6 +1107,14 @@ class OMGTrainer(Trainer):
         :raises ValueError:
             If the result_name does not end with .json.
         """
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            from mace.calculators import mace_mp
+        with prefixed_stdout(prefix="[TorchSIM] "):
+            from torch_sim import static
+            from torch_sim.autobatching import BinningAutoBatcher
+            from torch_sim.models.mace import MaceModel
+
         # Catch warnings from MACE and prefix stdout.
         with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
