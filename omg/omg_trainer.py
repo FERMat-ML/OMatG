@@ -1036,8 +1036,10 @@ class OMGTrainer(Trainer):
         improved performance. This requires a max_memory_scaler parameter to control the batching behavior which is
         essential for managing GPU memory usage. Larger values of max_memory_scaler allow for larger batches and potentially
         better performance, but also increase the risk of out-of-memory errors. The optimal value for max_memory_scaler
-        depends on the specific GPU, the size of the structures being evaluated, and the floating point precision.
-        The default value of 250000.0 is adjusted for 80GB H100 GPUs, the MP20 dataset, and float64 precision.
+        depends on the specific GPU, the size of the structures being evaluated, the floating point precision, and
+        the number of structures being evaluated (since TorchSim preloads all structures as tensors before batching).
+        The default value of 250000.0 is adjusted for 80GB H100 GPUs, the MP20 dataset, float64 precision, and 9046
+        structures.
 
         :param model:
             OMG model (argument required and automatically passed by lightning CLI).

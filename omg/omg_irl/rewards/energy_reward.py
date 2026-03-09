@@ -33,8 +33,9 @@ class EnergyReward(Reward):
     improved performance. This requires a max_memory_scaler parameter to control the batching behavior which is
     essential for managing GPU memory usage. Larger values of max_memory_scaler allow for larger batches and potentially
     better performance, but also increase the risk of out-of-memory errors. The optimal value for max_memory_scaler
-    depends on the specific GPU and the size of the structurqes being evaluated. The default value of 500000.0 is a
-    adjusted for 80GB A100 GPUs and the MP20 dataset.
+    depends on the specific GPU, the size of the structures being evaluated, the floating point precision, and the
+    number of structures being evaluated (since TorchSim preloads all structures as tensors before batching. The default
+    value of 500000.0 is adjusted for 80GB H100 GPUs, the MP20 dataset, float64 precision, and 1024 structures.
 
     TODO: Change clipping to clipping within GRPO groups and compare results.
 
