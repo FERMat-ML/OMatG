@@ -183,7 +183,8 @@ class EnergyReward(Reward):
         if self._device == "cpu":
             with torch.set_grad_enabled(True):  # Mace needs gradients.
                 for idx, structure in enumerate(tqdm.tqdm(structures, desc="Computing energy rewards with MACE",
-                                                          disable=not enable_progress_bar, unit="structures")):
+                                                          disable=not enable_progress_bar, unit="structures",
+                                                          position=1)):
                     if self._invalid_penalty is not None and not self._is_valid(structure):
                         energies[idx] = self._invalid_penalty
                         invalid_flags[idx] = 1.0
@@ -205,7 +206,7 @@ class EnergyReward(Reward):
             res = static(system=valid_atoms, model=self._mace_model, autobatcher=self._batcher,
                          pbar={"desc": "Computing valid energy rewards with MACE",
                                "postfix": f"{len(structures) - len(valid_atoms)} invalid structures",
-                               "unit": "structures"} if enable_progress_bar else False)
+                               "unit": "structures", "position": 1} if enable_progress_bar else False)
             assert len(res) == len(valid_atoms)
             energies[valid_mask] = [float(r["potential_energy"][0]) / len(atoms)
                                     for r, atoms in zip(res, valid_atoms)]
