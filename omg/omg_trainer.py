@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import json
+import logging
 from math import log
 from pathlib import Path
 from typing import Literal, Optional, Sequence, Union
@@ -1119,9 +1120,11 @@ class OMGTrainer(Trainer):
         with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             if device == "cpu":
+                logging.disable(logging.WARNING)  # Newer versions of Mace log warnings.
                 # Calling mace_mp with return_raw_model=False changes the default dtype of torch.
                 mace_model = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq,
                                      default_dtype=default_dtype)
+                logging.disable(logging.NOTSET)  # Undo the disabling of logging.
                 torch.set_default_dtype(torch.float32)  # Undo what happened in mace_mp construction.
                 batcher = None
                 if max_memory_scaler != 250000.0:
