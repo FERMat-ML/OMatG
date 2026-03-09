@@ -1163,13 +1163,15 @@ class OMGTrainer(Trainer):
             if device == "cpu":
                 ref_energies_per_atom = np.full(len(ref_atoms), np.nan, dtype=float)
                 with torch.set_grad_enabled(True):  # Mace needs gradients.
-                    for idx, atoms in enumerate(tqdm.tqdm(ref_atoms, desc="Computing energies with MACE")):
+                    for idx, atoms in enumerate(tqdm.tqdm(ref_atoms, desc="Computing energies with MACE",
+                                                          unit="structures")):
                         assert is_valid(atoms)
                         ref_energies_per_atom[idx] = mace_model.get_potential_energy(atoms) / len(atoms)
             else:
                 assert device == "cuda"
                 assert all(is_valid(atoms) for atoms in ref_atoms)
-                res = static(system=ref_atoms, model=mace_model, autobatcher=batcher, pbar=True)
+                res = static(system=ref_atoms, model=mace_model, autobatcher=batcher,
+                             pbar={"desc": "Computing energies with MACE", "unit": "structures"})
                 assert len(res) == len(ref_atoms)
                 ref_energies_per_atom = np.array([float(r["potential_energy"][0]) / len(atoms)
                                                   for r, atoms in zip(res, ref_atoms)])
