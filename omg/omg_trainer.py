@@ -1187,7 +1187,9 @@ class OMGTrainer(Trainer):
             assert device == "cuda"
             valid_mask = np.array([is_valid(atoms) for atoms in gen_atoms])
             valid_atoms = [gen_atoms[i] for i in range(len(gen_atoms)) if valid_mask[i]]
-            res = static(system=valid_atoms, model=mace_model, autobatcher=batcher, pbar=True)
+            res = static(system=valid_atoms, model=mace_model, autobatcher=batcher,
+                         pbar={"desc": "Computing energies with MACE", "total": len(gen_atoms),
+                               "initial": len(gen_atoms) - len(valid_atoms)})
             assert len(res) == len(valid_atoms)
             energies_per_atom[valid_mask] = np.array([float(r["potential_energy"][0]) / len(atoms)
                                                       for r, atoms in zip(res, valid_atoms)])
