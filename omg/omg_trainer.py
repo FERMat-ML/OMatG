@@ -1119,10 +1119,12 @@ class OMGTrainer(Trainer):
         with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
             warnings.simplefilter("ignore", category=UserWarning)
             if device == "cpu":
+                # Calling mace_mp with return_raw_model=False changes the default dtype of torch.
                 mace_model = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq,
                                      default_dtype=default_dtype)
+                torch.set_default_dtype(torch.float32)  # Undo what happened in mace_mp construction.
                 batcher = None
-                if max_memory_scaler != 500000.0:
+                if max_memory_scaler != 250000.0:
                     warnings.warn("max_memory_scaler is only used when device is 'cuda', the specified value will be "
                                   "ignored.")
             else:
