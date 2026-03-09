@@ -1180,7 +1180,8 @@ class OMGTrainer(Trainer):
         energies_per_atom = np.full(len(gen_atoms), np.nan, dtype=float)
         if device == "cpu":
             with torch.set_grad_enabled(True):  # Mace needs gradients.
-                for idx, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Computing energies with MACE")):
+                for idx, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Computing energies with MACE",
+                                                      unit="structure")):
                     if is_valid(atoms):
                         energies_per_atom[idx] = mace_model.get_potential_energy(atoms) / len(atoms)
         else:
@@ -1188,8 +1189,9 @@ class OMGTrainer(Trainer):
             valid_mask = np.array([is_valid(atoms) for atoms in gen_atoms])
             valid_atoms = [gen_atoms[i] for i in range(len(gen_atoms)) if valid_mask[i]]
             res = static(system=valid_atoms, model=mace_model, autobatcher=batcher,
-                         pbar={"desc": "Computing energies with MACE", "total": len(gen_atoms),
-                               "initial": len(gen_atoms) - len(valid_atoms)})
+                         pbar={"desc": "Computing valid energies with MACE",
+                               "postfix": f"{len(gen_atoms) - len(valid_atoms)} invalid structures",
+                               "unit": "structure"})
             assert len(res) == len(valid_atoms)
             energies_per_atom[valid_mask] = np.array([float(r["potential_energy"][0]) / len(atoms)
                                                       for r, atoms in zip(res, valid_atoms)])
