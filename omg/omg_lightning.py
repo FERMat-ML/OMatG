@@ -204,6 +204,7 @@ class OMGLightning(lightning.LightningModule):
         self.animations_n_structures = animations_n_structures
         self.animations_stride = animations_stride
         self.animations_dir = animations_dir
+        self._animations_saved = False
 
     def training_step(self, x_1: OMGData) -> torch.Tensor:
         """
@@ -433,20 +434,39 @@ class OMGLightning(lightning.LightningModule):
         structures using the intermediate states returned by the stochastic interpolants integration.
         """
         x_0 = self.sampler.sample_p_0(x).to(self.device)
-        gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
+        want_inter = self.save_animations and not self._animations_saved
+        gen, inter = self.si.integrate(x_0, self.model, save_intermediate=want_inter)
         filename = (Path(self.generation_xyz_filename) if self.generation_xyz_filename is not None
                     else Path(f"{time.strftime('%Y%m%d-%H%M%S')}.xyz"))
         init_filename = filename.with_stem(filename.stem + "_init")
         xyz_saver(x_0.to("cpu"), init_filename)
         xyz_saver(gen.to("cpu"), filename)
 
-        if self.save_animations and inter is not None:
+        if want_inter and inter is not None:
             self._save_animations(inter, filename)
+            self._animations_saved = True
 
         return gen
 
+    @staticmethod
+    def _remap_species_for_viz(species: np.ndarray) -> np.ndarray:
+        """Remap species so mask tokens and ghost atoms are distinguishable from real elements.
+
+        - Mask token (0) -> He (2) — shows as a distinct light element in viewers
+        - Ghost atoms (>118) -> Ar (18) — shows as a different inert element
+        - Real atoms (1-118) -> unchanged
+        """
+        out = species.copy()
+        out[species == 0] = 2       # mask -> He
+        out[species > 118] = 18     # ghost -> Ar
+        return out
+
     def _save_animations(self, inter_list: List[OMGData], base_filename: Path) -> None:
-        """Save trajectories for a subset of structures as multi-frame XYZ files."""
+        """Save trajectories for a subset of structures as multi-frame XYZ files.
+
+        Only called for the first predict batch to avoid overwrites and to keep
+        memory/disk usage reasonable.
+        """
         if not inter_list:
             return
 
@@ -468,14 +488,13 @@ class OMGLightning(lightning.LightningModule):
         if not subsampled:
             return
 
-        max_valid_z = 118
         for struct_idx in range(n_structures):
             frames: list[Atoms] = []
             for d in subsampled:
                 lower = d.ptr[struct_idx].item()
                 upper = d.ptr[struct_idx + 1].item()
-                species = d.species[lower:upper].detach().cpu().numpy().copy()
-                species[species > max_valid_z] = 0  # remap ghost atoms to dummy 'X'
+                species = d.species[lower:upper].detach().cpu().numpy()
+                species = self._remap_species_for_viz(species)
                 positions = d.pos[lower:upper, :].detach().cpu().numpy()
                 cell = d.cell[struct_idx, :, :].detach().cpu().numpy()
                 atoms = Atoms(
