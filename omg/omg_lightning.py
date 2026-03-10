@@ -450,15 +450,16 @@ class OMGLightning(lightning.LightningModule):
 
     @staticmethod
     def _remap_species_for_viz(species: np.ndarray) -> np.ndarray:
-        """Remap species so mask tokens and ghost atoms are distinguishable from real elements.
+        """Remap species so mask tokens and ghost atoms are valid for ASE.
 
-        - Mask token (0) -> He (2) — shows as a distinct light element in viewers
-        - Ghost atoms (>118) -> Ar (18) — shows as a different inert element
+        - Mask token (0) -> He (2) — distinguishable from ghost in viewers
+        - Ghost atoms (>118) -> X (0) — matches xyz_saver convention
         - Real atoms (1-118) -> unchanged
         """
         out = species.copy()
-        out[species == 0] = 2       # mask -> He
-        out[species > 118] = 18     # ghost -> Ar
+        mask_tokens = species == 0
+        out[species > 118] = 0      # ghost -> X (same as xyz_saver)
+        out[mask_tokens] = 2         # mask -> He
         return out
 
     def _save_animations(self, inter_list: List[OMGData], base_filename: Path) -> None:
