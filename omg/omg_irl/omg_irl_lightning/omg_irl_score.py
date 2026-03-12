@@ -42,6 +42,10 @@ class OMGIRLScore(OMGIRLLightningAbstract):
     of atoms per structure. To prevent policy updates from being biased toward larger crystals, different position
     normalization modes can be selected.
 
+    One cannot use this class to reinforce the discrete species field. If species are integrated by the base model, they
+    are passively integrated using the frozen base model at each timestep without any RL. This enables de novo
+    generation where species are predicted alongside positions and lattice vectors.
+
     :param reward:
         Reward function to evaluate the generated structures.
     :type reward: Reward
@@ -128,7 +132,6 @@ class OMGIRLScore(OMGIRLLightningAbstract):
         If all relative costs are zero.
         If any relative cost key does not follow the format '<data_field>_<cost_type>', where <cost_type> is one of
         'policy', 'regularization', or 'distillation'.
-        If integrating species is enabled.
         If an integrated data field is missing a noise schedule or relative costs.
         If an integrated data field is not disabled but does not use an SDE integrated interpolant.
         If velocity prediction is not enabled for position or cell data fields when using SingleStochasticInterpolantOS.
@@ -204,7 +207,8 @@ class OMGIRLScore(OMGIRLLightningAbstract):
                                  f"Expected 'policy', 'regularization', or 'distillation'.")
 
         if self.integrate_species:
-            raise ValueError("Integrating species is not supported in OMGIRLScore.")
+            # RL for the discrete species generation in OMGIRLScore is not supported.
+            self.disable_fields.add(DataField.species)
 
         for integrated_data_field in self.integrated_data_fields:
             if integrated_data_field in self.disable_fields:
@@ -401,6 +405,13 @@ class OMGIRLScore(OMGIRLLightningAbstract):
 
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + drift * dt + noise * sqrt_dt)
+
+            if self.integrate_species:
+                # Integrate species using the frozen base model (no RL on species).
+                species_b = base_model_output[DataField.species.name + "_b"]
+                species_eta = base_model_output[DataField.species.name + "_eta"]
+                x_t.species = self.species_interpolant.integrate(lambda _, __: (species_b, species_eta), x_t.species, t,
+                                                                 dt, x_t.batch)
 
             sampled_actions.append(step_sampled_actions)
             old_log_probs.append(step_old_log_probs)
@@ -684,5 +695,12 @@ class OMGIRLScore(OMGIRLLightningAbstract):
 
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + drift * dt + noise * sqrt_dt)
+
+            if self.integrate_species:
+                # Integrate species using the frozen base model (no RL on species).
+                species_b = base_model_output[DataField.species.name + "_b"]
+                species_eta = base_model_output[DataField.species.name + "_eta"]
+                x_t.species = self.species_interpolant.integrate(lambda _, __: (species_b, species_eta), x_t.species, t,
+                                                                 dt, x_t.batch)
 
         return x_t

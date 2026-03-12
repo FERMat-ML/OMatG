@@ -63,7 +63,8 @@ class OMGIRLVelocity(OMGIRLScale):
 
     The GRPO framework is used to reinforce the velocity fields for the atomic positions and the lattice vectors,
     given that they are integrated by the base model. Any scores predicted by the base model are ignored. Optionally,
-    one can switch off the reinforcement for each of these data fields.
+    one can switch off the reinforcement for each of these data fields. In this case, the base model's velocity field is
+    used without modification, and no noise is added during integration.
 
     For every data field that is reinforced, the loss consists of a policy loss, a regularization loss, and optionally,
     if the noise schedule for that data field is learnable, an entropy loss. The relative costs of these losses should
@@ -74,8 +75,9 @@ class OMGIRLVelocity(OMGIRLScale):
     of atoms per structure. To prevent policy updates from being biased toward larger crystals, different position
     normalization modes can be selected.
 
-    It is possible to disable reinforcement of the velocity field for specific data fields. For these data fields, the
-    base model velocity is used without modification, and no noise is added.
+    One cannot use this class to reinforce the discrete species field. If species are integrated by the base model, they
+    are passively integrated using the frozen base model at each timestep without any RL. This enables de novo
+    generation where species are predicted alongside positions and lattice vectors.
 
     :param reward:
         Reward function to evaluate the generated structures.
@@ -168,7 +170,6 @@ class OMGIRLVelocity(OMGIRLScale):
         If all relative costs are zero.
         If any relative cost key does not follow the format '<data_field>_<cost_type>', where <cost_type> is one of
         'policy', 'regularization', or 'entropy'.
-        If integrating species is enabled.
         If an integrated data field is missing a reference noise schedule, noise schedule, or relative costs.
         If velocity prediction is not enabled for position or cell data fields when using SingleStochasticInterpolantOS.
         If position_normalization is invalid.
@@ -324,6 +325,13 @@ class OMGIRLVelocity(OMGIRLScale):
 
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
+
+            if self.integrate_species:
+                # Integrate species using the frozen base model (no RL on species).
+                species_b = base_model_output[DataField.species.name + "_b"]
+                species_eta = base_model_output[DataField.species.name + "_eta"]
+                x_t.species = self.species_interpolant.integrate(lambda _, __: (species_b, species_eta), x_t.species, t,
+                                                                 dt, x_t.batch)
 
             sampled_actions.append(step_sampled_actions)
             old_log_probs.append(step_old_log_probs)
@@ -615,5 +623,12 @@ class OMGIRLVelocity(OMGIRLScale):
 
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
+
+            if self.integrate_species:
+                # Integrate species using the frozen base model (no RL on species).
+                species_b = base_model_output[DataField.species.name + "_b"]
+                species_eta = base_model_output[DataField.species.name + "_eta"]
+                x_t.species = self.species_interpolant.integrate(lambda _, __: (species_b, species_eta), x_t.species, t,
+                                                                 dt, x_t.batch)
 
         return x_t
