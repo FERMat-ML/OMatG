@@ -43,6 +43,10 @@ class OMGIRLScale(OMGIRLLightningAbstract):
     relative costs of these losses should be specified with the keys '<data_field>_policy',
     '<data_field>_regularization', and '<data_field>_entropy' in the relative_costs dictionary.
 
+    One cannot use this class to learn a velocity-annealing schedule for the discrete species. If species are integrated
+    by the base model, they are passively integrated using the frozen base model at each timestep without any RL. This
+    enables de novo generation where species are predicted alongside positions and lattice vectors.
+
     :param reward:
         Reward function to evaluate the generated structures.
     :type reward: Reward
@@ -133,7 +137,6 @@ class OMGIRLScale(OMGIRLLightningAbstract):
         If all relative costs are zero.
         If any relative cost key does not follow the format '<data_field>_<cost_type>', where <cost_type> is one of
         'policy', 'regularization', or 'entropy'.
-        If integrating species is enabled.
         If an integrated data field is missing a reference noise schedule, noise schedule, or relative costs.
         If velocity prediction is not enabled for position or cell data fields when using SingleStochasticInterpolantOS.
     """
@@ -207,7 +210,8 @@ class OMGIRLScale(OMGIRLLightningAbstract):
                                  f"Expected 'policy', 'regularization', or 'entropy'.")
 
         if self.integrate_species:
-            raise ValueError("Integrating species is not supported in OMGIRLScale.")
+            # Learning a velocity-annealing schedule for the species in OMGIRLScale is not supported.
+            self.disable_fields.add(DataField.species)
 
         for integrated_data_field in self.integrated_data_fields:
             if integrated_data_field in self.disable_fields:
@@ -387,6 +391,13 @@ class OMGIRLScale(OMGIRLLightningAbstract):
 
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
+
+            if self.integrate_species:
+                # Integrate species using the frozen base model (no RL on species).
+                species_b = base_model_output[DataField.species.name + "_b"]
+                species_eta = base_model_output[DataField.species.name + "_eta"]
+                x_t.species = self.species_interpolant.integrate(lambda _, __: (species_b, species_eta), x_t.species, t,
+                                                                 dt, x_t.batch)
 
             sampled_actions.append(step_sampled_actions)
             old_log_probs.append(step_old_log_probs)
@@ -640,6 +651,13 @@ class OMGIRLScale(OMGIRLLightningAbstract):
 
                 # Euler-Maruyama update for SDE.
                 x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
+
+            if self.integrate_species:
+                # Integrate species using the frozen base model (no RL on species).
+                species_b = base_model_output[DataField.species.name + "_b"]
+                species_eta = base_model_output[DataField.species.name + "_eta"]
+                x_t.species = self.species_interpolant.integrate(lambda _, __: (species_b, species_eta), x_t.species, t,
+                                                                 dt, x_t.batch)
 
         return x_t
 
