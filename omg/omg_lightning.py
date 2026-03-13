@@ -471,7 +471,7 @@ class OMGLightning(lightning.LightningModule):
         :rtype: OMGData
         """
         x_0 = self.sampler.sample_p_0(x).to(self.device)
-        gen, inter = self.si.integrate(x_0, self.model, save_intermediate=True)
+        gen = self.si.integrate(x_0, self.model, save_intermediate=False)
         filename = (Path(self.generation_xyz_filename) if self.generation_xyz_filename is not None
                     else Path(f"{time.strftime('%Y%m%d-%H%M%S')}.xyz"))
         init_filename = filename.with_stem(filename.stem + "_init")
