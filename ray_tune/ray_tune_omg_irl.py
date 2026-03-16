@@ -123,7 +123,7 @@ def train_omg_irl_tune(config: dict, base_rl_config: dict, base_omg_config_path:
 
 def tune_omg_irl(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_path: Path,
                  storage_path: Path, temp_dir: Optional[Path], project_name: str, cpus_per_trial: int,
-                 gpus_per_trial: int, restore: bool, metric: str, mode: str, max_t: int) -> None:
+                 gpus_per_trial: int, restore: bool, metric: str, mode: str, max_t: int, grace_period: int) -> None:
     with open(rl_config, "r") as f:
         rl_config = yaml.unsafe_load(f)
 
@@ -138,7 +138,7 @@ def tune_omg_irl(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_p
 
     init(address="local", log_to_driver=True, _temp_dir=str(temp_dir) if temp_dir is not None else None)
     # Here max_t is in unites of the computation of the metric.
-    scheduler = ASHAScheduler(max_t=max_t)
+    scheduler = ASHAScheduler(max_t=max_t, grace_period=grace_period)
     sampler = TPESampler(seed=0)
     # noinspection PyTypeChecker
     algo = OptunaSearch(sampler=sampler, metric=metric, mode=mode)
@@ -217,7 +217,7 @@ def main():
     tune_omg_irl(num_samples=-1, rl_config=absolute_rl_config_path, omg_config=absolute_omg_config_path,
                  omg_ckpt_path=absolute_omg_ckpt_path, storage_path=absolute_storage_path, temp_dir=args.temp_dir,
                  project_name=args.project_name, cpus_per_trial=args.cpus_per_trial, gpus_per_trial=args.gpus_per_trial,
-                 restore=args.restore, metric="val_reward_mean", mode="max", max_t=10)
+                 restore=args.restore, metric="val_reward_mean", mode="max", max_t=10, grace_period=5)
 
 
 if __name__ == '__main__':
