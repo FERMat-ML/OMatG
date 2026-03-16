@@ -130,9 +130,11 @@ def tune_omg_irl(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_p
     search_space = {}
     for key, value in yield_flattened_items(rl_config):
         if isinstance(value, Domain):
-            if key in search_space:
-                raise RuntimeError(f"Duplicate key {key} found in search space.")
-            search_space[key] = value
+            # Convert tuple key to dot-separated string
+            str_key = ".".join(str(k) for k in key)
+            if str_key in search_space:
+                raise RuntimeError(f"Duplicate key {str_key} found in search space.")
+            search_space[str_key] = value
 
     init(address="local", log_to_driver=True, _temp_dir=str(temp_dir) if temp_dir is not None else None)
     # Here max_t is in unites of the computation of the metric.
