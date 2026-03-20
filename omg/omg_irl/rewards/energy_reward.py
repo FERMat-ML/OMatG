@@ -92,7 +92,7 @@ class EnergyReward(Reward):
                  default_dtype: Literal["float32", "float64"] = "float64", enable_cueq: bool = False,
                  max_memory_scaler: float = 500000.0, invalid_penalty: Optional[float] = None,
                  volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
-                 polar_sine_cutoff: float = 1.0e-3) -> None:
+                 polar_sine_cutoff: float = 1.0e-3, clip_std: Optional[float] = None) -> None:
         """Constructor for EnergyReward."""
         super().__init__()
         if not scale > 0.0:
@@ -103,6 +103,8 @@ class EnergyReward(Reward):
             raise ValueError("Structure check cutoff must be non-negative.")
         if not polar_sine_cutoff >= 0.0:
             raise ValueError("Polar sine cutoff must be non-negative.")
+        if clip_std is not None and not clip_std > 0.0:
+            raise ValueError("clip_std must be positive.")
         self._scale = scale
         self._device = device
         self._default_dtype = default_dtype
@@ -135,6 +137,7 @@ class EnergyReward(Reward):
         self._volume_check_cutoff = volume_check_cutoff
         self._structure_check_cutoff = structure_check_cutoff
         self._polar_sine_cutoff = polar_sine_cutoff
+        self._clip_std = clip_std
 
     def _is_valid(self, structure: Structure) -> bool:
         """Check if the structure is valid based on volume, interatomic distances, and polar sine criteria."""
@@ -207,6 +210,17 @@ class EnergyReward(Reward):
             assert len(res) == len(valid_atoms)
             energies[valid_mask] = [float(r["potential_energy"][0]) / len(atoms)
                                     for r, atoms in zip(res, valid_atoms)]
+
+        if self._clip_std is not None:
+            valid_mask = (invalid_flags == 0.0)
+            valid_energies = energies[valid_mask]
+            if valid_energies.size > 1:
+                mean = valid_energies.mean()
+                std = valid_energies.std()
+                if std > 0.0:
+                    low = mean - self._clip_std * std
+                    high = mean + self._clip_std * std
+                    energies[valid_mask] = np.clip(energies[valid_mask], low, high)
 
         rewards = -self._scale * energies  # Minimize energy.
         info_dict = {"energy_per_atom": energies, "energy_invalid": invalid_flags}
