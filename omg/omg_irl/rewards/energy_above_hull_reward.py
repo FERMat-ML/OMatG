@@ -17,12 +17,12 @@ with prefixed_stdout(prefix="[TorchSim] "):
     from torch_sim.autobatching import BinningAutoBatcher
     from torch_sim.models.mace import MaceModel
 
-from ._energy_above_hull import get_energy_above_hull
+from .lemat_genbench_energy_above_hull import get_energy_above_hull
 
 
 class EnergyAboveHullReward(Reward):
     """
-    Reward function that encourages thermodynamic stability by minimizing the energy above the convex hull.
+    Reward function that encourages thermodynamic stability by minimizing the energy above the convex hull per atom.
 
     This reward is designed for de-novo generation (DNG) where different structures in a GRPO group may have different
     compositions. Unlike raw energy per atom, energy above hull is a composition-aware stability metric that measures
@@ -32,27 +32,16 @@ class EnergyAboveHullReward(Reward):
     1. Compute total energy of each structure using MACE-MPA-0.
     2. Extract the composition from the generated species.
     3. Compute the energy above the convex hull using reference phase diagrams from the LeMat-GenBench dataset.
-    4. Return the negative energy above hull as the reward (lower e_above_hull = more stable = higher reward).
+    4. Return the negative energy above hull per atom as the reward (lower e_above_hull = more stable = higher reward).
 
     Invalid structures (based on volume, interatomic distance, and polar sine criteria) are assigned a configurable
     penalty value.
-
-    The convex hull phase diagrams are cached per unique set of elements to avoid expensive recomputation.
 
     :param scale:
         Scaling factor for the reward.
         Must be positive.
         Defaults to 1.0.
     :type scale: float
-    :param hull_type:
-        Type of convex hull to use for the reference phase diagram.
-        "mace_omat" uses the OMatG hull, "mace_mp" uses the Materials Project hull.
-        Defaults to "mace_omat".
-    :type hull_type: Literal["mace_mp", "mace_omat"]
-    :param hull_threshold:
-        Energy above hull threshold in eV/atom for filtering the reference dataset.
-        Defaults to 0.001.
-    :type hull_threshold: float
     :param device:
         The device to run MACE on. Can be "cpu" or "cuda".
         Defaults to "cpu".
@@ -62,30 +51,33 @@ class EnergyAboveHullReward(Reward):
         Defaults to "float64".
     :type default_dtype: Literal["float32", "float64"]
     :param enable_cueq:
-        Whether to enable CuEq in MACE.
+        Whether to enable the CuEq in MACE.
         Defaults to False.
     :type enable_cueq: bool
     :param max_memory_scaler:
         The max_memory_scaler parameter for TorchSim's BinningAutoBatcher when using CUDA.
-        Defaults to 500000.0.
+        Defaults to 500000.0, which is adjusted for 80GB A100 GPUs and the MP20 dataset.
     :type max_memory_scaler: float
     :param invalid_penalty:
-        Penalty energy above hull in eV/atom to assign to invalid structures.
+        Penalty energy above hull to assign to invalid structures.
         If None, no penalty is applied and energies for invalid structures are computed normally.
         Defaults to None.
     :type invalid_penalty: Optional[float]
     :param volume_check_cutoff:
         Minimum volume for which to compute the energy normally.
+        If the generated structure has a volume below this cutoff, the energy above hull is potentially penalized.
         Must be non-negative.
         Defaults to 0.1.
     :type volume_check_cutoff: float
     :param structure_check_cutoff:
-        Minimum interatomic distance threshold.
+        If the minimum interatomic distance in the generated structure is below this cutoff, the energy above hull is
+        potentially penalized.
         Must be non-negative.
         Defaults to 0.5.
     :type structure_check_cutoff: float
     :param polar_sine_cutoff:
-        Minimum polar sine threshold.
+        If the polar sine (volume / product of lattice lengths) of the generated structure is below this cutoff,
+        the energy above hull is potentially penalized.
         Must be non-negative.
         Defaults to 1.0e-3.
     :type polar_sine_cutoff: float
@@ -97,8 +89,7 @@ class EnergyAboveHullReward(Reward):
         If polar_sine_cutoff is negative.
     """
 
-    def __init__(self, scale: float = 1.0, hull_type: Literal["mace_mp", "mace_omat"] = "mace_omat",
-                 hull_threshold: float = 0.001, device: Literal["cpu", "cuda"] = "cpu",
+    def __init__(self, scale: float = 1.0, device: Literal["cpu", "cuda"] = "cpu",
                  default_dtype: Literal["float32", "float64"] = "float64", enable_cueq: bool = False,
                  max_memory_scaler: float = 500000.0, invalid_penalty: Optional[float] = None,
                  volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
@@ -114,8 +105,6 @@ class EnergyAboveHullReward(Reward):
         if not polar_sine_cutoff >= 0.0:
             raise ValueError("Polar sine cutoff must be non-negative.")
         self._scale = scale
-        self._hull_type = hull_type
-        self._hull_threshold = hull_threshold
         self._device = device
         self._default_dtype = default_dtype
         # Catch warnings from MACE and prefix stdout.
@@ -162,30 +151,12 @@ class EnergyAboveHullReward(Reward):
         polar_sine_valid = (polar_sine >= self._polar_sine_cutoff)
         return volume_valid and structure_valid and polar_sine_valid
 
-    def _compute_energy_above_hull(self, total_energy: float, composition: Composition) -> float:
-        """
-        Compute the energy above the convex hull for a structure with the given total energy and composition.
-
-        :param total_energy:
-            Total energy in eV.
-        :type total_energy: float
-        :param composition:
-            Pymatgen Composition object.
-        :type composition: Composition
-
-        :return:
-            Energy above hull in eV/atom.
-        :rtype: float
-        """
-        return get_energy_above_hull(total_energy, composition, hull_type=self._hull_type,
-                                     threshold=self._hull_threshold)
-
     def compute(self, structures: Sequence[Structure], stage: ComputeStage,
                 enable_progress_bar: bool) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         """
         Compute energy above hull rewards for a batch of structures.
 
-        First computes total energies using MACE, then computes energy above hull for each structure using its
+        First computes total energies using MACE, then computes energy above hull per atom for each structure using its
         composition and the reference convex hull.
 
         The stage parameter is included for compatibility but is not used in this reward function.
@@ -204,27 +175,22 @@ class EnergyAboveHullReward(Reward):
             (Rewards per structure, info dictionary with 'e_above_hull', 'energy_per_atom', and 'ehull_invalid' keys).
         :rtype: tuple[np.ndarray, dict[str, np.ndarray]]
         """
-        e_above_hull = np.empty(len(structures), dtype=float)
-        energies_per_atom = np.empty(len(structures), dtype=float)
+        energies = np.empty(len(structures), dtype=float)
         invalid_flags = np.zeros(len(structures), dtype=float)
 
-        # Step 1: Compute total energies using MACE (same as EnergyReward).
-        total_energies = np.empty(len(structures), dtype=float)
         if self._device == "cpu":
-            with torch.set_grad_enabled(True):  # MACE needs gradients.
+            with torch.set_grad_enabled(True):  # Mace needs gradients.
+                # Mace calculator needs appropriate default dtype.
                 torch.set_default_dtype(torch.float64 if self._default_dtype == "float64" else torch.float32)
                 for idx, structure in enumerate(tqdm.tqdm(structures, desc="Computing energies with MACE",
                                                           disable=not enable_progress_bar, unit="structures",
                                                           position=1)):
                     if self._invalid_penalty is not None and not self._is_valid(structure):
-                        total_energies[idx] = np.nan
-                        energies_per_atom[idx] = np.nan
-                        e_above_hull[idx] = self._invalid_penalty
+                        energies[idx] = np.nan
                         invalid_flags[idx] = 1.0
                         continue
-                    total_energies[idx] = self._mace_model.get_potential_energy(structure.get_ase_atoms())
-                    energies_per_atom[idx] = total_energies[idx] / len(structure.atomic_numbers)
-                torch.set_default_dtype(torch.float32)
+                    energies[idx] = self._mace_model.get_potential_energy(structure.get_ase_atoms())
+                torch.set_default_dtype(torch.float32)  # Undo the change to default dtype.
         else:
             assert self._device == "cuda"
             if self._invalid_penalty is not None:
@@ -232,9 +198,7 @@ class EnergyAboveHullReward(Reward):
             else:
                 valid_mask = np.ones(len(structures), dtype=bool)
 
-            total_energies[~valid_mask] = np.nan
-            energies_per_atom[~valid_mask] = np.nan
-            e_above_hull[~valid_mask] = self._invalid_penalty
+            energies[~valid_mask] = np.nan
             invalid_flags[~valid_mask] = 1.0
 
             valid_atoms = [structures[i].get_ase_atoms() for i in range(len(structures)) if valid_mask[i]]
@@ -243,34 +207,35 @@ class EnergyAboveHullReward(Reward):
                                "postfix": f"{len(structures) - len(valid_atoms)} invalid structures",
                                "unit": "structures", "position": 1, "leave": False} if enable_progress_bar else False)
             assert len(res) == len(valid_atoms)
-            valid_idx = 0
-            for i in range(len(structures)):
-                if valid_mask[i]:
-                    total_energies[i] = float(res[valid_idx]["potential_energy"][0])
-                    energies_per_atom[i] = total_energies[i] / len(structures[i].atomic_numbers)
-                    valid_idx += 1
+            energies[valid_mask] = [float(r["potential_energy"][0])
+                                    for r, atoms in zip(res, valid_atoms)]
 
-        # Step 2: Compute energy above hull for valid structures.
+        e_above_hull = np.empty(len(structures), dtype=float)
+        hull_error_flags = np.zeros(len(structures), dtype=float)
+
         for idx in tqdm.tqdm(range(len(structures)), desc="Computing energy above hull",
                              disable=not enable_progress_bar, unit="structures", position=1):
             if invalid_flags[idx] > 0.5:
-                continue  # Already assigned penalty.
+                e_above_hull[idx] = self._invalid_penalty
             try:
                 composition = structures[idx].get_pymatgen_structure().composition
-                e_above_hull[idx] = self._compute_energy_above_hull(total_energies[idx], composition)
-            except ValueError as e:
-                logging.warning(f"Failed to compute energy above hull for structure {idx}: {e}")
+                # Use hull type and threshold as in LeMat-GenBench.
+                # This is already the energy above hull per atom.
+                e_above_hull[idx] = get_energy_above_hull(energies[idx], composition, hull_type="mace_mp",
+                                                          threshold=0.001)
+            except ValueError:
+                hull_error_flags[idx] = 1.0
                 if self._invalid_penalty is not None:
                     e_above_hull[idx] = self._invalid_penalty
-                    invalid_flags[idx] = 1.0
                 else:
                     # Fall back to a large positive value (very unstable).
                     e_above_hull[idx] = 10.0
 
         rewards = -self._scale * e_above_hull  # Minimize energy above hull.
         info_dict = {
-            "e_above_hull": e_above_hull,
-            "energy_per_atom": energies_per_atom,
-            "ehull_invalid": invalid_flags,
+            "energy_above_hull_per_atom": e_above_hull,
+            "energy": energies,
+            "energy_invalid": invalid_flags,
+            "hull_error": hull_error_flags,
         }
         return rewards, info_dict

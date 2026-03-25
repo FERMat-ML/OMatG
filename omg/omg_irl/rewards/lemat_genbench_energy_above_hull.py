@@ -50,7 +50,7 @@ def _one_hot_encode_composition(elements) -> np.ndarray:
 
 
 @lru_cache(maxsize=None)
-def _retrieve_df(hull_type: str = "mace_omat", threshold: float = 0.001):
+def _retrieve_df(hull_type: str = "mace_mp", threshold: float = 0.001):
     """Retrieve the reference dataset for hull computations from HuggingFace Hub.
 
     Tries loading via the ``datasets`` library first (``LeMaterial/LeMat-Bulk-MLIP-Hull``),
@@ -77,7 +77,7 @@ def _retrieve_df(hull_type: str = "mace_omat", threshold: float = 0.001):
 
 
 @lru_cache(maxsize=None)
-def _retrieve_matrix(hull_type: str = "mace_omat", threshold: float = 0.001) -> np.ndarray:
+def _retrieve_matrix(hull_type: str = "mace_mp", threshold: float = 0.001) -> np.ndarray:
     """Retrieve the composition matrix for hull computations from HuggingFace Hub.
 
     The result is cached so subsequent calls with the same arguments are free.
@@ -112,7 +112,7 @@ def _filter_df(df, matrix: np.ndarray, composition: Composition):
 
 
 def get_energy_above_hull(total_energy: float, composition: Composition,
-                          hull_type: str = "mace_omat", threshold: float = 0.001) -> float:
+                          hull_type: str = "mace_mp", threshold: float = 0.001) -> float:
     """Calculate energy above the convex hull from total energy and composition.
 
     Parameters
@@ -123,7 +123,7 @@ def get_energy_above_hull(total_energy: float, composition: Composition,
         Pymatgen Composition object (may contain charged species).
     hull_type : str
         Reference hull type. One of 'mace_mp', 'mace_omat', 'dft', 'orb', 'uma'.
-        Defaults to 'mace_omat'.
+        Defaults to 'mace_mp'.
     threshold : float
         Energy above hull threshold in eV/atom for filtering the reference dataset.
         Defaults to 0.001.
