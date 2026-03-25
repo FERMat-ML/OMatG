@@ -28,6 +28,7 @@ from omg.si.corrector import PeriodicBoundaryConditionsCorrector
 from omg.utils import convert_ase_atoms_to_data, prefixed_stdout, xyz_reader
 from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_cov, get_space_group,
                           get_volume_frac, match_rmsds, metre_rmsds, ValidAtoms)
+from omg.omg_irl.rewards.lemat_genbench_energy_above_hull import get_energy_above_hull
 
 
 class OMGTrainer(Trainer):
@@ -1223,6 +1224,207 @@ class OMGTrainer(Trainer):
             json.dump({
                 "mean_energy_per_atom": float(np.mean(valid_energies)),
                 "number_invalid_energies": int(number_invalid_energies)
+            }, f, indent=4)
+
+    def energy_above_hull_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
+                                  result_name: str = "energy_above_hull_metrics.json",
+                                  ehull_storage_file: str = "ehull_per_atom.npy",
+                                  energy_storage_file: str = "energies_per_atom.npy",
+                                  hull_type: str = "mace_omat", hull_threshold: float = 0.001,
+                                  device: Literal["cpu", "cuda"] = "cpu",
+                                  default_dtype: Literal["float32", "float64"] = "float64", enable_cueq: bool = False,
+                                  max_memory_scaler: float = 250000.0, volume_check_cutoff: float = 0.1,
+                                  structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3) -> None:
+        """
+        Compute the energy above the convex hull per atom for generated structures.
+
+        First computes total energies with MACE, then computes the energy above the convex hull for each valid
+        structure using its composition and a reference phase diagram from the LeMat-GenBench dataset. This metric is
+        appropriate for de-novo generation (DNG) where structures may have different compositions.
+
+        An invalid structure is a structure that fails volume, structure, or polar sine checks. Structures where the
+        hull computation fails (e.g., elements not in the reference dataset) are also marked as invalid.
+
+        When using a CUDA device, the MACE calculations are batched using TorchSim's BinningAutoBatcher for
+        improved performance.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        :param xyz_file:
+            XYZ file containing the generated structures.
+            This argument has to be set on the command line.
+        :type xyz_file: str
+        :param result_name:
+            Name of the json file to save the energy above hull results.
+            Defaults to "energy_above_hull_metrics.json".
+        :type result_name: str
+        :param ehull_storage_file:
+            Name of the NumPy file to save the energy above hull per atom values.
+            Defaults to "ehull_per_atom.npy".
+        :type ehull_storage_file: str
+        :param energy_storage_file:
+            Name of the NumPy file to save the energies per atom.
+            Defaults to "energies_per_atom.npy".
+        :type energy_storage_file: str
+        :param hull_type:
+            Reference hull type. One of 'mace_omat', 'mace_mp', 'dft', 'orb', 'uma'.
+            Defaults to "mace_omat".
+        :type hull_type: str
+        :param hull_threshold:
+            Energy above hull threshold in eV/atom for filtering the reference dataset.
+            Defaults to 0.001.
+        :type hull_threshold: float
+        :param device:
+            The device to run MACE on. Can be "cpu" or "cuda".
+            Defaults to "cpu".
+        :type device: Literal["cpu", "cuda"]
+        :param default_dtype:
+            The default dtype to use for MACE. Can be "float32" or "float64".
+            Defaults to "float64".
+        :type default_dtype: Literal["float32", "float64"]
+        :param enable_cueq:
+            Whether to enable the CuEq in MACE.
+            Defaults to False.
+        :type enable_cueq: bool
+        :param max_memory_scaler:
+            The max_memory_scaler parameter for TorchSim's BinningAutoBatcher when using CUDA.
+            Defaults to 250000.0, which is adjusted for 80GB H100 GPUs, the MP20 dataset, and float64 precision.
+        :type max_memory_scaler: float
+        :param volume_check_cutoff:
+            The cutoff for the volume check in cubic angstroms. Structures with volume below this cutoff are
+            considered invalid.
+            Defaults to 0.1.
+        :type volume_check_cutoff: float
+        :param structure_check_cutoff:
+            The cutoff for the structure check in angstroms. Structures with minimum interatomic distance below
+            this cutoff are considered invalid.
+            Defaults to 0.5.
+        :type structure_check_cutoff: float
+        :param polar_sine_cutoff:
+            The cutoff for the polar sine check. Structures with polar sine of the lattice below this cutoff
+            are considered invalid.
+            Defaults to 1.0e-3.
+        :type polar_sine_cutoff: float
+
+        :raises FileNotFoundError:
+            If the xyz_file does not exist.
+        :raises ValueError:
+            If the result_name does not end with .json.
+        """
+        with warnings.catch_warnings(), prefixed_stdout(prefix="[MACE] "):
+            warnings.simplefilter("ignore", category=UserWarning)
+            from mace.calculators import mace_mp
+        with prefixed_stdout(prefix="[TorchSim] "):
+            from torch_sim import static
+            from torch_sim.autobatching import BinningAutoBatcher
+            from torch_sim.models.mace import MaceModel
+
+        # Catch warnings from MACE and prefix stdout.
+        with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            if device == "cpu":
+                logging.disable(logging.WARNING)  # Newer versions of Mace log warnings.
+                # Calling mace_mp with return_raw_model=False changes the default dtype of torch.
+                mace_model = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq,
+                                     default_dtype=default_dtype)
+                logging.disable(logging.NOTSET)  # Undo the disabling of logging.
+                torch.set_default_dtype(torch.float32)  # Undo what happened in mace_mp construction.
+                batcher = None
+                if max_memory_scaler != 250000.0:
+                    warnings.warn("max_memory_scaler is only used when device is 'cuda', the specified value will be "
+                                  "ignored.")
+            else:
+                # TorchSim's batching does not work on CPU.
+                assert device == "cuda"
+                mace = mace_mp(model="medium-mpa-0", device=device, default_dtype=default_dtype,
+                               enable_cueq=enable_cueq, return_raw_model=True)
+                # noinspection PyTypeChecker
+                mace_model = MaceModel(model=mace, device=device, compute_forces=False, compute_stress=False,
+                                       dtype=torch.float64 if default_dtype == "float64" else torch.float32,
+                                       enable_cueq=enable_cueq)
+                batcher = BinningAutoBatcher(model=mace_model, max_memory_scaler=max_memory_scaler,
+                                             memory_scales_with="n_atoms_x_density")
+
+        def is_valid(atoms: Atoms) -> bool:
+            """Check if a structure is valid based on volume, structure, and polar sine checks."""
+            py_structure = AseAtomsAdaptor.get_structure(atoms)
+            volume_valid = (py_structure.volume >= volume_check_cutoff)
+            dist_mat = py_structure.distance_matrix
+            dist_mat = dist_mat + np.diag(
+                np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0)
+            )
+            min_dist = dist_mat.min()
+            structure_valid = (min_dist >= structure_check_cutoff)
+            polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+            polar_sine_valid = (polar_sine >= polar_sine_cutoff)
+            return volume_valid and structure_valid and polar_sine_valid
+
+        final_file = Path(xyz_file)
+        if not final_file.exists():
+            raise FileNotFoundError(f"File {final_file} does not exist.")
+
+        if not result_name.endswith(".json"):
+            raise ValueError("The result_name must end with .json")
+
+        # Get atoms
+        gen_atoms = xyz_reader(final_file)
+
+        total_energies = np.full(len(gen_atoms), np.nan, dtype=float)
+        valid_mask = np.array([is_valid(atoms) for atoms in gen_atoms])
+
+        if device == "cpu":
+            with torch.set_grad_enabled(True):  # Mace needs gradients.
+                # Mace calculator needs appropriate default dtype.
+                torch.set_default_dtype(torch.float64 if default_dtype == "float64" else torch.float32)
+                for idx, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Computing energies with MACE",
+                                                      unit="structures")):
+                    if valid_mask[idx]:
+                        total_energies[idx] = mace_model.get_potential_energy(atoms)
+                torch.set_default_dtype(torch.float32)  # Undo the change to default dtype.
+        else:
+            assert device == "cuda"
+            valid_atoms = [gen_atoms[i] for i in range(len(gen_atoms)) if valid_mask[i]]
+            res = static(system=valid_atoms, model=mace_model, autobatcher=batcher,
+                         pbar={"desc": "Computing valid energies with MACE",
+                               "postfix": f"{len(gen_atoms) - len(valid_atoms)} invalid structures",
+                               "unit": "structures"})
+            assert len(res) == len(valid_atoms)
+            total_energies[valid_mask] = np.array([float(r["potential_energy"][0]) for r in res])
+
+        energies_per_atom = np.array([total_energies[i] / len(gen_atoms[i]) if not np.isnan(total_energies[i])
+                                      else np.nan for i in range(len(gen_atoms))])
+        np.save(energy_storage_file, energies_per_atom)
+
+        ehull_per_atom = np.full(len(gen_atoms), np.nan, dtype=float)
+        num_hull_errors = 0
+        for idx in tqdm.tqdm(range(len(gen_atoms)), desc="Computing energy above hull", unit="structures"):
+            if not valid_mask[idx]:
+                continue
+            try:
+                composition = AseAtomsAdaptor.get_structure(gen_atoms[idx]).composition
+                ehull_per_atom[idx] = get_energy_above_hull(total_energies[idx], composition,
+                                                            hull_type="mace_mp", threshold=0.001)
+            except (ValueError, RuntimeError) as e:
+                num_hull_errors += 1
+
+        np.save(ehull_storage_file, ehull_per_atom)
+        valid_ehull = ehull_per_atom[~np.isnan(ehull_per_atom)]
+        number_invalid = int(np.sum(~valid_mask))
+
+        print("Mean energy above hull (eV/atom) of valid structures: ", float(np.mean(valid_ehull)))
+        print("Number of invalid structures (geometry checks): ", number_invalid)
+        print("Number of hull computation errors: ", num_hull_errors)
+
+        with open(result_name, "w") as f:
+            json.dump({
+                "mean_ehull_per_atom": float(np.mean(valid_ehull)),
+                "mean_energy_per_atom": float(np.nanmean(energies_per_atom)),
+                "number_invalid_structures": number_invalid,
+                "number_hull_errors": num_hull_errors
             }, f, indent=4)
 
     def fit_lattice(self, model: OMGLightning, datamodule: OMGDataModule) -> None:

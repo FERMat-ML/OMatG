@@ -207,8 +207,7 @@ class EnergyAboveHullReward(Reward):
                                "postfix": f"{len(structures) - len(valid_atoms)} invalid structures",
                                "unit": "structures", "position": 1, "leave": False} if enable_progress_bar else False)
             assert len(res) == len(valid_atoms)
-            energies[valid_mask] = [float(r["potential_energy"][0])
-                                    for r, atoms in zip(res, valid_atoms)]
+            energies[valid_mask] = [float(r["potential_energy"][0]) for r in res]
 
         e_above_hull = np.empty(len(structures), dtype=float)
         hull_error_flags = np.zeros(len(structures), dtype=float)
@@ -239,3 +238,4 @@ class EnergyAboveHullReward(Reward):
             "hull_error": hull_error_flags,
         }
         return rewards, info_dict
+
