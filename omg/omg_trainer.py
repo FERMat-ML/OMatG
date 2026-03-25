@@ -1230,7 +1230,6 @@ class OMGTrainer(Trainer):
                                   result_name: str = "energy_above_hull_metrics.json",
                                   ehull_storage_file: str = "ehull_per_atom.npy",
                                   energy_storage_file: str = "energies_per_atom.npy",
-                                  hull_type: str = "mace_omat", hull_threshold: float = 0.001,
                                   device: Literal["cpu", "cuda"] = "cpu",
                                   default_dtype: Literal["float32", "float64"] = "float64", enable_cueq: bool = False,
                                   max_memory_scaler: float = 250000.0, volume_check_cutoff: float = 0.1,
@@ -1270,14 +1269,6 @@ class OMGTrainer(Trainer):
             Name of the NumPy file to save the energies per atom.
             Defaults to "energies_per_atom.npy".
         :type energy_storage_file: str
-        :param hull_type:
-            Reference hull type. One of 'mace_omat', 'mace_mp', 'dft', 'orb', 'uma'.
-            Defaults to "mace_omat".
-        :type hull_type: str
-        :param hull_threshold:
-            Energy above hull threshold in eV/atom for filtering the reference dataset.
-            Defaults to 0.001.
-        :type hull_threshold: float
         :param device:
             The device to run MACE on. Can be "cpu" or "cuda".
             Defaults to "cpu".
