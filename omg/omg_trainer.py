@@ -1400,6 +1400,7 @@ class OMGTrainer(Trainer):
                 ehull_per_atom[idx] = get_energy_above_hull(total_energies[idx], composition,
                                                             hull_type="mace_mp", threshold=0.001)
             except (ValueError, RuntimeError) as e:
+                print("[WARNING] Failed to compute energy above hull: ", e)
                 num_hull_errors += 1
 
         np.save(ehull_storage_file, ehull_per_atom)
