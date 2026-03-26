@@ -213,7 +213,7 @@ class EnergyAboveHullReward(Reward):
         hull_error_flags = np.zeros(len(structures), dtype=float)
 
         for idx in tqdm.tqdm(range(len(structures)), desc="Computing energy above hull",
-                             disable=not enable_progress_bar, unit="structures", position=1):
+                             disable=not enable_progress_bar, unit="structures", position=1, leave=False):
             if invalid_flags[idx] > 0.5:
                 e_above_hull[idx] = self._invalid_penalty
             try:
