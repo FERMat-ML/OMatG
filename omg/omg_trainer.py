@@ -1228,7 +1228,7 @@ class OMGTrainer(Trainer):
 
     def energy_above_hull_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
                                   result_name: str = "energy_above_hull_metrics.json",
-                                  ehull_storage_file: str = "ehull_per_atom.npy",
+                                  energy_above_hull_storage_file: str = "energy_above_hull_per_atom.npy",
                                   energy_storage_file: str = "energies_per_atom.npy",
                                   device: Literal["cpu", "cuda"] = "cpu",
                                   default_dtype: Literal["float32", "float64"] = "float64", enable_cueq: bool = False,
@@ -1261,10 +1261,10 @@ class OMGTrainer(Trainer):
             Name of the json file to save the energy above hull results.
             Defaults to "energy_above_hull_metrics.json".
         :type result_name: str
-        :param ehull_storage_file:
+        :param energy_above_hull_storage_file:
             Name of the NumPy file to save the energy above hull per atom values.
-            Defaults to "ehull_per_atom.npy".
-        :type ehull_storage_file: str
+            Defaults to "energy_above_hull_per_atom.npy".
+        :type energy_above_hull_storage_file: str
         :param energy_storage_file:
             Name of the NumPy file to save the energies per atom.
             Defaults to "energies_per_atom.npy".
@@ -1403,7 +1403,7 @@ class OMGTrainer(Trainer):
                 print("[WARNING] Failed to compute energy above hull: ", e)
                 num_hull_errors += 1
 
-        np.save(ehull_storage_file, ehull_per_atom)
+        np.save(energy_above_hull_storage_file, ehull_per_atom)
         valid_ehull = ehull_per_atom[~np.isnan(ehull_per_atom)]
         number_invalid = int(np.sum(~valid_mask))
 
