@@ -58,10 +58,9 @@ def _retrieve_df(hull_type: str = "mace_mp", threshold: float = 0.001):
 
     The result is cached so subsequent calls with the same arguments are free.
     """
-    threshold_str = f"{threshold:.3f}".replace(".", "_")
     file_path = hf_hub_download(
         repo_id="LeMaterial/LeMat-Bulk-MLIP-Hull",
-        filename=f"threshold_{threshold_str}/{hull_type}_above_hull_dataset.parquet",
+        filename=f"data/{hull_type}-00000-of-00001.parquet",
         repo_type="dataset",
     )
     dataset = pd.read_parquet(file_path)
