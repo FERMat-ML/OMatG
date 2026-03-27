@@ -82,7 +82,7 @@ class ScaleMLP(nn.Module):
             ckpt = torch.load(checkpoint, map_location="cpu", weights_only=True)
             prefixes = ["scale_model.", "residual_model."]
             scale_state = {k.removeprefix(prefix): v for k, v in ckpt["state_dict"].items()
-                           if k.startswith(prefix) for prefix in prefixes}
+                           for prefix in prefixes if k.startswith(prefix)}
             if not scale_state:
                 raise RuntimeError(f"Checkpoint does not contain any keys with prefix in '{prefixes}': {checkpoint}")
             self.load_state_dict(scale_state)
