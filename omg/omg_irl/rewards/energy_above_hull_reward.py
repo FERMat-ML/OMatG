@@ -223,7 +223,7 @@ class EnergyAboveHullReward(Reward):
                 # This is already the energy above hull per atom.
                 e_above_hull[idx] = get_energy_above_hull(energies[idx], composition, hull_type="mace_mp",
                                                           threshold=0.001)
-            except ValueError:
+            except (ValueError, RuntimeError):
                 hull_error_flags[idx] = 1.0
                 if self._invalid_penalty is not None:
                     e_above_hull[idx] = self._invalid_penalty
