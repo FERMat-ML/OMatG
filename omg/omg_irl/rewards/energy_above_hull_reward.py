@@ -216,6 +216,7 @@ class EnergyAboveHullReward(Reward):
                              disable=not enable_progress_bar, unit="structures", position=1, leave=False):
             if invalid_flags[idx] > 0.5:
                 e_above_hull[idx] = self._invalid_penalty
+                continue
             try:
                 composition = structures[idx].get_pymatgen_structure().composition
                 # Use hull type and threshold as in LeMat-GenBench.
