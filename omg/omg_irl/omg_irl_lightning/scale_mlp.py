@@ -1,3 +1,4 @@
+from typing import Optional
 import torch
 import torch.nn as nn
 
@@ -28,14 +29,25 @@ class ScaleMLP(nn.Module):
         If True, use a shared trunk with separate heads for pos and cell. If False, use separate MLPs for pos and cell.
         Defaults to True.
     :type shared_trunk: bool
+    :param checkpoint:
+        Path to an OMGIRLScale Lightning checkpoint from which to load pre-trained scale model weights.
+        The checkpoint must contain keys prefixed with "scale_model." in its state_dict.
+        The architecture parameters (hidden_dimension, number_hidden_layers, shared_trunk) must match the checkpoint.
+        If provided, the weights are loaded after construction, overriding initialize_zeros.
+        Defaults to None.
+    :type checkpoint: Optional[str]
 
     :raises ValueError:
         If hidden_dimension is not positive.
         If number_hidden_layers is negative.
+    :raises FileNotFoundError:
+        If the checkpoint path does not exist.
+    :raises RuntimeError:
+        If the checkpoint does not contain scale_model weights or the architecture does not match.
     """
 
     def __init__(self, hidden_dimension: int = 64, number_hidden_layers: int = 2, initialize_zeros: bool = True,
-                 shared_trunk: bool = True) -> None:
+                 shared_trunk: bool = True, checkpoint: Optional[str] = None) -> None:
         """Constructor for TimeMLP."""
         super().__init__()
         if not hidden_dimension > 0:
@@ -65,6 +77,15 @@ class ScaleMLP(nn.Module):
                                              number_hidden_layers=number_hidden_layers,
                                              input_dimension=1, output_dimension=1,
                                              initialize_zeros=initialize_zeros)
+
+        if checkpoint is not None:
+            ckpt = torch.load(checkpoint, map_location="cpu", weights_only=True)
+            prefixes = ["scale_model.", "residual_model."]
+            scale_state = {k.removeprefix(prefix): v for k, v in ckpt["state_dict"].items()
+                           if k.startswith(prefix) for prefix in prefixes}
+            if not scale_state:
+                raise RuntimeError(f"Checkpoint does not contain any keys with prefix in '{prefixes}': {checkpoint}")
+            self.load_state_dict(scale_state)
 
     @staticmethod
     def _build_mlp(hidden_dimension: int, number_hidden_layers: int, input_dimension: int, output_dimension: int,

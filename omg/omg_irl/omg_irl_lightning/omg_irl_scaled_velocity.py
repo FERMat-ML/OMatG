@@ -30,9 +30,9 @@ class OMGIRLScaledVelocity(OMGIRLScale):
     dimension as b_theta(x_t, t), and sigma(t) is a (potentially learnable) noise schedule.
 
     Analogously, the reference policy is given by
-    x_t+dt = x_t + b_ref(x_t, t) * dt + sigma_ref(t) * randn * sqrt(dt),
-    where b_ref(x_t, t) is the velocity field predicted by the frozen base model, and sigma_ref(t) is a fixed reference
-    noise schedule.
+    x_t+dt = x_t + (1 + s(t)) * b_ref(x_t, t) * dt + sigma_ref(t) * randn * sqrt(dt),
+    where b_ref(x_t, t) is the velocity field predicted by the frozen base model, s(t) is the frozen pre-trained scale,
+    and sigma_ref(t) is a fixed reference noise schedule.
 
     The scale model must be pre-trained using OMGIRLScale. It is frozen upon construction and not updated during
     training, serving as a fixed warm start for the velocity learning.
