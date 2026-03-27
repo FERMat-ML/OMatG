@@ -234,7 +234,6 @@ class EnergyAboveHullReward(Reward):
         rewards = -self._scale * e_above_hull  # Minimize energy above hull.
         info_dict = {
             "energy_above_hull_per_atom": e_above_hull,
-            "energy": energies,
             "energy_invalid": invalid_flags,
             "hull_error": hull_error_flags,
         }
