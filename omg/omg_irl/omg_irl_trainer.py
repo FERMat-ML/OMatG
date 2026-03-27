@@ -60,7 +60,7 @@ class OMGIRLTrainer(Trainer):
 
         # noinspection PyTypeChecker
         times = torch.linspace(SMALL_TIME, BIG_TIME, model.integration_time_steps)
-        schedules = model.scale_model(None, times.unsqueeze(-1))
+        schedules = model.scale_model(times)
 
         plt.figure()
         plt.plot(times.numpy(), schedules["pos_s"].squeeze(-1).numpy(force=True), label="atomic positions")
