@@ -1527,6 +1527,7 @@ class OMGTrainer(Trainer):
             except RuntimeError as e:
                 warnings.warn(f"Structure {i} relaxation failed with error: {e}")
                 failed_relaxations += 1
+                write(str(relaxed_file), original_atoms.copy(), format='extxyz', append=True)
                 continue
 
             steps = optimizer.get_number_of_steps()
