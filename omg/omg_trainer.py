@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import Literal, Optional, Sequence, Union
 import warnings
 from ase import Atoms
+from ase.filters import FrechetCellFilter
 from ase.io import write
+import ase.optimize
 from lightning.pytorch import Trainer
 import lmdb
 import matplotlib.pyplot as plt
@@ -1417,6 +1419,132 @@ class OMGTrainer(Trainer):
                 "mean_energy_per_atom": float(np.nanmean(energies_per_atom)),
                 "number_invalid_structures": number_invalid,
                 "number_hull_errors": num_hull_errors
+            }, f, indent=4)
+
+    def relax(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
+              relaxed_xyz_file: Optional[str] = None, result_name: str = "relax.json", fmax: float = 0.02,
+              max_steps: int = 100, optimizer_name: str = "BFGSLineSearch") -> None:
+        """
+        Relax the generated structures using MACE.
+
+        The method relaxes the structures using the specified optimizer and the forces predicted by the pretrained
+        MACE model. The relaxed structures are saved to an XYZ file, and the mean relaxation steps and mean
+        root-mean-square distance between the original and relaxed structures are saved to a JSON file.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        :param xyz_file:
+            XYZ file containing the generated structures to relax.
+            This argument has to be set on the command line.
+        :type xyz_file: str
+        :param relaxed_xyz_file:
+            XYZ file to save the relaxed structures to. If None, the relaxed structures are saved to
+            a file with the same name as `xyz_file` but with "_relaxed" appended to the stem.
+            This argument can be optionally set on the command line.
+            Defaults to None.
+        :type relaxed_xyz_file: Optional[str]
+        :param result_name:
+            Name of the JSON file to save the relaxation results to.
+            This argument can be optionally set on the command line.
+            Defaults to "relax.json".
+        :type result_name: str
+        :param fmax:
+            Maximum force criterion for convergence of the relaxation.
+            The relaxation is considered converged when the maximum force on any atom is less than `fmax`.
+            This argument can be optionally set on the command line.
+            Defaults to 0.02.
+        :type fmax: float
+        :param max_steps:
+            Maximum number of optimization steps for the relaxation.
+            If the relaxation does not converge within this number of steps, it is stopped.
+            This argument can be optionally set on the command line.
+            Defaults to 100.
+        :type max_steps: int
+        :param optimizer_name:
+            Optimizer to use for the relaxation. Supported optimizers are "BFGS", "BFGSLineSearch", "LBFGS",
+            "LBFGSLineSearch", "GoodOldQuasiNewton", "CellAwareBFGS", "GPMin", "MDMin", "FIRE", and "FIRE2".
+            This argument can be optionally set on the command line.
+            Defaults to "BFGSLineSearch".
+        :type optimizer_name: str
+
+        :raises FileNotFoundError:
+            If the `xyz_file` does not exist.
+        :raises ValueError:
+            If the `result_name` does not end with .json.
+            If the `optimizer` is not supported.
+        """
+        with warnings.catch_warnings(), prefixed_stdout(prefix="[MACE] "):
+            warnings.simplefilter("ignore", category=UserWarning)
+            from mace.calculators import mace_mp
+
+        final_file = Path(xyz_file)
+        if not final_file.exists():
+            raise FileNotFoundError(f"File {final_file} does not exist.")
+        gen_atoms = xyz_reader(final_file)
+
+        if relaxed_xyz_file is not None:
+            relaxed_file = Path(relaxed_xyz_file)
+        else:
+            relaxed_file = final_file.with_stem(final_file.stem + "_relaxed")
+
+        if not result_name.endswith(".json"):
+            raise ValueError("The result_name must end with .json")
+
+        # See https://ase-lib.org/ase/optimize.html
+        if optimizer_name not in {"BFGS", "BFGSLineSearch", "LBFGS", "LBFGSLineSearch", "GoodOldQuasiNewton",
+                                  "CellAwareBFGS", "GPMin", "MDMin", "FIRE", "FIRE2"}:
+            raise ValueError(f"Unsupported optimizer {optimizer_name}. Supported optimizers are BFGS, BFGSLineSearch, "
+                             f"LBFGS, LBFGSLineSearch, GoodOldQuasiNewton, CellAwareBFGS, GPMin, MDMin, FIRE, and "
+                             f"FIRE2.")
+
+        optimizer_class = getattr(ase.optimize, optimizer_name)
+        # Catch warnings from MACE and prefix stdout.
+        with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            logging.disable(logging.WARNING)  # Newer versions of Mace log warnings.
+            # Note that calling mace_mp with return_raw_model=False changes the default dtype of torch.
+            mace_model = mace_mp(model="medium-mpa-0", device="cpu", enable_cueq=False, default_dtype="float64")
+            logging.disable(logging.NOTSET)  # Undo the disabling of logging.
+
+        # Delete the relaxed file if it already exists to avoid appending to stale results.
+        if relaxed_file.exists():
+            relaxed_file.unlink()
+
+        relaxation_steps = []
+        rmses = []
+        failed_relaxations = 0
+
+        for i, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Relaxing structures", unit="structure")):
+            original_atoms = atoms.copy()
+            atoms.calc = mace_model
+            optimizer = optimizer_class(FrechetCellFilter(atoms), logfile=None)
+            try:
+                optimizer.run(fmax=fmax, steps=max_steps)
+            except RuntimeError as e:
+                warnings.warn(f"Structure {i} relaxation failed with error: {e}")
+                failed_relaxations += 1
+                continue
+
+            steps = optimizer.get_number_of_steps()
+            if steps == max_steps:
+                warnings.warn(f"Structure {i} reached the maximum number of relaxation steps ({max_steps}).")
+            relaxation_steps.append(steps)
+
+            rmse = np.sqrt(np.mean(np.linalg.norm(original_atoms.positions - atoms.positions, axis=1) ** 2))
+            rmses.append(rmse)
+
+            # Copy necessary to avoid including force information etc.
+            write(str(relaxed_file), atoms.copy(), format='extxyz', append=True)
+
+        with open(result_name, "w") as f:
+            json.dump({
+                "mean_relaxation_steps": np.mean(relaxation_steps),
+                "mean_rmse": np.mean(rmses),
+                "failed_relaxations": failed_relaxations
             }, f, indent=4)
 
     def fit_lattice(self, model: OMGLightning, datamodule: OMGDataModule) -> None:
