@@ -1423,13 +1423,30 @@ class OMGTrainer(Trainer):
 
     def relax(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
               relaxed_xyz_file: Optional[str] = None, result_name: str = "relax.json", fmax: float = 0.02,
-              max_steps: int = 100, optimizer_name: str = "BFGSLineSearch") -> None:
+              max_steps: int = 100, optimizer_name: str = "BFGSLineSearch",
+              device: Literal["cpu", "cuda"] = "cpu", enable_cueq: bool = False,
+              max_memory_scaler: float = 250000.0) -> None:
         """
         Relax the generated structures using MACE.
 
         The method relaxes the structures using the specified optimizer and the forces predicted by the pretrained
-        MACE model. The relaxed structures are saved to an XYZ file, and the mean relaxation steps and mean
-        root-mean-square distance between the original and relaxed structures are saved to a JSON file.
+        MACE model. The relaxed structures are saved to an XYZ file, and the mean root-mean-square distance between
+        the original and relaxed structures are saved to a JSON file.
+
+        When using a CPU device, the structures are relaxed sequentially using ASE optimizers with a Frechet cell
+        filter. The optimizer_name parameter selects the ASE optimizer to use. Supported optimizers are "BFGS",
+        "BFGSLineSearch", "LBFGS", "LBFGSLineSearch", "GoodOldQuasiNewton", "CellAwareBFGS", "GPMin", "MDMin",
+        "FIRE", and "FIRE2".
+
+        When using a CUDA device, the relaxation is batched using TorchSim's optimize function with an
+        InFlightAutoBatcher for improved performance. The optimizer_name parameter selects the TorchSim optimizer to
+        use. Supported optimizers are "bfgs", "lbfgs", "fire", and "gradient_descent". A Frechet cell filter is used for
+        cell relaxation. This requires a max_memory_scaler parameter to control the batching behavior which is essential
+        for managing GPU memory usage. Larger values of max_memory_scaler allow for larger batches and potentially
+        better performance, but also increase the risk of out-of-memory errors. The optimal value for max_memory_scaler
+        depends on the specific GPU, the size of the structures being relaxed, and the number of structures being
+        relaxed (since TorchSim preloads all structures as tensors before batching). The default value of 250000.0 is
+        adjusted for 80GB H100 GPUs, the MP20 dataset, float64 precision, and 9046 structures.
 
         :param model:
             OMG model (argument required and automatically passed by lightning CLI).
@@ -1465,21 +1482,42 @@ class OMGTrainer(Trainer):
             Defaults to 100.
         :type max_steps: int
         :param optimizer_name:
-            Optimizer to use for the relaxation. Supported optimizers are "BFGS", "BFGSLineSearch", "LBFGS",
-            "LBFGSLineSearch", "GoodOldQuasiNewton", "CellAwareBFGS", "GPMin", "MDMin", "FIRE", and "FIRE2".
+            Optimizer to use for the relaxation. On CPU, supported optimizers are "BFGS", "BFGSLineSearch", "LBFGS",
+            "LBFGSLineSearch", "GoodOldQuasiNewton", "CellAwareBFGS", "GPMin", "MDMin", "FIRE", and "FIRE2"
+            (see https://ase-lib.org/ase/optimize.html). On CUDA, supported optimizers are "bfgs", "lbfgs", "fire", and
+            "gradient_descent" (TorchSim optimizers).
             This argument can be optionally set on the command line.
             Defaults to "BFGSLineSearch".
         :type optimizer_name: str
+        :param device:
+            The device to run MACE on. Can be "cpu" or "cuda".
+            Defaults to "cpu".
+            This argument can be optionally set on the command line.
+        :type device: Literal["cpu", "cuda"]
+        :param enable_cueq:
+            Whether to enable the CuEq in MACE.
+            Defaults to False.
+            This argument can be optionally set on the command line.
+        :type enable_cueq: bool
+        :param max_memory_scaler:
+            The max_memory_scaler parameter for TorchSim's InFlightAutoBatcher when using CUDA.
+            Defaults to 250000.0, which is adjusted for 80GB H100 GPUs, the MP20 dataset, and float64 precision.
+            This argument can be optionally set on the command line.
+        :type max_memory_scaler: float
 
         :raises FileNotFoundError:
             If the `xyz_file` does not exist.
         :raises ValueError:
             If the `result_name` does not end with .json.
-            If the `optimizer` is not supported.
+            If the `optimizer_name` is not supported.
         """
         with warnings.catch_warnings(), prefixed_stdout(prefix="[MACE] "):
             warnings.simplefilter("ignore", category=UserWarning)
             from mace.calculators import mace_mp
+        with prefixed_stdout(prefix="[TorchSim] "):
+            import torch_sim as ts
+            from torch_sim.autobatching import InFlightAutoBatcher
+            from torch_sim.models.mace import MaceModel
 
         final_file = Path(xyz_file)
         if not final_file.exists():
@@ -1494,59 +1532,110 @@ class OMGTrainer(Trainer):
         if not result_name.endswith(".json"):
             raise ValueError("The result_name must end with .json")
 
-        # See https://ase-lib.org/ase/optimize.html
-        if optimizer_name not in {"BFGS", "BFGSLineSearch", "LBFGS", "LBFGSLineSearch", "GoodOldQuasiNewton",
-                                  "CellAwareBFGS", "GPMin", "MDMin", "FIRE", "FIRE2"}:
-            raise ValueError(f"Unsupported optimizer {optimizer_name}. Supported optimizers are BFGS, BFGSLineSearch, "
-                             f"LBFGS, LBFGSLineSearch, GoodOldQuasiNewton, CellAwareBFGS, GPMin, MDMin, FIRE, and "
-                             f"FIRE2.")
-
-        optimizer_class = getattr(ase.optimize, optimizer_name)
-        # Catch warnings from MACE and prefix stdout.
-        with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=UserWarning)
-            logging.disable(logging.WARNING)  # Newer versions of Mace log warnings.
-            # Note that calling mace_mp with return_raw_model=False changes the default dtype of torch.
-            mace_model = mace_mp(model="medium-mpa-0", device="cpu", enable_cueq=False, default_dtype="float64")
-            logging.disable(logging.NOTSET)  # Undo the disabling of logging.
-
         # Delete the relaxed file if it already exists to avoid appending to stale results.
         if relaxed_file.exists():
             relaxed_file.unlink()
 
-        relaxation_steps = []
-        rmses = []
-        failed_relaxations = 0
+        # Initialize MACE model.
+        with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            if device == "cpu":
+                logging.disable(logging.WARNING)  # Newer versions of Mace log warnings.
+                # Note that calling mace_mp with return_raw_model=False changes the default dtype of torch.
+                mace_model = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq,
+                                     default_dtype="float64")
+                logging.disable(logging.NOTSET)
+                if max_memory_scaler != 250000.0:
+                    warnings.warn("max_memory_scaler is only used when device is 'cuda', the specified value will be "
+                                  "ignored.")
+                autobatcher = None
+            else:
+                # TorchSim's batching does not work on CPU.
+                assert device == "cuda"
+                mace = mace_mp(model="medium-mpa-0", device=device, default_dtype="float64", enable_cueq=enable_cueq,
+                               return_raw_model=True)
+                # noinspection PyTypeChecker
+                mace_model = MaceModel(model=mace, device=device, compute_forces=True, compute_stress=True,
+                                       dtype=torch.float64, enable_cueq=enable_cueq)
+                autobatcher = InFlightAutoBatcher(model=mace_model, max_memory_scaler=max_memory_scaler,
+                                                  memory_scales_with=mace_model.memory_scales_with)
 
-        for i, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Relaxing structures", unit="structure")):
-            original_atoms = atoms.copy()
-            atoms.calc = mace_model
-            optimizer = optimizer_class(FrechetCellFilter(atoms), logfile=None)
-            try:
-                optimizer.run(fmax=fmax, steps=max_steps)
-            except RuntimeError as e:
-                warnings.warn(f"Structure {i} relaxation failed with error: {e}")
-                failed_relaxations += 1
-                write(str(relaxed_file), original_atoms.copy(), format='extxyz', append=True)
-                continue
+        if device == "cpu":
+            # See https://ase-lib.org/ase/optimize.html
+            if optimizer_name not in {"BFGS", "BFGSLineSearch", "LBFGS", "LBFGSLineSearch", "GoodOldQuasiNewton",
+                                      "CellAwareBFGS", "GPMin", "MDMin", "FIRE", "FIRE2"}:
+                raise ValueError(f"Unsupported optimizer {optimizer_name}. Supported optimizers are BFGS, "
+                                 f"BFGSLineSearch, LBFGS, LBFGSLineSearch, GoodOldQuasiNewton, CellAwareBFGS, GPMin, "
+                                 f"MDMin, FIRE, and FIRE2.")
+            optimizer_class = getattr(ase.optimize, optimizer_name)
 
-            steps = optimizer.get_number_of_steps()
-            if steps == max_steps:
-                warnings.warn(f"Structure {i} reached the maximum number of relaxation steps ({max_steps}).")
-            relaxation_steps.append(steps)
+            relaxation_steps = []
+            rmses = []
+            failed_relaxations = 0
 
-            rmse = np.sqrt(np.mean(np.linalg.norm(original_atoms.positions - atoms.positions, axis=1) ** 2))
-            rmses.append(rmse)
+            for i, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Relaxing structures", unit="structure")):
+                original_atoms = atoms.copy()
+                atoms.calc = mace_model
+                optimizer = optimizer_class(FrechetCellFilter(atoms), logfile=None)
+                try:
+                    optimizer.run(fmax=fmax, steps=max_steps)
+                except RuntimeError as e:
+                    warnings.warn(f"Structure {i} relaxation failed with error: {e}")
+                    failed_relaxations += 1
+                    write(str(relaxed_file), original_atoms.copy(), format='extxyz', append=True)
+                    continue
 
-            # Copy necessary to avoid including force information etc.
-            write(str(relaxed_file), atoms.copy(), format='extxyz', append=True)
+                steps = optimizer.get_number_of_steps()
+                if steps == max_steps:
+                    warnings.warn(f"Structure {i} reached the maximum number of relaxation steps ({max_steps}).")
+                relaxation_steps.append(steps)
 
-        with open(result_name, "w") as f:
-            json.dump({
-                "mean_relaxation_steps": np.mean(relaxation_steps),
-                "mean_rmse": np.mean(rmses),
-                "failed_relaxations": failed_relaxations
-            }, f, indent=4)
+                rmse = np.sqrt(np.mean(np.linalg.norm(original_atoms.positions - atoms.positions, axis=1) ** 2))
+                rmses.append(rmse)
+
+                # Copy necessary to avoid including force information etc.
+                write(str(relaxed_file), atoms.copy(), format='extxyz', append=True)
+
+                with open(result_name, "w") as f:
+                    json.dump({
+                        "mean_relaxation_steps": np.mean(relaxation_steps),
+                        "mean_rmse": np.mean(rmses),
+                        "failed_relaxations": failed_relaxations
+                    }, f, indent=4)
+        else:
+            assert device == "cuda"
+            # Store original positions for RMSE computation.
+            original_positions = [atoms.positions.copy() for atoms in gen_atoms]
+            if optimizer_name not in {"bfgs", "lbfgs", "fire", "gradient_descent"}:
+                raise ValueError(f"Unsupported optimizer {optimizer_name}. Supported optimizers are bfgs, lbfgs, fire, "
+                                 f"and gradient_descent.")
+            optimizer = getattr(ts.Optimizer, optimizer_name)
+            relaxed_state = ts.optimize(
+                system=gen_atoms,
+                model=mace_model,
+                optimizer=optimizer,
+                convergence_fn=ts.generate_force_convergence_fn(force_tol=fmax, include_cell_forces=True),
+                max_steps=max_steps,
+                autobatcher=autobatcher,
+                init_kwargs=dict(cell_filter=ts.CellFilter.frechet),
+                pbar={"desc": "Relaxing structures with MACE", "unit": "structure"},
+            )
+
+            relaxed_atoms_list = relaxed_state.to_atoms()
+            assert len(relaxed_atoms_list) == len(gen_atoms)
+
+            rmses = []
+            failed_relaxations = 0
+            for orig_pos, relaxed_atoms in zip(original_positions, relaxed_atoms_list):
+                rmse = np.sqrt(np.mean(np.linalg.norm(orig_pos - relaxed_atoms.positions, axis=1) ** 2))
+                rmses.append(rmse)
+                write(str(relaxed_file), relaxed_atoms, format='extxyz', append=True)
+
+            with open(result_name, "w") as f:
+                json.dump({
+                    "mean_rmse": float(np.mean(rmses)) if rmses else None,
+                    "failed_relaxations": failed_relaxations
+                }, f, indent=4)
 
     def fit_lattice(self, model: OMGLightning, datamodule: OMGDataModule) -> None:
         """
