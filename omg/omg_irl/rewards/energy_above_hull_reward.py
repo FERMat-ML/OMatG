@@ -4,7 +4,6 @@ import numpy as np
 import tqdm
 import warnings
 import torch
-from pymatgen.core import Composition
 from omg.datamodule import Structure
 from omg.utils import prefixed_stdout
 from .abstracts import ComputeStage, Reward
@@ -81,6 +80,13 @@ class EnergyAboveHullReward(Reward):
         Must be non-negative.
         Defaults to 1.0e-3.
     :type polar_sine_cutoff: float
+    :param max_energy_above_hull:
+        If set, caps the energy above hull per atom at this value (in eV/atom) before computing the reward.
+        This prevents extreme outliers from dominating the reward signal, which is especially useful when
+        combining with other reward functions via CompositeRewards.
+        If None, no capping is applied.
+        Defaults to None.
+    :type max_energy_above_hull: Optional[float]
 
     :raises ValueError:
         If scale is not positive.
@@ -93,11 +99,13 @@ class EnergyAboveHullReward(Reward):
                  default_dtype: Literal["float32", "float64"] = "float64", enable_cueq: bool = False,
                  max_memory_scaler: float = 500000.0, invalid_penalty: Optional[float] = None,
                  volume_check_cutoff: float = 0.1, structure_check_cutoff: float = 0.5,
-                 polar_sine_cutoff: float = 1.0e-3) -> None:
+                 polar_sine_cutoff: float = 1.0e-3, max_energy_above_hull: Optional[float] = None) -> None:
         """Constructor for EnergyAboveHullReward."""
         super().__init__()
         if not scale > 0.0:
             raise ValueError("Scale must be positive.")
+        if max_energy_above_hull is not None and not max_energy_above_hull > 0.0:
+            raise ValueError("max_energy_above_hull must be positive.")
         if not volume_check_cutoff >= 0.0:
             raise ValueError("Volume check cutoff must be non-negative.")
         if not structure_check_cutoff >= 0.0:
@@ -133,6 +141,7 @@ class EnergyAboveHullReward(Reward):
                 self._batcher = BinningAutoBatcher(model=self._mace_model, max_memory_scaler=max_memory_scaler,
                                                    memory_scales_with="n_atoms_x_density")
         self._invalid_penalty = invalid_penalty
+        self._max_energy_above_hull = max_energy_above_hull
         self._volume_check_cutoff = volume_check_cutoff
         self._structure_check_cutoff = structure_check_cutoff
         self._polar_sine_cutoff = polar_sine_cutoff
@@ -230,6 +239,9 @@ class EnergyAboveHullReward(Reward):
                 else:
                     # Fall back to a large positive value (very unstable).
                     e_above_hull[idx] = 10.0
+
+        if self._max_energy_above_hull is not None:
+            e_above_hull = np.minimum(e_above_hull, self._max_energy_above_hull)
 
         rewards = -self._scale * e_above_hull  # Minimize energy above hull.
         info_dict = {
