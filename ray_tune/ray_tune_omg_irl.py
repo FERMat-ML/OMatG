@@ -65,7 +65,7 @@ def overwrite_flattened_items(original_dict: dict, flattened_updates: dict[tuple
 
 
 def train_omg_irl_tune(config: dict, base_rl_config: dict, base_omg_config_path: Path, ckpt_path: Path,
-                       project_name: str):
+                       project_name: str, omg_irl_ckpt_path: Optional[Path]):
     # Import here to avoid issues with global base_modules when using Ray Tune.
     from omg.omg_irl.base_modules import base_modules
     from omg.omg_irl.omg_irl_lightning.abstracts import OMGIRLLightningAbstract
@@ -99,11 +99,21 @@ def train_omg_irl_tune(config: dict, base_rl_config: dict, base_omg_config_path:
         base_modules["model"] = omg_cli.model
         base_modules["datamodule"] = omg_cli.datamodule
 
-        OMGIRLCLI(model_class=OMGIRLLightningAbstract, trainer_class=LimitTrainer,
-                  save_config_callback=None, subclass_mode_model=True,
-                  args=["fit", "--config", str(rl_config_path), "--trainer.logger", "WandbLogger",
-                        "--trainer.logger.name", context.get_trial_name(), "--trainer.logger.project", project_name,
-                        "--seed_everything", "0", "--model.init_args.validation_xyz_filename", trial_dir + "/val.xyz"])
+        if omg_irl_ckpt_path is None:
+            OMGIRLCLI(model_class=OMGIRLLightningAbstract, trainer_class=LimitTrainer,
+                      save_config_callback=None, subclass_mode_model=True,
+                      args=["fit", "--config", str(rl_config_path), "--trainer.logger", "WandbLogger",
+                            "--trainer.logger.name", context.get_trial_name(), "--trainer.logger.project", project_name,
+                            "--seed_everything", "0", "--model.init_args.validation_xyz_filename",
+                            trial_dir + "/val.xyz"])
+        else:
+            OMGIRLCLI(model_class=OMGIRLLightningAbstract, trainer_class=LimitTrainer,
+                      save_config_callback=None, subclass_mode_model=True,
+                      args=["fit", "--config", str(rl_config_path), "--ckpt_path", str(omg_irl_ckpt_path),
+                            "--trainer.logger", "WandbLogger", "--trainer.logger.name", context.get_trial_name(),
+                            "--trainer.logger.project", project_name, "--seed_everything", "0",
+                            "--model.init_args.validation_xyz_filename", trial_dir + "/val.xyz"])
+
     finally:
         # Necessary to flush stdout and stderr files.
         sys.stdout.flush()
@@ -123,7 +133,8 @@ def train_omg_irl_tune(config: dict, base_rl_config: dict, base_omg_config_path:
 
 def tune_omg_irl(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_path: Path,
                  storage_path: Path, temp_dir: Optional[Path], project_name: str, cpus_per_trial: int,
-                 gpus_per_trial: int, restore: bool, metric: str, mode: str, max_t: int, grace_period: int) -> None:
+                 gpus_per_trial: int, restore: bool, metric: str, mode: str, max_t: int, grace_period: int,
+                 omg_irl_ckpt_path: Optional[Path]) -> None:
     with open(rl_config, "r") as f:
         rl_config = yaml.unsafe_load(f)
 
@@ -148,7 +159,8 @@ def tune_omg_irl(num_samples: int, rl_config: Path, omg_config: Path, omg_ckpt_p
         base_rl_config=rl_config,
         base_omg_config_path=omg_config,
         ckpt_path=omg_ckpt_path,
-        project_name=project_name
+        project_name=project_name,
+        omg_irl_ckpt_path=omg_irl_ckpt_path,
     )
 
     if restore:
@@ -190,6 +202,7 @@ def main():
     parser.add_argument("--cpus_per_trial", type=int, default=4)
     parser.add_argument("--gpus_per_trial", type=int, default=1)
     parser.add_argument("--temp_dir", type=Path, default=None)
+    parser.add_argument("--omg_irl_ckpt_path", type=Path, default=None)
     parser.add_argument("--restore", action="store_true")
     parser.add_argument("--sde", action="store_true")
     args = parser.parse_args()
@@ -210,6 +223,13 @@ def main():
     if not absolute_storage_path.exists():
         raise RuntimeError(f"Storage path {absolute_storage_path} does not exist.")
 
+    if args.omg_irl_ckpt_path is not None:
+        absolute_omg_irl_ckpt_path = args.omg_irl_ckpt_path.absolute()
+        if not absolute_omg_irl_ckpt_path.exists():
+            raise RuntimeError(f"OMG-IRL checkpoint path {absolute_omg_irl_ckpt_path} does not exist.")
+    else:
+        absolute_omg_irl_ckpt_path = None
+
     absolute_temp_dir = args.temp_dir.absolute() if args.temp_dir is not None else None
     if absolute_temp_dir is not None and not absolute_temp_dir.exists():
         raise RuntimeError(f"Temporary directory path {absolute_temp_dir} does not exist.")
@@ -217,7 +237,8 @@ def main():
     tune_omg_irl(num_samples=-1, rl_config=absolute_rl_config_path, omg_config=absolute_omg_config_path,
                  omg_ckpt_path=absolute_omg_ckpt_path, storage_path=absolute_storage_path, temp_dir=args.temp_dir,
                  project_name=args.project_name, cpus_per_trial=args.cpus_per_trial, gpus_per_trial=args.gpus_per_trial,
-                 restore=args.restore, metric="val_reward_mean", mode="max", max_t=10, grace_period=5)
+                 restore=args.restore, metric="val_reward_mean", mode="max", max_t=10, grace_period=5,
+                 omg_irl_ckpt_path=absolute_omg_irl_ckpt_path)
 
 
 if __name__ == '__main__':
