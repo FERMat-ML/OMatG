@@ -14,13 +14,13 @@ class CompositeRewards(Reward):
         List of reward functions to combine.
     :type rewards: Sequence[Reward]
     :param weights:
-        Weights for each reward function (must sum to 1).
+        Non-negative weights for each reward function. The total reward is the weighted sum of individual rewards.
+        Since GRPO normalizes rewards within each group, only the relative weights matter, not their absolute scale.
     :type weights: Sequence[float]
 
     :raises ValueError:
         If the number of reward functions does not match the number of weights.
         If any weight is negative.
-        If the weights do not sum to 1.
     """
 
     def __init__(self, rewards: Sequence[Reward], weights: Sequence[float]) -> None:
@@ -29,9 +29,7 @@ class CompositeRewards(Reward):
         if len(rewards) != len(weights):
             raise ValueError("Number of reward functions must match number of weights.")
         if not all(w >= 0.0 for w in weights):
-            raise ValueError("Weights must be positive.")
-        if not abs(sum(weights) - 1.0) < 1e-6:
-            raise ValueError("Weights must sum to 1.0")
+            raise ValueError("Weights must be non-negative.")
         self._reward_functions = rewards
         self._weights = weights
 
