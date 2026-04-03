@@ -3,3 +3,4 @@ from .composite_rewards import CompositeRewards
 from .crmse_reward import CRMSEReward
 from .energy_above_hull_reward import EnergyAboveHullReward
 from .energy_reward import EnergyReward
+from .symmetry_reward import NonCentrosymmetricReward, NonTriclinicReward
