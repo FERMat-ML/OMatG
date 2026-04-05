@@ -2,6 +2,7 @@ from collections import OrderedDict
 import json
 import logging
 from math import log
+import os
 from pathlib import Path
 from typing import Literal, Optional, Sequence, Union
 import warnings
@@ -19,6 +20,7 @@ from pymatgen.core import Composition, Lattice, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from scipy.stats import lognorm, wasserstein_distance
 from sklearn.neighbors import KernelDensity
+import spglib
 import tqdm
 import torch
 from torch_geometric.data import Data
@@ -1419,6 +1421,133 @@ class OMGTrainer(Trainer):
                 "mean_energy_per_atom": float(np.nanmean(energies_per_atom)),
                 "number_invalid_structures": number_invalid,
                 "number_hull_errors": num_hull_errors
+            }, f, indent=4)
+
+    def symmetry_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
+                         result_name: str = "symmetry_metrics.json",
+                         symprec: float = 0.1, volume_check_cutoff: float = 0.1,
+                         structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3) -> None:
+        """
+        Compute symmetry statistics for generated structures.
+
+        For each structure, computes the space group number and checks for inversion symmetry using spglib. Reports the
+        fraction of non-triclinic structures (space group > 2), the fraction of non-centrosymmetric structures (non-
+        triclinic and no inversion symmetry), and the number of invalid structures that fail validity checks.
+
+        An invalid structure is a structure that fails volume, interatomic distance, or polar sine checks. Invalid
+        structures and structures where spglib fails are assigned space group number 0.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        :param xyz_file:
+            XYZ file containing the generated structures.
+            This argument has to be set on the command line.
+        :type xyz_file: str
+        :param result_name:
+            Name of the json file to save the symmetry results.
+            Defaults to "symmetry_metrics.json".
+        :type result_name: str
+        :param symprec:
+            Symmetry tolerance for spglib in Angstroms.
+            Defaults to 0.1.
+        :type symprec: float
+        :param volume_check_cutoff:
+            The cutoff for the volume check in cubic angstroms. Structures with volume below this cutoff are
+            considered invalid.
+            Defaults to 0.1.
+        :type volume_check_cutoff: float
+        :param structure_check_cutoff:
+            The cutoff for the structure check in angstroms. Structures with minimum interatomic distance below
+            this cutoff are considered invalid.
+            Defaults to 0.5.
+        :type structure_check_cutoff: float
+        :param polar_sine_cutoff:
+            The cutoff for the polar sine check. Structures with polar sine of the lattice below this cutoff
+            are considered invalid.
+            Defaults to 1.0e-3.
+        :type polar_sine_cutoff: float
+
+        :raises FileNotFoundError:
+            If the xyz_file does not exist.
+        :raises ValueError:
+            If the result_name does not end with .json.
+        """
+        def is_valid(atoms: Atoms) -> bool:
+            """Check if a structure is valid based on volume, structure, and polar sine checks."""
+            py_structure = AseAtomsAdaptor.get_structure(atoms)
+            volume_valid = (py_structure.volume >= volume_check_cutoff)
+            dist_mat = py_structure.distance_matrix
+            dist_mat = dist_mat + np.diag(
+                np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0)
+            )
+            min_dist = dist_mat.min()
+            structure_valid = (min_dist >= structure_check_cutoff)
+            polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+            polar_sine_valid = (polar_sine >= polar_sine_cutoff)
+            return volume_valid and structure_valid and polar_sine_valid
+
+        def compute_symmetry(atoms: Atoms) -> tuple[int, bool]:
+            """Return (space group number, has_inversion). Returns (0, False) if spglib fails."""
+            cell = (atoms.get_cell(), atoms.get_scaled_positions(), atoms.get_atomic_numbers())
+            # Suppress spglib's C-level stderr output.
+            old_fd = os.dup(2)
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, 2)
+            os.close(devnull)
+            try:
+                sym_data = spglib.get_symmetry_dataset(cell, symprec=symprec)
+            finally:
+                os.dup2(old_fd, 2)
+                os.close(old_fd)
+            if sym_data is None:
+                return 0, False
+            has_inversion = any(
+                np.array_equal(rot, -np.eye(3, dtype=int))
+                for rot in sym_data.rotations
+            )
+            return sym_data.number, has_inversion
+
+        final_file = Path(xyz_file)
+        if not final_file.exists():
+            raise FileNotFoundError(f"File {final_file} does not exist.")
+
+        if not result_name.endswith(".json"):
+            raise ValueError("The result_name must end with .json")
+
+        gen_atoms = xyz_reader(final_file)
+        n = len(gen_atoms)
+
+        is_non_triclinic = np.zeros(n, dtype=float)
+        is_non_centrosymmetric = np.zeros(n, dtype=float)
+        invalid_flags = np.zeros(n, dtype=float)
+
+        for idx, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Computing symmetry metrics", unit="structures")):
+            if not is_valid(atoms):
+                invalid_flags[idx] = 1.0
+                continue
+            sg_number, has_inversion = compute_symmetry(atoms)
+            if sg_number > 2:
+                is_non_triclinic[idx] = 1.0
+            if sg_number > 2 and not has_inversion:
+                is_non_centrosymmetric[idx] = 1.0
+
+        number_invalid = int(np.sum(invalid_flags))
+        fraction_non_triclinic = float(np.mean(is_non_triclinic))
+        fraction_non_centrosymmetric = float(np.mean(is_non_centrosymmetric))
+
+        print(f"Fraction of non-triclinic structures (SG > 2): {fraction_non_triclinic:.4f}")
+        print(f"Fraction of non-centrosymmetric structures: {fraction_non_centrosymmetric:.4f}")
+        print(f"Number of invalid structures: {number_invalid}")
+
+        with open(result_name, "w") as f:
+            json.dump({
+                "fraction_non_triclinic": fraction_non_triclinic,
+                "fraction_non_centrosymmetric": fraction_non_centrosymmetric,
+                "number_invalid_structures": number_invalid
             }, f, indent=4)
 
     def relax(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
