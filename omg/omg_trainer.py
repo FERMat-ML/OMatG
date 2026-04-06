@@ -1725,10 +1725,14 @@ class OMGTrainer(Trainer):
                 # Copy necessary to avoid including force information etc.
                 write(str(relaxed_file), atoms.copy(), format='extxyz', append=True)
 
+                # Save per-structure iteration counts to a separate .npy file.
+                npy_file = Path(result_name).with_suffix(".relaxation_steps.npy")
+                np.save(str(npy_file), np.array(relaxation_steps, dtype=np.int32))
+
                 with open(result_name, "w") as f:
                     json.dump({
-                        "mean_relaxation_steps": np.mean(relaxation_steps),
-                        "mean_rmse": np.mean(rmses),
+                        "mean_relaxation_steps": float(np.mean(relaxation_steps)),
+                        "mean_rmse": float(np.mean(rmses)),
                         "failed_relaxations": failed_relaxations
                     }, f, indent=4)
         else:
@@ -1750,6 +1754,11 @@ class OMGTrainer(Trainer):
                 pbar={"desc": "Relaxing structures with MACE", "unit": "structure"},
             )
 
+            # Extract per-system iteration counts for bfgs/lbfgs.
+            n_iter = None
+            if hasattr(relaxed_state, "n_iter"):
+                n_iter = relaxed_state.n_iter  # int32 tensor, one entry per system
+
             relaxed_atoms_list = relaxed_state.to_atoms()
             assert len(relaxed_atoms_list) == len(gen_atoms)
 
@@ -1760,11 +1769,17 @@ class OMGTrainer(Trainer):
                 rmses.append(rmse)
                 write(str(relaxed_file), relaxed_atoms, format='extxyz', append=True)
 
+            result = {
+                "mean_rmse": float(np.mean(rmses)) if rmses else None,
+                "failed_relaxations": failed_relaxations
+            }
+            if n_iter is not None:
+                result["mean_relaxation_steps"] = float(n_iter.float().mean().item())
+                npy_file = Path(result_name).with_suffix(".relaxation_steps.npy")
+                np.save(str(npy_file), n_iter.cpu().numpy())
+
             with open(result_name, "w") as f:
-                json.dump({
-                    "mean_rmse": float(np.mean(rmses)) if rmses else None,
-                    "failed_relaxations": failed_relaxations
-                }, f, indent=4)
+                json.dump(result, f, indent=4)
 
     def fit_lattice(self, model: OMGLightning, datamodule: OMGDataModule) -> None:
         """
