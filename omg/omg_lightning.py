@@ -186,10 +186,11 @@ class OMGLightning(lightning.LightningModule):
             self._validation_metric = self.ValidationMetric[validation_mode.upper()]
         except AttributeError:
             raise ValueError(f"Unknown validation metric f{validation_mode}.")
-        if self._validation_metric == self.ValidationMetric.MATCH_RATE or self._validation_metric == self.ValidationMetric.METRE:
+        if (self._validation_metric == self.ValidationMetric.MATCH_RATE
+                or self._validation_metric == self.ValidationMetric.METRE):
             if not isinstance(species_stochastic_interpolant, SingleStochasticInterpolantIdentity):
                 raise ValueError("Species stochastic interpolant must be of type SingleStochasticInterpolantIdentity "
-                                 "for match rate validation.")
+                                 "for match rate or METRe validation.")
         self.dataset_name = dataset_name
         if not self.dataset_name in ["mp_20", "carbon_24", "perov_5", "mpts_52", "alex_mp_20"]:
             raise ValueError(f"Dataset {self.dataset_name} not supported.")
@@ -204,7 +205,8 @@ class OMGLightning(lightning.LightningModule):
         self.generated_atoms = []
         if store_validation_structures_path is not None:
             if self._validation_metric == self.ValidationMetric.LOSS:
-                raise ValueError("The store_validation_structures_path option cannot be used with validation_mode 'loss'.")
+                raise ValueError("The store_validation_structures_path option cannot be used with validation_mode "
+                                 "'loss'.")
             if not store_validation_structures_path.endswith(".xyz"):
                 raise ValueError("store_validation_structures_path must be an .xyz file.")
         self.store_validation_structures_path = store_validation_structures_path
