@@ -88,7 +88,7 @@ data:
       file_path: "data/mp_20/test.lmdb"
       lazy_storage: True
       niggli_reduce: True
-  batch_size: 1024  # Was 32
+  batch_size: 1024
 trainer:
   callbacks:
     - class_path: lightning.pytorch.callbacks.ModelCheckpoint

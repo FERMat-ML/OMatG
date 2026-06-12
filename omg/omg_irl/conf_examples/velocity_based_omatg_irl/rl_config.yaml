@@ -28,7 +28,7 @@ model:
     reward:
       class_path: omg.omg_irl.EnergyReward
       init_args:
-        device: cuda
+        device: cpu  # Change to cuda if available for faster training.
         default_dtype: float64
         invalid_penalty: 3.0
         polar_sine_cutoff: 0.001
