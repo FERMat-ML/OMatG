@@ -54,6 +54,19 @@ field in which case it is passively integrated using the frozen OMatG base model
 species are integrated by the base model in a de novo generation setup, they are also passively integrated using the 
 frozen OMatG base model without any RL. 
 
+The [`conf_examples`](conf_examples) directory contains example configuration files that were used in the 
+paper:
+1. The [`score_based_omatg_irl`](conf_examples/score_based_omatg_irl) directory contains RL and OMatG configuration 
+   files for score-based OMatG-IRL from Section 5.1 (see blue curve in Fig. 3). The pretrained checkpoint and original 
+   OMatG configuration file is available on 
+   [Hugging Face](https://huggingface.co/OMatG/MP-20-CSP/tree/main/Trig-SDE-Gamma).
+2. The [`velocity_based_omatg_irl`](conf_examples/velocity_based_omatg_irl) directory contains RL and OMatG 
+   configuration files for velocity-based OMatG-IRL from Section 5.1 (see orange curve in Fig. 3). The pretrained 
+   checkpoint and original OMatG configuration file is available on 
+   [Hugging Face](https://huggingface.co/OMatG/MP-20-CSP/tree/main/Trig-ODE-Gamma). The same directory also contains a 
+   robust RL configuration in [`rl_config_robust.yaml`](conf_examples/velocity_based_omatg_irl/rl_config_robust.yaml) 
+   that was used across different datasets and pretrained OMatG models in Appendix J.
+
 <details>
 <summary><b>Expand this section for details on the different OMatG-IRL variants.</b></summary>
 
@@ -107,9 +120,8 @@ is `grpo_num_groups * grpo_group_size`.
 
 Note also that the number of integration timesteps of the rollouts is determined by the `integration_time_steps` 
 parameter in the configuration file of the base model. We recommend to use a low number of integration time steps for 
-policy-gradient RL (e.g., 50).
-
-The [```conf_examples```](conf_examples) directory contains several example configuration files.
+policy-gradient RL (e.g., 50). We also recommend to remove any velocity annealing from the configuration file of the 
+pretrained OMatG model.
 
 #### Model
 
