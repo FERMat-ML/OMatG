@@ -1,0 +1,62 @@
+model:
+  class_path: omg.omg_irl.OMGIRLScore
+  init_args:
+    disable_fields:
+      - cell
+    gradient_clip_algorithm: norm
+    gradient_clip_val: 1.0
+    grpo_group_size: 64
+    grpo_num_groups: 16
+    grpo_share_x_0: false
+    noise_schedules:
+      pos:
+        class_path: omg.omg_irl.SqrtNoiseSchedule
+        init_args:
+          noise_scale: 0.1668100537200059
+    normalize_relative_costs: false
+    position_normalization: per_atom_surrogate
+    ppo_clip_epsilon: 0.25669992372367456
+    ppo_epochs: 4
+    relative_costs:
+      pos_distillation: 3.0e-05
+      pos_policy: 2.371526753470146
+      pos_regularization: 1.0e-05
+    reward:
+      class_path: omg.omg_irl.EnergyReward
+      init_args:
+        device: cuda
+        default_dtype: float64
+        invalid_penalty: 3.0
+        polar_sine_cutoff: 0.001
+        scale: 1.0
+        structure_check_cutoff: 0.5
+        volume_check_cutoff: 0.1
+optimizer:
+  class_path: torch.optim.Adam
+  init_args:
+    lr: 0.00013424234647400077
+trainer:
+  callbacks:
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      filename: best_val_reward_mean
+      mode: max
+      monitor: val_reward_mean
+      save_top_k: 1
+      save_weights_only: false
+  - class_path: lightning.pytorch.callbacks.ModelCheckpoint
+    init_args:
+      every_n_epochs: 1
+      monitor: val_reward_mean
+      save_top_k: -1
+      save_weights_only: false
+  - class_path: lightning.pytorch.callbacks.TQDMProgressBar
+    init_args:
+      leave: true
+  enable_progress_bar: true
+  inference_mode: false
+  log_every_n_steps: 1
+  max_steps: 1200  # 300 training iterations with 4 PPO epochs each.
+  num_sanity_val_steps: -1
+  precision: 32-true
+  val_check_interval: 10
