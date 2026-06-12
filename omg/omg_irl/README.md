@@ -16,7 +16,6 @@ evaluation metrics.
 
 - [Overview.](#overview)
 - [Installation.](#installation)
-- [Reinforcement Learning Approaches.](#reinforcement-learning-approaches)
 - [Reward Functions.](#reward-functions)
 - [Training.](#training)
 - [Generation.](#generation)
@@ -31,7 +30,7 @@ decision process with a stochastic policy that samples the next state $x_{t+\Del
 state $x_t$. Every RL training step performs the following loop:
 
 1. Sample $G$ initial structures $x_0$ from the base distribution $p_0$ under identical conditioning. For the
-crystal structure prediction (CSP) task, this corresponds to sampling $G$ initial structures for the same composition.
+crystal structure prediction task, this corresponds to sampling $G$ initial structures for the same composition.
 2. Rollout $G$ trajectories by numerically integrating the current stochastic policy from every $x_0$ to $x_1$ with an
 Euler&ndash;Maruyama scheme (without gradients).
 3. Compute rewards and GRPO advantages on the final structures $x_1$ (without gradients). 
@@ -49,7 +48,7 @@ In contrast, when only the velocity field $b^\theta(t,x_t)$ of an ordinary diffe
 Using the same stochastic-perturbation idea, **velocity-annealing OMatG-IRL** uses policy-gradient RL to learn a 
 time-dependent velocity-annealing schedule that rescales the frozen velocity field of a pretrained OMatG model.
 
-OMatG-IRL can currently only be applied to reinforce the stochastic policies for the generative process of the 
+OMatG-IRL can currently only be applied to reinforce the stochastic policies for the generative processes of the 
 fractional coordinates (`pos` field) and lattice vectors (`cell` field). Optionally, one can disable RL for either 
 field in which case it is passively integrated using the frozen OMatG base model without any RL. If the discrete 
 species are integrated by the base model in a de novo generation setup, they are also passively integrated using the 
@@ -64,11 +63,11 @@ Each of the three OMatG-IRL variants corresponds to a class in the
 [`omg_irl_lightning`](omg_irl_lightning) package. The following table summarizes the differences between the three 
 variants, where $\xi$ denotes a Gaussian noise term and $\sigma(t)$ is a configurable time-dependent noise schedule:
 
-| Approach | Class | What is Learned                                                                                                                                                                                                             | Euler&ndash;Maruyama Update                                                                                                          |
-|----------|-------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| Score-based | [`OMGIRLScore`](omg_irl_lightning/omg_irl_score.py) | Velocity field $b^\theta(t,x_t)$ and denoiser $z^\theta(t,x_t)$ through updates to the pretrained OMatG model                                                                                                               | $x_{t+\Delta t} = x_t + [b^\theta - \frac{\sigma(t)^2}{2 \gamma(t)} z^\theta] \Delta t + \sigma(t) \sqrt{\Delta t} \, \xi$           |
-| Velocity-based | [`OMGIRLVelocity`](omg_irl_lightning/omg_irl_velocity.py) | Velocity field $b^\theta(t, x_t)$ through updates to the pretrained OMatG model                                                                                                                                             | $x_{t+\Delta t} = x_t + b^\theta \,\Delta t + \sigma(t) \sqrt{\Delta t}\,\xi$                                                        |
-| Velocity-annealing | [`OMGIRLScale`](omg_irl_lightning/omg_irl_scale.py) | Time-dependent velocity-annealing schedule $s^\theta(t)$ through updates to a multilayer perceptron in [`ScaleMLP`](omg_irl_lightning/scale_mlp.py); the pretrained velocity field $b^{\theta_\mathrm{ref}}$ remains frozen | $x_{t+\Delta t} = x_t + [1 + s^\theta(t)] b^{\theta_\mathrm{ref}} \Delta t + \sigma(t) b^{\theta_\mathrm{ref}} \sqrt{\Delta t}\,\xi$ |
+| Approach | Class | What is Learned                                                                                                                                                                                                             | Euler&ndash;Maruyama Update                                                                                                        |
+|----------|-------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| Score-based | [`OMGIRLScore`](omg_irl_lightning/omg_irl_score.py) | Velocity field $b^\theta(t,x_t)$ and denoiser $z^\theta(t,x_t)$ through updates to the pretrained OMatG model.                                                                                                              | $x_{t+\Delta t} = x_t + [b^\theta - \frac{\sigma(t)^2}{2 \gamma(t)} z^\theta] \Delta t + \sigma(t) \sqrt{\Delta t} \xi$            |
+| Velocity-based | [`OMGIRLVelocity`](omg_irl_lightning/omg_irl_velocity.py) | Velocity field $b^\theta(t, x_t)$ through updates to the pretrained OMatG model.                                                                                                                                            | $x_{t+\Delta t} = x_t + b^\theta \,\Delta t + \sigma(t) \sqrt{\Delta t} \xi$                                                       |
+| Velocity-annealing | [`OMGIRLScale`](omg_irl_lightning/omg_irl_scale.py) | Time-dependent velocity-annealing schedule $s^\theta(t)$ through updates to a multilayer perceptron in [`ScaleMLP`](omg_irl_lightning/scale_mlp.py); the pretrained velocity field $b^{\theta_\mathrm{ref}}$ remains frozen. | $x_{t+\Delta t} = x_t + [1 + s^\theta(t)] b^{\theta_\mathrm{ref}} \Delta t + \sigma(t) b^{\theta_\mathrm{ref}} \sqrt{\Delta t} \xi$ |
 
 The available noise schedules $\sigma(t)$ in [```noise_schedules.py```](noise_schedules.py) are:
 
@@ -106,7 +105,7 @@ The [```conf_examples```](conf_examples) directory contains several example conf
 
 #### Model
 
-The `class_path` of the `model` section selects one of the [OMatG-IRL variants](#omatg-irl-variants) that are 
+The `class_path` of the `model` section selects one of the OMatG-IRL variants that are 
 implemented as classes in the [`omg_irl_lightning`](omg_irl_lightning) package. The `init_args` of the `model` section 
 then contain the hyperparameters for the selected OMatG-IRL variant. For example, the following configuration was used 
 for the velocity-based OMatG-IRL experiments in Section 5.1 in the paper:
@@ -208,23 +207,24 @@ OMatG-IRL is part of the `omg` package. Installing the `omg` package as describe
 Rewards are maximized during reinforcement. Every reward function implements the
 [`Reward`](rewards/abstracts.py) abstract class whose `compute` method returns a reward for every generated structure
 together with an information dictionary of additional per-structure quantities that are averaged and logged (with a
-`val_` prefix during validation). The following implementations are available:
+`val_` prefix during validation). The following rewards are available:
 
 - [`EnergyReward`](rewards/energy_reward.py): Negative energy per atom predicted by the
   [MACE-MPA-0](https://github.com/ACEsuit/mace) foundation model. Energies are computed
   sequentially through [ASE](https://ase-lib.org) on CPU, or batched with
   [TorchSim](https://github.com/Radical-AI/torch-sim) on GPU. Structures that fail validity checks (based on volume,
-  minimum interatomic distance, and polar sine of the lattice) are optionally assigned an `invalid_penalty` energy
-  per atom. This reward is most useful for the crystal structure prediction task where all structures in a GRPO group 
+  minimum interatomic distance, and polar sine of the lattice) are optionally assigned a penalty. 
+  This reward is most useful for the crystal structure prediction task where all structures in a GRPO group 
   share the same composition.
 - [`EnergyAboveHullReward`](rewards/energy_above_hull_reward.py): Negative energy above the convex hull based on
-  MACE-MPA-0 energies and [LeMat-GenBench](https://github.com/LeMaterial/lemat-genbench) reference convex hull. In contrast to the raw energy per atom, the energy above the hull is comparable across
-  compositions, which makes this reward suitable for the de novo generation task where the compositions within a GRPO group vary.
+  MACE-MPA-0 energies and the [LeMat-GenBench](https://github.com/LeMaterial/lemat-genbench) reference convex hull. In 
+  contrast to the raw energy per atom, the energy above the hull is comparable across compositions, which makes this 
+  reward suitable for the de novo generation task where the compositions within a GRPO group vary.
 - [`CRMSEReward`](rewards/crmse_reward.py): Structural similarity to the reference structures of the corresponding
   dataset based on PyMatGen's `StructureMatcher` (see the corrected root-mean-square error
   described in the [main README](../../README.md#crystal-structure-prediction-metrics)). Generated structures are
   compared to all reference structures with the same reduced composition, and non-matching structures are penalized
-  with the site tolerance `stol`.
+  with the site tolerance `stol`. This reward is only recommended for velocity-annealing OMatG-IRL.
 - [`NonTriclinicReward`](rewards/symmetry_reward.py): Binary reward of one if the structure has a space group number
   greater than two (that is, the structure is not triclinic) as determined by [spglib](https://spglib.readthedocs.io),
   and zero otherwise.
@@ -259,7 +259,8 @@ argument before the `omg` keyword. In order to restart the RL training from an O
 generators, use `--seed_everything=<seed>`.
 
 The structures generated during validation can be stored by setting
-`--model.init_args.validation_xyz_filename=<xyz_file>` (the filenames are suffixed with the current epoch and step).
+`--model.init_args.validation_xyz_filename=<xyz_file>` before the `omg` keyword (the filenames are suffixed with the 
+current epoch and step).
 
 ## Generation
 
@@ -277,9 +278,9 @@ structures in `filename.xyz`.
 
 ## Plotting Learned Velocity-Annealing Schedules
 
-For velocity-annealing OMatG-IRL based on [`OMGIRLScale`](omg_irl_lightning/omg_irl_scale.py) models, run the following 
-command to plot the learned velocity-annealing schedule $s^\theta(t)$ of every reinforced data field as a function of 
-time:
+For velocity-annealing OMatG-IRL models based on the [`OMGIRLScale`](omg_irl_lightning/omg_irl_scale.py) class, run the 
+following command to plot the learned velocity-annealing schedule $s^\theta(t)$ of every reinforced data field as a 
+function of time:
 
 ```bash
 omg_irl plot_schedule --config=<rl_configuration_file.yaml> --ckpt_path=<rl_checkpoint_file.ckpt> --plot_filename=<plot_name.pdf> omg --config=<configuration_file.yaml> --ckpt_path=<checkpoint_file.ckpt>
