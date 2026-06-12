@@ -69,6 +69,12 @@ variants, where $\xi$ denotes a Gaussian noise term and $\sigma(t)$ is a configu
 | Velocity-based | [`OMGIRLVelocity`](omg_irl_lightning/omg_irl_velocity.py) | Velocity field $b^\theta(t, x_t)$ through updates to the pretrained OMatG model.                                                                                                                                            | $x_{t+\Delta t} = x_t + b^\theta \,\Delta t + \sigma(t) \sqrt{\Delta t} \xi$                                                       |
 | Velocity-annealing | [`OMGIRLScale`](omg_irl_lightning/omg_irl_scale.py) | Time-dependent velocity-annealing schedule $s^\theta(t)$ through updates to a multilayer perceptron in [`ScaleMLP`](omg_irl_lightning/scale_mlp.py); the pretrained velocity field $b^{\theta_\mathrm{ref}}$ remains frozen. | $x_{t+\Delta t} = x_t + [1 + s^\theta(t)] b^{\theta_\mathrm{ref}} \Delta t + \sigma(t) b^{\theta_\mathrm{ref}} \sqrt{\Delta t} \xi$ |
 
+There is also the [`OMGIRLScaledVelocity`](omg_irl_lightning/omg_irl_scaled_velocity.py) class which is similar to 
+`OMGIRLVelocity` but additionally considers a previously learned time-dependent velocity-annealing schedule 
+$s^\theta(t)$ from `OMGIRLScale`. This class can thus be used to update the velocity field $b^\theta(t,x_t)$ through 
+updates to the pretrained OMatG model while keeping a previously learned velocity-annealing schedule $s^\theta(t)$ in
+a `ScaleMLP` frozen.
+
 The available noise schedules $\sigma(t)$ in [```noise_schedules.py```](noise_schedules.py) are:
 
 | Schedule | Formula                        |
@@ -77,7 +83,9 @@ The available noise schedules $\sigma(t)$ in [```noise_schedules.py```](noise_sc
 | `SqrtNoiseSchedule` | $\sigma(t) = a \sqrt{(1-t)/t}$ |
 
 The noise schedules are related to the $\epsilon(t)$ functions in the stochastic interpolants of the base OMatG models 
-in [`omg/si.epsilon.py`](../si/epsilon.py) by $\sigma^2(t) = 2\epsilon(t)$.
+in [`omg/si.epsilon.py`](../si/epsilon.py) by $\sigma^2(t) = 2\epsilon(t)$. There is also a learnable noise schedule
+implemented in `MLPNoiseSchedule` that starts from a constant noise schedule and learns a time-dependent noise schedule 
+through RL updates to a multilayer perceptron.
 
 </details>
 
