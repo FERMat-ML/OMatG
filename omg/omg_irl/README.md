@@ -63,7 +63,7 @@ paper:
 2. The [`velocity_based_omatg_irl`](conf_examples/velocity_based_omatg_irl) directory contains RL and OMatG 
    configuration files for velocity-based OMatG-IRL from Section 5.1 (see orange curve in Fig. 3). The pretrained 
    checkpoint and original OMatG configuration file is available on 
-   [Hugging Face](https://huggingface.co/OMatG/MP-20-CSP/tree/main/Trig-ODE-Gamma). The same directory also contains a 
+   [Hugging Face](https://huggingface.co/OMatG/MP-20-CSP/tree/main/Trig-SDE-Gamma). The same directory also contains a 
    robust RL configuration in [`rl_config_robust.yaml`](conf_examples/velocity_based_omatg_irl/rl_config_robust.yaml) 
    that was used across different datasets and pretrained OMatG models in Appendix J.
 
