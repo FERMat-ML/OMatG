@@ -1,11 +1,15 @@
 from collections import OrderedDict
 import json
+import logging
 from math import log
+import os
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Literal, Optional, Sequence, Union
 import warnings
 from ase import Atoms
+from ase.filters import FrechetCellFilter
 from ase.io import write
+import ase.optimize
 from lightning.pytorch import Trainer
 import lmdb
 import matplotlib.pyplot as plt
@@ -13,8 +17,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import pickle
 from pymatgen.core import Composition, Lattice, Structure
+from pymatgen.io.ase import AseAtomsAdaptor
 from scipy.stats import lognorm, wasserstein_distance
 from sklearn.neighbors import KernelDensity
+import spglib
 import tqdm
 import torch
 from torch_geometric.data import Data
@@ -23,9 +29,10 @@ from omg.datamodule import OMGDataset, OMGDataModule
 from omg.globals import MAX_ATOM_NUM
 from omg.sampler.minimum_permutation_distance import correct_for_minimum_permutation_distance
 from omg.si.corrector import PeriodicBoundaryConditionsCorrector
-from omg.utils import convert_ase_atoms_to_data, xyz_reader
+from omg.utils import convert_ase_atoms_to_data, prefixed_stdout, xyz_reader
 from omg.analysis import (get_coordination_numbers, get_coordination_numbers_species, get_cov, get_space_group,
                           get_volume_frac, match_rmsds, metre_rmsds, ValidAtoms)
+from omg.omg_irl.rewards.lemat_genbench_energy_above_hull import get_energy_above_hull
 
 
 class OMGTrainer(Trainer):
@@ -1014,6 +1021,766 @@ class OMGTrainer(Trainer):
                 "cov_precision": cov_precision
             }, f, indent=4)
 
+    def energy_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
+                       result_name: str = "energy_metrics.json", energy_storage_file: str = "energies_per_atom.npy",
+                       device: Literal["cpu", "cuda"] = "cpu", default_dtype: Literal["float32", "float64"] = "float64",
+                       enable_cueq: bool = False, max_memory_scaler: float = 250000.0, volume_check_cutoff: float = 0.1,
+                       structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3,
+                       predict_energy_storage_file: Optional[str] = None) -> None:
+        """
+        Compute the energies per atom of the generated structures with MACE and report the mean energy per atom of valid
+        structures and the number of invalid structures during energy computation.
+
+        An invalid structure is a structure that fails a volume, structure, or polar sine checks. The volume check
+        checks if the volume of the structure is above a certain cutoff. The structure check checks if the minimum
+        interatomic distance in the structure is above a certain cutoff. The polar sine check checks if the polar sine
+        of the lattice is above a certain cutoff. These checks are used to filter out structures that are likely to
+        have diverging energies.
+
+        When using a CUDA device, the MACE calculations are batched using TorchSim's BinningAutoBatcher for
+        improved performance. This requires a max_memory_scaler parameter to control the batching behavior which is
+        essential for managing GPU memory usage. Larger values of max_memory_scaler allow for larger batches and potentially
+        better performance, but also increase the risk of out-of-memory errors. The optimal value for max_memory_scaler
+        depends on the specific GPU, the size of the structures being evaluated, the floating point precision, and
+        the number of structures being evaluated (since TorchSim preloads all structures as tensors before batching).
+        The default value of 250000.0 is adjusted for 80GB H100 GPUs, the MP20 dataset, float64 precision, and 9046
+        structures.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        :param xyz_file:
+            XYZ file containing the generated structures.
+            This argument has to be set on the command line.
+        :type xyz_file: str
+        :param result_name:
+            Name of the json file to save the energy results.
+            Defaults to "energy_metrics.json".
+            This argument can be optionally set on the command line.
+        :type result_name: str
+        :param energy_storage_file:
+            Name of the NumPy file to save the energies per atom.
+            Defaults to "energies_per_atom.npy".
+            This argument can be optionally set on the command line.
+        :type energy_storage_file: str
+        :param device:
+            The device to run MACE on. Can be "cpu" or "cuda".
+            Defaults to "cpu".
+            This argument can be optionally set on the command line.
+        :type device: Literal["cpu", "cuda"]
+        :param default_dtype:
+            The default dtype to use for MACE. Can be "float32" or "float64".
+            Defaults to "float64".
+            This argument can be optionally set on the command line.
+        :type default_dtype: Literal["float32", "float64"]
+        :param enable_cueq:
+            Whether to enable the CuEq in MACE.
+            Defaults to False.
+            This argument can be optionally set on the command line.
+        :type enable_cueq: bool
+        :param max_memory_scaler:
+            The max_memory_scaler parameter for TorchSim's BinningAutoBatcher when using CUDA.
+            Defaults to 250000.0, which is adjusted for 80GB H100 GPUs, the MP20 dataset, and float64 precision.
+        :type max_memory_scaler: float
+        :param volume_check_cutoff:
+            The cutoff for the volume check in cubic angstroms. Structures with volume per atom below this cutoff are
+            considered invalid.
+            Defaults to 0.1.
+            This argument can be optionally set on the command line.
+        :type volume_check_cutoff: float
+        :param structure_check_cutoff:
+            The cutoff for the structure check in angstroms. Structures with minimum interatomic distance below
+            this cutoff are considered invalid.
+            Defaults to 0.5.
+            This argument can be optionally set on the command line.
+        :type structure_check_cutoff: float
+        :param polar_sine_cutoff:
+            The cutoff for the polar sine check. Structures with polar sine of the lattice below this cutoff
+            are considered invalid.
+            Defaults to 1.0e-3.
+            This argument can be optionally set on the command line.
+        :type polar_sine_cutoff: float
+        :param predict_energy_storage_file:
+            Name of the NumPy file to save the energies per atom of the prediction dataset.
+            If None, the energies per atom of the prediction dataset are not computed and saved.
+            Defaults to None.
+            This argument can be optionally set on the command line.
+        :type predict_energy_storage_file: Optional[str]
+
+        :raises FileNotFoundError:
+            If the xyz_file does not exist.
+        :raises ValueError:
+            If the result_name does not end with .json.
+        """
+        with warnings.catch_warnings(), prefixed_stdout(prefix="[MACE] "):
+            warnings.simplefilter("ignore", category=UserWarning)
+            from mace.calculators import mace_mp
+        with prefixed_stdout(prefix="[TorchSim] "):
+            from torch_sim import static
+            from torch_sim.autobatching import BinningAutoBatcher
+            from torch_sim.models.mace import MaceModel
+
+        # Catch warnings from MACE and prefix stdout.
+        with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            if device == "cpu":
+                logging.disable(logging.WARNING)  # Newer versions of Mace log warnings.
+                # Calling mace_mp with return_raw_model=False changes the default dtype of torch.
+                mace_model = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq,
+                                     default_dtype=default_dtype)
+                logging.disable(logging.NOTSET)  # Undo the disabling of logging.
+                torch.set_default_dtype(torch.float32)  # Undo what happened in mace_mp construction.
+                batcher = None
+                if max_memory_scaler != 250000.0:
+                    warnings.warn("max_memory_scaler is only used when device is 'cuda', the specified value will be "
+                                  "ignored.")
+            else:
+                # TorchSim's batching does not work on CPU.
+                assert device == "cuda"
+                mace = mace_mp(model="medium-mpa-0", device=device, default_dtype=default_dtype,
+                               enable_cueq=enable_cueq, return_raw_model=True)
+                # noinspection PyTypeChecker
+                mace_model = MaceModel(model=mace, device=device, compute_forces=False, compute_stress=False,
+                                       dtype=torch.float64 if default_dtype == "float64" else torch.float32,
+                                       enable_cueq=enable_cueq)
+                batcher = BinningAutoBatcher(model=mace_model, max_memory_scaler=max_memory_scaler,
+                                             memory_scales_with="n_atoms_x_density")
+
+        def is_valid(atoms: Atoms) -> bool:
+            """Check if a structure is valid based on volume, structure, and polar sine checks."""
+            py_structure = AseAtomsAdaptor.get_structure(atoms)
+            volume_valid = (py_structure.volume >= volume_check_cutoff)
+            dist_mat = py_structure.distance_matrix
+            dist_mat = dist_mat + np.diag(
+                np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0)
+            )
+            min_dist = dist_mat.min()
+            structure_valid = (min_dist >= structure_check_cutoff)
+            polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+            polar_sine_valid = (polar_sine >= polar_sine_cutoff)
+            return volume_valid and structure_valid and polar_sine_valid
+
+        final_file = Path(xyz_file)
+        if not final_file.exists():
+            raise FileNotFoundError(f"File {final_file} does not exist.")
+
+        if not result_name.endswith(".json"):
+            raise ValueError("The result_name must end with .json")
+
+        if predict_energy_storage_file is not None:
+            ref_atoms = self._load_dataset_atoms(datamodule.pred_dataset)
+            if device == "cpu":
+                ref_energies_per_atom = np.full(len(ref_atoms), np.nan, dtype=float)
+                with torch.set_grad_enabled(True):  # Mace needs gradients.
+                    # Mace calculator needs appropriate default dtype.
+                    torch.set_default_dtype(torch.float64 if default_dtype == "float64" else torch.float32)
+                    for idx, atoms in enumerate(tqdm.tqdm(ref_atoms, desc="Computing energies with MACE",
+                                                          unit="structures")):
+                        assert is_valid(atoms)
+                        ref_energies_per_atom[idx] = mace_model.get_potential_energy(atoms) / len(atoms)
+                    torch.set_default_dtype(torch.float32)  # Undo the change to default dtype.
+            else:
+                assert device == "cuda"
+                assert all(is_valid(atoms) for atoms in ref_atoms)
+                res = static(system=ref_atoms, model=mace_model, autobatcher=batcher,
+                             pbar={"desc": "Computing energies with MACE", "unit": "structures"})
+                assert len(res) == len(ref_atoms)
+                ref_energies_per_atom = np.array([float(r["potential_energy"][0]) / len(atoms)
+                                                  for r, atoms in zip(res, ref_atoms)])
+            np.save(predict_energy_storage_file, ref_energies_per_atom)
+
+        # Get atoms
+        gen_atoms = xyz_reader(final_file)
+
+        energies_per_atom = np.full(len(gen_atoms), np.nan, dtype=float)
+        if device == "cpu":
+            with torch.set_grad_enabled(True):  # Mace needs gradients.
+                # Mace calculator needs appropriate default dtype.
+                torch.set_default_dtype(torch.float64 if default_dtype == "float64" else torch.float32)
+                for idx, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Computing energies with MACE",
+                                                      unit="structures")):
+                    if is_valid(atoms):
+                        energies_per_atom[idx] = mace_model.get_potential_energy(atoms) / len(atoms)
+                torch.set_default_dtype(torch.float32)  # Undo the change to default dtype.
+        else:
+            assert device == "cuda"
+            valid_mask = np.array([is_valid(atoms) for atoms in gen_atoms])
+            valid_atoms = [gen_atoms[i] for i in range(len(gen_atoms)) if valid_mask[i]]
+            res = static(system=valid_atoms, model=mace_model, autobatcher=batcher,
+                         pbar={"desc": "Computing valid energies with MACE",
+                               "postfix": f"{len(gen_atoms) - len(valid_atoms)} invalid structures",
+                               "unit": "structures"})
+            assert len(res) == len(valid_atoms)
+            energies_per_atom[valid_mask] = np.array([float(r["potential_energy"][0]) / len(atoms)
+                                                      for r, atoms in zip(res, valid_atoms)])
+
+        np.save(energy_storage_file, energies_per_atom)
+        valid_energies = energies_per_atom[~np.isnan(energies_per_atom)]
+        number_invalid_energies = np.sum(np.isnan(energies_per_atom))
+
+        print("Mean energy per atom of valid structures: ", float(np.mean(valid_energies)))
+        print("Number of invalid structures during energy computation: ", int(number_invalid_energies))
+
+        with open(result_name, "w") as f:
+            json.dump({
+                "mean_energy_per_atom": float(np.mean(valid_energies)),
+                "number_invalid_energies": int(number_invalid_energies)
+            }, f, indent=4)
+
+    def energy_above_hull_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
+                                  result_name: str = "energy_above_hull_metrics.json",
+                                  energy_above_hull_storage_file: str = "energy_above_hull_per_atom.npy",
+                                  energy_storage_file: str = "energies_per_atom.npy",
+                                  device: Literal["cpu", "cuda"] = "cpu",
+                                  default_dtype: Literal["float32", "float64"] = "float64", enable_cueq: bool = False,
+                                  max_memory_scaler: float = 250000.0, volume_check_cutoff: float = 0.1,
+                                  structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3) -> None:
+        """
+        Compute the energy above the convex hull per atom for generated structures.
+
+        First computes total energies with MACE, then computes the energy above the convex hull for each valid
+        structure using its composition and a reference phase diagram from the LeMat-GenBench dataset. This metric is
+        appropriate for de-novo generation (DNG) where structures may have different compositions.
+
+        An invalid structure is a structure that fails volume, structure, or polar sine checks. Structures where the
+        hull computation fails (e.g., elements not in the reference dataset) are also marked as invalid.
+
+        When using a CUDA device, the MACE calculations are batched using TorchSim's BinningAutoBatcher for
+        improved performance.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        :param xyz_file:
+            XYZ file containing the generated structures.
+            This argument has to be set on the command line.
+        :type xyz_file: str
+        :param result_name:
+            Name of the json file to save the energy above hull results.
+            Defaults to "energy_above_hull_metrics.json".
+        :type result_name: str
+        :param energy_above_hull_storage_file:
+            Name of the NumPy file to save the energy above hull per atom values.
+            Defaults to "energy_above_hull_per_atom.npy".
+        :type energy_above_hull_storage_file: str
+        :param energy_storage_file:
+            Name of the NumPy file to save the energies per atom.
+            Defaults to "energies_per_atom.npy".
+        :type energy_storage_file: str
+        :param device:
+            The device to run MACE on. Can be "cpu" or "cuda".
+            Defaults to "cpu".
+        :type device: Literal["cpu", "cuda"]
+        :param default_dtype:
+            The default dtype to use for MACE. Can be "float32" or "float64".
+            Defaults to "float64".
+        :type default_dtype: Literal["float32", "float64"]
+        :param enable_cueq:
+            Whether to enable the CuEq in MACE.
+            Defaults to False.
+        :type enable_cueq: bool
+        :param max_memory_scaler:
+            The max_memory_scaler parameter for TorchSim's BinningAutoBatcher when using CUDA.
+            Defaults to 250000.0, which is adjusted for 80GB H100 GPUs, the MP20 dataset, and float64 precision.
+        :type max_memory_scaler: float
+        :param volume_check_cutoff:
+            The cutoff for the volume check in cubic angstroms. Structures with volume below this cutoff are
+            considered invalid.
+            Defaults to 0.1.
+        :type volume_check_cutoff: float
+        :param structure_check_cutoff:
+            The cutoff for the structure check in angstroms. Structures with minimum interatomic distance below
+            this cutoff are considered invalid.
+            Defaults to 0.5.
+        :type structure_check_cutoff: float
+        :param polar_sine_cutoff:
+            The cutoff for the polar sine check. Structures with polar sine of the lattice below this cutoff
+            are considered invalid.
+            Defaults to 1.0e-3.
+        :type polar_sine_cutoff: float
+
+        :raises FileNotFoundError:
+            If the xyz_file does not exist.
+        :raises ValueError:
+            If the result_name does not end with .json.
+        """
+        with warnings.catch_warnings(), prefixed_stdout(prefix="[MACE] "):
+            warnings.simplefilter("ignore", category=UserWarning)
+            from mace.calculators import mace_mp
+        with prefixed_stdout(prefix="[TorchSim] "):
+            from torch_sim import static
+            from torch_sim.autobatching import BinningAutoBatcher
+            from torch_sim.models.mace import MaceModel
+
+        # Catch warnings from MACE and prefix stdout.
+        with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            if device == "cpu":
+                logging.disable(logging.WARNING)  # Newer versions of Mace log warnings.
+                # Calling mace_mp with return_raw_model=False changes the default dtype of torch.
+                mace_model = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq,
+                                     default_dtype=default_dtype)
+                logging.disable(logging.NOTSET)  # Undo the disabling of logging.
+                torch.set_default_dtype(torch.float32)  # Undo what happened in mace_mp construction.
+                batcher = None
+                if max_memory_scaler != 250000.0:
+                    warnings.warn("max_memory_scaler is only used when device is 'cuda', the specified value will be "
+                                  "ignored.")
+            else:
+                # TorchSim's batching does not work on CPU.
+                assert device == "cuda"
+                mace = mace_mp(model="medium-mpa-0", device=device, default_dtype=default_dtype,
+                               enable_cueq=enable_cueq, return_raw_model=True)
+                # noinspection PyTypeChecker
+                mace_model = MaceModel(model=mace, device=device, compute_forces=False, compute_stress=False,
+                                       dtype=torch.float64 if default_dtype == "float64" else torch.float32,
+                                       enable_cueq=enable_cueq)
+                batcher = BinningAutoBatcher(model=mace_model, max_memory_scaler=max_memory_scaler,
+                                             memory_scales_with="n_atoms_x_density")
+
+        def is_valid(atoms: Atoms) -> bool:
+            """Check if a structure is valid based on volume, structure, and polar sine checks."""
+            py_structure = AseAtomsAdaptor.get_structure(atoms)
+            volume_valid = (py_structure.volume >= volume_check_cutoff)
+            dist_mat = py_structure.distance_matrix
+            dist_mat = dist_mat + np.diag(
+                np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0)
+            )
+            min_dist = dist_mat.min()
+            structure_valid = (min_dist >= structure_check_cutoff)
+            polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+            polar_sine_valid = (polar_sine >= polar_sine_cutoff)
+            return volume_valid and structure_valid and polar_sine_valid
+
+        final_file = Path(xyz_file)
+        if not final_file.exists():
+            raise FileNotFoundError(f"File {final_file} does not exist.")
+
+        if not result_name.endswith(".json"):
+            raise ValueError("The result_name must end with .json")
+
+        # Get atoms
+        gen_atoms = xyz_reader(final_file)
+
+        total_energies = np.full(len(gen_atoms), np.nan, dtype=float)
+        valid_mask = np.array([is_valid(atoms) for atoms in gen_atoms])
+
+        if device == "cpu":
+            with torch.set_grad_enabled(True):  # Mace needs gradients.
+                # Mace calculator needs appropriate default dtype.
+                torch.set_default_dtype(torch.float64 if default_dtype == "float64" else torch.float32)
+                for idx, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Computing energies with MACE",
+                                                      unit="structures")):
+                    if valid_mask[idx]:
+                        total_energies[idx] = mace_model.get_potential_energy(atoms)
+                torch.set_default_dtype(torch.float32)  # Undo the change to default dtype.
+        else:
+            assert device == "cuda"
+            valid_atoms = [gen_atoms[i] for i in range(len(gen_atoms)) if valid_mask[i]]
+            res = static(system=valid_atoms, model=mace_model, autobatcher=batcher,
+                         pbar={"desc": "Computing valid energies with MACE",
+                               "postfix": f"{len(gen_atoms) - len(valid_atoms)} invalid structures",
+                               "unit": "structures"})
+            assert len(res) == len(valid_atoms)
+            total_energies[valid_mask] = np.array([float(r["potential_energy"][0]) for r in res])
+
+        energies_per_atom = np.array([total_energies[i] / len(gen_atoms[i]) if not np.isnan(total_energies[i])
+                                      else np.nan for i in range(len(gen_atoms))])
+        np.save(energy_storage_file, energies_per_atom)
+
+        ehull_per_atom = np.full(len(gen_atoms), np.nan, dtype=float)
+        num_hull_errors = 0
+        for idx in tqdm.tqdm(range(len(gen_atoms)), desc="Computing energy above hull", unit="structures"):
+            if not valid_mask[idx]:
+                continue
+            try:
+                composition = AseAtomsAdaptor.get_structure(gen_atoms[idx]).composition
+                ehull_per_atom[idx] = get_energy_above_hull(total_energies[idx], composition,
+                                                            hull_type="mace_mp", threshold=0.001)
+            except (ValueError, RuntimeError) as e:
+                print("[WARNING] Failed to compute energy above hull: ", e)
+                num_hull_errors += 1
+
+        np.save(energy_above_hull_storage_file, ehull_per_atom)
+        valid_ehull = ehull_per_atom[~np.isnan(ehull_per_atom)]
+        number_invalid = int(np.sum(~valid_mask))
+
+        print("Mean energy above hull (eV/atom) of valid structures: ", float(np.mean(valid_ehull)))
+        print("Number of invalid structures (geometry checks): ", number_invalid)
+        print("Number of hull computation errors: ", num_hull_errors)
+
+        with open(result_name, "w") as f:
+            json.dump({
+                "mean_ehull_per_atom": float(np.mean(valid_ehull)),
+                "mean_energy_per_atom": float(np.nanmean(energies_per_atom)),
+                "number_invalid_structures": number_invalid,
+                "number_hull_errors": num_hull_errors
+            }, f, indent=4)
+
+    def symmetry_metrics(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
+                         result_name: str = "symmetry_metrics.json",
+                         symprec: float = 0.1, volume_check_cutoff: float = 0.1,
+                         structure_check_cutoff: float = 0.5, polar_sine_cutoff: float = 1.0e-3) -> None:
+        """
+        Compute symmetry statistics for generated structures.
+
+        For each structure, computes the space group number and checks for inversion symmetry using spglib. Reports the
+        fraction of non-triclinic structures (space group > 2), the fraction of non-centrosymmetric structures (non-
+        triclinic and no inversion symmetry), and the number of invalid structures that fail validity checks.
+
+        An invalid structure is a structure that fails volume, interatomic distance, or polar sine checks. Invalid
+        structures and structures where spglib fails are assigned space group number 0.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        :param xyz_file:
+            XYZ file containing the generated structures.
+            This argument has to be set on the command line.
+        :type xyz_file: str
+        :param result_name:
+            Name of the json file to save the symmetry results.
+            Defaults to "symmetry_metrics.json".
+        :type result_name: str
+        :param symprec:
+            Symmetry tolerance for spglib in Angstroms.
+            Defaults to 0.1.
+        :type symprec: float
+        :param volume_check_cutoff:
+            The cutoff for the volume check in cubic angstroms. Structures with volume below this cutoff are
+            considered invalid.
+            Defaults to 0.1.
+        :type volume_check_cutoff: float
+        :param structure_check_cutoff:
+            The cutoff for the structure check in angstroms. Structures with minimum interatomic distance below
+            this cutoff are considered invalid.
+            Defaults to 0.5.
+        :type structure_check_cutoff: float
+        :param polar_sine_cutoff:
+            The cutoff for the polar sine check. Structures with polar sine of the lattice below this cutoff
+            are considered invalid.
+            Defaults to 1.0e-3.
+        :type polar_sine_cutoff: float
+
+        :raises FileNotFoundError:
+            If the xyz_file does not exist.
+        :raises ValueError:
+            If the result_name does not end with .json.
+        """
+        def is_valid(atoms: Atoms) -> bool:
+            """Check if a structure is valid based on volume, structure, and polar sine checks."""
+            py_structure = AseAtomsAdaptor.get_structure(atoms)
+            volume_valid = (py_structure.volume >= volume_check_cutoff)
+            dist_mat = py_structure.distance_matrix
+            dist_mat = dist_mat + np.diag(
+                np.ones(dist_mat.shape[0]) * (structure_check_cutoff + 10.0)
+            )
+            min_dist = dist_mat.min()
+            structure_valid = (min_dist >= structure_check_cutoff)
+            polar_sine = py_structure.lattice.volume / np.prod(py_structure.lattice.lengths)
+            polar_sine_valid = (polar_sine >= polar_sine_cutoff)
+            return volume_valid and structure_valid and polar_sine_valid
+
+        def compute_symmetry(atoms: Atoms) -> tuple[int, bool]:
+            """Return (space group number, has_inversion). Returns (0, False) if spglib fails."""
+            cell = (atoms.get_cell(), atoms.get_scaled_positions(), atoms.get_atomic_numbers())
+            # Suppress spglib's C-level stderr output.
+            old_fd = os.dup(2)
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, 2)
+            os.close(devnull)
+            try:
+                sym_data = spglib.get_symmetry_dataset(cell, symprec=symprec)
+            finally:
+                os.dup2(old_fd, 2)
+                os.close(old_fd)
+            if sym_data is None:
+                return 0, False
+            has_inversion = any(
+                np.array_equal(rot, -np.eye(3, dtype=int))
+                for rot in sym_data.rotations
+            )
+            return sym_data.number, has_inversion
+
+        final_file = Path(xyz_file)
+        if not final_file.exists():
+            raise FileNotFoundError(f"File {final_file} does not exist.")
+
+        if not result_name.endswith(".json"):
+            raise ValueError("The result_name must end with .json")
+
+        gen_atoms = xyz_reader(final_file)
+        n = len(gen_atoms)
+
+        is_non_triclinic = np.zeros(n, dtype=float)
+        is_non_centrosymmetric = np.zeros(n, dtype=float)
+        invalid_flags = np.zeros(n, dtype=float)
+
+        for idx, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Computing symmetry metrics", unit="structures")):
+            if not is_valid(atoms):
+                invalid_flags[idx] = 1.0
+                continue
+            sg_number, has_inversion = compute_symmetry(atoms)
+            if sg_number > 2:
+                is_non_triclinic[idx] = 1.0
+            if sg_number > 2 and not has_inversion:
+                is_non_centrosymmetric[idx] = 1.0
+
+        number_invalid = int(np.sum(invalid_flags))
+        fraction_non_triclinic = float(np.mean(is_non_triclinic))
+        fraction_non_centrosymmetric = float(np.mean(is_non_centrosymmetric))
+
+        print(f"Fraction of non-triclinic structures (SG > 2): {fraction_non_triclinic:.4f}")
+        print(f"Fraction of non-centrosymmetric structures: {fraction_non_centrosymmetric:.4f}")
+        print(f"Number of invalid structures: {number_invalid}")
+
+        with open(result_name, "w") as f:
+            json.dump({
+                "fraction_non_triclinic": fraction_non_triclinic,
+                "fraction_non_centrosymmetric": fraction_non_centrosymmetric,
+                "number_invalid_structures": number_invalid
+            }, f, indent=4)
+
+    def relax(self, model: OMGLightning, datamodule: OMGDataModule, xyz_file: str,
+              relaxed_xyz_file: Optional[str] = None, result_name: str = "relax.json", fmax: float = 0.02,
+              max_steps: int = 100, optimizer_name: str = "BFGSLineSearch",
+              device: Literal["cpu", "cuda"] = "cpu", enable_cueq: bool = False,
+              max_memory_scaler: float = 250000.0) -> None:
+        """
+        Relax the generated structures using MACE.
+
+        The method relaxes the structures using the specified optimizer and the forces predicted by the pretrained
+        MACE model. The relaxed structures are saved to an XYZ file, and the mean root-mean-square distance between
+        the original and relaxed structures are saved to a JSON file.
+
+        When using a CPU device, the structures are relaxed sequentially using ASE optimizers with a Frechet cell
+        filter. The optimizer_name parameter selects the ASE optimizer to use. Supported optimizers are "BFGS",
+        "BFGSLineSearch", "LBFGS", "LBFGSLineSearch", "GoodOldQuasiNewton", "CellAwareBFGS", "GPMin", "MDMin",
+        "FIRE", and "FIRE2".
+
+        When using a CUDA device, the relaxation is batched using TorchSim's optimize function with an
+        InFlightAutoBatcher for improved performance. The optimizer_name parameter selects the TorchSim optimizer to
+        use. Supported optimizers are "bfgs", "lbfgs", "fire", and "gradient_descent". A Frechet cell filter is used for
+        cell relaxation. This requires a max_memory_scaler parameter to control the batching behavior which is essential
+        for managing GPU memory usage. Larger values of max_memory_scaler allow for larger batches and potentially
+        better performance, but also increase the risk of out-of-memory errors. The optimal value for max_memory_scaler
+        depends on the specific GPU, the size of the structures being relaxed, and the number of structures being
+        relaxed (since TorchSim preloads all structures as tensors before batching). The default value of 250000.0 is
+        adjusted for 80GB H100 GPUs, the MP20 dataset, float64 precision, and 9046 structures.
+
+        :param model:
+            OMG model (argument required and automatically passed by lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by lightning CLI).
+        :type datamodule: OMGDataModule
+        :param xyz_file:
+            XYZ file containing the generated structures to relax.
+            This argument has to be set on the command line.
+        :type xyz_file: str
+        :param relaxed_xyz_file:
+            XYZ file to save the relaxed structures to. If None, the relaxed structures are saved to
+            a file with the same name as `xyz_file` but with "_relaxed" appended to the stem.
+            This argument can be optionally set on the command line.
+            Defaults to None.
+        :type relaxed_xyz_file: Optional[str]
+        :param result_name:
+            Name of the JSON file to save the relaxation results to.
+            This argument can be optionally set on the command line.
+            Defaults to "relax.json".
+        :type result_name: str
+        :param fmax:
+            Maximum force criterion for convergence of the relaxation.
+            The relaxation is considered converged when the maximum force on any atom is less than `fmax`.
+            This argument can be optionally set on the command line.
+            Defaults to 0.02.
+        :type fmax: float
+        :param max_steps:
+            Maximum number of optimization steps for the relaxation.
+            If the relaxation does not converge within this number of steps, it is stopped.
+            This argument can be optionally set on the command line.
+            Defaults to 100.
+        :type max_steps: int
+        :param optimizer_name:
+            Optimizer to use for the relaxation. On CPU, supported optimizers are "BFGS", "BFGSLineSearch", "LBFGS",
+            "LBFGSLineSearch", "GoodOldQuasiNewton", "CellAwareBFGS", "GPMin", "MDMin", "FIRE", and "FIRE2"
+            (see https://ase-lib.org/ase/optimize.html). On CUDA, supported optimizers are "bfgs", "lbfgs", "fire", and
+            "gradient_descent" (TorchSim optimizers).
+            This argument can be optionally set on the command line.
+            Defaults to "BFGSLineSearch".
+        :type optimizer_name: str
+        :param device:
+            The device to run MACE on. Can be "cpu" or "cuda".
+            Defaults to "cpu".
+            This argument can be optionally set on the command line.
+        :type device: Literal["cpu", "cuda"]
+        :param enable_cueq:
+            Whether to enable the CuEq in MACE.
+            Defaults to False.
+            This argument can be optionally set on the command line.
+        :type enable_cueq: bool
+        :param max_memory_scaler:
+            The max_memory_scaler parameter for TorchSim's InFlightAutoBatcher when using CUDA.
+            Defaults to 250000.0, which is adjusted for 80GB H100 GPUs, the MP20 dataset, and float64 precision.
+            This argument can be optionally set on the command line.
+        :type max_memory_scaler: float
+
+        :raises FileNotFoundError:
+            If the `xyz_file` does not exist.
+        :raises ValueError:
+            If the `result_name` does not end with .json.
+            If the `optimizer_name` is not supported.
+        """
+        with warnings.catch_warnings(), prefixed_stdout(prefix="[MACE] "):
+            warnings.simplefilter("ignore", category=UserWarning)
+            from mace.calculators import mace_mp
+        with prefixed_stdout(prefix="[TorchSim] "):
+            import torch_sim as ts
+            from torch_sim.autobatching import InFlightAutoBatcher
+            from torch_sim.models.mace import MaceModel
+
+        final_file = Path(xyz_file)
+        if not final_file.exists():
+            raise FileNotFoundError(f"File {final_file} does not exist.")
+        gen_atoms = xyz_reader(final_file)
+
+        if relaxed_xyz_file is not None:
+            relaxed_file = Path(relaxed_xyz_file)
+        else:
+            relaxed_file = final_file.with_stem(final_file.stem + "_relaxed")
+
+        if not result_name.endswith(".json"):
+            raise ValueError("The result_name must end with .json")
+
+        # Delete the relaxed file if it already exists to avoid appending to stale results.
+        if relaxed_file.exists():
+            relaxed_file.unlink()
+
+        # Initialize MACE model.
+        with prefixed_stdout(prefix="[MACE] "), warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            if device == "cpu":
+                logging.disable(logging.WARNING)  # Newer versions of Mace log warnings.
+                # Note that calling mace_mp with return_raw_model=False changes the default dtype of torch.
+                mace_model = mace_mp(model="medium-mpa-0", device=device, enable_cueq=enable_cueq,
+                                     default_dtype="float64")
+                logging.disable(logging.NOTSET)
+                if max_memory_scaler != 250000.0:
+                    warnings.warn("max_memory_scaler is only used when device is 'cuda', the specified value will be "
+                                  "ignored.")
+                autobatcher = None
+            else:
+                # TorchSim's batching does not work on CPU.
+                assert device == "cuda"
+                mace = mace_mp(model="medium-mpa-0", device=device, default_dtype="float64", enable_cueq=enable_cueq,
+                               return_raw_model=True)
+                # noinspection PyTypeChecker
+                mace_model = MaceModel(model=mace, device=device, compute_forces=True, compute_stress=True,
+                                       dtype=torch.float64, enable_cueq=enable_cueq)
+                autobatcher = InFlightAutoBatcher(model=mace_model, max_memory_scaler=max_memory_scaler,
+                                                  memory_scales_with=mace_model.memory_scales_with)
+
+        if device == "cpu":
+            # See https://ase-lib.org/ase/optimize.html
+            if optimizer_name not in {"BFGS", "BFGSLineSearch", "LBFGS", "LBFGSLineSearch", "GoodOldQuasiNewton",
+                                      "CellAwareBFGS", "GPMin", "MDMin", "FIRE", "FIRE2"}:
+                raise ValueError(f"Unsupported optimizer {optimizer_name}. Supported optimizers are BFGS, "
+                                 f"BFGSLineSearch, LBFGS, LBFGSLineSearch, GoodOldQuasiNewton, CellAwareBFGS, GPMin, "
+                                 f"MDMin, FIRE, and FIRE2.")
+            optimizer_class = getattr(ase.optimize, optimizer_name)
+
+            relaxation_steps = []
+            rmses = []
+            failed_relaxations = 0
+
+            for i, atoms in enumerate(tqdm.tqdm(gen_atoms, desc="Relaxing structures", unit="structure")):
+                original_atoms = atoms.copy()
+                atoms.calc = mace_model
+                optimizer = optimizer_class(FrechetCellFilter(atoms), logfile=None)
+                try:
+                    optimizer.run(fmax=fmax, steps=max_steps)
+                except RuntimeError as e:
+                    warnings.warn(f"Structure {i} relaxation failed with error: {e}")
+                    failed_relaxations += 1
+                    write(str(relaxed_file), original_atoms.copy(), format='extxyz', append=True)
+                    continue
+
+                steps = optimizer.get_number_of_steps()
+                if steps == max_steps:
+                    warnings.warn(f"Structure {i} reached the maximum number of relaxation steps ({max_steps}).")
+                relaxation_steps.append(steps)
+
+                rmse = np.sqrt(np.mean(np.linalg.norm(original_atoms.positions - atoms.positions, axis=1) ** 2))
+                rmses.append(rmse)
+
+                # Copy necessary to avoid including force information etc.
+                write(str(relaxed_file), atoms.copy(), format='extxyz', append=True)
+
+                # Save per-structure iteration counts to a separate .npy file.
+                npy_file = Path(result_name).with_suffix(".relaxation_steps.npy")
+                np.save(str(npy_file), np.array(relaxation_steps, dtype=np.int32))
+
+                with open(result_name, "w") as f:
+                    json.dump({
+                        "mean_relaxation_steps": float(np.mean(relaxation_steps)),
+                        "mean_rmse": float(np.mean(rmses)),
+                        "failed_relaxations": failed_relaxations
+                    }, f, indent=4)
+        else:
+            assert device == "cuda"
+            # Store original positions for RMSE computation.
+            original_positions = [atoms.positions.copy() for atoms in gen_atoms]
+            if optimizer_name not in {"bfgs", "lbfgs", "fire", "gradient_descent"}:
+                raise ValueError(f"Unsupported optimizer {optimizer_name}. Supported optimizers are bfgs, lbfgs, fire, "
+                                 f"and gradient_descent.")
+            optimizer = getattr(ts.Optimizer, optimizer_name)
+            relaxed_state = ts.optimize(
+                system=gen_atoms,
+                model=mace_model,
+                optimizer=optimizer,
+                convergence_fn=ts.generate_force_convergence_fn(force_tol=fmax, include_cell_forces=True),
+                max_steps=max_steps,
+                autobatcher=autobatcher,
+                init_kwargs=dict(cell_filter=ts.CellFilter.frechet),
+                pbar={"desc": "Relaxing structures with MACE", "unit": "structure"},
+            )
+
+            # Extract per-system iteration counts for bfgs/lbfgs.
+            n_iter = None
+            if hasattr(relaxed_state, "n_iter"):
+                n_iter = relaxed_state.n_iter  # int32 tensor, one entry per system
+
+            relaxed_atoms_list = relaxed_state.to_atoms()
+            assert len(relaxed_atoms_list) == len(gen_atoms)
+
+            rmses = []
+            failed_relaxations = 0
+            for orig_pos, relaxed_atoms in zip(original_positions, relaxed_atoms_list):
+                rmse = np.sqrt(np.mean(np.linalg.norm(orig_pos - relaxed_atoms.positions, axis=1) ** 2))
+                rmses.append(rmse)
+                write(str(relaxed_file), relaxed_atoms, format='extxyz', append=True)
+
+            result = {
+                "mean_rmse": float(np.mean(rmses)) if rmses else None,
+                "failed_relaxations": failed_relaxations
+            }
+            if n_iter is not None:
+                result["mean_relaxation_steps"] = float(n_iter.float().mean().item())
+                npy_file = Path(result_name).with_suffix(".relaxation_steps.npy")
+                np.save(str(npy_file), n_iter.cpu().numpy())
+
+            with open(result_name, "w") as f:
+                json.dump(result, f, indent=4)
+
     def fit_lattice(self, model: OMGLightning, datamodule: OMGDataModule) -> None:
         """
         Fit a log-normal distribution to the lattice lengths of the training dataset.
@@ -1107,3 +1874,32 @@ class OMGTrainer(Trainer):
                     "ids": str(struc)
                 }
                 txn.put(str(idx).encode(), pickle.dumps(data))
+
+    def load(self, model: OMGLightning, datamodule: OMGDataModule,
+             ckpt_path: Optional[Union[str, Path]] = None) -> None:
+        """
+        Load the model, datamodule, and optionally a checkpoint to ensure everything is working.
+
+        Within LightningCLI, this subcommand enables loading a checkpoint without starting training or testing. This
+        circumvents the problem that, if no subcommand is provided to LightningCLI, it either errors out (if run=True
+        in LightningCLI) or just initializes the model and datamodule without loading a checkpoint (if run=False in
+        LightningCLI). By using this subcommand with run=True, one can test whether a checkpoint can be loaded, without
+        actually starting training or testing.
+
+        :param model:
+            OMG model (argument required and automatically passed by Lightning CLI).
+        :type model: OMGLightning
+        :param datamodule:
+            OMG datamodule (argument required and automatically passed by Lightning CLI).
+        :type datamodule: OMGDataModule
+        :param ckpt_path:
+            Path to the checkpoint file to load. If None, no checkpoint is loaded.
+            This argument can be optionally set on the command line.
+            Defaults to None.
+        :type ckpt_path: Optional[Union[str, Path]]
+        """
+        if ckpt_path is not None:
+            print(f"Restoring states from the checkpoint path at {ckpt_path}")
+            ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
+            model.load_state_dict(ckpt["state_dict"])
+            print(f"Loaded model weights from the checkpoint at {ckpt_path}")

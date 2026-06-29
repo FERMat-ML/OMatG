@@ -292,3 +292,13 @@ class StochasticInterpolants(object):
             raise ValueError(f"Data field must be in {[d.name for d in DataField]}.")
         index = self._data_fields.index(df)
         return self._stochastic_interpolants[index]
+
+    def get_integration_time_steps(self) -> int:
+        """
+        Return the number of integration time steps for the integration of the collection of stochastic interpolants.
+
+        :return:
+            Number of integration time steps.
+        :rtype: int
+        """
+        return self._integration_time_steps

@@ -8,5 +8,6 @@ from .interpolants import (LinearInterpolant, TrigonometricInterpolant, EncoderD
                            ScoreBasedDiffusionModelInterpolantVP, ScoreBasedDiffusionModelInterpolantVE,
                            PeriodicLinearInterpolant)
 from .single_stochastic_interpolant import DifferentialEquationType, SingleStochasticInterpolant
+from .single_stochastic_interpolant_os import SingleStochasticInterpolantOS
 from .single_stochastic_interpolant_identity import SingleStochasticInterpolantIdentity
 from .stochastic_interpolants import StochasticInterpolants

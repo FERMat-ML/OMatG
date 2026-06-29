@@ -1,0 +1,692 @@
+from typing import Optional, Sequence
+import warnings
+import torch
+import torch.nn as nn
+from tqdm import trange
+from omg.datamodule import OMGData
+from omg.globals import SMALL_TIME, BIG_TIME
+from omg.si import DifferentialEquationType, SingleStochasticInterpolantOS
+from omg.utils import DataField
+from omg.omg_irl.base_modules import base_modules
+from omg.omg_irl.noise_schedules import NoiseSchedule
+from omg.omg_irl.rewards import Reward
+from .abstracts import OMGIRLLightningAbstract, TrajectoryData
+from .scale_mlp import ScaleMLP
+
+
+class OMGIRLScale(OMGIRLLightningAbstract):
+    """
+    Velocity-annealing Open Materials Generation with Inference-time Reinforcement Learning (OMatG-IRL) using
+    group-relative policy optimization (GRPO) and proximal policy optimization (PPO) within the PyTorch Lightning
+    framework.
+
+    This class learns a time-dependent velocity-annealing schedule that modifies the base OMatG model's velocity
+    as (1 + s(t)) * b_ref(x_t, t), where s(t) is the learned scale and b_ref(x_t, t) is the base model's predicted
+    velocity.
+
+    Exploration is enabled by adding Gaussian noise with time-dependent standard deviation sigma(t) to the
+    velocity-annealing schedule, resulting in the following Euler-Maruyama update for the variable x_t:
+    x_t+dt = x_t + [1 + s(t)] * b_ref(x_t, t) * dt + sigma(t) * b_ref(x_t, t) * randn * sqrt(dt),
+    where randn is a one-dimensional standard normal random variable, and sigma(t) is a (potentially learnable) noise
+    schedule.
+
+    Analogously, the reference policy is given by
+    x_t+dt = x_t + b_ref(x_t, t) * dt + sigma_ref(t) * b_ref(x_t, t) * randn * sqrt(dt),
+    where sigma_ref(t) is a fixed reference noise schedule.
+
+    The GRPO framework is used to learn a velocity-annealing schedule for the atomic positions and the lattice vectors,
+    given that they are integrated by the base model. Any scores predicted by the base model are ignored. Optionally,
+    one can switch off learning of a velocity-annealing schedule for each of these data fields.
+
+    For every data field for which a velocity-annealing schedule is learned, the loss consists of a policy loss,
+    a regularization loss, and optionally, if the noise schedule for that data field is learnable, an entropy loss. The
+    relative costs of these losses should be specified with the keys '<data_field>_policy',
+    '<data_field>_regularization', and '<data_field>_entropy' in the relative_costs dictionary.
+
+    One cannot use this class to learn a velocity-annealing schedule for the discrete species. If species are integrated
+    by the base model, they are passively integrated using the frozen base model at each timestep without any RL. This
+    enables de novo generation where species are predicted alongside positions and lattice vectors.
+
+    :param reward:
+        Reward function to evaluate the generated structures.
+    :type reward: Reward
+    :param reference_noise_schedules:
+        Dictionary mapping data field names to reference noise schedules sigma_ref(t).
+        The reference noise schedules must not be learnable.
+    :type reference_noise_schedules: dict[str, NoiseSchedule]
+    :param noise_schedules:
+        Dictionary mapping data field names to noise schedules sigma(t).
+        The noise schedules can be learnable or non-learnable.
+    :type noise_schedules: dict[str, NoiseSchedule]
+    :param relative_costs:
+        Dictionary mapping cost types to their relative costs for each data field.
+    :type relative_costs: dict[str, float]
+    :param scale_model:
+        The scale model to learn the velocity-annealing schedule s(t).
+        The scale model should output a dictionary mapping data field names to their corresponding scales.
+    :type scale_model: ScaleMLP
+    :param normalize_relative_costs:
+        If True, all relative costs are normalized so that they sum to 1.
+        Defaults to True.
+    :type normalize_relative_costs: bool
+    :param disable_fields:
+        Sequence of data field names for which to disable learning of the velocity-annealing schedule.
+        For these data fields, the velocity-annealing schedule is effectively set to zero, and no noise is added.
+        Defaults to an empty sequence.
+    :type disable_fields: Sequence[str]
+    :param grpo_group_size:
+        Number of samples per structure in each GRPO group.
+        Must be greater than 1.
+        Defaults to 32.
+    :type grpo_group_size: int
+    :param grpo_num_groups:
+        Number of GRPO groups per training batch.
+        The total number of structures in a training batch is grpo_group_size * grpo_num_groups.
+        Must be greater than 0.
+        Defaults to 16.
+    :type grpo_num_groups: int
+    :param grpo_share_x_0:
+        If True, all group members share the same initial structure x_0, i.e., x_0 is sampled once per GRPO group.
+        If False, x_0 is sampled independently for each group member.
+        Defaults to True.
+    :type grpo_share_x_0: bool
+    :param ppo_clip_epsilon:
+        PPO clipping epsilon for the surrogate objective.
+        Must be non-negative.
+        Defaults to 0.2.
+    :type ppo_clip_epsilon: float
+    :param ppo_epochs:
+        Number of PPO epochs (passes over the same trajectory) per training step.
+        Must be at least 1.
+        Defaults to 1.
+    :type ppo_epochs: int
+    :param gradient_clip_val:
+        Value for gradient clipping.
+        If None, no gradient clipping is applied.
+        Defaults to 1.0.
+    :type gradient_clip_val: Optional[float]
+    :param gradient_clip_algorithm:
+        Algorithm for gradient clipping. Options are "norm" or "value".
+        Defaults to "norm".
+    :type gradient_clip_algorithm: str
+    :param generation_xyz_filename:
+        If provided, the filename to store predicted structures during prediction.
+        If None, a timestamped filename will be generated.
+        Must be an .xyz file if provided.
+        Defaults to None.
+    :type generation_xyz_filename: Optional[str]
+    :param validation_xyz_filename:
+        If provided, the filename to store validation structures during validation.
+        This filename will be used as a prefix, and epoch and step information will be appended to it for each
+        validation batch.
+        If None, validation structures will not be stored.
+        Must be an .xyz file if provided.
+        Defaults to None.
+    :type validation_xyz_filename: Optional[str]
+    :param enable_progress_bar:
+        If True, enables progress bars during reward computation, rollout, PPO update, and integration.
+        Defaults to True.
+    :type enable_progress_bar: bool
+
+    :raises ValueError:
+        If reference_noise_schedules contains an invalid data field name.
+        If any reference noise schedule is learnable.
+        If noise_schedules contains an invalid data field name.
+        If disable_fields contains an invalid data field name.
+        If any relative cost is negative.
+        If all relative costs are zero.
+        If any relative cost key does not follow the format '<data_field>_<cost_type>', where <cost_type> is one of
+        'policy', 'regularization', or 'entropy'.
+        If an integrated data field is missing a reference noise schedule, noise schedule, or relative costs.
+        If velocity prediction is not enabled for position or cell data fields when using SingleStochasticInterpolantOS.
+    """
+
+    def __init__(self, reward: Reward, reference_noise_schedules: dict[str, NoiseSchedule],
+                 noise_schedules: dict[str, NoiseSchedule], relative_costs: dict[str, float],
+                 scale_model: ScaleMLP, normalize_relative_costs: bool = True, disable_fields: Sequence[str] = (),
+                 grpo_group_size: int = 32, grpo_num_groups: int = 16, grpo_share_x_0: bool = True,
+                 ppo_clip_epsilon: float = 0.2, ppo_epochs: int = 1, gradient_clip_val: Optional[float] = 1.0,
+                 gradient_clip_algorithm: str = "norm", generation_xyz_filename: Optional[str] = None,
+                 validation_xyz_filename: Optional[str] = None, enable_progress_bar: bool = True) -> None:
+        """Constructor of OMGIRLScale."""
+        super().__init__(reward=reward, grpo_group_size=grpo_group_size, grpo_num_groups=grpo_num_groups,
+                         grpo_share_x_0=grpo_share_x_0, ppo_clip_epsilon=ppo_clip_epsilon, ppo_epochs=ppo_epochs,
+                         gradient_clip_val=gradient_clip_val, gradient_clip_algorithm=gradient_clip_algorithm,
+                         generation_xyz_filename=generation_xyz_filename,
+                         validation_xyz_filename=validation_xyz_filename, enable_progress_bar=enable_progress_bar)
+
+        self.scale_model = scale_model
+
+        try:
+            self.reference_noise_schedules: dict[DataField, NoiseSchedule] = {
+                DataField[field.lower()]: ns for field, ns in reference_noise_schedules.items()}
+        except KeyError as e:
+            raise ValueError(f"Invalid data field in reference_noise_schedules: {e}") from e
+        if any(schedule.learnable() for schedule in self.reference_noise_schedules.values()):
+            raise ValueError("Reference noise schedules must not be learnable.")
+
+        try:
+            self.noise_schedules: dict[DataField, NoiseSchedule] = {
+                DataField[field.lower()]: ns for field, ns in noise_schedules.items()}
+        except KeyError as e:
+            raise ValueError(f"Invalid data field in noise_schedules: {e}") from e
+        # Store learnable noise schedules in ModuleDict for proper registration.
+        noise_schedule_modules = {field.name: schedule for field, schedule in self.noise_schedules.items()
+                                  if isinstance(schedule, nn.Module)}
+        assert all(schedule.learnable() for schedule in noise_schedule_modules.values())
+        # Prevents empty ModuleList that would be printed out by Lightning.
+        if len(noise_schedule_modules) > 0:
+            self.noise_schedule_modules = nn.ModuleDict(noise_schedule_modules)
+        else:
+            self.noise_schedule_modules = None
+
+        try:
+            self.disable_fields: set[DataField] = set(DataField[field.lower()] for field in disable_fields)
+        except KeyError as e:
+            raise ValueError(f"Invalid data field in disable_fields: {e}") from e
+
+        if not all(cost >= 0.0 for cost in relative_costs.values()):
+            raise ValueError("All relative costs must be non-negative.")
+        sum_costs = sum(relative_costs.values())
+        if sum_costs == 0.0:
+            raise ValueError("At least one relative cost must be positive.")
+        self.normalize_relative_costs = normalize_relative_costs
+        if self.normalize_relative_costs:
+            self.relative_costs = {key: value / sum_costs for key, value in relative_costs.items()}
+            assert abs(sum(self.relative_costs.values()) - 1.0) < 1e-10
+        else:
+            self.relative_costs = relative_costs
+        for field in self.relative_costs.keys():
+            split_field = field.split("_")
+            if len(split_field) != 2:
+                raise ValueError(f"Invalid relative cost key: {field}. Expected format '<data_field>_<cost_type>'.")
+            field_name, cost_type = split_field
+            try:
+                DataField[field_name.lower()]
+            except KeyError as e:
+                raise ValueError(f"Invalid data field in relative costs: {field_name}") from e
+            if cost_type not in {"policy", "regularization", "entropy"}:
+                raise ValueError(f"Invalid cost type in relative costs: {cost_type}. "
+                                 f"Expected 'policy', 'regularization', or 'entropy'.")
+
+        if self.integrate_species:
+            # Learning a velocity-annealing schedule for the species in OMGIRLScale is not supported.
+            self.disable_fields.add(DataField.species)
+
+        for integrated_data_field in self.integrated_data_fields:
+            if integrated_data_field in self.disable_fields:
+                if integrated_data_field in self.reference_noise_schedules:
+                    warnings.warn(f"Reference noise schedule for disabled integrated data field "
+                                  f"{integrated_data_field.name} will be ignored.")
+                if integrated_data_field in self.noise_schedules:
+                    warnings.warn(f"Noise schedule for disabled integrated data field "
+                                  f"{integrated_data_field.name} will be ignored.")
+                if integrated_data_field.name + "_policy" in self.relative_costs:
+                    warnings.warn(f"Relative policy cost for disabled integrated data field "
+                                  f"{integrated_data_field.name} will be ignored.")
+                if integrated_data_field.name + "_regularization" in self.relative_costs:
+                    warnings.warn(f"Relative regularization cost for disabled integrated data field "
+                                  f"{integrated_data_field.name} will be ignored.")
+                if integrated_data_field.name + "_entropy" in self.relative_costs:
+                    warnings.warn(f"Relative entropy cost for disabled integrated data field "
+                                  f"{integrated_data_field.name} will be ignored.")
+            else:
+                if integrated_data_field not in self.reference_noise_schedules:
+                    raise ValueError(f"Missing reference noise schedule for integrated data field "
+                                     f"{integrated_data_field.name}.")
+                if integrated_data_field not in self.noise_schedules:
+                    raise ValueError(f"Missing noise schedule for integrated data field {integrated_data_field.name}.")
+                if integrated_data_field.name + "_policy" not in self.relative_costs:
+                    raise ValueError(f"Missing relative policy cost for integrated data field "
+                                     f"{integrated_data_field.name}.")
+                if integrated_data_field.name + "_regularization" not in self.relative_costs:
+                    raise ValueError(f"Missing relative regularization cost for integrated data field "
+                                     f"{integrated_data_field.name}.")
+                if (self.noise_schedules[integrated_data_field].learnable()
+                        and integrated_data_field.name + "_entropy" not in self.relative_costs):
+                    raise ValueError(f"Missing relative entropy cost for integrated data field "
+                                     f"{integrated_data_field.name} with learnable noise schedule.")
+                if (not self.noise_schedules[integrated_data_field].learnable()
+                        and integrated_data_field.name + "_entropy" in self.relative_costs):
+                    warnings.warn(f"Relative entropy cost for integrated data field "
+                                  f"{integrated_data_field.name} with non-learnable noise schedule will be ignored.")
+
+        for fixed_data_field in self.fixed_data_fields:
+            if fixed_data_field in self.disable_fields:
+                warnings.warn(f"Disabled field {fixed_data_field.name} is not an integrated data field and will be "
+                              f"ignored.")
+            if fixed_data_field in self.reference_noise_schedules:
+                warnings.warn(f"Reference noise schedule for fixed data field {fixed_data_field.name} will be ignored.")
+            if fixed_data_field in self.noise_schedules:
+                warnings.warn(f"Noise schedule for fixed data field {fixed_data_field.name} will be ignored.")
+
+        if self.integrate_pos:
+            if self.pos_interpolant.get_differential_equation_type() != DifferentialEquationType.ODE:
+                warnings.warn("OMGIRLScale will ignore predicted scores for position data field and only work with "
+                              "the velocity field.")
+            if self.pos_interpolant.get_velocity_annealing_factor() != 0.0:
+                warnings.warn("OMGIRLScale will ignore velocity annealing for position data field.")
+            if isinstance(self.pos_interpolant, SingleStochasticInterpolantOS):
+                if not self.pos_interpolant.predicts_velocity():
+                    raise ValueError("OMGIRLScale requires velocity prediction for position data field when using "
+                                     "SingleStochasticInterpolantOS.")
+
+        if self.integrate_cell:
+            if self.cell_interpolant.get_differential_equation_type() != DifferentialEquationType.ODE:
+                warnings.warn("OMGIRLScale will ignore predicted scores for cell data field and only work with "
+                              "the velocity field.")
+            if self.cell_interpolant.get_velocity_annealing_factor() != 0.0:
+                warnings.warn("OMGIRLScale will ignore velocity annealing for cell data field.")
+            if isinstance(self.cell_interpolant, SingleStochasticInterpolantOS):
+                if not self.cell_interpolant.predicts_velocity():
+                    raise ValueError("OMGIRLScale requires velocity prediction for cell data field when using "
+                                     "SingleStochasticInterpolantOS.")
+
+    def _rollout(self, x_0: OMGData) -> TrajectoryData:
+        """
+        Generate a trajectory rollout starting from initial structures x_0 without gradients, storing data for PPO
+        updates.
+
+        This method is called in no_grad context by the public rollout method.
+
+        :param x_0:
+            Initial structures at time 0 sampled from p_0.
+        :type x_0: OMGData
+
+        :return:
+            Trajectory data containing states, sampled actions, old log probabilities, base model outputs, rewards,
+            advantages, and info dictionary for logging.
+        :rtype: TrajectoryData
+        """
+        base_model = base_modules["model"].model
+        assert base_model is not None
+        batch_size = len(x_0.n_atoms)
+        # noinspection PyTypeChecker
+        times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
+        x_t = x_0.clone()
+        states = []
+        old_log_probs = []
+        sampled_actions = []
+        base_model_outputs = []
+        scale_total = {field.name: torch.tensor(0.0, device=self.device)
+                       for field in self.integrated_data_fields if field not in self.disable_fields}
+
+        # Integrate over time with scale model.
+        for t_index in trange(1, len(times), desc="Rollout with scales", position=1, leave=False,
+                              disable=not self.enable_progress_bar):
+            t = times[t_index - 1]
+            dt = times[t_index] - times[t_index - 1]
+            sqrt_dt = torch.sqrt(dt)
+            time = t.repeat(batch_size)
+            base_model_output = base_model(x_t, time)
+            scale_output = self.scale_model(time)
+
+            states.append(x_t.clone())
+            step_sampled_actions = {}
+            step_old_log_probs = {}
+            step_base_model_outputs = {}
+
+            if self.integrate_pos:
+                base_b = base_model_output[DataField.pos.name + "_b"]
+
+                if DataField.pos in self.disable_fields:
+                    # Take a standard Euler step (i.e., Euler-Maruyama without noise).
+                    velocity = base_b
+                    noise = torch.zeros_like(base_b)
+                else:
+                    sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
+                    assert sigma.ndim == 0
+                    scale = scale_output[DataField.pos.name + "_s"]  # Tensor of shape (batch_size,).
+                    assert scale.shape == time.shape
+                    # Tensor of shape (sum(n_atoms), 1) so that it can be broadcast to base_b shape (sum(n_atoms), 3).
+                    scale_per_atom = scale[x_t.batch].unsqueeze(-1)
+                    assert scale_per_atom.shape[:1] == base_b.shape[:1]
+                    velocity = (1.0 + scale_per_atom) * base_b
+                    randn = torch.randn_like(scale)  # Tensor of shape (batch_size).
+                    randn_per_atom = randn[x_t.batch].unsqueeze(-1)  # Tensor of shape (sum(n_atoms), 1).
+                    noise = sigma * randn_per_atom * base_b
+                    # Store sampled action for PPO update: scale * dt + sigma * randn * sqrt(dt).
+                    # Effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
+                    # Noise is effectively one-dimensional. Shape (batch_size,).
+                    step_sampled_actions[DataField.pos] = scale * dt + sigma * randn * sqrt_dt
+                    # Log probability of x_t+dt given x_t for SDE.
+                    # Tensor of shape (batch_size,).
+                    log_prob = -0.5 * (torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn ** 2))
+                    step_old_log_probs[DataField.pos] = log_prob
+                    # Log absolute scale mean over batch.
+                    assert DataField.pos.name in scale_total
+                    scale_total[DataField.pos.name] += scale.abs().mean()
+
+                # Euler-Maruyama update for SDE.
+                x_t.pos = self.pos_corrector.correct(x_t.pos + velocity * dt + noise * sqrt_dt)
+
+            if self.integrate_cell:
+                base_b = base_model_output[DataField.cell.name + "_b"]
+
+                if DataField.cell in self.disable_fields:
+                    velocity = base_b
+                    noise = torch.zeros_like(base_b)
+                else:
+                    sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
+                    assert sigma.ndim == 0
+                    # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
+                    scale = scale_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
+                    assert scale.shape[:1] == base_b.shape[:1]
+                    velocity = (1.0 + scale) * base_b
+                    randn = torch.randn_like(scale)
+                    noise = sigma * randn * base_b
+                    # Store sampled action for PPO update: scale * dt + sigma * randn * sqrt(dt).
+                    # Effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
+                    # Noise is effectively one-dimensional. Shape (batch_size,).
+                    step_sampled_actions[DataField.cell] = (
+                            scale.squeeze(dim=(1, 2)) * dt + sigma * randn.squeeze(dim=(1, 2)) * sqrt_dt)
+                    # Log probability of x_t+dt given x_t for SDE.
+                    # Tensor of shape (batch_size,).
+                    step_old_log_probs[DataField.cell] = -0.5 * (
+                            torch.log(2.0 * torch.pi * (sigma ** 2) * dt) + (randn.squeeze(dim=(1, 2)) ** 2)
+                    )
+                    # Log absolute scale mean over batch.
+                    assert DataField.cell.name in scale_total
+                    scale_total[DataField.cell.name] += scale.squeeze(dim=(1, 2)).abs().mean()
+
+                # Euler-Maruyama update for SDE.
+                x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
+
+            if self.integrate_species:
+                # Integrate species using the frozen base model (no RL on species).
+                species_b = base_model_output[DataField.species.name + "_b"]
+                species_eta = base_model_output[DataField.species.name + "_eta"]
+                x_t.species = self.species_interpolant.integrate(lambda _, __: (species_b, species_eta), x_t.species, t,
+                                                                 dt, x_t.batch)
+
+            sampled_actions.append(step_sampled_actions)
+            old_log_probs.append(step_old_log_probs)
+            base_model_outputs.append(step_base_model_outputs)
+
+        # Append final state.
+        states.append(x_t.clone())
+
+        # Average over time steps.
+        info_dict = {f"{key}_scale": scale / (len(times) - 1) for key, scale in scale_total.items()}
+
+        return self._create_trajectory_data(states, sampled_actions, old_log_probs, base_model_outputs, info_dict)
+
+    def ppo_update(self, trajectory: TrajectoryData) -> tuple[float, dict[str, float]]:
+        """
+        Perform a PPO update using the provided trajectory data.
+
+        This method takes the trajectory data generated during the rollout and performs one PPO update, returning the
+        computed total loss and an additional dictionary for logging.
+
+        :param trajectory:
+            Trajectory data containing states, sampled actions, old log probabilities, base model outputs,
+            rewards, advantages, and info dictionary for logging.
+            This object is generated by the rollout method.
+        :type trajectory: TrajectoryData
+
+        :return:
+            A tuple containing two elements:
+            - The total loss as a float value.
+            - A dictionary mapping arbitrary string keys to float values for logging. This can include individual loss
+                components, clip fractions, or any other relevant metrics.
+        :rtype: tuple[float, dict[str, float]]
+        """
+        batch_size = len(trajectory.rewards)
+        # noinspection PyTypeChecker
+        times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
+        num_timesteps = len(times) - 1
+
+        # Track losses for logging (only for non-disabled integrated fields).
+        active_fields = [field for field in self.integrated_data_fields if field not in self.disable_fields]
+        total_loss = 0.0
+        total_policy_losses = {field: 0.0 for field in active_fields}
+        total_reg_losses = {field: 0.0 for field in active_fields}
+        total_entropy_losses = {field: 0.0 for field in active_fields}
+        total_clip_fractions = {field: 0.0 for field in active_fields}
+
+        # Zero gradients once at the start, then accumulate across all timesteps.
+        opt = self.optimizers()
+        opt.zero_grad()
+
+        for t_index in trange(num_timesteps, desc="Perform PPO update", position=1, leave=False,
+                              disable=not self.enable_progress_bar):
+            t = times[t_index]
+            dt = times[t_index + 1] - times[t_index]
+            sqrt_dt = torch.sqrt(dt)
+            time = t.repeat(batch_size)
+            # Re-evaluate scale model with gradients.
+            scale_output = self.scale_model(time)
+            timestep_loss = torch.tensor(0.0, device=self.device)
+
+            if self.integrate_pos and DataField.pos not in self.disable_fields:
+                sigma_ref = self.reference_noise_schedules[DataField.pos].noise(t)  # Scalar.
+                sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
+                assert sigma.ndim == sigma_ref.ndim == 0
+                scale = scale_output[DataField.pos.name + "_s"]  # Shape (batch_size,).
+                old_log_prob = trajectory.old_log_probs[t_index][DataField.pos]  # Shape (batch_size,).
+                # This is effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
+                # Noise is effectively one-dimensional. Shape (batch_size,).
+                sampled_action = trajectory.sampled_actions[t_index][DataField.pos]
+                # Tensor of shape (batch_size,).
+                current_log_prob = -0.5 * (
+                        torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
+                        + ((sampled_action.detach() - scale * dt) / (sigma * sqrt_dt)) ** 2
+                )
+                ratio = torch.exp(current_log_prob - old_log_prob.detach())
+                clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
+                                 | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
+                # Take mean over batch.
+                policy_loss = -torch.min(ratio * trajectory.advantages,
+                                         clipped_ratio * trajectory.advantages).mean()
+
+                # Regularization loss as KL divergence between modified and base policy.
+                # This is already the KL divergence per structure. Shape (batch_size,).
+                kl_div = (torch.log(sigma_ref) - torch.log(sigma)
+                          + (sigma * sigma + scale * scale * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
+                # Take mean over batch.
+                reg_loss = kl_div.mean()
+
+                # Entropy bonus when learning sigma.
+                if self.noise_schedules[DataField.pos].learnable():
+                    # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
+                    entropy_loss = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5)
+                else:
+                    entropy_loss = None
+
+                # Add weighted losses.
+                timestep_loss += self.relative_costs[DataField.pos.name + "_policy"] * policy_loss
+                timestep_loss += self.relative_costs[DataField.pos.name + "_regularization"] * reg_loss
+                if self.noise_schedules[DataField.pos].learnable():
+                    timestep_loss += self.relative_costs[DataField.pos.name + "_entropy"] * entropy_loss
+
+                # Track for logging.
+                total_policy_losses[DataField.pos] += policy_loss.item()
+                total_reg_losses[DataField.pos] += reg_loss.item()
+                total_clip_fractions[DataField.pos] += clip_fraction.item()
+                if self.noise_schedules[DataField.pos].learnable():
+                    total_entropy_losses[DataField.pos] += entropy_loss.item()
+
+            if self.integrate_cell and DataField.cell not in self.disable_fields:
+                sigma_ref = self.reference_noise_schedules[DataField.cell].noise(t)  # Scalar.
+                sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
+                assert sigma.ndim == sigma_ref.ndim == 0
+                scale = scale_output[DataField.cell.name + "_s"]  # Shape (batch_size,).
+                old_log_prob = trajectory.old_log_probs[t_index][DataField.cell]  # Shape (batch_size,).
+                # This is effectively x_t+dt - x_t - base_b * dt, however, ignoring base_b direction.
+                # Noise is effectively one-dimensional. Shape (batch_size,).
+                sampled_action = trajectory.sampled_actions[t_index][DataField.cell]
+                # Tensor of shape (batch_size,).
+                current_log_prob = -0.5 * (
+                        torch.log(2.0 * torch.pi * (sigma ** 2) * dt)
+                        + ((sampled_action.detach() - scale * dt) / (sigma * sqrt_dt)) ** 2
+                )
+
+                ratio = torch.exp(current_log_prob - old_log_prob.detach())
+                clipped_ratio = torch.clamp(ratio, 1.0 - self.ppo_clip_epsilon, 1.0 + self.ppo_clip_epsilon)
+                clip_fraction = ((ratio < (1.0 - self.ppo_clip_epsilon))
+                                 | (ratio > (1.0 + self.ppo_clip_epsilon))).float().mean()
+                # Take mean over batch.
+                policy_loss = -torch.min(ratio * trajectory.advantages,
+                                         clipped_ratio * trajectory.advantages).mean()
+
+                # Regularization loss as KL divergence between modified and base policy.
+                # This is already the KL divergence per structure. Shape (batch_size,).
+                kl_div = (torch.log(sigma_ref) - torch.log(sigma)
+                          + (sigma * sigma + scale * scale * dt) / (2.0 * sigma_ref * sigma_ref) - 0.5)
+                # Take mean over batch.
+                reg_loss = kl_div.mean()
+
+                # Entropy bonus when learning sigma.
+                if self.noise_schedules[DataField.cell].learnable():
+                    # Entropy of Gaussian grows with log(sigma). Take negative since we want to maximize entropy.
+                    entropy_loss = (-0.5 * torch.log(2.0 * torch.pi * sigma * sigma) - 0.5)
+                else:
+                    entropy_loss = None
+
+                # Add weighted losses.
+                timestep_loss += self.relative_costs[DataField.cell.name + "_policy"] * policy_loss
+                timestep_loss += self.relative_costs[DataField.cell.name + "_regularization"] * reg_loss
+                if self.noise_schedules[DataField.cell].learnable():
+                    timestep_loss += self.relative_costs[DataField.cell.name + "_entropy"] * entropy_loss
+
+                # Track for logging.
+                total_policy_losses[DataField.cell] += policy_loss.item()
+                total_reg_losses[DataField.cell] += reg_loss.item()
+                total_clip_fractions[DataField.cell] += clip_fraction.item()
+                if self.noise_schedules[DataField.cell].learnable():
+                    total_entropy_losses[DataField.cell] += entropy_loss.item()
+
+            # Scale loss by 1/num_timesteps and accumulate gradients.
+            scaled_loss = timestep_loss / num_timesteps
+            self.manual_backward(scaled_loss)
+            total_loss += scaled_loss.item()
+
+        # After all timesteps: clip gradients and perform single optimizer step.
+        if self.gradient_clip_val is not None:
+            # noinspection PyTypeChecker
+            self.clip_gradients(opt, gradient_clip_val=self.gradient_clip_val,
+                                gradient_clip_algorithm=self.gradient_clip_algorithm)
+        opt.step()
+
+        # Return average losses and clip fractions for logging.
+        logging_info = {}
+        for field in active_fields:
+            logging_info[field.name + "_loss_policy"] = total_policy_losses[field] / num_timesteps
+            logging_info[field.name + "_loss_regularization"] = total_reg_losses[field] / num_timesteps
+            if self.noise_schedules[field].learnable():
+                logging_info[field.name + "_loss_entropy"] = total_entropy_losses[field] / num_timesteps
+            logging_info[field.name + "_clip_fraction"] = total_clip_fractions[field] / num_timesteps
+
+        return total_loss, logging_info
+
+    def _integrate(self, x_0: OMGData) -> OMGData:
+        """
+        Integrate the reinforced model starting from initial structures x_0.
+
+        This method is called in no_grad context by the public integrate method.
+
+        :param x_0:
+            Initial structures at time 0 sampled from p_0.
+        :type x_0: OMGData
+
+        :return:
+            Integrated structures at time 1 after applying the reinforced model.
+        :rtype: OMGData
+        """
+        base_model = base_modules["model"].model
+        assert base_model is not None
+        batch_size = len(x_0.n_atoms)
+        # noinspection PyTypeChecker
+        times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
+        x_t = x_0.clone()
+
+        for t_index in trange(1, len(times), desc="Integrating with scales", position=1, leave=False,
+                              disable=not self.enable_progress_bar):
+            t = times[t_index - 1]
+            dt = times[t_index] - times[t_index - 1]
+            sqrt_dt = torch.sqrt(dt)
+            time = t.repeat(batch_size)
+            base_model_output = base_model(x_t, time)
+            scale_output = self.scale_model(time)
+
+            if self.integrate_pos:
+                base_b = base_model_output[DataField.pos.name + "_b"]
+
+                if DataField.pos in self.disable_fields:
+                    # Take a standard Euler step (i.e., Euler-Maruyama without noise).
+                    velocity = base_b
+                    noise = torch.zeros_like(base_b)
+                else:
+                    sigma = self.noise_schedules[DataField.pos].noise(t)  # Scalar.
+                    assert sigma.ndim == 0
+                    scale = scale_output[DataField.pos.name + "_s"]  # Tensor of shape (batch_size,).
+                    assert scale.shape == time.shape
+                    # Tensor of shape (sum(n_atoms), 1) so that it can be broadcast to base_b shape (sum(n_atoms), 3).
+                    scale_per_atom = scale[x_t.batch].unsqueeze(-1)
+                    assert scale_per_atom.shape[:1] == base_b.shape[:1]
+                    velocity = (1.0 + scale_per_atom) * base_b
+                    randn = torch.randn_like(scale)  # Tensor of shape (batch_size,).
+                    randn_per_atom = randn[x_t.batch].unsqueeze(-1)  # Tensor of shape (sum(n_atoms), 1).
+                    noise = sigma * randn_per_atom * base_b
+
+                # Euler-Maruyama update for SDE.
+                x_t.pos = self.pos_corrector.correct(x_t.pos + velocity * dt + noise * sqrt_dt)
+
+            if self.integrate_cell:
+                base_b = base_model_output[DataField.cell.name + "_b"]
+
+                if DataField.cell in self.disable_fields:
+                    # Take a standard Euler step (i.e., Euler-Maruyama without noise).
+                    velocity = base_b
+                    noise = torch.zeros_like(base_b)
+                else:
+                    sigma = self.noise_schedules[DataField.cell].noise(t)  # Scalar.
+                    assert sigma.ndim == 0
+                    # Tensor of shape (batch_size, 1, 1) so that it can be broadcast to base_b shape (batch_size, 3, 3).
+                    scale = scale_output[DataField.cell.name + "_s"].unsqueeze(-1).unsqueeze(-1)
+                    assert scale.shape[:1] == base_b.shape[:1]
+                    velocity = (1.0 + scale) * base_b
+                    noise = sigma * torch.randn_like(scale) * base_b
+
+                # Euler-Maruyama update for SDE.
+                x_t.cell = self.cell_corrector.correct(x_t.cell + velocity * dt + noise * sqrt_dt)
+
+            if self.integrate_species:
+                # Integrate species using the frozen base model (no RL on species).
+                species_b = base_model_output[DataField.species.name + "_b"]
+                species_eta = base_model_output[DataField.species.name + "_eta"]
+                x_t.species = self.species_interpolant.integrate(lambda _, __: (species_b, species_eta), x_t.species, t,
+                                                                 dt, x_t.batch)
+
+        return x_t
+
+    def training_step(self, batch: OMGData, batch_idx: int) -> None:
+        """
+        Take a training step using GRPO with a PPO-like objective.
+
+        This method extends the training_step method of the OMGIRLLightningAbstract class by logging
+        statistics about the learnable noise schedules after the standard training step.
+
+        :param batch:
+            Batch of training data from the datamodule.
+            This batch contains grpo_num_groups unique structures.
+        :type batch: OMGData
+        :param batch_idx:
+            Index of the current batch.
+        :type batch_idx: int
+        """
+        super().training_step(batch, batch_idx)
+
+        # Log sigma schedule statistics for learnable noise schedules.
+        for field in self.integrated_data_fields:
+            if field not in self.disable_fields and self.noise_schedules[field].learnable():
+                # noinspection PyTypeChecker
+                times = torch.linspace(SMALL_TIME, BIG_TIME, self.integration_time_steps, device=self.device)
+                sigmas = self.noise_schedules[field].noise(times)
+                self.log(f"sigma_{field.name}_mean", sigmas.mean(), on_step=True, on_epoch=True, prog_bar=True,
+                         sync_dist=True, batch_size=len(batch))
+                self.log(f"sigma_{field.name}_min", sigmas.min(), on_step=True, on_epoch=True, sync_dist=True,
+                         batch_size=len(batch))
+                self.log(f"sigma_{field.name}_max", sigmas.max(), on_step=True, on_epoch=True, sync_dist=True,
+                         batch_size=len(batch))

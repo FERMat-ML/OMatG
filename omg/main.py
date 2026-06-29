@@ -11,6 +11,7 @@ from omg.datamodule import OMGDataModule
 def main():
     """Main function to run the Open Materials Generation (OMatG) command line interface (used by omg command)."""
     OMGCLI(model_class=OMGLightning, datamodule_class=OMGDataModule, trainer_class=OMGTrainer,
+           save_config_callback=None,
            parser_kwargs={"formatter_class": argparse.RawDescriptionHelpFormatter, "description": f"""
 Open Materials Generation (OMatG) Version {__version__}
 

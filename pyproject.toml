@@ -6,10 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "omg"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
-version = "1.2.1"
+version = "2.0.0"
 dependencies = [
-    "numpy ~= 2.3",
-    "scipy ~= 1.16",
+    "numpy ~= 2.4",
+    "scipy ~= 1.17",
     "torch ~= 2.8",
     "lightning[extra] ~= 2.5",
     "jsonargparse == 4.41",
@@ -17,26 +17,29 @@ dependencies = [
     "torch_scatter ~= 2.1",
     "torchdiffeq ~= 0.2",
     "torchsde ~= 0.2",
-    "lmdb ~= 1.6",
+    "lmdb ~= 1.7",
     "loguru ~= 0.7",
-    "ase ~= 3.25",
-    "pytest ~= 8.4",
+    "ase ~= 3.28",
+    "pytest ~= 9.0",
     "tqdm ~= 4.67",
-    "smact ~= 3.1",
-    "wandb ~= 0.20",
-    "scikit-learn ~= 1.7",
+    "smact ~= 4.0",
+    "wandb ~= 0.27",
+    "scikit-learn ~= 1.9",
     "matplotlib ~= 3.10",
-    "pymatgen ~= 2025.6",
-    "spglib ~= 2.6",
+    "pymatgen ~= 2025.10",
+    "spglib ~= 2.7",
     "pyyaml ~= 6.0",
-    "matminer ~= 0.9",
-    "huggingface_hub ~= 1.2",
-    "pyarrow ~= 22.0"
+    "matminer ~= 0.10",
+    "huggingface_hub ~= 1.19",
+    "pyarrow ~= 23.0",
+    "mace-torch ~= 0.3",
+    "torch-sim-atomistic ~= 0.5"
 ]
 
 [project.scripts]
 omg = "omg.main:main"
 omg_load = "omg.main:load"
+omg_irl = "omg.omg_irl.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

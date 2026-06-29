@@ -533,3 +533,33 @@ class SingleStochasticInterpolantOS(StochasticInterpolant):
         :rtype: Corrector
         """
         return self._corrector
+
+    def get_velocity_annealing_factor(self) -> float:
+        """
+        Get the velocity annealing factor used during inference.
+
+        :return:
+            Velocity annealing factor.
+        :rtype: float
+        """
+        return self._velocity_annealing_factor
+
+    def get_differential_equation_type(self) -> DifferentialEquationType:
+        """
+        Get the type of differential equation used for inference.
+
+        :return:
+            Type of differential equation.
+        :rtype: DifferentialEquationType
+        """
+        return self._differential_equation_type
+
+    def predicts_velocity(self) -> bool:
+        """
+        Whether the model predicts the velocity fields.
+
+        :return:
+            Whether the model predicts the velocity fields.
+        :rtype: bool
+        """
+        return self._predict_velocity

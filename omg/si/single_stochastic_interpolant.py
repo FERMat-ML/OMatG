@@ -546,3 +546,33 @@ class SingleStochasticInterpolant(StochasticInterpolant):
         :rtype: Corrector
         """
         return self._corrector
+
+    def get_gamma(self) -> Optional[LatentGamma]:
+        """
+        Get the gamma function gamma(t) used in the stochastic interpolant.
+
+        :return:
+           Gamma function.
+        :rtype: Optional[LatentGamma]
+        """
+        return self._gamma
+
+    def get_velocity_annealing_factor(self) -> float:
+        """
+        Get the velocity annealing factor used during inference.
+
+        :return:
+            Velocity annealing factor.
+        :rtype: float
+        """
+        return self._velocity_annealing_factor
+
+    def get_differential_equation_type(self) -> DifferentialEquationType:
+        """
+        Get the type of differential equation used for inference.
+
+        :return:
+            Type of differential equation.
+        :rtype: DifferentialEquationType
+        """
+        return self._differential_equation_type

@@ -35,7 +35,12 @@ class OMGCLI(LightningCLI):
         d["csp_metrics"] = {"model", "datamodule"}
         d["dng_metrics"] = {"model", "datamodule"}
         d["fit_lattice"] = {"model", "datamodule"}
+        d["energy_metrics"] = {"model", "datamodule"}
+        d["energy_above_hull_metrics"] = {"model", "datamodule"}
+        d["symmetry_metrics"] = {"model", "datamodule"}
+        d["relax"] = {"model", "datamodule"}
         d["create_compositions"] = {"model", "datamodule"}
+        d["load"] = {"model", "datamodule"}
         return d
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
