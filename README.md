@@ -8,19 +8,24 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2509.12178-maroon)](https://arxiv.org/abs/2509.12178)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face%20Datasets-FFD21E?logo=huggingface&logoColor=000)](https://huggingface.co/collections/colabfit/datasets-all-that-structure-matches-does-not-glitter)
 
+[![Static Badge](https://img.shields.io/badge/ICML_2026-OpenReview.net-811913?labelColor=222529)](https://openreview.net/forum?id=xfHppnGXaH)
+[![arXiv](https://img.shields.io/badge/arXiv-2602.00424-maroon)](https://arxiv.org/abs/2602.00424)
+
 [![Python](https://img.shields.io/badge/python-3.11--3.13-blue?logo=python)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.8-ee4c2c?logo=pytorch&logoColor=white)](https://pytorch.org/)
 [![Lightning](https://img.shields.io/badge/-Lightning-792ee5?logo=pytorchlightning&logoColor=white)](https://github.com/Lightning-AI/lightning)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Static Badge](https://img.shields.io/badge/Version-1.2.1-blue)
+![Static Badge](https://img.shields.io/badge/Version-2.0.0-blue)
 
-A state-of-the-art generative model for crystal structure prediction and *de novo* generation of inorganic crystals. 
+A generative framework for crystal structure prediction and *de novo* generation of inorganic crystals. 
 This open-source framework accompanies the [ICML 2025 paper](https://openreview.net/forum?id=gHGrzxFujU) about the 
-generative model itself (expanded version available on [arXiv](https://arxiv.org/abs/2502.02582)), and the 
-[NeurIPS 2025 paper](https://openreview.net/forum?id=ig9ujp50D4) about newly introduced benchmark metrics and datasets 
-(expanded version available on [arXiv](https://arxiv.org/abs/2509.12178)). 
-These papers should be [cited](#citing-omatg) when using OMatG or the newly introduced benchmark metrics and datasets. 
+generative OMatG model itself, the 
+[NeurIPS 2025 paper](https://openreview.net/forum?id=ig9ujp50D4) about newly introduced benchmark metrics and datasets, 
+and the OMatG-IRL [ICML 2026 paper](https://openreview.net/forum?id=xfHppnGXaH) about reinforcement learning for pretrained OMatG 
+models. 
+These papers should be [cited](#citing-omatg) when using OMatG, the newly introduced benchmark metrics and datasets, 
+or OMatG-IRL. 
 
 #### Crystal structure prediction of GaTe:
 
@@ -40,6 +45,9 @@ These papers should be [cited](#citing-omatg) when using OMatG or the newly intr
 - [Visualization.](#visualization)
 - [Crystal Structure Prediction Metrics.](#crystal-structure-prediction-metrics)
 - [*De Novo* Generation Metrics.](#de-novo-generation-metrics)
+- [Energy Metrics and Relaxation.](#energy-metrics-and-relaxation)
+- [Symmetry Metrics.](#symmetry-metrics)
+- [Open Materials Generation with Inference-Time Reinforcement Learning (OMatG-IRL).](#open-materials-generation-with-inference-time-reinforcement-learning-omatg-irl)
 - [Citing OMatG.](#citing-omatg)
 
 ## Overview
@@ -555,6 +563,61 @@ be changed by setting the `--number_cpus` argument (which is probably most usefu
 
 Stability related metrics can be computed, for example, with the [MatterGen codebase](https://github.com/microsoft/mattergen). 
 
+## Energy Metrics and Relaxation
+
+Run the following command to compute the energies per atom of the generated structures as computed by the 
+[MACE-MPA-0](https://github.com/ACEsuit/mace) foundation model:
+
+```bash
+omg energy_metrics --config<configuration_file.yaml> --xyz_file=<xyz_file>
+```
+
+By default, this command computes the energies sequentially on CPU with [ASE](https://ase-lib.org). If a CUDA-enabled GPU 
+is available, the energy can be computed on GPU with [TorchSim](https://github.com/TorchSim/torch-sim) by using the 
+`--device=cuda` argument. By default, the mean energy per atom of valid structures and the number of invalid structures 
+are stored in the `energy_metrics.json` file. The energies per atom of all structures are stored in the 
+`energies_per_atom.npy` NumPy file.
+
+The following command similarly computes the energies above hull based on the MACE-MPA-0 energies and the 
+[LeMat-GenBench](https://github.com/LeMaterial/lemat-genbench) reference convex hull:
+
+```bash
+omg energy_above_hull_metrics --config<configuration_file.yaml> --xyz_file=<xyz_file
+```
+
+By default, this command stores metrics in the `energy_above_hull_metrics.json` file, energies per atom in the 
+`energies_per_atom.npy` NumPy file, and energies above hull in the `energies_above_hull_per_atom.npy` NumPy file.
+
+The following command relaxes generated structures with the MACE-MPA-0 model:
+```bash
+omg relax --config<configuration_file.yaml> --xyz_file=<xyz_file>
+```
+
+By default, this command relaxes structures sequentially on CPU with ASE. If a CUDA-enabled GPU is available, the 
+relaxation can be performed on GPU with TorchSim by using the `--device=cuda` argument and specifying an appropriate 
+optimizer with the `--optimizer_name` argument. The relaxed structures are saved to a file with the same name as 
+`<xyz_file>` but with `_relaxed` appended to the stem. Relaxation metrics are stored in the `relax.json` file.
+
+Further arguments are documented in the corresponding methods in the [`OMGTrainer`](omg/omg_trainer.py) class.
+
+## Symmetry Metrics
+
+Run the following command to compute the fraction of generated structures that are non-triclinic and 
+non-centrosymmetric with the [spglib](https://spglib.readthedocs.io/en/stable/) library:
+
+```bash
+omg symmetry_metrics --config<configuration_file.yaml> --xyz_file=<xyz_file>
+```
+
+By default, this command stores metrics in the `symmetry_metrics.json` file.
+
+## Open Materials Generation with Inference-Time Reinforcement Learning (OMatG-IRL)
+
+OMatG-IRL aligns pretrained OMatG models with downstream objectives using black-box reward functions through 
+policy-gradient reinforcement learning (RL). OMatG-IRL is implemented in the [```omg/omg_irl```](omg/omg_irl) package,
+which is documented in its own [README](omg/omg_irl/README.md). It accompanies the 
+[ICML 2026 paper](https://openreview.net/forum?id=xfHppnGXaH) that should be [cited](#citing-omatg) when using OMatG-IRL.
+
 ## Citing OMatG
 
 Please cite the following paper when using OMatG in your work:
@@ -590,6 +653,22 @@ Please cite the following paper when using new benchmarks and datasets associate
     url={https://openreview.net/forum?id=ig9ujp50D4},
     archivePrefix={arXiv},
     eprint={2509.12178},
+    primaryClass={cs.LG},
+}
+```
+
+Please cite the following paper when using OMatG-IRL in your work: 
+
+```bibtex
+@inproceedings{
+    hoellmer2026,
+    title={Open Materials Generation with Inference-Time Reinforcement Learning},
+    author={Philipp H{\"o}llmer and Stefano Martiniani},
+    booktitle={Forty-third International Conference on Machine Learning},
+    year={2026},
+    url={https://openreview.net/forum?id=xfHppnGXaH},
+    archivePrefix={arXiv},
+    eprint={2602.00424},
     primaryClass={cs.LG},
 }
 ```
