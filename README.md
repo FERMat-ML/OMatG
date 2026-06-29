@@ -8,6 +8,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2509.12178-maroon)](https://arxiv.org/abs/2509.12178)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face%20Datasets-FFD21E?logo=huggingface&logoColor=000)](https://huggingface.co/collections/colabfit/datasets-all-that-structure-matches-does-not-glitter)
 
+[![Static Badge](https://img.shields.io/badge/ICML_2026-OpenReview.net-811913?labelColor=222529)](https://openreview.net/forum?id=xfHppnGXaH)
 [![arXiv](https://img.shields.io/badge/arXiv-2602.00424-maroon)](https://arxiv.org/abs/2602.00424)
 
 [![Python](https://img.shields.io/badge/python-3.11--3.13-blue?logo=python)](https://www.python.org/)
@@ -21,7 +22,7 @@ A generative framework for crystal structure prediction and *de novo* generation
 This open-source framework accompanies the [ICML 2025 paper](https://openreview.net/forum?id=gHGrzxFujU) about the 
 generative OMatG model itself, the 
 [NeurIPS 2025 paper](https://openreview.net/forum?id=ig9ujp50D4) about newly introduced benchmark metrics and datasets, 
-and the OMatG-IRL [preprint](https://arxiv.org/abs/2602.00424) about reinforcement learning for pretrained OMatG 
+and the OMatG-IRL [ICML 2026 paper](https://openreview.net/forum?id=xfHppnGXaH) about reinforcement learning for pretrained OMatG 
 models. 
 These papers should be [cited](#citing-omatg) when using OMatG, the newly introduced benchmark metrics and datasets, 
 or OMatG-IRL. 
@@ -615,7 +616,7 @@ By default, this command stores metrics in the `symmetry_metrics.json` file.
 OMatG-IRL aligns pretrained OMatG models with downstream objectives using black-box reward functions through 
 policy-gradient reinforcement learning (RL). OMatG-IRL is implemented in the [```omg/omg_irl```](omg/omg_irl) package,
 which is documented in its own [README](omg/omg_irl/README.md). It accompanies the 
-[preprint](https://arxiv.org/abs/2602.00424) that should be [cited](#citing-omatg) when using OMatG-IRL.
+[ICML 2026 paper](https://openreview.net/forum?id=xfHppnGXaH) that should be [cited](#citing-omatg) when using OMatG-IRL.
 
 ## Citing OMatG
 
@@ -659,14 +660,15 @@ Please cite the following paper when using new benchmarks and datasets associate
 Please cite the following paper when using OMatG-IRL in your work: 
 
 ```bibtex
-@misc{
+@inproceedings{
     hoellmer2026,
     title={Open Materials Generation with Inference-Time Reinforcement Learning},
     author={Philipp H{\"o}llmer and Stefano Martiniani},
+    booktitle={Forty-third International Conference on Machine Learning},
     year={2026},
+    url={https://openreview.net/forum?id=xfHppnGXaH},
     archivePrefix={arXiv},
     eprint={2602.00424},
     primaryClass={cs.LG},
-    url={https://arxiv.org/abs/2602.00424},
 }
 ```

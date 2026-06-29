@@ -1,10 +1,11 @@
 # Open Materials Generation with Inference-Time Reinforcement Learning (OMatG-IRL)
 
+[![Static Badge](https://img.shields.io/badge/ICML_2026-OpenReview.net-811913?labelColor=222529)](https://openreview.net/forum?id=xfHppnGXaH)
 [![arXiv](https://img.shields.io/badge/arXiv-2602.00424-maroon)](https://arxiv.org/abs/2602.00424)
 
 A policy-gradient reinforcement-learning (RL) framework for aligning pretrained OMatG models with downstream
 objectives using black-box reward functions. This part of the OMatG framework accompanies the OMatG-IRL
-[preprint](https://arxiv.org/abs/2602.00424), which should be
+[ICML 2026 paper](https://openreview.net/forum?id=xfHppnGXaH), which should be
 [cited](#citing-omatg-irl) when using it.
 
 This README focuses on the parts specific to the RL setup of OMatG-IRL in the `omg_irl` package. The 
@@ -312,13 +313,15 @@ Please cite the following paper (in addition to the papers mentioned in the
 [main README](../../README.md#citing-omatg)) when using OMatG-IRL in your work:
 
 ```bibtex
-@misc{hoellmer2026,
+@inproceedings{
+    hoellmer2026,
     title={Open Materials Generation with Inference-Time Reinforcement Learning},
     author={Philipp H{\"o}llmer and Stefano Martiniani},
+    booktitle={Forty-third International Conference on Machine Learning},
     year={2026},
+    url={https://openreview.net/forum?id=xfHppnGXaH},
     archivePrefix={arXiv},
     eprint={2602.00424},
     primaryClass={cs.LG},
-    url={https://arxiv.org/abs/2602.00424},
 }
 ```
