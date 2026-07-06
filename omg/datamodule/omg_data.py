@@ -48,7 +48,13 @@ class OMGData(Data):
             self.property = None
         else:
             self.n_atoms = torch.tensor(len(structure.atomic_numbers))  # Shape: (1, )
-            self.species = structure.atomic_numbers  # Shape: (n_atoms, )
+            # Handle ghost atoms: convert -1 to fixed global label (119) to keep distinct from mask (0)
+            species = structure.atomic_numbers.clone()
+            ghost_mask = species < 0
+            if ghost_mask.any():
+                GLOBAL_GHOST_LABEL = 119  # Fixed label for all ghost atoms
+                species[ghost_mask] = GLOBAL_GHOST_LABEL
+            self.species = species  # Shape: (n_atoms, )
             self.cell = structure.cell.unsqueeze(0) # Shape: (1, 3, 3).
             self.pos = structure.pos  # Shape: (n_atoms, 3).
             self.pos_is_fractional = torch.tensor(structure.pos_is_fractional, dtype=torch.bool)  # Shape: (1, )

@@ -40,6 +40,18 @@ def get_bonds(atoms: Atoms, covalent_increase_factor: float = 1.25) -> List[List
         List of bonds for the atoms in the structure.
     :rtype: List[List[int]]
     """
+    # Filter out ghost atoms before computing bonds
+    # Ghost atoms are non-physical and should not be included in coordination calculations
+    if "is_ghost" in atoms.arrays:
+        is_ghost = atoms.arrays["is_ghost"].astype(bool)
+        atoms = atoms[~is_ghost]
+    else:
+        # Fallback: filter by atomic number (ghost atoms have number <= 0 or > MAX_ATOM_NUM)
+        valid_mask = (atoms.numbers > 0) & (atoms.numbers <= MAX_ATOM_NUM)
+        atoms = atoms[valid_mask]
+    # If all atoms were ghost atoms, return empty results
+    if len(atoms) == 0:
+        return []
     distances = atoms.get_all_distances(mic=True)
     cr = [covalent_radii[number] for number in atoms.numbers]
 
@@ -75,6 +87,18 @@ def get_coordination_numbers(atoms: Atoms, covalent_increase_factor: float = 1.2
         List of coordination numbers for the atoms in the structure.
     :rtype: List[int]
     """
+    # Filter out ghost atoms before computing coordination numbers
+    # Ghost atoms are non-physical and should not be included in coordination calculations
+    if "is_ghost" in atoms.arrays:
+        is_ghost = atoms.arrays["is_ghost"].astype(bool)
+        atoms = atoms[~is_ghost]
+    else:
+        # Fallback: filter by atomic number (ghost atoms have number <= 0 or > MAX_ATOM_NUM)
+        valid_mask = (atoms.numbers > 0) & (atoms.numbers <= MAX_ATOM_NUM)
+        atoms = atoms[valid_mask]
+    # If all atoms were ghost atoms, return empty results
+    if len(atoms) == 0:
+        return []
     bonds = get_bonds(atoms, covalent_increase_factor)
     return [len(b) for b in bonds]
 

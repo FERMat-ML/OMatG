@@ -85,6 +85,26 @@ class ValidAtoms(object):
         if upper_narity_limit is not None and upper_narity_limit < 1:
             raise ValueError("The upper n-arity limit must be at least 1.")
         self._upper_narity_limit = upper_narity_limit
+        # Filter out ghost atoms before validation
+        # Ghost atoms are non-physical and should not be included in metrics
+        if "is_ghost" in atoms.arrays:
+            is_ghost = atoms.arrays["is_ghost"].astype(bool)
+            atoms = atoms[~is_ghost]
+        else:
+            # Fallback: filter by atomic number (ghost atoms have number <= 0 or > MAX_ATOM_NUM)
+            valid_mask = (atoms.numbers > 0) & (atoms.numbers <= MAX_ATOM_NUM)
+            atoms = atoms[valid_mask]
+        # If all atoms were ghost atoms, mark as invalid
+        if len(atoms) == 0:
+            self._volume_valid = False
+            self._structure_valid = False
+            self._composition_valid = False
+            self._fingerprint_valid = False
+            self._composition_fingerprint, self._structure_fingerprint = None, None
+            self._atoms = atoms
+            self._structure = None
+            self._composition = None
+            return
         self._atoms = atoms
         self._structure = AseAtomsAdaptor.get_structure(atoms)
         self._composition = self._structure.composition

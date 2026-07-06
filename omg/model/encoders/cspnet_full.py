@@ -39,7 +39,10 @@ class CSPNetFull(Encoder, CSPNet):
         self.ip = ip
         self.hidden_dim = hidden_dim
         self.species_shift = 1
-        self.node_embedding = nn.Embedding(max_atoms, hidden_dim)
+        # Embedding size increased to accommodate ghost atoms (label 119)
+        # With species_shift=1, species 119 maps to index 118, so we need at least 119 entries
+        # Using max_atoms + 20 = 120 to safely handle species up to 119
+        self.node_embedding = nn.Embedding(max_atoms + 20, hidden_dim)
         self.atom_latent_emb = nn.Linear(hidden_dim + latent_dim, hidden_dim)
         if act_fn == 'silu':
             self.act_fn = nn.SiLU()

@@ -82,12 +82,24 @@ def xyz_saver(data: Union[OMGData, list[OMGData]], filename: Path) -> None:
         batch_size = len(d.n_atoms)
         for i in range(batch_size):
             lower, upper = d.ptr[i * 1], d.ptr[(i * 1) + 1]
+            species_slice = d.species[lower:upper].cpu().numpy()
+            MAX_Z = 118  # highest element ASE knows about
+            safe_species = species_slice.copy()
+            ghost_mask = species_slice <= 0
+            ghost_mask |= species_slice > MAX_Z
+            safe_species[ghost_mask] = 0  # map ghosts to dummy element 'X'
             if d.pos_is_fractional[i]:
-                atoms.append(Atoms(numbers=d.species[lower:upper], scaled_positions=d.pos[lower:upper, :],
-                                   cell=d.cell[i, :, :], pbc=True))
+                atom = Atoms(numbers=safe_species, scaled_positions=d.pos[lower:upper, :],
+                           cell=d.cell[i, :, :], pbc=True)
             else:
-                atoms.append(Atoms(numbers=d.species[lower:upper], positions=d.pos[lower:upper, :],
-                                   cell=d.cell[i, :, :], pbc=True))
+                atom = Atoms(numbers=safe_species, positions=d.pos[lower:upper, :],
+                           cell=d.cell[i, :, :], pbc=True)
+            if ghost_mask.any():
+                atom.new_array("is_ghost", ghost_mask.astype(np.int8))
+                ghost_numbers = np.full_like(safe_species, -1)
+                ghost_numbers[ghost_mask] = species_slice[ghost_mask]
+                atom.new_array("ghost_atomic_number", ghost_numbers)
+            atoms.append(atom)
     write(filename, atoms, append=True)
 
 
